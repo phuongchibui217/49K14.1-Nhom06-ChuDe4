@@ -34,7 +34,7 @@
             background: white;
             border-radius: 20px;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            box-shadow: 0 10px 30px rgba(39, 119, 42, 0.08);
             transition: all 0.3s ease;
             height: 100%;
             border: 1px solid #e2e8f0;
@@ -93,6 +93,17 @@
             border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 600;
+        }
+        
+        /* Fixed header offset fix */
+        .main-content {
+            padding-top: 80px;
+        }
+        
+        @media (max-width: 991px) {
+            .main-content {
+                padding-top: 70px;
+            }
         }
     </style>
 </head>

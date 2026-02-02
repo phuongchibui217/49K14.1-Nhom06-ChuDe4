@@ -11,110 +11,455 @@
     <!-- FontAwesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
     
-    <!-- Google Fonts - Montserrat -->
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts - Montserrat & Playfair Display -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Playfair+Display:wght@500;600;700&display=swap" rel="stylesheet">
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/style.css">
     
     <style>
+        /* Page Header */
         .page-header {
-            background: linear-gradient(135deg, rgba(30, 58, 95, 0.9), rgba(44, 82, 130, 0.9)), 
+            background: linear-gradient(135deg, rgba(30, 58, 95, 0.85), rgba(44, 82, 130, 0.9)), 
                         url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920') center/cover;
-            padding: 6rem 0 3rem;
+            padding: 7rem 0 4rem;
             text-align: center;
             color: white;
+            position: relative;
         }
         
+        .page-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(180deg, rgba(30, 58, 95, 0.3) 0%, transparent 100%);
+        }
+        
+        .page-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 3rem;
+            margin-bottom: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+        
+        .page-header .lead {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 300;
+            font-size: 1.1rem;
+            opacity: 0.95;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Appointments Container */
         .appointments-container {
-            max-width: 1000px;
-            margin: -3rem auto 3rem;
+            max-width: 1100px;
+            margin: -4rem auto 4rem;
             position: relative;
             z-index: 10;
+            padding: 0 1rem;
         }
         
         .appointments-card {
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-            padding: 2rem;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(30, 58, 95, 0.12);
+            padding: 2.5rem;
             animation: fadeInUp 0.6s ease;
         }
         
-        .appointment-item {
-            border: 1px solid #e2e8f0;
-            border-radius: 15px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            transition: all 0.3s ease;
-            background: white;
-        }
-        
-        .appointment-item:hover {
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-            border-color: var(--gold-primary);
-        }
-        
-        .status-badge {
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
+        /* Tabs */
+        .nav-pills .nav-link {
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
             font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            color: #2c5282;
+            background: #f8f9fa;
         }
         
-        .status-pending {
-            background: #fff3cd;
-            color: #856404;
+        .nav-pills .nav-link.active {
+            background: linear-gradient(135deg, #d4a835, #f1c40f);
+            color: white;
+            box-shadow: 0 4px 15px rgba(212, 168, 53, 0.3);
         }
         
-        .status-confirmed {
-            background: #d1e7dd;
-            color: #0f5132;
+        .nav-pills .nav-link:hover:not(.active) {
+            background: #e9ecef;
+            transform: translateY(-2px);
         }
         
-        .status-completed {
-            background: #cff4fc;
-            color: #055160;
-        }
-        
-        .status-cancelled {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        
-        .service-image {
-            width: 100px;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 10px;
-        }
-        
+        /* Filter Buttons */
         .filter-btn {
             border: none;
-            padding: 0.5rem 1.5rem;
-            border-radius: 20px;
+            padding: 0.6rem 1.25rem;
+            border-radius: 22px;
             font-weight: 600;
             transition: all 0.3s ease;
             background: #f8f9fa;
             color: #6c757d;
+            font-size: 0.85rem;
+            letter-spacing: 0.3px;
         }
         
         .filter-btn:hover,
         .filter-btn.active {
-            background: var(--gradient-gold);
+            background: linear-gradient(135deg, #d4a835, #f1c40f);
             color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(212, 168, 53, 0.25);
         }
         
+        /* Appointment Cards */
+        .appointment-item {
+            border: 2px solid #f1f3f5;
+            border-radius: 20px;
+            padding: 1.75rem 2rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .appointment-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: linear-gradient(180deg, #d4a835, #f1c40f);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .appointment-item:hover {
+            box-shadow: 0 12px 40px rgba(30, 58, 95, 0.15);
+            border-color: #d4a835;
+            transform: translateY(-4px);
+        }
+        
+        .appointment-item:hover::before {
+            opacity: 1;
+        }
+        
+        /* Service Info */
+        .appointment-item h5 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 600;
+            font-size: 1.35rem;
+            color: #1e3a5f;
+            margin-bottom: 0.75rem;
+            letter-spacing: 0.3px;
+        }
+        
+        .appointment-item .text-muted {
+            font-size: 0.9rem;
+            color: #6c757d;
+            letter-spacing: 0.3px;
+        }
+        
+        .appointment-item .text-muted i {
+            color: #d4a835;
+            margin-right: 0.5rem;
+        }
+        
+        /* Service Image */
+        .service-image {
+            width: 110px;
+            height: 110px;
+            object-fit: cover;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+        }
+        
+        .appointment-item:hover .service-image {
+            transform: scale(1.05);
+        }
+        
+        /* Status Badges */
+        .status-badge {
+            padding: 0.6rem 1.25rem;
+            border-radius: 22px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .status-pending {
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.15), rgba(251, 146, 60, 0.15));
+            color: #b45309;
+            border: 1.5px solid rgba(255, 193, 7, 0.3);
+        }
+        
+        .status-confirmed {
+            background: linear-gradient(135deg, rgba(13, 110, 253, 0.15), rgba(22, 163, 74, 0.15));
+            color: #065f46;
+            border: 1.5px solid rgba(13, 110, 253, 0.3);
+        }
+        
+        .status-completed {
+            background: linear-gradient(135deg, rgba(30, 58, 95, 0.15), rgba(44, 82, 130, 0.15));
+            color: #1e3a5f;
+            border: 1.5px solid rgba(30, 58, 95, 0.3);
+        }
+        
+        .status-cancelled {
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.12), rgba(239, 68, 68, 0.12));
+            color: #991b1b;
+            border: 1.5px solid rgba(220, 38, 38, 0.3);
+        }
+        
+        .status-badge i {
+            font-size: 0.85rem;
+        }
+        
+        /* Consultation Icon Box */
+        .consultation-icon-box {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, rgba(30, 58, 95, 0.1), rgba(44, 82, 130, 0.1));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+        }
+        
+        .appointment-item:hover .consultation-icon-box {
+            transform: scale(1.05);
+        }
+        
+        /* Empty State */
         .empty-state {
             text-align: center;
-            padding: 4rem 2rem;
+            padding: 5rem 2rem;
             color: #6c757d;
         }
         
         .empty-state i {
-            font-size: 5rem;
-            margin-bottom: 1.5rem;
-            color: #e2e8f0;
+            font-size: 6rem;
+            margin-bottom: 2rem;
+            color: #e9ecef;
+            background: linear-gradient(135deg, #d4a835, #f1c40f);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* Button System */
+        .btn-action-primary {
+            background: linear-gradient(135deg, #d4a835, #f1c40f);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.6rem 1.25rem;
+            border-radius: 22px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.9rem;
+            letter-spacing: 0.3px;
+            box-shadow: 0 4px 12px rgba(212, 168, 53, 0.2);
+        }
+        
+        .btn-action-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(212, 168, 53, 0.35);
+            background: linear-gradient(135deg, #e5a343, #f39c12);
+            color: white;
+        }
+        
+        .btn-action-primary:active {
+            transform: translateY(-1px);
+        }
+        
+        .btn-action-primary i {
+            margin-right: 0.5rem;
+        }
+        
+        .btn-action-secondary {
+            background: transparent;
+            border: 2px solid #1e3a5f;
+            color: #1e3a5f;
+            font-weight: 600;
+            padding: 0.45rem 1rem;
+            border-radius: 18px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.85rem;
+            letter-spacing: 0.3px;
+        }
+        
+        .btn-action-secondary:hover {
+            background: linear-gradient(135deg, #1e3a5f, #2c5282);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(30, 58, 95, 0.25);
+        }
+        
+        .btn-action-secondary:active {
+            transform: translateY(0);
+        }
+        
+        .btn-action-secondary i {
+            margin-right: 0.4rem;
+        }
+        
+        .btn-action-destructive {
+            background: transparent;
+            border: 2px solid #dc3545;
+            color: #dc3545;
+            font-weight: 600;
+            padding: 0.45rem 1rem;
+            border-radius: 18px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.85rem;
+            letter-spacing: 0.3px;
+        }
+        
+        .btn-action-destructive:hover {
+            background: linear-gradient(135deg, #dc3545, #ef4444);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.25);
+        }
+        
+        .btn-action-destructive:active {
+            transform: translateY(0);
+        }
+        
+        .btn-action-destructive i {
+            margin-right: 0.4rem;
+        }
+        
+        .btn-cta-primary {
+            background: linear-gradient(135deg, #d4a835, #f1c40f);
+            border: none;
+            color: white;
+            font-weight: 700;
+            padding: 1.1rem 3rem;
+            border-radius: 28px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 1.15rem;
+            letter-spacing: 0.5px;
+            box-shadow: 0 6px 20px rgba(212, 168, 53, 0.35);
+        }
+        
+        .btn-cta-primary:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 35px rgba(212, 168, 53, 0.45);
+            background: linear-gradient(135deg, #e5a343, #f39c12);
+            color: white;
+        }
+        
+        .btn-cta-primary:active {
+            transform: translateY(-2px);
+        }
+        
+        .btn-cta-primary i {
+            margin-right: 0.6rem;
+        }
+        
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            align-items: stretch;
+        }
+        
+        @media (min-width: 768px) {
+            .action-buttons {
+                align-items: flex-end;
+            }
+        }
+        
+        /* Floating Buttons */
+        .floating-button {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            z-index: 999;
+        }
+        
+        .floating-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .floating-btn.zalo {
+            background: linear-gradient(135deg, #0068ff, #00c6ff);
+        }
+        
+        .floating-btn.hotline {
+            background: linear-gradient(135deg, #d4a835, #f1c40f);
+        }
+        
+        .floating-btn:hover {
+            transform: translateY(-4px) scale(1.1);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        @media (max-width: 768px) {
+            .floating-button {
+                bottom: 1.5rem;
+                right: 1.5rem;
+            }
+            
+            .floating-btn {
+                width: 48px;
+                height: 48px;
+                font-size: 1.25rem;
+            }
+            
+            .appointment-item {
+                padding: 1.25rem 1.5rem;
+            }
+            
+            .appointment-item h5 {
+                font-size: 1.15rem;
+            }
+            
+            .service-image {
+                width: 90px;
+                height: 90px;
+            }
+            
+            .consultation-icon-box {
+                width: 90px;
+                height: 90px;
+            }
+        }
+        
+        /* Fixed header offset fix */
+        .main-content {
+            padding-top: 80px;
+        }
+        
+        @media (max-width: 991px) {
+            .main-content {
+                padding-top: 70px;
+            }
         }
     </style>
 </head>
@@ -230,14 +575,16 @@
                                                     <i class="fas fa-map-marker-alt me-2"></i>Spa ANA - 123 Đường Nguyễn Huệ, Q.1
                                                 </p>
                                             </div>
-                                            <div class="col-md-3 text-center text-md-end">
-                                                <span class="status-badge status-confirmed">Đã xác nhận</span>
-                                                <div class="mt-2">
-                                                    <button class="btn btn-sm btn-outline-warning me-1" onclick="viewDetail('APT001')">
-                                                        <i class="fas fa-eye"></i>
+                                            <div class="col-md-3">
+                                                <div class="text-center text-md-end mb-2">
+                                                    <span class="status-badge status-confirmed">Đã xác nhận</span>
+                                                </div>
+                                                <div class="action-buttons">
+                                                    <button class="btn btn-action-primary" onclick="viewDetail('APT001')">
+                                                        <i class="fas fa-eye"></i>Xem chi tiết
                                                     </button>
-                                                    <button class="btn btn-sm btn-outline-danger" onclick="cancelAppointment('APT001')">
-                                                        <i class="fas fa-times"></i>
+                                                    <button class="btn btn-action-destructive" onclick="cancelAppointment('APT001')">
+                                                        <i class="fas fa-times"></i>Hủy lịch
                                                     </button>
                                                 </div>
                                             </div>
@@ -259,14 +606,16 @@
                                                     <i class="fas fa-map-marker-alt me-2"></i>Spa ANA - 123 Đường Nguyễn Huệ, Q.1
                                                 </p>
                                             </div>
-                                            <div class="col-md-3 text-center text-md-end">
-                                                <span class="status-badge status-completed">Hoàn thành</span>
-                                                <div class="mt-2">
-                                                    <button class="btn btn-sm btn-outline-warning me-1" onclick="viewDetail('APT002')">
-                                                        <i class="fas fa-eye"></i>
+                                            <div class="col-md-3">
+                                                <div class="text-center text-md-end mb-2">
+                                                    <span class="status-badge status-completed">Hoàn thành</span>
+                                                </div>
+                                                <div class="action-buttons">
+                                                    <button class="btn btn-action-primary" onclick="viewDetail('APT002')">
+                                                        <i class="fas fa-eye"></i>Xem chi tiết
                                                     </button>
-                                                    <button class="btn btn-sm btn-outline-success" onclick="rebook('APT002')">
-                                                        <i class="fas fa-redo"></i> Đặt lại
+                                                    <button class="btn btn-action-secondary" onclick="rebook('APT002')">
+                                                        <i class="fas fa-redo"></i>Đặt lại
                                                     </button>
                                                 </div>
                                             </div>
@@ -288,14 +637,16 @@
                                                     <i class="fas fa-map-marker-alt me-2"></i>Spa ANA - 123 Đường Nguyễn Huệ, Q.1
                                                 </p>
                                             </div>
-                                            <div class="col-md-3 text-center text-md-end">
-                                                <span class="status-badge status-cancelled">Đã hủy</span>
-                                                <div class="mt-2">
-                                                    <button class="btn btn-sm btn-outline-warning me-1" onclick="viewDetail('APT003')">
-                                                        <i class="fas fa-eye"></i>
+                                            <div class="col-md-3">
+                                                <div class="text-center text-md-end mb-2">
+                                                    <span class="status-badge status-cancelled">Đã hủy</span>
+                                                </div>
+                                                <div class="action-buttons">
+                                                    <button class="btn btn-action-primary" onclick="viewDetail('APT003')">
+                                                        <i class="fas fa-eye"></i>Xem chi tiết
                                                     </button>
-                                                    <button class="btn btn-sm btn-outline-success" onclick="rebook('APT003')">
-                                                        <i class="fas fa-redo"></i> Đặt lại
+                                                    <button class="btn btn-action-secondary" onclick="rebook('APT003')">
+                                                        <i class="fas fa-redo"></i>Đặt lại
                                                     </button>
                                                 </div>
                                             </div>
@@ -325,11 +676,13 @@
                                                     <i class="fas fa-info-circle me-2"></i>Tôi muốn tìm hiểu về liệu trình trị mụn...
                                                 </p>
                                             </div>
-                                            <div class="col-md-3 text-center text-md-end">
-                                                <span class="status-badge status-pending">Chờ xử lý</span>
-                                                <div class="mt-2">
-                                                    <button class="btn btn-sm btn-outline-warning" onclick="viewConsultationDetail('CONS001')">
-                                                        <i class="fas fa-eye"></i> Chi tiết
+                                            <div class="col-md-3">
+                                                <div class="text-center text-md-end mb-2">
+                                                    <span class="status-badge status-pending">Chờ xử lý</span>
+                                                </div>
+                                                <div class="action-buttons">
+                                                    <button class="btn btn-action-primary" onclick="viewConsultationDetail('CONS001')">
+                                                        <i class="fas fa-eye"></i>Xem chi tiết
                                                     </button>
                                                 </div>
                                             </div>
@@ -352,11 +705,13 @@
                                                     <i class="fas fa-info-circle me-2"></i>Chuyên gia đã tư vấn và tư vấn hoàn tất
                                                 </p>
                                             </div>
-                                            <div class="col-md-3 text-center text-md-end">
-                                                <span class="status-badge status-completed">Đã xử lý</span>
-                                                <div class="mt-2">
-                                                    <button class="btn btn-sm btn-outline-warning" onclick="viewConsultationDetail('CONS002')">
-                                                        <i class="fas fa-eye"></i> Chi tiết
+                                            <div class="col-md-3">
+                                                <div class="text-center text-md-end mb-2">
+                                                    <span class="status-badge status-completed">Đã xử lý</span>
+                                                </div>
+                                                <div class="action-buttons">
+                                                    <button class="btn btn-action-primary" onclick="viewConsultationDetail('CONS002')">
+                                                        <i class="fas fa-eye"></i>Xem chi tiết
                                                     </button>
                                                 </div>
                                             </div>
@@ -368,9 +723,9 @@
                         </div>
                         
                         <!-- Book New Button -->
-                        <div class="text-center mt-4">
-                            <a href="booking.html" class="btn btn-warning btn-lg">
-                                <i class="fas fa-plus me-2"></i>Đặt lịch mới
+                        <div class="text-center mt-5 pt-4">
+                            <a href="booking.html" class="btn btn-cta-primary">
+                                <i class="fas fa-plus"></i>Đặt lịch mới
                             </a>
                         </div>
                         
