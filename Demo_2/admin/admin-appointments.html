@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Lịch hẹn - Spa ANA</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    
+    <!-- Google Fonts - Montserrat -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="../css/style.css">
+    
+    <style>
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .admin-sidebar {
+            background: var(--primary-blue);
+            min-height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            padding: 0;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        
+        .sidebar-header h3 {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        
+        .sidebar-header span {
+            color: var(--gold-primary);
+        }
+        
+        .sidebar-nav {
+            padding: 1rem 0;
+        }
+        
+        .sidebar-nav .nav-link {
+            color: #ecf0f1;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+        
+        .sidebar-nav .nav-link:hover,
+        .sidebar-nav .nav-link.active {
+            background: var(--gradient-gold);
+            color: white;
+            padding-left: 2rem;
+        }
+        
+        .sidebar-nav .nav-link i {
+            width: 25px;
+            margin-right: 10px;
+        }
+        
+        .admin-content {
+            margin-left: 260px;
+            flex: 1;
+            padding: 0;
+            min-height: 100vh;
+            background: #f5f7fa;
+        }
+        
+        .admin-header {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .admin-main {
+            padding: 2rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stats-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-gold);
+            border-color: var(--gold-primary);
+        }
+        
+        .stats-number {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stats-number.blue { color: var(--primary-blue); }
+        .stats-number.green { color: #27ae60; }
+        .stats-number.orange { color: var(--gold-primary); }
+        .stats-number.red { color: #e74c3c; }
+        
+        .stats-label {
+            color: #7f8c8d;
+            font-size: 0.85rem;
+        }
+        
+        .conflict-warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+        
+        @media (max-width: 991px) {
+            .admin-sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .admin-content {
+                margin-left: 0;
+            }
+            
+            .admin-sidebar.show {
+                transform: translateX(0);
+            }
+            
+            #sidebarToggle {
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="admin-layout">
+        
+        <!-- Sidebar -->
+        <nav class="admin-sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-spa fa-2x mb-2" style="color: var(--gold-primary);"></i>
+                <h3>Spa <span>ANA</span></h3>
+            </div>
+            
+            <ul class="nav flex-column sidebar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="dashboard.html">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="admin-appointments.html">
+                        <i class="fas fa-calendar-check"></i>
+                        Quản lý Lịch hẹn
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="admin-services.html">
+                        <i class="fas fa-spa"></i>
+                        Quản lý Dịch vụ
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="admin-reports.html">
+                        <i class="fas fa-comments"></i>
+                        Tư vấn & CSKH
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <i class="fas fa-users"></i>
+                        Quản lý Khách hàng
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <i class="fas fa-chart-bar"></i>
+                        Báo cáo
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">
+                        <i class="fas fa-cog"></i>
+                        Cài đặt
+                    </a>
+                </li>
+                <li class="nav-item mt-4">
+                    <a class="nav-link text-danger" href="../index.html">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Đăng xuất
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        
+        <!-- Main Content -->
+        <div class="admin-content">
+            
+            <!-- Header -->
+            <header class="admin-header">
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-light me-3" id="sidebarToggle" style="display: none;">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h4 class="mb-0">Quản lý Lịch Hẹn</h4>
+                </div>
+                
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#addAppointmentModal">
+                        <i class="fas fa-plus me-2"></i>Tạo lịch hẹn
+                    </button>
+                </div>
+            </header>
+            
+            <!-- Main Content -->
+            <main class="admin-main">
+                
+                <!-- Statistics Cards -->
+                <div class="stats-grid">
+                    <div class="stats-card">
+                        <div class="stats-number blue">156</div>
+                        <div class="stats-label">Tổng lịch hẹn</div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stats-number green">120</div>
+                        <div class="stats-label">Đã xác nhận</div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stats-number orange">28</div>
+                        <div class="stats-label">Chờ xác nhận</div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stats-number red">8</div>
+                        <div class="stats-label">Cảnh báo trùng</div>
+                    </div>
+                </div>
+                
+                <!-- Filter & Search -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                    <input type="text" class="form-control" placeholder="Tìm kiếm khách hàng...">
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select">
+                                    <option value="">Tất cả dịch vụ</option>
+                                    <option value="1">Chăm sóc da</option>
+                                    <option value="2">Massage</option>
+                                    <option value="3">Phun thêu</option>
+                                    <option value="4">Triệt lông</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select class="form-select">
+                                    <option value="">Tất cả trạng thái</option>
+                                    <option value="pending">Chờ xác nhận</option>
+                                    <option value="confirmed">Đã xác nhận</option>
+                                    <option value="processing">Đang xử lý</option>
+                                    <option value="completed">Hoàn thành</option>
+                                    <option value="cancelled">Đã hủy</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <input type="date" class="form-control" placeholder="Từ ngày">
+                            </div>
+                            <div class="col-md-2">
+                                <input type="date" class="form-control" placeholder="Đến ngày">
+                            </div>
+                            <div class="col-md-1">
+                                <button class="btn btn-outline-warning w-100">
+                                    <i class="fas fa-filter"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Appointments Table -->
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Mã</th>
+                                        <th>Khách hàng</th>
+                                        <th>SĐT</th>
+                                        <th>Dịch vụ</th>
+                                        <th>Ngày giờ</th>
+                                        <th>Trạng thái</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr id="appointment-1" data-status="pending">
+                                        <td><span class="badge bg-secondary">LH001</span></td>
+                                        <td>Nguyễn Thị Mai</td>
+                                        <td>0901 234 567</td>
+                                        <td>Chăm sóc da</td>
+                                        <td>15/02/2026 10:00</td>
+                                        <td><span class="badge bg-warning">Chờ xác nhận</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-success me-1" title="Xác nhận" onclick="confirmAppointment('LH001')">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-primary me-1" title="Sửa" onclick="editAppointment('LH001')">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" title="Hủy" onclick="deleteAppointment('LH001')">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr id="appointment-2" data-status="confirmed">
+                                        <td><span class="badge bg-secondary">LH002</span></td>
+                                        <td>Trần Văn Hùng</td>
+                                        <td>0912 345 678</td>
+                                        <td>Triệt lông</td>
+                                        <td>15/02/2026 14:00</td>
+                                        <td><span class="badge bg-success">Đã xác nhận</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary me-1" title="Sửa" onclick="editAppointment('LH002')">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" title="Hủy" onclick="deleteAppointment('LH002')">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr id="appointment-3" data-status="processing">
+                                        <td><span class="badge bg-secondary">LH003</span></td>
+                                        <td>Lê Thu Thảo</td>
+                                        <td>0934 567 890</td>
+                                        <td>Phun thêu môi</td>
+                                        <td>15/02/2026 15:30</td>
+                                        <td><span class="badge bg-info">Đang xử lý</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-success me-1" title="Hoàn thành" onclick="completeAppointment('LH003')">
+                                                <i class="fas fa-check-double"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" title="Hủy" onclick="deleteAppointment('LH003')">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr id="appointment-4" data-status="completed">
+                                        <td><span class="badge bg-secondary">LH004</span></td>
+                                        <td>Phạm Minh Đức</td>
+                                        <td>0945 678 901</td>
+                                        <td>Massage</td>
+                                        <td>15/02/2026 16:00</td>
+                                        <td><span class="badge bg-success">Hoàn thành</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-info me-1" title="Chi tiết">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-primary" title="In">
+                                                <i class="fas fa-print"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr id="appointment-5" data-status="cancelled">
+                                        <td><span class="badge bg-secondary">LH005</span></td>
+                                        <td>Hoàng Thị Lan</td>
+                                        <td>0967 890 123</td>
+                                        <td>Chăm sóc da</td>
+                                        <td>14/02/2026 11:00</td>
+                                        <td><span class="badge bg-danger">Đã hủy</span></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-warning me-1" title="Đặt lại">
+                                                <i class="fas fa-redo"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-info" title="Lý do">
+                                                <i class="fas fa-info-circle"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div class="card-footer bg-white border-0">
+                        <nav>
+                            <ul class="pagination justify-content-center mb-0">
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#"><i class="fas fa-chevron-left"></i></a>
+                                </li>
+                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                <li class="page-item">
+                                    <a class="page-link" href="#"><i class="fas fa-chevron-right"></i></a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+                
+            </main>
+        </div>
+    </div>
+    
+    <!-- Add Appointment Modal -->
+    <div class="modal fade" id="addAppointmentModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-plus me-2 text-warning"></i>Tạo Lịch Hẹn Mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addAppointmentForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Họ tên khách hàng *</label>
+                                <input type="text" class="form-control" id="addName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Số điện thoại *</label>
+                                <input type="tel" class="form-control" id="addPhone" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Dịch vụ *</label>
+                            <select class="form-select" id="addService" required>
+                                <option value="">Chọn dịch vụ</option>
+                                <option value="1">Chăm sóc da</option>
+                                <option value="2">Massage</option>
+                                <option value="3">Phun thêu môi & mày</option>
+                                <option value="4">Triệt lông</option>
+                            </select>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Ngày *</label>
+                                <input type="date" class="form-control" id="addDate" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Giờ *</label>
+                                <input type="time" class="form-control" id="addTime" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Ghi chú</label>
+                            <textarea class="form-control" id="addNote" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-warning" onclick="saveNewAppointment()">Tạo lịch hẹn</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit Appointment Modal -->
+    <div class="modal fade" id="editAppointmentModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-edit me-2 text-warning"></i>Sửa Lịch Hẹn</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Conflict Warning -->
+                    <div class="conflict-warning" id="conflictWarning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Cảnh báo:</strong> Khung giờ này đã trùng với lịch hẹn khác! Bạn có muốn lưu với cảnh báo không?
+                    </div>
+                    
+                    <form id="editAppointmentForm">
+                        <input type="hidden" id="editAppointmentId">
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Họ tên khách hàng *</label>
+                                <input type="text" class="form-control" id="editName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Số điện thoại *</label>
+                                <input type="tel" class="form-control" id="editPhone" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Dịch vụ *</label>
+                            <select class="form-select" id="editService" required>
+                                <option value="">Chọn dịch vụ</option>
+                                <option value="1">Chăm sóc da</option>
+                                <option value="2">Massage</option>
+                                <option value="3">Phun thêu môi & mày</option>
+                                <option value="4">Triệt lông</option>
+                            </select>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Ngày *</label>
+                                <input type="date" class="form-control" id="editDate" required onchange="checkConflict()">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Giờ *</label>
+                                <input type="time" class="form-control" id="editTime" required onchange="checkConflict()">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Trạng thái</label>
+                            <select class="form-select" id="editStatus">
+                                <option value="pending">Chờ xác nhận</option>
+                                <option value="confirmed">Đã xác nhận</option>
+                                <option value="processing">Đang xử lý</option>
+                                <option value="completed">Hoàn thành</option>
+                                <option value="cancelled">Đã hủy</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Ghi chú</label>
+                            <textarea class="form-control" id="editNote" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-warning" onclick="saveEditedAppointment()">Lưu thay đổi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2 text-danger"></i>Xác nhận xóa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Bạn có chắc chắn muốn xóa lịch hẹn này?</p>
+                    <p class="text-muted small">Hành động này sẽ giải phóng slot lịch hẹn. Không thể hoàn tác sau khi xóa.</p>
+                    <input type="hidden" id="deleteAppointmentId">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmDelete()">Xóa lịch hẹn</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="../js/main.js"></script>
+    
+    <script>
+        let deleteModalInstance;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            deleteModalInstance = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        });
+        
+        // Toggle sidebar on mobile
+        document.getElementById('sidebarToggle').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('show');
+        });
+        
+        // Confirm appointment
+        function confirmAppointment(id) {
+            alert('Đã xác nhận lịch hẹn: ' + id);
+            // In real app, update status via API
+        }
+        
+        // Complete appointment
+        function completeAppointment(id) {
+            if (confirm('Đánh dấu lịch hẹn này đã hoàn thành?')) {
+                alert('Đã hoàn thành lịch hẹn: ' + id);
+            }
+        }
+        
+        // Edit appointment
+        function editAppointment(id) {
+            // Get appointment data
+            const row = document.getElementById('appointment-' + id.split('LH')[1]);
+            
+            if (row.dataset.status === 'completed') {
+                alert('Không thể sửa lịch hẹn đã hoàn thành!');
+                return;
+            }
+            
+            // Populate form with appointment data (mock data)
+            document.getElementById('editAppointmentId').value = id;
+            document.getElementById('editName').value = 'Nguyễn Thị Mai';
+            document.getElementById('editPhone').value = '0901 234 567';
+            document.getElementById('editService').value = '1';
+            document.getElementById('editDate').value = '2026-02-15';
+            document.getElementById('editTime').value = '10:00';
+            document.getElementById('editStatus').value = row.dataset.status;
+            document.getElementById('editNote').value = '';
+            
+            // Show modal
+            new bootstrap.Modal(document.getElementById('editAppointmentModal')).show();
+        }
+        
+        // Check for time conflicts
+        function checkConflict() {
+            const date = document.getElementById('editDate').value;
+            const time = document.getElementById('editTime').value;
+            
+            // Mock conflict check - in real app, check against database
+            const hasConflict = (date === '2026-02-15' && time === '14:00');
+            
+            if (hasConflict) {
+                document.getElementById('conflictWarning').style.display = 'block';
+            } else {
+                document.getElementById('conflictWarning').style.display = 'none';
+            }
+        }
+        
+        // Save edited appointment
+        function saveEditedAppointment() {
+            const id = document.getElementById('editAppointmentId').value;
+            const hasConflict = document.getElementById('conflictWarning').style.display === 'block';
+            
+            if (hasConflict) {
+                if (!confirm('Khung giờ này đã trùng với lịch hẹn khác! Bạn có muốn lưu với cảnh báo không?')) {
+                    return;
+                }
+            }
+            
+            alert('Đã lưu thay đổi lịch hẹn: ' + id);
+            bootstrap.Modal.getInstance(document.getElementById('editAppointmentModal')).hide();
+        }
+        
+        // Delete appointment
+        function deleteAppointment(id) {
+            const row = document.getElementById('appointment-' + id.split('LH')[1]);
+            
+            if (row.dataset.status === 'completed') {
+                alert('Không thể xóa lịch hẹn đã hoàn thành!');
+                return;
+            }
+            
+            document.getElementById('deleteAppointmentId').value = id;
+            deleteModalInstance.show();
+        }
+        
+        // Confirm delete
+        function confirmDelete() {
+            const id = document.getElementById('deleteAppointmentId').value;
+            alert('Đã xóa lịch hẹn: ' + id + '. Slot đã được giải phóng.');
+            deleteModalInstance.hide();
+        }
+        
+        // Save new appointment
+        function saveNewAppointment() {
+            const form = document.getElementById('addAppointmentForm');
+            if (form.checkValidity()) {
+                alert('Đã tạo lịch hẹn mới thành công!');
+                bootstrap.Modal.getInstance(document.getElementById('addAppointmentModal')).hide();
+                form.reset();
+            } else {
+                form.reportValidity();
+            }
+        }
+    </script>
+</body>
+</html>

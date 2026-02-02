@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - Spa ANA</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    
+    <!-- Google Fonts - Montserrat -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 0;
+        }
+        
+        .login-container {
+            max-width: 450px;
+            width: 100%;
+            padding: 2rem;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 3rem 2rem;
+            animation: fadeInUp 0.6s ease;
+        }
+        
+        .login-logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .login-logo i {
+            font-size: 4rem;
+            background: var(--gradient-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .login-logo h2 {
+            margin-top: 1rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+        }
+        
+        .form-floating label {
+            color: #6c757d;
+        }
+        
+        .btn-login {
+            background: var(--gradient-gold);
+            border: none;
+            padding: 1rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            color: white;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-gold);
+            background: var(--gradient-gold);
+            color: white;
+        }
+        
+        .btn-google {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background: white;
+            color: #333;
+            font-weight: 600;
+            transition: var(--transition);
+            margin-bottom: 1rem;
+        }
+        
+        .btn-google:hover {
+            border-color: #db4437;
+            background: #fff5f5;
+            color: #db4437;
+        }
+        
+        .btn-google i {
+            margin-right: 0.5rem;
+        }
+        
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+        }
+        
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #ddd;
+        }
+        
+        .divider span {
+            padding: 0 1rem;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .register-link {
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+        
+        .register-link a {
+            color: var(--gold-primary);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-logo">
+                <i class="fas fa-spa"></i>
+                <h2>Spa ANA</h2>
+            </div>
+            
+            <h4 class="text-center mb-4">Đăng Nhập</h4>
+            
+            <!-- Alert Container -->
+            <div id="loginAlert"></div>
+            
+            <!-- Google Login Button -->
+            <button type="button" class="btn btn-google" onclick="handleGoogleLogin()">
+                <i class="fab fa-google"></i>Đăng nhập bằng Google
+            </button>
+            
+            <div class="divider">
+                <span>hoặc đăng nhập bằng</span>
+            </div>
+            
+            <form id="loginForm" novalidate>
+                <div class="form-floating mb-3">
+                    <input type="tel" class="form-control" id="phone" placeholder="Số điện thoại" pattern="[0-9]{10}" required>
+                    <label for="phone"><i class="fas fa-phone me-2"></i>Số điện thoại</label>
+                    <div class="field-error" id="phoneError" style="display: none;"></div>
+                </div>
+                
+                <div class="form-floating mb-3">
+                    <input type="password" class="form-control" id="password" placeholder="Mật khẩu" required>
+                    <label for="password"><i class="fas fa-lock me-2"></i>Mật khẩu</label>
+                    <div class="field-error" id="passwordError" style="display: none;"></div>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="rememberMe">
+                        <label class="form-check-label" for="rememberMe">
+                            Ghi nhớ đăng nhập
+                        </label>
+                    </div>
+                    <a href="#" class="text-decoration-none text-muted small" onclick="showForgotPassword()">Quên mật khẩu?</a>
+                </div>
+                
+                <button type="submit" class="btn btn-warning btn-login w-100">
+                    <i class="fas fa-sign-in-alt me-2"></i>Đăng Nhập
+                </button>
+            </form>
+            
+            <div class="register-link">
+                <p class="mb-2">Chưa có tài khoản?</p>
+                <a href="register.html">Đăng ký ngay</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="js/main.js"></script>
+    
+    <script>
+        // Form validation and submission
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Clear previous errors
+            clearErrors();
+            
+            // Validate form
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('password').value;
+            
+            let isValid = true;
+            
+            // Validate phone
+            if (!phone || !/^[0-9]{10}$/.test(phone)) {
+                showError('phone', 'Vui lòng nhập số điện thoại hợp lệ (10 số)');
+                isValid = false;
+            }
+            
+            // Validate password
+            if (!password || password.length < 6) {
+                showError('password', 'Mật khẩu phải có ít nhất 6 ký tự');
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                return;
+            }
+            
+            // Simulate login
+            simulateLogin(phone, password);
+        });
+        
+        function showError(field, message) {
+            const errorElement = document.getElementById(field + 'Error');
+            const inputElement = document.getElementById(field);
+            
+            if (errorElement && inputElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+                inputElement.classList.add('is-invalid');
+            }
+        }
+        
+        function clearErrors() {
+            const errorElements = document.querySelectorAll('.field-error');
+            const inputElements = document.querySelectorAll('.is-invalid');
+            
+            errorElements.forEach(el => {
+                el.style.display = 'none';
+                el.textContent = '';
+            });
+            
+            inputElements.forEach(el => {
+                el.classList.remove('is-invalid');
+            });
+            
+            // Clear alert
+            document.getElementById('loginAlert').innerHTML = '';
+        }
+        
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('loginAlert');
+            alertContainer.innerHTML = `
+                <div class="alert alert-${type} custom-alert" role="alert">
+                    ${message}
+                </div>
+            `;
+        }
+        
+        function simulateLogin(phone, password) {
+            // Simulate API call
+            setTimeout(() => {
+                // Mock authentication logic
+                // In real app, this would be an API call
+                
+                // Demo: Accept any valid 10-digit phone and password >= 6 chars
+                // Show error if phone is "0000000000" to test error handling
+                if (phone === '0000000000') {
+                    showAlert('Thông tin đăng nhập không chính xác', 'danger');
+                    return;
+                }
+                
+                // Success case
+                showAlert('Đăng nhập thành công! Đang chuyển hướng...', 'success');
+                
+                // Store user info in localStorage (simulated session)
+                localStorage.setItem('currentUser', JSON.stringify({
+                    phone: phone,
+                    name: 'Khách hàng'
+                }));
+                
+                // Redirect to home after 1.5 seconds
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
+                
+            }, 1000);
+        }
+        
+        function handleGoogleLogin() {
+            showAlert('Đang kết nối với Google...', 'info');
+            
+            // Simulate Google OAuth flow
+            setTimeout(() => {
+                showAlert('Đăng nhập bằng Google thành công! Đang chuyển hướng...', 'success');
+                
+                // Store user info
+                localStorage.setItem('currentUser', JSON.stringify({
+                    phone: 'google_user',
+                    name: 'Người dùng Google',
+                    provider: 'google'
+                }));
+                
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
+            }, 1500);
+        }
+        
+        function showForgotPassword() {
+            showAlert('Tính năng khôi phục mật khẩu đang được phát triển. Vui lòng liên hệ hotline 1900 1234 để được hỗ trợ.', 'warning');
+        }
+    </script>
+</body>
+</html>
