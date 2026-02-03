@@ -59,8 +59,41 @@
             color: var(--primary-blue);
         }
         
+        .form-floating {
+            margin-bottom: 1.5rem;
+        }
+        
         .form-floating label {
             color: #6c757d;
+        }
+        
+        .form-control {
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 0 0.2rem rgba(212, 168, 55, 0.15);
+            outline: none;
+        }
+        
+        .is-invalid {
+            border-color: #dc3545 !important;
+        }
+        
+        .field-error {
+            color: #dc3545;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .is-invalid + .field-error {
+            display: block;
         }
         
         .btn-register {
@@ -69,9 +102,10 @@
             padding: 1rem;
             font-weight: 600;
             font-size: 1.1rem;
-            border-radius: 10px;
+            border-radius: 12px;
             transition: all 0.3s ease;
             color: white;
+            width: 100%;
         }
         
         .btn-register:hover {
@@ -81,25 +115,12 @@
             color: white;
         }
         
-        .btn-otp {
-            background: var(--gradient-spa);
-            border: none;
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            border-radius: 10px;
-            transition: all 0.3s ease;
-            color: white;
-        }
-        
-        .btn-otp:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
-            background: var(--gradient-spa);
-            color: white;
+        .btn-register:active {
+            transform: translateY(0);
         }
         
         .password-requirements {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: #6c757d;
             margin-top: 0.5rem;
             padding: 0.75rem;
@@ -116,6 +137,11 @@
             margin-bottom: 0.25rem;
         }
         
+        .password-requirements li i {
+            color: var(--gold-primary);
+            margin-right: 0.5rem;
+        }
+        
         .register-link {
             text-align: center;
             margin-top: 1.5rem;
@@ -126,43 +152,62 @@
             font-weight: 600;
         }
         
-        .step-indicator {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 2rem;
+        .custom-alert {
+            border-radius: 12px;
+            border: none;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
         }
         
-        .step {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #e2e8f0;
+        .required-mark {
+            color: #dc3545;
+        }
+        
+        .optional-text {
+            font-size: 0.85rem;
             color: #6c757d;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            margin: 0 0.5rem;
-            transition: all 0.3s ease;
+            font-weight: 400;
         }
         
-        .step.active {
-            background: var(--gradient-gold);
-            color: white;
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
-        .step.completed {
-            background: var(--success-color);
-            color: white;
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
         }
         
-        .form-step {
-            display: none;
-        }
-        
-        .form-step.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
+        /* Responsive */
+        @media (max-width: 576px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .register-card {
+                padding: 2rem 1.5rem;
+            }
+            
+            .register-logo i {
+                font-size: 3rem;
+            }
+            
+            .btn-register {
+                font-size: 1rem;
+                padding: 0.875rem;
+            }
         }
     </style>
 </head>
@@ -180,107 +225,100 @@
             <!-- Alert Container -->
             <div id="registerAlert"></div>
             
-            <!-- Step Indicator -->
-            <div class="step-indicator">
-                <div class="step active" id="step1-indicator">1</div>
-                <div class="step" id="step2-indicator">2</div>
-                <div class="step" id="step3-indicator">3</div>
-            </div>
-            
-            <!-- Step 1: Enter Phone Number -->
-            <div class="form-step active" id="step1">
-                <div class="form-floating mb-3">
-                    <input type="tel" class="form-control" id="phone" placeholder="Số điện thoại" pattern="[0-9]{10}" required>
-                    <label for="phone"><i class="fas fa-phone me-2"></i>Số điện thoại</label>
-                    <div class="field-error" id="phoneError" style="display: none;"></div>
+            <!-- Single-Step Registration Form -->
+            <form id="registerForm" novalidate>
+                
+                <!-- Họ và tên -->
+                <div class="form-floating">
+                    <input type="text" class="form-control" id="fullName" placeholder="Họ và tên" required>
+                    <label for="fullName">
+                        <i class="fas fa-user me-2"></i>Họ và tên
+                        <span class="required-mark">*</span>
+                    </label>
+                    <div class="field-error" id="fullNameError"></div>
                 </div>
                 
-                <button type="button" class="btn btn-otp w-100" onclick="sendOTP()">
-                    <i class="fas fa-paper-plane me-2"></i>Gửi mã OTP
-                </button>
-            </div>
-            
-            <!-- Step 2: Verify OTP -->
-            <div class="form-step" id="step2">
-                <p class="text-center mb-3">Mã OTP đã được gửi đến số điện thoại của bạn</p>
-                
-                <div class="otp-container">
-                    <input type="text" class="otp-input" maxlength="1" id="otp1" onkeyup="moveToNext(this, 'otp2')">
-                    <input type="text" class="otp-input" maxlength="1" id="otp2" onkeyup="moveToNext(this, 'otp3')">
-                    <input type="text" class="otp-input" maxlength="1" id="otp3" onkeyup="moveToNext(this, 'otp4')">
-                    <input type="text" class="otp-input" maxlength="1" id="otp4" onkeyup="moveToNext(this, 'otp5')">
-                    <input type="text" class="otp-input" maxlength="1" id="otp5" onkeyup="moveToNext(this, 'otp6')">
-                    <input type="text" class="otp-input" maxlength="1" id="otp6" onkeyup="handleOTPComplete()">
+                <!-- Số điện thoại -->
+                <div class="form-floating">
+                    <input type="tel" class="form-control" id="phone" placeholder="Số điện thoại" required>
+                    <label for="phone">
+                        <i class="fas fa-phone me-2"></i>Số điện thoại
+                        <span class="required-mark">*</span>
+                    </label>
+                    <div class="field-error" id="phoneError"></div>
+                    <small class="text-muted">10 số, bắt đầu bằng số 0</small>
                 </div>
                 
-                <div class="otp-timer" id="otpTimer">
-                    Thời gian còn lại: <span id="timerCount">180</span> giây
+                <!-- Email -->
+                <div class="form-floating">
+                    <input type="email" class="form-control" id="email" placeholder="Email" required>
+                    <label for="email">
+                        <i class="fas fa-envelope me-2"></i>Email
+                        <span class="required-mark">*</span>
+                    </label>
+                    <div class="field-error" id="emailError"></div>
+                    <small class="text-muted">Để nhận thông tin và ưu đãi</small>
                 </div>
                 
-                <div class="text-center mt-3">
-                    <button type="button" class="btn btn-link text-decoration-none" id="resendOTP" onclick="sendOTP()" disabled>
-                        Gửi lại OTP
-                    </button>
+                <!-- Ngày sinh -->
+                <div class="form-floating">
+                    <input type="date" class="form-control" id="dob" placeholder="Ngày sinh">
+                    <label for="dob">
+                        <i class="fas fa-calendar me-2"></i>Ngày sinh
+                        <span class="optional-text">(không bắt buộc)</span>
+                    </label>
+                    <div class="field-error" id="dobError"></div>
                 </div>
-            </div>
-            
-            <!-- Step 3: Complete Registration -->
-            <div class="form-step" id="step3">
-                <form id="registerForm" novalidate>
-                    <div class="form-floating mb-3">
-                        <input type="text" class="form-control" id="fullName" placeholder="Họ và tên" required>
-                        <label for="fullName"><i class="fas fa-user me-2"></i>Họ và tên</label>
-                        <div class="field-error" id="fullNameError" style="display: none;"></div>
-                    </div>
+                
+                <!-- Mật khẩu -->
+                <div class="form-floating">
+                    <input type="password" class="form-control" id="password" placeholder="Mật khẩu" required>
+                    <label for="password">
+                        <i class="fas fa-lock me-2"></i>Mật khẩu
+                        <span class="required-mark">*</span>
+                    </label>
+                    <div class="field-error" id="passwordError"></div>
                     
-                    <div class="form-floating mb-3">
-                        <input type="email" class="form-control" id="email" placeholder="Email" required>
-                        <label for="email"><i class="fas fa-envelope me-2"></i>Email</label>
-                        <div class="field-error" id="emailError" style="display: none;"></div>
-                    </div>
-                    
-                    <div class="form-floating mb-3">
-                        <input type="date" class="form-control" id="dob" required>
-                        <label for="dob"><i class="fas fa-calendar me-2"></i>Ngày sinh</label>
-                        <div class="field-error" id="dobError" style="display: none;"></div>
-                    </div>
-                    
-                    <div class="form-floating mb-3">
-                        <input type="password" class="form-control" id="password" placeholder="Mật khẩu" required>
-                        <label for="password"><i class="fas fa-lock me-2"></i>Mật khẩu</label>
-                        <div class="field-error" id="passwordError" style="display: none;"></div>
-                    </div>
-                    
-                    <div class="password-requirements mb-3">
+                    <div class="password-requirements">
                         <strong>Mật khẩu phải có:</strong>
                         <ul>
-                            <li>Tối thiểu 10 ký tự</li>
-                            <li>Ít nhất 1 chữ hoa</li>
-                            <li>Ít nhất 1 chữ thường</li>
-                            <li>Ít nhất 1 số</li>
-                            <li>Ít nhất 1 ký tự đặc biệt</li>
+                            <li><i class="fas fa-check-circle"></i>Tối thiểu 10 ký tự</li>
+                            <li><i class="fas fa-check-circle"></i>Ít nhất 1 chữ hoa</li>
+                            <li><i class="fas fa-check-circle"></i>Ít nhất 1 chữ thường</li>
+                            <li><i class="fas fa-check-circle"></i>Ít nhất 1 số</li>
+                            <li><i class="fas fa-check-circle"></i>Ít nhất 1 ký tự đặc biệt (!@#$%^&*)</li>
                         </ul>
                     </div>
-                    
-                    <div class="form-floating mb-3">
-                        <input type="password" class="form-control" id="confirmPassword" placeholder="Xác nhận mật khẩu" required>
-                        <label for="confirmPassword"><i class="fas fa-lock me-2"></i>Xác nhận mật khẩu</label>
-                        <div class="field-error" id="confirmPasswordError" style="display: none;"></div>
-                    </div>
-                    
-                    <div class="form-check mb-4">
-                        <input class="form-check-input" type="checkbox" id="agreeTerms" required>
-                        <label class="form-check-label" for="agreeTerms">
-                            Tôi đồng ý với <a href="#" class="text-decoration-none">Điều khoản sử dụng</a> và <a href="#" class="text-decoration-none">Chính sách bảo mật</a>
-                        </label>
-                        <div class="field-error" id="agreeTermsError" style="display: none;"></div>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-warning btn-register w-100 mb-3">
-                        <i class="fas fa-user-plus me-2"></i>Đăng Ký
-                    </button>
-                </form>
-            </div>
+                </div>
+                
+                <!-- Xác nhận mật khẩu -->
+                <div class="form-floating">
+                    <input type="password" class="form-control" id="confirmPassword" placeholder="Xác nhận mật khẩu" required>
+                    <label for="confirmPassword">
+                        <i class="fas fa-lock me-2"></i>Xác nhận mật khẩu
+                        <span class="required-mark">*</span>
+                    </label>
+                    <div class="field-error" id="confirmPasswordError"></div>
+                </div>
+                
+                <!-- Đồng ý điều khoản -->
+                <div class="form-check mb-4">
+                    <input class="form-check-input" type="checkbox" id="agreeTerms" required>
+                    <label class="form-check-label" for="agreeTerms">
+                        Tôi đồng ý với 
+                        <a href="#" class="text-decoration-none me-1">Điều khoản sử dụng</a> 
+                        và 
+                        <a href="#" class="text-decoration-none ms-1">Chính sách bảo mật</a>
+                    </label>
+                    <div class="field-error" id="agreeTermsError"></div>
+                </div>
+                
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-register">
+                    <i class="fas fa-user-plus me-2"></i>Đăng Ký
+                </button>
+                
+            </form>
             
             <div class="register-link">
                 <p class="mb-2">Đã có tài khoản?</p>
@@ -296,137 +334,21 @@
     <script src="js/main.js"></script>
     
     <script>
-        let otpTimerInterval;
-        let generatedOTP = '';
-        let userPhone = '';
+        // ========================================
+        // REGISTRATION FORM VALIDATION
+        // ========================================
         
-        // Send OTP
-        function sendOTP() {
-            const phone = document.getElementById('phone').value;
-            
-            // Validate phone
-            if (!phone || !/^[0-9]{10}$/.test(phone)) {
-                showError('phone', 'Vui lòng nhập số điện thoại hợp lệ (10 số)');
-                return;
-            }
-            
-            // Check if phone exists (simulated)
-            if (phone === '0901234567') {
-                showAlert('Số điện thoại đã được đăng ký. Vui lòng sử dụng số khác.', 'danger');
-                return;
-            }
-            
-            // Generate OTP (simulated - 6 digits)
-            generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
-            userPhone = phone;
-            
-            // Show success message
-            showAlert(`Mã OTP của bạn là: ${generatedOTP} (Demo purpose)`, 'success');
-            
-            // Move to step 2
-            showStep(2);
-            
-            // Start timer
-            startOTPTimer();
-            
-            // Focus first OTP input
-            setTimeout(() => {
-                document.getElementById('otp1').focus();
-            }, 500);
-        }
-        
-        // OTP Timer
-        function startOTPTimer() {
-            let timeLeft = 180; // 3 minutes
-            const timerElement = document.getElementById('timerCount');
-            const resendButton = document.getElementById('resendOTP');
-            
-            resendButton.disabled = true;
-            
-            otpTimerInterval = setInterval(() => {
-                timeLeft--;
-                timerElement.textContent = timeLeft;
-                
-                if (timeLeft <= 0) {
-                    clearInterval(otpTimerInterval);
-                    timerElement.textContent = '0';
-                    resendButton.disabled = false;
-                    showAlert('Mã OTP đã hết hạn. Vui lòng gửi lại.', 'warning');
-                }
-            }, 1000);
-        }
-        
-        // Move to next OTP input
-        function moveToNext(current, nextId) {
-            if (current.value.length === 1) {
-                document.getElementById(nextId).focus();
-            }
-        }
-        
-        // Handle OTP complete
-        function handleOTPComplete() {
-            const otp = Array.from(document.querySelectorAll('.otp-input'))
-                .map(input => input.value)
-                .join('');
-            
-            if (otp.length === 6) {
-                verifyOTP(otp);
-            }
-        }
-        
-        // Verify OTP
-        function verifyOTP(otp) {
-            if (otp === generatedOTP) {
-                // Success
-                clearInterval(otpTimerInterval);
-                showAlert('Xác thực OTP thành công!', 'success');
-                
-                // Move to step 3
-                setTimeout(() => {
-                    showStep(3);
-                }, 1000);
-            } else {
-                showAlert('Mã OTP không chính xác. Vui lòng thử lại.', 'danger');
-                
-                // Clear OTP inputs
-                document.querySelectorAll('.otp-input').forEach(input => {
-                    input.value = '';
-                });
-                document.getElementById('otp1').focus();
-            }
-        }
-        
-        // Show step
-        function showStep(stepNumber) {
-            // Hide all steps
-            document.querySelectorAll('.form-step').forEach(step => {
-                step.classList.remove('active');
-            });
-            
-            // Update indicators
-            document.querySelectorAll('.step').forEach((indicator, index) => {
-                indicator.classList.remove('active', 'completed');
-                if (index + 1 < stepNumber) {
-                    indicator.classList.add('completed');
-                } else if (index + 1 === stepNumber) {
-                    indicator.classList.add('active');
-                }
-            });
-            
-            // Show current step
-            document.getElementById('step' + stepNumber).classList.add('active');
-        }
-        
-        // Register form submission
+        // Form submission
         document.getElementById('registerForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
             // Clear previous errors
             clearErrors();
             
-            // Validate form
-            const fullName = document.getElementById('fullName').value;
-            const email = document.getElementById('email').value;
+            // Get form values
+            const fullName = document.getElementById('fullName').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const email = document.getElementById('email').value.trim();
             const dob = document.getElementById('dob').value;
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
@@ -434,66 +356,112 @@
             
             let isValid = true;
             
-            // Validate full name
+            // ========================================
+            // VALIDATION RULES
+            // ========================================
+            
+            // 1. Validate Full Name: minimum 2 characters
             if (!fullName || fullName.length < 2) {
-                showError('fullName', 'Vui lòng nhập họ tên hợp lệ');
+                showError('fullName', '<i class="fas fa-exclamation-circle"></i>Vui lòng nhập họ tên hợp lệ (tối thiểu 2 ký tự)');
                 isValid = false;
             }
             
-            // Validate email
+            // 2. Validate Phone Number: digits only, length = 10, starts with 0
+            if (!phone || !/^[0-9]{10}$/.test(phone)) {
+                showError('phone', '<i class="fas fa-exclamation-circle"></i>Vui lòng nhập số điện thoại hợp lệ (10 số, bắt đầu bằng số 0)');
+                isValid = false;
+            }
+            
+            // 3. Validate Email: valid email format
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!email || !emailRegex.test(email)) {
-                showError('email', 'Vui lòng nhập email hợp lệ');
+                showError('email', '<i class="fas fa-exclamation-circle"></i>Vui lòng nhập email hợp lệ');
                 isValid = false;
             }
             
-            // Validate DOB
-            if (!dob) {
-                showError('dob', 'Vui lòng chọn ngày sinh');
+            // DOB is optional - no validation needed
+            
+            // 4. Validate Password: minimum 10 characters
+            if (!password || password.length < 10) {
+                showError('password', '<i class="fas fa-exclamation-circle"></i>Mật khẩu phải có tối thiểu 10 ký tự');
                 isValid = false;
             }
             
-            // Validate password strength
-            const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{10,}$/;
-            if (!password || !passwordRegex.test(password)) {
-                showError('password', 'Mật khẩu không đáp ứng yêu cầu. Vui lòng kiểm tra lại.');
+            // 5. Validate Password: at least 1 uppercase
+            if (!/[A-Z]/.test(password)) {
+                showError('password', '<i class="fas fa-exclamation-circle"></i>Mật khẩu phải có ít nhất 1 chữ hoa');
                 isValid = false;
             }
             
-            // Validate confirm password
+            // 6. Validate Password: at least 1 lowercase
+            if (!/[a-z]/.test(password)) {
+                showError('password', '<i class="fas fa-exclamation-circle"></i>Mật khẩu phải có ít nhất 1 chữ thường');
+                isValid = false;
+            }
+            
+            // 7. Validate Password: at least 1 number
+            if (!/\d/.test(password)) {
+                showError('password', '<i class="fas fa-exclamation-circle"></i>Mật khẩu phải có ít nhất 1 số');
+                isValid = false;
+            }
+            
+            // 8. Validate Password: at least 1 special character
+            if (!/[!@#$%^&*]/.test(password)) {
+                showError('password', '<i class="fas fa-exclamation-circle"></i>Mật khẩu phải có ít nhất 1 ký tự đặc biệt (!@#$%^&*)');
+                isValid = false;
+            }
+            
+            // 9. Validate Confirm Password: must match password
             if (!confirmPassword || password !== confirmPassword) {
-                showError('confirmPassword', 'Mật khẩu xác nhận không khớp');
+                showError('confirmPassword', '<i class="fas fa-exclamation-circle"></i>Mật khẩu xác nhận không khớp');
                 isValid = false;
             }
             
-            // Validate terms agreement
+            // 10. Validate Terms Checkbox: must be checked
             if (!agreeTerms) {
-                showError('agreeTerms', 'Bạn phải đồng ý với điều khoản sử dụng');
+                showError('agreeTerms', '<i class="fas fa-exclamation-circle"></i>Bạn phải đồng ý với điều khoản sử dụng');
                 isValid = false;
             }
             
+            // Check for duplicate phone (simulated)
+            if (phone === '0901234567') {
+                showError('phone', '<i class="fas fa-exclamation-circle"></i>Số điện thoại đã được đăng ký. Vui lòng sử dụng số khác.');
+                isValid = false;
+            }
+            
+            // If validation fails, don't submit
             if (!isValid) {
                 return;
             }
             
-            // Simulate registration
+            // ========================================
+            // SIMULATE REGISTRATION
+            // ========================================
+            
             simulateRegistration({
-                phone: userPhone,
                 fullName: fullName,
+                phone: phone,
                 email: email,
                 dob: dob,
                 password: password
             });
         });
         
+        // ========================================
+        // ERROR DISPLAY
+        // ========================================
+        
         function showError(field, message) {
             const errorElement = document.getElementById(field + 'Error');
             const inputElement = document.getElementById(field);
             
             if (errorElement && inputElement) {
-                errorElement.textContent = message;
+                errorElement.innerHTML = message;
                 errorElement.style.display = 'block';
                 inputElement.classList.add('is-invalid');
+                
+                // Scroll to first error
+                errorElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
         }
         
@@ -503,7 +471,7 @@
             
             errorElements.forEach(el => {
                 el.style.display = 'none';
-                el.textContent = '';
+                el.innerHTML = '';
             });
             
             inputElements.forEach(el => {
@@ -514,27 +482,46 @@
             document.getElementById('registerAlert').innerHTML = '';
         }
         
+        // ========================================
+        // ALERT DISPLAY
+        // ========================================
+        
         function showAlert(message, type) {
             const alertContainer = document.getElementById('registerAlert');
+            const icons = {
+                success: 'fa-check-circle',
+                danger: 'fa-exclamation-circle',
+                info: 'fa-info-circle'
+            };
+            
             alertContainer.innerHTML = `
-                <div class="alert alert-${type} custom-alert" role="alert">
-                    ${message}
+                <div class="alert alert-${type} custom-alert d-flex align-items-center" role="alert">
+                    <i class="fas ${icons[type]} me-3 fs-5"></i>
+                    <div>${message}</div>
                 </div>
             `;
         }
+        
+        // ========================================
+        // SIMULATE REGISTRATION
+        // ========================================
         
         function simulateRegistration(userData) {
             showAlert('Đang xử lý đăng ký...', 'info');
             
             // Simulate API call
-            setTimeout(() => {
-                showAlert('Đăng ký thành công! Đang chuyển hướng đến trang đăng nhập...', 'success');
+            setTimeout(function() {
+                // Success message as specified
+                showAlert(
+                    '<strong>Đăng ký thành công!</strong> Vui lòng đăng nhập.',
+                    'success'
+                );
                 
-                // Store user info (simulated)
+                // Log registration data (simulated)
                 console.log('Registered user:', userData);
                 
-                // Redirect to login after 2 seconds
-                setTimeout(() => {
+                // Redirect to login.html after 2 seconds
+                setTimeout(function() {
                     window.location.href = 'login.html';
                 }, 2000);
             }, 1500);

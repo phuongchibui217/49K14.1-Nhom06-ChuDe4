@@ -373,33 +373,40 @@
             <span class="navbar-toggler-icon"></span>
           </button>
 
-          <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-              <li class="nav-item">
-                <a class="nav-link" href="index.html">Trang chủ</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="services.html">Dịch vụ</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="consultation.html">Đăng ký tư vấn</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link active" href="booking.html">Đặt lịch</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="my-appointments.html">Lịch của tôi</a>
-              </li>
-            </ul>
-
+     <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="index.html">Trang chủ</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="about.html">Về Spa ANA</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="services.html">Dịch vụ</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="consultation.html">Đăng ký tư vấn</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="booking.html">Đặt lịch</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="complaint.html">Hỗ trợ / CSKH</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="admin/login.html">
+                                <i class="fas fa-lock me-1"></i>Admin
+                            </a>
+                        </li>
+                    </ul>
             <div class="header-icons ms-3 d-flex align-items-center">
-              <a
+              <!-- <a
                 href="#"
                 class="btn btn-outline-warning btn-icon me-2"
                 title="Tin nhắn"
               >
                 <i class="fas fa-envelope"></i>
-              </a>
+              </a> -->
               <div class="dropdown">
                 <button
                   class="btn btn-outline-warning dropdown-toggle"
@@ -448,45 +455,101 @@
               <div class="row g-4">
                 <!-- Left Column: Customer Info & Date/Time -->
                 <div class="col-lg-4">
-                  <h6 class="section-title">
-                    <i class="fas fa-user"></i>Thông tin khách hàng
-                  </h6>
-
-                  <!-- Full Name -->
-                  <div class="mb-4">
-                    <label for="fullName" class="form-label">
-                      Họ tên <span class="required-mark">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="fullName"
-                      placeholder="Nhập họ và tên của bạn"
-                      required
-                    />
-                    <div class="field-error" id="fullNameError"></div>
-                    <small class="text-muted helper-text"
-                      >Tối thiểu 2 ký tự</small
-                    >
+                  
+                  <!-- LOGGED-IN CUSTOMER INFO (Read-only) -->
+                  <!-- <div id="loggedInCustomerInfo" style="display: none;">
+                    <div class="customer-info-display card bg-light p-4 mb-4" style="border-radius: 16px; border-left: 4px solid var(--gold-primary);">
+                      <div class="text-center mb-3">
+                        <div class="avatar-circle mb-2" style="width: 60px; height: 60px; background: var(--gradient-spa); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                          <i class="fas fa-user fa-2x text-white"></i>
+                        </div>
+                        <h5 class="mb-1" id="displayCustomerName"></h5>
+                        <span class="badge bg-warning text-dark mb-2">Khách hàng thân thiết</span>
+                      </div>
+                      
+                      <div class="info-item mb-2">
+                        <i class="fas fa-phone text-warning me-2"></i>
+                        <span id="displayCustomerPhone" class="fw-medium"></span>
+                      </div>
+                      <div class="info-item mb-2">
+                        <i class="fas fa-envelope text-warning me-2"></i>
+                        <span id="displayCustomerEmail" class="text-muted"></span>
+                      </div>
+                      
+                      <div class="mt-3 pt-3 border-top">
+                        <p class="text-muted small mb-2">
+                          <i class="fas fa-info-circle me-1"></i>Bạn đang đặt lịch với tài khoản của mình
+                        </p>
+                        <a href="profile.html" class="btn btn-outline-warning btn-sm w-100">
+                          <i class="fas fa-edit me-2"></i>Cập nhật thông tin
+                        </a>
+                      </div>
+                    </div>
                   </div>
+                   -->
 
-                  <!-- Phone -->
-                  <div class="mb-4">
-                    <label for="phone" class="form-label">
-                      Số điện thoại <span class="required-mark">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      class="form-control"
-                      id="phone"
-                      placeholder="Nhập số điện thoại"
-                      pattern="[0-9]{10}"
-                      required
-                    />
-                    <div class="field-error" id="phoneError"></div>
-                    <small class="text-muted helper-text"
-                      >10 số, bắt đầu bằng số 0</small
-                    >
+                  <p class="text-muted small mb-2">
+                      <i class="fas fa-info-circle me-1"></i>Bạn đang đặt lịch với tài khoản của mình
+                  </p>
+                  <!-- GUEST CUSTOMER INFO FORM -->
+                  <div id="guestCustomerInfo" style="display: none;">
+                    <h6 class="section-title">
+                      <i class="fas fa-user-plus"></i>Thông tin khách hàng
+                    </h6>
+
+                    <!-- Full Name -->
+                    <div class="mb-4">
+                      <label for="fullName" class="form-label">
+                        Họ tên <span class="required-mark">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="fullName"
+                        placeholder="Nhập họ và tên của bạn"
+                        required
+                      />
+                      <div class="field-error" id="fullNameError"></div>
+                      <small class="text-muted helper-text"
+                        >Tối thiểu 2 ký tự</small
+                      >
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="mb-4">
+                      <label for="phone" class="form-label">
+                        Số điện thoại <span class="required-mark">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        class="form-control"
+                        id="phone"
+                        placeholder="Nhập số điện thoại"
+                        pattern="[0-9]{10}"
+                        required
+                      />
+                      <div class="field-error" id="phoneError"></div>
+                      <small class="text-muted helper-text"
+                        >10 số, bắt đầu bằng số 0</small
+                      >
+                    </div>
+
+                    <!-- Email (Optional for guest) -->
+                    <div class="mb-4">
+                      <label for="email" class="form-label">
+                        Email <span class="text-muted">(không bắt buộc)</span>
+                      </label>
+                      <input
+                        type="email"
+                        class="form-control"
+                        id="email"
+                        placeholder="email@example.com"
+                      />
+                      <div class="field-error" id="emailError"></div>
+                      <small class="text-muted helper-text"
+                        >Để nhận thông báo đặt lịch</small
+                      >
+                    </div>
                   </div>
 
                   <!-- Date Selection -->
@@ -779,7 +842,90 @@
     <script src="js/main.js"></script>
 
     <script>
-      // Service selection - Horizontal chip layout
+      // ========================================
+      // SESSION AWARE BOOKING SYSTEM
+      // ========================================
+      
+      // Initialize page with session check
+      document.addEventListener("DOMContentLoaded", function() {
+        checkLoginStatus();
+        updateHeaderUserState();
+      });
+
+      // ========================================
+      // LOGIN STATUS DETECTION
+      // ========================================
+      
+      function checkLoginStatus() {
+        const currentUser = localStorage.getItem('currentUser');
+        
+        if (currentUser) {
+          // LOGGED-IN CUSTOMER FLOW
+          const user = JSON.parse(currentUser);
+          
+          // Hide guest form, show logged-in display
+          document.getElementById('guestCustomerInfo').style.display = 'none';
+          document.getElementById('loggedInCustomerInfo').style.display = 'block';
+          
+          // Populate customer info display
+          document.getElementById('displayCustomerName').textContent = user.name;
+          document.getElementById('displayCustomerPhone').textContent = user.phone;
+          document.getElementById('displayCustomerEmail').textContent = user.email || 'Chưa cập nhật';
+          
+          // Add visual indicator
+          document.querySelector('.booking-hero p.lead').innerHTML = 
+            `Xin chào, <strong>${user.name}</strong>! Trải nghiệm dịch vụ spa tuyệt vời trong vài bước đơn giản`;
+          
+          return true;
+        } else {
+          // GUEST USER FLOW
+          document.getElementById('guestCustomerInfo').style.display = 'block';
+          document.getElementById('loggedInCustomerInfo').style.display = 'none';
+          
+          // Keep original hero text for guests
+          document.querySelector('.booking-hero p.lead').innerHTML = 
+            'Trải nghiệm dịch vụ spa tuyệt vời trong vài bước đơn giản';
+          
+          return false;
+        }
+      }
+
+      // ========================================
+      // HEADER STATE MANAGEMENT
+      // ========================================
+      
+      function updateHeaderUserState() {
+        const currentUser = localStorage.getItem('currentUser');
+        const userDropdown = document.querySelector('.dropdown-menu');
+        
+        if (!userDropdown) return;
+        
+        if (currentUser) {
+          const user = JSON.parse(currentUser);
+          userDropdown.innerHTML = `
+            <li><a class="dropdown-item" href="profile.html"><i class="fas fa-user-circle me-2"></i>Tài khoản: ${user.name}</a></li>
+            <li><a class="dropdown-item" href="my-appointments.html"><i class="fas fa-calendar-check me-2"></i>Lịch của tôi</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i>Đăng xuất</a></li>
+          `;
+        } else {
+          userDropdown.innerHTML = `
+            <li><a class="dropdown-item" href="login.html"><i class="fas fa-sign-in-alt me-2"></i>Đăng nhập</a></li>
+            <li><a class="dropdown-item" href="register.html"><i class="fas fa-user-plus me-2"></i>Đăng ký</a></li>
+          `;
+        }
+      }
+
+      // Logout function
+      window.logout = function() {
+        localStorage.removeItem('currentUser');
+        window.location.href = 'index.html';
+      };
+
+      // ========================================
+      // SERVICE SELECTION
+      // ========================================
+      
       document.querySelectorAll(".service-chip").forEach((item) => {
         item.addEventListener("click", function () {
           // Remove selected class from all items
@@ -796,7 +942,10 @@
         });
       });
 
-      // Form submission
+      // ========================================
+      // FORM SUBMISSION - SESSION AWARE
+      // ========================================
+      
       document
         .getElementById("bookingForm")
         .addEventListener("submit", function (e) {
@@ -805,74 +954,142 @@
           // Clear previous errors
           clearErrors();
 
-          // Validate form
-          const fullName = document.getElementById("fullName").value.trim();
-          const phone = document.getElementById("phone").value.trim();
+          // Check login status
+          const isLoggedIn = localStorage.getItem('currentUser') !== null;
+          const currentUser = isLoggedIn ? JSON.parse(localStorage.getItem('currentUser')) : null;
+
+          // Validate form based on login status
           const service = document.getElementById("selectedService").value;
           const date = document.getElementById("date").value;
           const time = document.getElementById("time").value;
           const notes = document.getElementById("notes").value.trim();
-
+          
           let isValid = true;
+          let bookingData = {
+            service: service,
+            date: date,
+            time: time,
+            notes: notes
+          };
 
-          // Validate full name
-          if (!fullName || fullName.length < 2) {
-            showError(
-              "fullName",
-              '<i class="fas fa-exclamation-circle"></i>Vui lòng nhập họ tên hợp lệ (tối thiểu 2 ký tự)',
-            );
-            isValid = false;
-          }
+          // ========================================
+          // VALIDATION FOR LOGGED-IN CUSTOMERS
+          // ========================================
+          if (isLoggedIn && currentUser) {
+            // LOGGED-IN: Only validate booking fields
+            // Customer info is auto-populated from session
+            
+            // Validate service
+            if (!service) {
+              showAlert(
+                '<i class="fas fa-exclamation-circle"></i>Vui lòng chọn dịch vụ',
+                "danger",
+              );
+              isValid = false;
+            }
 
-          // Validate phone
-          if (!phone || !/^[0-9]{10}$/.test(phone)) {
-            showError(
-              "phone",
-              '<i class="fas fa-exclamation-circle"></i>Vui lòng nhập số điện thoại hợp lệ (10 số, bắt đầu bằng 0)',
-            );
-            isValid = false;
-          }
+            // Validate date
+            if (!date) {
+              showError(
+                "date",
+                '<i class="fas fa-exclamation-circle"></i>Vui lòng chọn ngày hẹn',
+              );
+              isValid = false;
+            }
 
-          // Validate service
-          if (!service) {
-            showAlert(
-              '<i class="fas fa-exclamation-circle"></i>Vui lòng chọn dịch vụ',
-              "danger",
-            );
-            isValid = false;
-          }
+            // Validate time
+            if (!time) {
+              showError(
+                "time",
+                '<i class="fas fa-exclamation-circle"></i>Vui lòng chọn khung giờ hợp lệ',
+              );
+              isValid = false;
+            }
 
-          // Validate date
-          if (!date) {
-            showError(
-              "date",
-              '<i class="fas fa-exclamation-circle"></i>Vui lòng chọn ngày hẹn',
-            );
-            isValid = false;
-          }
+            // Add customer info from session
+            bookingData.customer_id = currentUser.id;
+            bookingData.customer_name = currentUser.name;
+            bookingData.customer_phone = currentUser.phone;
+            bookingData.customer_email = currentUser.email;
+            bookingData.is_guest = false;
+            
+          } else {
+            // ========================================
+            // VALIDATION FOR GUEST CUSTOMERS
+            // ========================================
+            
+            const fullName = document.getElementById("fullName").value.trim();
+            const phone = document.getElementById("phone").value.trim();
+            const email = document.getElementById("email").value.trim();
 
-          // Validate time
-          if (!time) {
-            showError(
-              "time",
-              '<i class="fas fa-exclamation-circle"></i>Vui lòng chọn khung giờ hợp lệ',
-            );
-            isValid = false;
+            // Validate full name
+            if (!fullName || fullName.length < 2) {
+              showError(
+                "fullName",
+                '<i class="fas fa-exclamation-circle"></i>Vui lòng nhập họ tên hợp lệ (tối thiểu 2 ký tự)',
+              );
+              isValid = false;
+            }
+
+            // Validate phone
+            if (!phone || !/^[0-9]{10}$/.test(phone)) {
+              showError(
+                "phone",
+                '<i class="fas fa-exclamation-circle"></i>Vui lòng nhập số điện thoại hợp lệ (10 số, bắt đầu bằng 0)',
+              );
+              isValid = false;
+            }
+
+            // Validate email (optional, but if provided, must be valid)
+            if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+              showError(
+                "email",
+                '<i class="fas fa-exclamation-circle"></i>Vui lòng nhập email hợp lệ',
+              );
+              isValid = false;
+            }
+
+            // Validate service
+            if (!service) {
+              showAlert(
+                '<i class="fas fa-exclamation-circle"></i>Vui lòng chọn dịch vụ',
+                "danger",
+              );
+              isValid = false;
+            }
+
+            // Validate date
+            if (!date) {
+              showError(
+                "date",
+                '<i class="fas fa-exclamation-circle"></i>Vui lòng chọn ngày hẹn',
+              );
+              isValid = false;
+            }
+
+            // Validate time
+            if (!time) {
+              showError(
+                "time",
+                '<i class="fas fa-exclamation-circle"></i>Vui lòng chọn khung giờ hợp lệ',
+              );
+              isValid = false;
+            }
+
+            // Add guest customer info
+            bookingData.customer_id = null;
+            bookingData.customer_name = fullName;
+            bookingData.customer_phone = phone;
+            bookingData.customer_email = email || null;
+            bookingData.is_guest = true;
           }
 
           if (!isValid) {
             return;
           }
 
-          // Simulate booking
-          simulateBooking({
-            fullName: fullName,
-            phone: phone,
-            service: service,
-            date: date,
-            time: time,
-            notes: notes,
-          });
+          // Simulate booking with session-aware data
+          simulateBooking(bookingData);
         });
 
       function showError(field, message) {
@@ -928,7 +1145,7 @@
         // Simulate API call
         setTimeout(() => {
           // Check for duplicate booking (simulated)
-          if (bookingData.phone === "0901234567") {
+          if (bookingData.customer_phone === "0901234567") {
             showAlert(
               "Bạn đã có lịch hẹn vào thời gian này. Vui lòng chọn thời gian khác.",
               "danger",
@@ -936,30 +1153,67 @@
             return;
           }
 
-          // Success
-          showAlert(
-            "Đặt lịch thành công! Chúng tôi sẽ liên hệ với bạn để xác nhận.",
-            "success",
-          );
+          // ========================================
+          // SUCCESS MESSAGE - SESSION AWARE
+          // ========================================
+          
+          const isLoggedIn = localStorage.getItem('currentUser') !== null;
+          
+          if (isLoggedIn) {
+            // LOGGED-IN SUCCESS MESSAGE
+            const successMessage = `
+              <div class="mb-3">
+                <strong>Đặt lịch thành công!</strong>
+              </div>
+              <div class="mb-2">
+                Chúng tôi sẽ liên hệ với bạn để xác nhận lịch hẹn.
+              </div>
+              <div class="mt-3 pt-3 border-top">
+                <a href="my-appointments.html" class="btn btn-outline-warning btn-sm">
+                  <i class="fas fa-calendar-check me-2"></i>Xem lịch của tôi
+                </a>
+              </div>
+            `;
+            showAlert(successMessage, "success");
+            
+          } else {
+            // GUEST SUCCESS MESSAGE - WITH ACCOUNT SUGGESTION
+            const successMessage = `
+              <div class="mb-3">
+                <strong>Đặt lịch thành công!</strong>
+              </div>
+              <div class="mb-3">
+                Chúng tôi sẽ liên hệ với số điện thoại 
+                <strong>${bookingData.customer_phone}</strong> 
+                để xác nhận lịch hẹn.
+              </div>
+              <div class="alert alert-info mt-3 mb-0" style="border-radius: 8px;">
+                <i class="fas fa-lightbulb me-2"></i>
+                <strong>Tạo tài khoản miễn phí?</strong><br>
+                <small class="text-muted">
+                  Quản lý lịch hẹn dễ dàng hơn, nhận ưu đãi đặc biệt và nhiều lợi ích khác
+                </small>
+              </div>
+              <div class="mt-3 d-flex gap-2">
+                <a href="register.html" class="btn btn-warning btn-sm">
+                  <i class="fas fa-user-plus me-2"></i>Đăng ký ngay
+                </a>
+                <button onclick="hideAlert()" class="btn btn-outline-secondary btn-sm">
+                  <i class="fas fa-times me-2"></i>Không, cảm ơn
+                </button>
+              </div>
+            `;
+            showAlert(successMessage, "success");
+          }
 
           // Store booking (simulated)
           console.log("Booking data:", bookingData);
 
-          // Reset form after 3 seconds
+          // Reset form after 5 seconds (longer for guests to read the suggestion)
           setTimeout(() => {
             document.getElementById("bookingForm").reset();
             // Reset service selection
             document.querySelectorAll(".service-chip").forEach((si) => {
               si.classList.remove("selected");
             });
-            document.getElementById("selectedService").value = "";
-          }, 3000);
-        }, 1500);
-      }
-
-      // Set minimum date to today
-      const today = new Date().toISOString().split("T")[0];
-      document.getElementById("date").setAttribute("min", today);
-    </script>
-  </body>
-</html>
+            document.getElementById("selectedService
