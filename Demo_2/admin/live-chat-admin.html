@@ -1,0 +1,1249 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý Chat Trực tuyến - Spa ANA</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+            overflow: hidden;
+        }
+
+        /* Main Chat Layout - Like Messenger Web */
+        .live-chat-container {
+            display: flex;
+            height: 100vh;
+            background: white;
+        }
+
+        /* A. CỬ TRÁI (LEFT) - Chat List */
+        .chat-list-sidebar {
+            width: 380px;
+            background: #f8f9fa;
+            border-right: 1px solid #e4e6eb;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+        }
+
+        .chat-list-header {
+            padding: 20px;
+            background: white;
+            border-bottom: 1px solid #e4e6eb;
+        }
+
+        .chat-list-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e3a5f;
+            margin-bottom: 15px;
+        }
+
+        .search-box {
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 40px 12px 15px;
+            border: 1px solid #e4e6eb;
+            border-radius: 20px;
+            background: #f0f2f5;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            background: white;
+            border-color: #0084ff;
+            box-shadow: 0 0 0 3px rgba(0, 132, 255, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #65676b;
+        }
+
+        /* Chat List Items */
+        .chat-list-container {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .chat-list-item {
+            display: flex;
+            padding: 12px 15px;
+            border-bottom: 1px solid #e4e6eb;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .chat-list-item:hover {
+            background: #f0f2f5;
+        }
+
+        .chat-list-item.active {
+            background: #e7f3ff;
+        }
+
+        .chat-list-item.unread {
+            background: #fff;
+            border-left: 3px solid #0084ff;
+        }
+
+        .customer-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #d4a853, #f1c40f);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .customer-avatar-initials {
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .customer-avatar-dot {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 14px;
+            height: 14px;
+            background: #ef4444;
+            border-radius: 50%;
+            border: 2px solid white;
+            font-size: 10px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .chat-list-item-content {
+            flex: 1;
+            margin-left: 12px;
+            min-width: 0;
+        }
+
+        .customer-name {
+            font-weight: 600;
+            font-size: 15px;
+            color: #1e3a5f;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .last-message {
+            font-size: 13px;
+            color: #65676b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .last-message-time {
+            font-size: 11px;
+            color: #99aab5;
+            margin-top: 2px;
+        }
+
+        .last-message-container {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .unread-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ef4444;
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .customer-tag {
+            font-size: 10px;
+            color: #6c757d;
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 2px;
+            display: inline-block;
+        }
+
+        /* B. KHU VỚC CHÍNH (CENTER) - Chat Window */
+        .chat-window {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            min-width: 0;
+        }
+
+        /* Chat Window Header */
+        .chat-window-header {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e4e6eb;
+            background: #f8f9fa;
+        }
+
+        .chat-customer-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .customer-info-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #d4a853, #f1c40f);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .customer-info-avatar-initials {
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .customer-info-avatar-dot {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 12px;
+            height: 12px;
+            background: #31a24c;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .customer-info-content {
+            flex: 1;
+        }
+
+        .customer-name {
+            font-weight: 700;
+            font-size: 16px;
+            color: #1e3a5f;
+            margin-bottom: 2px;
+        }
+
+        .customer-meta {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #65676b;
+        }
+
+        .customer-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status-text {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+
+        .status-online {
+            background: #31a24c;
+            box-shadow: 0 0 0 3px rgba(49, 162, 76, 0.2);
+        }
+
+        .status-offline {
+            background: #65676b;
+            animation: none;
+        }
+
+        .status-away {
+            background: #f59e0b;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .chat-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-action-btn {
+            background: white;
+            border: 1px solid #e4e6eb;
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #1e3a5f;
+        }
+
+        .chat-action-btn:hover {
+            background: #f0f2f5;
+            border-color: #d4a853;
+        }
+
+        .chat-action-btn i {
+            color: #65676b;
+        }
+
+        /* Messages Area */
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .messages-area::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .messages-area::-webkit-scrollbar-track {
+            background: #f0f2f5;
+        }
+
+        .messages-area::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        /* Message Bubbles */
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 14px;
+            line-height: 1.5;
+            position: relative;
+            word-wrap: break-word;
+            animation: messageSlideIn 0.3s ease;
+        }
+
+        @keyframes messageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Customer Messages - Right side (Gold) */
+        .message-customer {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #d4a853, #f1c40f);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-customer::after {
+            content: '';
+            position: absolute;
+            right: -8px;
+            bottom: 8px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid #f1c40f;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+        }
+
+        /* Staff Messages - Left side (Gray) */
+        .message-staff {
+            align-self: flex-start;
+            background: #f0f2f5;
+            color: #1e3a5f;
+            border-bottom-left-radius: 4px;
+            border: 1px solid #e4e6eb;
+        }
+
+        .message-staff::before {
+            content: '';
+            position: absolute;
+            left: -9px;
+            bottom: 8px;
+            width: 0;
+            height: 0;
+            border-right: 8px solid white;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+        }
+
+        .message-content {
+            margin-bottom: 4px;
+        }
+
+        .message-time {
+            font-size: 11px;
+            color: #99aab5;
+            margin-top: 6px;
+            text-align: right;
+        }
+
+        .message-status {
+            font-size: 11px;
+            color: #99aab5;
+            margin-top: 4px;
+            text-align: right;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .message-status.sending {
+            color: #f59e0b;
+        }
+
+        .message-status.sent {
+            color: #31a24c;
+        }
+
+        .message-status i {
+            font-size: 12px;
+        }
+
+        /* Typing Indicator */
+        .typing-indicator {
+            align-self: flex-start;
+            background: #f0f2f5;
+            padding: 10px 16px;
+            border-radius: 18px;
+            border-bottom-left-radius: 4px;
+            border: 1px solid #e4e6eb;
+            display: none;
+            gap: 6px;
+            animation: slideIn 0.2s ease;
+        }
+
+        .typing-indicator.active {
+            display: flex;
+            align-items: center;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #65676b;
+            animation: typingBounce 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-4px);
+            }
+        }
+
+        /* System Message */
+        .system-message {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px 16px;
+            margin: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #856404;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: slideIn 0.3s ease;
+        }
+
+        .system-message i {
+            font-size: 16px;
+            color: #ffc107;
+        }
+
+        /* C. KHUNG NHẮN (BOTTOM) - Input */
+        .chat-input-area {
+            padding: 15px 20px;
+            border-top: 1px solid #e4e6eb;
+            background: #f8f9fa;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 14px 20px;
+            border: 1px solid #e4e6eb;
+            border-radius: 20px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            transition: all 0.2s;
+            resize: none;
+            height: 52px;
+            line-height: 1.4;
+        }
+
+        .message-input:focus {
+            border-color: #0084ff;
+            box-shadow: 0 0 0 3px rgba(0, 132, 255, 0.1);
+            background: white;
+        }
+
+        .message-input::placeholder {
+            color: #99aab5;
+        }
+
+        .message-input:disabled {
+            background: #f0f2f5;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .attach-btn {
+            background: white;
+            border: 1px solid #e4e6eb;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .attach-btn:hover {
+            background: #f0f2f5;
+            border-color: #0084ff;
+        }
+
+        .attach-btn i {
+            color: #65676b;
+            font-size: 16px;
+        }
+
+        .send-btn {
+            background: #0084ff;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(0, 132, 255, 0.2);
+        }
+
+        .send-btn:hover {
+            background: #0066cc;
+            transform: scale(1.05);
+        }
+
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+
+        .send-btn:disabled {
+            background: #99aab5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .send-btn i {
+            font-size: 18px;
+            margin-left: 2px;
+        }
+
+        /* No Chat Selected State */
+        .no-chat-selected {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: #65676b;
+        }
+
+        .no-chat-icon {
+            font-size: 64px;
+            color: #d1d5db;
+            margin-bottom: 20px;
+        }
+
+        .no-chat-text {
+            font-size: 16px;
+            text-align: center;
+            color: #65676b;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .chat-list-sidebar {
+                display: none;
+            }
+
+            .chat-window {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Chat Container -->
+    <div class="live-chat-container">
+        <!-- A. CỬ TRÁI (LEFT) - Chat List -->
+        <div class="chat-list-sidebar">
+            <div class="chat-list-header">
+                <h2 class="chat-list-title">
+                    <i class="fas fa-comments me-2" style="color: #d4a853;"></i>
+                    Hội thoại
+                </h2>
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" placeholder="Tìm kiếm khách hàng..." id="searchInput">
+                </div>
+            </div>
+            
+            <div class="chat-list-container" id="chatListContainer">
+                <!-- Chat List Items will be loaded here -->
+                <div class="no-chat-selected" id="noChatSelected">
+                    <i class="fas fa-comments no-chat-icon"></i>
+                    <p class="no-chat-text">Chọn hội thoại để bắt đầu chat</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- B. KHU VỚC CHÍNH (CENTER) - Chat Window -->
+        <div class="chat-window" id="chatWindow">
+            <!-- No Chat Selected State -->
+            <div id="noChatView" style="display: none;">
+                <div class="no-chat-selected">
+                    <i class="fas fa-comments no-chat-icon"></i>
+                    <p class="no-chat-text">Chọn hội thoại từ danh sách bên trái để bắt đầu</p>
+                </div>
+            </div>
+
+            <!-- Chat Window Header -->
+            <div class="chat-window-header" id="chatHeader" style="display: none;">
+                <div class="chat-customer-info">
+                    <div class="customer-info-avatar" id="customerAvatar">
+                        <span class="customer-info-avatar-initials" id="customerInitials">N</span>
+                        <div class="customer-info-avatar-dot" id="customerStatusDot"></div>
+                    </div>
+                    <div class="customer-info-content">
+                        <div class="customer-name" id="customerName">Chọn hội thoại</div>
+                        <div class="customer-status">
+                            <div class="status-indicator">
+                                <div class="status-dot" id="statusDot"></div>
+                                <span class="status-text" id="statusText">--</span>
+                            </div>
+                            <div class="customer-meta">
+                                <span id="lastMessageTime">--</span>
+                                <span class="customer-tag" id="customerTag" style="display: none;">Khách vãng lai</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-actions">
+                        <button class="chat-action-btn" onclick="switchChat('prev')" title="Hội thoại trước">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="chat-action-btn" onclick="endChat()" title="Kết thúc chat">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- B.2. Messages Area -->
+            <div class="messages-area" id="messagesArea">
+                <!-- Messages will be loaded here -->
+            </div>
+            
+            <!-- C. KHUNG NHẮN (BOTTOM) - Input -->
+            <div class="chat-input-area" id="chatInputArea" style="display: none;">
+                <div class="input-wrapper">
+                    <button class="attach-btn" onclick="showAttachOptions()" title="Đính kèm file">
+                        <i class="fas fa-paperclip"></i>
+                    </button>
+                    <input type="text" class="message-input" id="messageInput" placeholder="Nhập tin nhắn..." onkeypress="handleKeyPress(event)">
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Chat Logic -->
+    <script>
+        // Chat State
+        let activeChatId = null;
+        let currentConversation = null;
+        let conversations = [];
+        let staffMember = {
+            id: 1,
+            name: 'Lê Văn Hậu',
+            role: 'Lễ tân',
+            avatar: 'L'
+        };
+
+        // Mock Data - Chat List
+        const mockConversations = [
+            {
+                id: 1,
+                customerId: 'C001',
+                customerName: 'Nguyễn Thị Mai',
+                customerInitials: 'NM',
+                lastMessage: 'Xin chào! Tôi muốn đặt lịch massage.',
+                lastMessageTime: '10:30',
+                unreadCount: 0,
+                status: 'online',
+                isGuest: false,
+                messages: [
+                    { id: 1, type: 'staff', content: 'Chào bạn! Tôi có thể giúp gì cho bạn?', time: '10:28', status: 'sent' },
+                    { id: 2, type: 'customer', content: 'Xin chào! Tôi muốn đặt lịch massage.', time: '10:30', status: 'sent' }
+                ]
+            },
+            {
+                id: 2,
+                customerId: 'C002',
+                customerName: 'Trần Văn Nam',
+                customerInitials: 'TN',
+                lastMessage: 'Giá liệu trình chăm sóc da là bao nhiêu?',
+                lastMessageTime: '09:15',
+                unreadCount: 2,
+                status: 'online',
+                isGuest: false,
+                messages: [
+                    { id: 1, type: 'customer', content: 'Xin chào! Tôi muốn tư vấn dịch vụ.', time: '09:10', status: 'sent' },
+                    { id: 2, type: 'staff', content: 'Chào bạn! Tôi có thể giúp gì cho bạn?', time: '09:12', status: 'sent' },
+                    { id: 3, type: 'customer', content: 'Giá liệu trình chăm sóc da là bao nhiêu?', time: '09:15', status: 'sent' },
+                    { id: 4, type: 'customer', content: 'Có combo không?', time: '09:20', status: 'sent' }
+                ]
+            },
+            {
+                id: 3,
+                customerId: 'C003',
+                customerName: 'Phạm Thị Lan',
+                customerInitials: 'PL',
+                lastMessage: 'Bạn có thể hẹn buổi mai được không?',
+                lastMessageTime: 'Hôm qua',
+                unreadCount: 0,
+                status: 'offline',
+                isGuest: false,
+                messages: [
+                    { id: 1, type: 'staff', content: 'Chào bạn! Bạn có thể hẹn buổi mai được không?', time: '16:30', status: 'sent' },
+                    { id: 2, type: 'customer', content: 'Có thể. 9h sáng được không?', time: '16:35', status: 'sent' }
+                ]
+            },
+            {
+                id: 4,
+                customerId: 'GUEST001',
+                customerName: 'Khách vãng lai #1',
+                customerInitials: 'K',
+                lastMessage: 'Tôi muốn biết giá dịch vụ.',
+                lastMessageTime: '2 phút trước',
+                unreadCount: 5,
+                status: 'online',
+                isGuest: true,
+                messages: [
+                    { id: 1, type: 'customer', content: 'Tôi muốn biết giá dịch vụ.', time: '14:05', status: 'sent' }
+                ]
+            },
+            {
+                id: 5,
+                customerId: 'GUEST002',
+                customerName: 'Khách vãng lai #2',
+                customerInitials: 'K',
+                lastMessage: 'Cảm ơn các bạn!',
+                lastMessageTime: '1 giờ trước',
+                unreadCount: 1,
+                status: 'online',
+                isGuest: true,
+                messages: []
+            },
+            {
+                id: 6,
+                customerId: 'C004',
+                customerName: 'Hoàng Minh Tuấn',
+                customerInitials: 'H',
+                lastMessage: 'Tôi muốn đặt lịch triệt lông.',
+                lastMessageTime: '30 phút trước',
+                unreadCount: 0,
+                status: 'online',
+                isGuest: false,
+                messages: [
+                    { id: 1, type: 'staff', content: 'Chào bạn! Tôi có thể giúp gì cho bạn?', time: '11:30', status: 'sent' }
+                ]
+            }
+        ];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadChatList();
+        });
+
+        // Load Chat List
+        function loadChatList() {
+            const chatListContainer = document.getElementById('chatListContainer');
+            chatListContainer.innerHTML = '';
+            
+            // Filter chats by search
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            mockConversations.forEach(function(chat) {
+                const isActive = activeChatId === chat.id;
+                const isUnread = chat.unreadCount > 0;
+                
+                const chatItem = document.createElement('div');
+                chatItem.className = 'chat-list-item' + (isActive ? ' active' : '') + (isUnread ? ' unread' : '');
+                chatItem.dataset.chatId = chat.id;
+                chatItem.onclick = function() {
+                    loadConversation(chat.id);
+                };
+                
+                const avatarHtml = chat.unreadCount > 0 
+                    ? `<div class="customer-avatar-dot">${chat.unreadCount}</div>`
+                    : '';
+                
+                chatItem.innerHTML = `
+                    <div class="customer-avatar">
+                        <span class="customer-avatar-initials">${chat.customerInitials}</span>
+                        ${avatarHtml}
+                    </div>
+                    <div class="chat-list-item-content">
+                        <div class="customer-name">${chat.customerName}</div>
+                        <div class="last-message-container">
+                            <span class="last-message">${chat.lastMessage}</span>
+                            <span class="last-message-time">${chat.lastMessageTime}</span>
+                        </div>
+                        ${chat.isGuest ? '<span class="customer-tag">Khách vãng lai</span>' : ''}
+                    </div>
+                    ${chat.unreadCount > 0 ? `<div class="unread-badge">${chat.unreadCount}</div>` : ''}
+                `;
+                
+                chatListContainer.appendChild(chatItem);
+            });
+        }
+
+        // Load Conversation
+        function loadConversation(conversationId) {
+            activeChatId = conversationId;
+            currentConversation = mockConversations.find(c => c.id === conversationId);
+            
+            if (currentConversation) {
+                // Update UI
+                updateChatHeader();
+                loadMessages(currentConversation.messages);
+                
+                // Mark as read
+                markAsRead(conversationId);
+                loadChatList(); // Refresh list to show active state
+                
+                // Show chat window, hide no chat view
+                document.getElementById('noChatView').style.display = 'none';
+                document.getElementById('chatHeader').style.display = 'flex';
+                document.getElementById('chatInputArea').style.display = 'block';
+                document.getElementById('messagesArea').style.display = 'flex';
+                
+                // Focus input
+                setTimeout(function() {
+                    const input = document.getElementById('messageInput');
+                    if (input) {
+                        input.focus();
+                    }
+                }, 100);
+            }
+        }
+
+        // Update Chat Header
+        function updateChatHeader() {
+            if (currentConversation) {
+                // Update avatar and initials
+                document.getElementById('customerInitials').textContent = currentConversation.customerInitials;
+                
+                // Update name
+                document.getElementById('customerName').textContent = currentConversation.customerName;
+                
+                // Update status
+                const statusDot = document.getElementById('statusDot');
+                const statusText = document.getElementById('statusText');
+                
+                if (currentConversation.status === 'online') {
+                    statusDot.className = 'status-dot status-online';
+                    statusText.textContent = 'Đang online';
+                    statusText.style.color = '#31a24c';
+                } else if (currentConversation.status === 'offline') {
+                    statusDot.className = 'status-dot status-offline';
+                    statusText.textContent = 'Đã rời website';
+                    statusText.style.color = '#65676b';
+                } else {
+                    statusDot.className = 'status-dot status-away';
+                    statusText.textContent = 'Đang hoạt động';
+                    statusText.style.color = '#f59e0b';
+                }
+                
+                // Update customer status dot in header
+                const customerStatusDot = document.getElementById('customerStatusDot');
+                if (currentConversation.status === 'online') {
+                    customerStatusDot.style.display = 'block';
+                } else {
+                    customerStatusDot.style.display = 'none';
+                }
+                
+                // Update last message time
+                document.getElementById('lastMessageTime').textContent = currentConversation.lastMessageTime;
+                
+                // Show/hide customer tag
+                const customerTag = document.getElementById('customerTag');
+                if (currentConversation.isGuest) {
+                    customerTag.style.display = 'inline-block';
+                } else {
+                    customerTag.style.display = 'none';
+                }
+                
+                // Update header background based on status
+                const chatHeader = document.getElementById('chatHeader');
+                if (currentConversation.status === 'offline') {
+                    chatHeader.style.background = '#f0f2f5';
+                }
+            }
+        }
+
+        // Load Messages
+        function loadMessages(messages) {
+            const messagesArea = document.getElementById('messagesArea');
+            messagesArea.innerHTML = '';
+            
+            messages.forEach(function(msg) {
+                const messageDiv = document.createElement('div');
+                
+                if (msg.type === 'staff') {
+                    messageDiv.className = 'message-bubble message-staff';
+                    const statusHtml = msg.status === 'sent' 
+                        ? `<div class="message-status sent"><i class="fas fa-check-circle"></i></div>` 
+                        : `<div class="message-status sending"><i class="fas fa-hourglass-half"></i></div>`;
+                    
+                    messageDiv.innerHTML = `
+                        <div class="message-content">${escapeHtml(msg.content)}</div>
+                        ${statusHtml}
+                        <div class="message-time">${msg.time}</div>
+                    `;
+                } else {
+                    messageDiv.className = 'message-bubble message-customer';
+                    messageDiv.innerHTML = `
+                        <div class="message-content">${escapeHtml(msg.content)}</div>
+                        <div class="message-time">${msg.time}</div>
+                    `;
+                }
+                
+                messagesArea.appendChild(messageDiv);
+            });
+            
+            // Show system message if customer offline
+            if (currentConversation && currentConversation.status === 'offline') {
+                showSystemMessage('Khách hàng đã rời khỏi website. Họ sẽ không nhận được tin nhắn mới.');
+            } else if (currentConversation && currentConversation.status === 'away') {
+                hideSystemMessage();
+            } else {
+                hideSystemMessage();
+            }
+        }
+
+        // Mark as Read
+        function markAsRead(conversationId) {
+            const conversation = mockConversations.find(c => c.id === conversationId);
+            if (conversation) {
+                conversation.unreadCount = 0;
+                loadChatList();
+            }
+        }
+
+        // Send Message
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message) {
+                alert('Vui lòng nhập nội dung tin nhắn');
+                return;
+            }
+            
+            if (!currentConversation) {
+                alert('Vui lòng chọn hội thoại để chat!');
+                return;
+            }
+            
+            if (currentConversation.status === 'offline') {
+                if (confirm('Khách hàng đã rời website. Bạn có chắc muốn gửi tin nhắn không?')) {
+                    // Allow sending
+                addMessageToConversation(currentConversation.id, message);
+                input.value = '';
+                scrollToBottom();
+                return;
+                } else {
+                    return;
+                }
+            }
+            
+            // Add message to conversation
+            addMessageToConversation(currentConversation.id, message);
+            input.value = '';
+            scrollToBottom();
+        }
+
+        function addMessageToConversation(conversationId, message) {
+            const conversation = mockConversations.find(c => c.id === conversationId);
+            if (!conversation) return;
+            
+            // Create new message with sending status
+            const newMessage = {
+                id: Date.now(),
+                type: 'staff',
+                content: message,
+                time: formatTime(new Date()),
+                status: 'sending'
+            };
+            
+            // Display immediately
+            const messagesArea = document.getElementById('messagesArea');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message-bubble message-staff';
+            messageDiv.innerHTML = `
+                <div class="message-content">${escapeHtml(message)}</div>
+                <div class="message-status sending">
+                    <i class="fas fa-hourglass-half"></i>
+                <div>Đang gửi...</div>
+                </div>
+                <div class="message-time">${formatTime(new Date())}</div>
+            `;
+            
+            messagesArea.appendChild(messageDiv);
+            scrollToBottom();
+            
+            // Add to conversation data
+            conversation.messages.push(newMessage);
+            
+            // Mark as sent after delay
+            setTimeout(function() {
+                newMessage.status = 'sent';
+                // Find the message div and update status
+                const messageDiv = document.querySelector(`.message-bubble[data-message-id="${newMessage.id}"]`);
+                if (messageDiv) {
+                    const statusDiv = messageDiv.querySelector('.message-status.sending');
+                    if (statusDiv) {
+                        statusDiv.className = 'message-status sent';
+                        statusDiv.innerHTML = `
+                            <div class="message-status sent"><i class="fas fa-check-circle"></i></div>
+                        `;
+                    }
+                }
+            }, 1000);
+            
+            // Update last message in chat list
+            conversation.lastMessage = message;
+            conversation.lastMessageTime = formatTime(new Date());
+            loadChatList();
+        }
+
+        // Switch Chat
+        function switchChat(direction) {
+            const currentIndex = mockConversations.findIndex(c => c.id === activeChatId);
+            let newIndex;
+            
+            if (direction === 'prev') {
+                newIndex = currentIndex > 0 ? currentIndex - 1 : mockConversations.length - 1;
+            } else {
+                newIndex = currentIndex < mockConversations.length - 1 ? currentIndex + 1 : 0;
+            }
+            
+            loadConversation(mockConversations[newIndex].id);
+        }
+
+        // End Chat
+        function endChat() {
+            if (!currentConversation) {
+                alert('Vui lòng chọn hội thoại để kết thúc!');
+                return;
+            }
+            
+            if (confirm('Bạn có chắc muốn kết thúc cuộc hội thoại này không?')) {
+                // Mark conversation as offline
+                currentConversation.status = 'offline';
+                loadChatList();
+                
+                // Show system message
+                showSystemMessage('Bạn đã kết thúc cuộc hội thoại này. Khách hàng không thể gửi tin nhắn mới.');
+                
+                // Disable input
+                document.getElementById('messageInput').disabled = true;
+            }
+        }
+
+        // System Message
+        function showSystemMessage(message) {
+            const messagesArea = document.getElementById('messagesArea');
+            const systemDiv = document.createElement('div');
+            systemDiv.className = 'system-message';
+            systemDiv.innerHTML = `<i class="fas fa-info-circle"></i><span>${message}</span>`;
+            
+            // Remove old system messages
+            const oldSystemMessages = messagesArea.querySelectorAll('.system-message');
+            oldSystemMessages.forEach(function(msg) {
+                msg.remove();
+            });
+            
+            messagesArea.appendChild(systemDiv);
+            scrollToBottom();
+        }
+
+        function hideSystemMessage() {
+            const oldSystemMessages = document.querySelectorAll('.system-message');
+            oldSystemMessages.forEach(function(msg) {
+                msg.remove();
+            });
+        }
+
+        // Search
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            loadChatList();
+        });
+
+        // Scroll to Bottom
+        function scrollToBottom() {
+            const messagesArea = document.getElementById('messagesArea');
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+
+        // Format Time
+        function formatTime(date) {
+            if (typeof date === 'string') {
+                return date;
+            }
+            const d = new Date(date);
+            const hours = d.getHours().toString().padStart(2, '0');
+            const minutes = d.getMinutes().toString().padStart(2, '0');
+            return hours + ':' + minutes;
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Handle Enter Key
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Attach Options (Demo)
+        function showAttachOptions() {
+            alert('Tính năng đính kèm file sẽ được cập nhật trong phiên bản tới! (Theo BR-03: Chỉ gửi tin nhắn văn bản cho khách hàng)');
+        }
+
+        // Initialize on load - show no chat selected
+        document.getElementById('noChatView').style.display = 'flex';
+        document.getElementById('chatHeader').style.display = 'none';
+        document.getElementById('chatInputArea').style.display = 'none';
+        document.getElementById('messagesArea').style.display = 'none';
+    </script>
+</body>
+</html>
