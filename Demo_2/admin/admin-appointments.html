@@ -511,6 +511,7 @@
                       data-status="cancelled"
                       data-payment="not-applicable"
                       data-amount="0"
+                      data-cancellation-reason="Khách hàng không thể đến do việc đột xuất"
                     >
                       <td><span class="badge bg-secondary">LH005</span></td>
                       <td><strong>Hoàng Thị Lan</strong></td>
@@ -526,11 +527,18 @@
                       </td>
                       <td>
                         <button
-                          class="btn btn-sm btn-outline-secondary"
+                          class="btn btn-sm btn-outline-info me-1"
                           title="Xem lý do hủy"
                           onclick="viewCancellationReason('LH005')"
                         >
                           <i class="fas fa-info-circle"></i>
+                        </button>
+                        <button
+                          class="btn btn-sm btn-outline-danger"
+                          title="Xóa vĩnh viễn"
+                          onclick="showPermanentDeleteConfirm('LH005')"
+                        >
+                          <i class="fas fa-trash"></i>
                         </button>
                       </td>
                     </tr>
@@ -1116,6 +1124,86 @@
       </div>
     </div>
 
+    <!-- Permanent Delete Confirmation Modal -->
+    <div class="modal fade" id="permanentDeleteModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-white">
+            <h5 class="modal-title">
+              <i class="fas fa-trash-alt me-2"></i>Xóa Vĩnh Viễn
+            </h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-danger">
+              <i class="fas fa-exclamation-circle me-2"></i>
+              <strong>CẢNH BÁO:</strong> Hành động này không thể hoàn tác!
+            </div>
+
+            <div class="card bg-light mb-3">
+              <div class="card-body py-2">
+                <div class="row">
+                  <div class="col-6">
+                    <strong>Mã lịch hẹn:</strong>
+                    <p class="mb-0" id="permanentDeleteIdDisplay">LH001</p>
+                  </div>
+                  <div class="col-6">
+                    <strong>Khách hàng:</strong>
+                    <p class="mb-0" id="permanentDeleteCustomer">Nguyễn Thị Mai</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p>Bạn có chắc chắn muốn <strong>xóa vĩnh viễn</strong> lịch hẹn này?</p>
+            <p class="text-danger small">
+              <i class="fas fa-exclamation-triangle me-1"></i>
+              Tất cả thông tin về lịch hẹn này sẽ bị xóa hoàn toàn khỏi hệ thống. Không thể khôi phục sau khi xóa.
+            </p>
+
+            <div class="mb-3">
+              <label class="form-label"
+                >Nhập "XÓA" để xác nhận <span class="text-danger">*</span></label
+              >
+              <input
+                type="text"
+                class="form-control"
+                id="permanentDeleteConfirm"
+                placeholder="Nhập chính xác: XÓA"
+                oninput="checkPermanentDeleteInput()"
+              />
+              <div class="invalid-feedback">
+                Vui lòng nhập đúng từ khóa "XÓA" để tiếp tục
+              </div>
+            </div>
+            <input type="hidden" id="permanentDeleteId" />
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              <i class="fas fa-times me-2"></i>Hủy bỏ
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              id="confirmPermanentDeleteBtn"
+              onclick="executePermanentDelete()"
+              disabled
+            >
+              <i class="fas fa-trash-alt me-2"></i>Xóa vĩnh viễn
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Payment Success Toast -->
     <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
       <div
@@ -1189,6 +1277,9 @@
     <script>
       let deleteModalInstance;
       let paymentModalInstance;
+      let permanentDeleteModalInstance;
+      let editModalInstance;
+      let viewDetailsModalInstance;
       let currentViewingId = null;
       let currentPaymentId = null;
 
@@ -1198,6 +1289,15 @@
         );
         paymentModalInstance = new bootstrap.Modal(
           document.getElementById("paymentModal"),
+        );
+        permanentDeleteModalInstance = new bootstrap.Modal(
+          document.getElementById("permanentDeleteModal"),
+        );
+        editModalInstance = new bootstrap.Modal(
+          document.getElementById("editAppointmentModal"),
+        );
+        viewDetailsModalInstance = new bootstrap.Modal(
+          document.getElementById("viewDetailsModal"),
         );
       });
 
@@ -1276,9 +1376,7 @@
         // Hide conflict warning
         document.getElementById("conflictWarning").style.display = "none";
 
-        new bootstrap.Modal(
-          document.getElementById("editAppointmentModal"),
-        ).show();
+        editModalInstance.show();
       }
 
       // Hủy lịch hẹn
@@ -1386,7 +1484,7 @@
           paymentBtn.style.display = "none";
         }
 
-        new bootstrap.Modal(document.getElementById("viewDetailsModal")).show();
+        viewDetailsModalInstance.show();
       }
 
       // Edit from detail modal
@@ -1923,6 +2021,78 @@
         } else {
           form.reportValidity();
         }
+      }
+
+      // ========== PERMANENT DELETE FUNCTIONS ==========
+
+      // Show permanent delete confirmation modal
+      function showPermanentDeleteConfirm(id) {
+        const row = document.getElementById("appointment-" + id.split("LH")[1]);
+
+        // Display appointment info in modal
+        document.getElementById("permanentDeleteIdDisplay").textContent = id;
+        document.getElementById("permanentDeleteCustomer").textContent =
+          row.querySelector("td:nth-child(2)").textContent.trim();
+        document.getElementById("permanentDeleteId").value = id;
+
+        // Reset input field
+        document.getElementById("permanentDeleteConfirm").value = "";
+        document
+          .getElementById("permanentDeleteConfirm")
+          .classList.remove("is-invalid", "is-valid");
+
+        // Disable confirm button
+        document.getElementById("confirmPermanentDeleteBtn").disabled = true;
+
+        permanentDeleteModalInstance.show();
+      }
+
+      // Check permanent delete input
+      function checkPermanentDeleteInput() {
+        const input = document.getElementById("permanentDeleteConfirm");
+        const confirmBtn = document.getElementById("confirmPermanentDeleteBtn");
+        const value = input.value.trim();
+
+        if (value === "XÓA") {
+          input.classList.remove("is-invalid");
+          input.classList.add("is-valid");
+          confirmBtn.disabled = false;
+        } else {
+          input.classList.remove("is-valid");
+          if (value.length > 0) {
+            input.classList.add("is-invalid");
+          } else {
+            input.classList.remove("is-invalid");
+          }
+          confirmBtn.disabled = true;
+        }
+      }
+
+      // Execute permanent delete
+      function executePermanentDelete() {
+        const id = document.getElementById("permanentDeleteId").value;
+        const input = document.getElementById("permanentDeleteConfirm");
+        const value = input.value.trim();
+
+        // Double-check input
+        if (value !== "XÓA") {
+          showToast("error", "Vui lòng nhập đúng từ khóa 'XÓA'!");
+          return;
+        }
+
+        const row = document.getElementById("appointment-" + id.split("LH")[1]);
+
+        // Remove the row with animation
+        row.style.transition = "opacity 0.3s ease";
+        row.style.opacity = "0";
+
+        setTimeout(() => {
+          row.remove();
+          showToast("success", "Đã xóa vĩnh viễn lịch hẹn: " + id);
+        }, 300);
+
+        // Close modal
+        permanentDeleteModalInstance.hide();
       }
     </script>
   </body>
