@@ -1,785 +1,1628 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Quản lý Lịch hẹn - Spa ANA</title>
-    
+
     <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
     <!-- FontAwesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-    
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+      rel="stylesheet"
+    />
+
     <!-- Google Fonts - Montserrat -->
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="../css/style.css">
-    
+    <link rel="stylesheet" href="../css/style.css" />
+
     <style>
-        .admin-layout {
-            display: flex;
-            min-height: 100vh;
-        }
-        
+      .admin-layout {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      .admin-sidebar {
+        background: var(--primary-blue);
+        min-height: 100vh;
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 260px;
+        padding: 0;
+        z-index: 1000;
+        transition: transform 0.3s ease;
+      }
+
+      .sidebar-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        text-align: center;
+      }
+
+      .sidebar-header h3 {
+        color: white;
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin: 0;
+      }
+
+      .sidebar-header span {
+        color: var(--gold-primary);
+      }
+
+      .sidebar-nav {
+        padding: 1rem 0;
+      }
+
+      .sidebar-nav .nav-link {
+        color: #ecf0f1;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+      }
+
+      .sidebar-nav .nav-link:hover,
+      .sidebar-nav .nav-link.active {
+        background: var(--gradient-gold);
+        color: white;
+        padding-left: 2rem;
+      }
+
+      .sidebar-nav .nav-link i {
+        width: 25px;
+        margin-right: 10px;
+      }
+
+      .admin-content {
+        margin-left: 260px;
+        flex: 1;
+        padding: 0;
+        min-height: 100vh;
+        background: #f5f7fa;
+      }
+
+      .admin-header {
+        background: white;
+        padding: 1rem 2rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+
+      .admin-main {
+        padding: 2rem;
+      }
+
+      .table tbody td {
+        vertical-align: middle;
+      }
+
+      /* Payment Status Badges */
+      .payment-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+      }
+
+      .payment-pending {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffc107;
+      }
+
+      .payment-paid {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #28a745;
+      }
+
+      .payment-not-applicable {
+        background: #e2e3e5;
+        color: #6c757d;
+        border: 1px solid #ced4da;
+      }
+
+      /* Payment Modal */
+      .payment-modal .modal-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 0.5rem 0.5rem 0 0;
+      }
+
+      .payment-info-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #dee2e6;
+      }
+
+      .payment-info-item:last-child {
+        border-bottom: none;
+      }
+
+      .payment-info-label {
+        font-weight: 600;
+        color: #495057;
+      }
+
+      .payment-info-value {
+        color: #212529;
+      }
+
+      .payment-amount {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #28a745;
+      }
+
+      @media (max-width: 991px) {
         .admin-sidebar {
-            background: var(--primary-blue);
-            min-height: 100vh;
-            position: fixed;
-            left: 0;
-            top: 0;
-            width: 260px;
-            padding: 0;
-            z-index: 1000;
-            transition: transform 0.3s ease;
+          transform: translateX(-100%);
         }
-        
-        .sidebar-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid rgba(255,255,255, 0.1);
-            text-align: center;
-        }
-        
-        .sidebar-header h3 {
-            color: white;
-            font-size: 1.2rem;
-            font-weight: 700;
-            margin: 0;
-        }
-        
-        .sidebar-header span {
-            color: var(--gold-primary);
-        }
-        
-        .sidebar-nav {
-            padding: 1rem 0;
-        }
-        
-        .sidebar-nav .nav-link {
-            color: #ecf0f1;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-        }
-        
-        .sidebar-nav .nav-link:hover,
-        .sidebar-nav .nav-link.active {
-            background: var(--gradient-gold);
-            color: white;
-            padding-left: 2rem;
-        }
-        
-        .sidebar-nav .nav-link i {
-            width: 25px;
-            margin-right: 10px;
-        }
-        
+
         .admin-content {
-            margin-left: 260px;
-            flex: 1;
-            padding: 0;
-            min-height: 100vh;
-            background: #f5f7fa;
+          margin-left: 0;
         }
-        
-        .admin-header {
-            background: white;
-            padding: 1rem 2rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
+
+        .admin-sidebar.show {
+          transform: translateX(0);
         }
-        
-        .admin-main {
-            padding: 2rem;
+
+        #sidebarToggle {
+          display: block !important;
         }
-        
-        .table tbody td {
-            vertical-align: middle;
-        }
-        
-        @media (max-width: 991px) {
-            .admin-sidebar {
-                transform: translateX(-100%);
-            }
-            
-            .admin-content {
-                margin-left: 0;
-            }
-            
-            .admin-sidebar.show {
-                transform: translateX(0);
-            }
-            
-            #sidebarToggle {
-                display: block !important;
-            }
-        }
+      }
     </style>
-</head>
-<body>
-    
+  </head>
+  <body>
     <div class="admin-layout">
-        
-        <!-- Sidebar -->
-        <nav class="admin-sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <i class="fas fa-spa fa-2x mb-2" style="color: var(--gold-primary);"></i>
-                <h3>Spa <span>ANA</span></h3>
-            </div>
-            
-            <ul class="nav flex-column sidebar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="dashboard.html">
-                        <i class="fas fa-tachometer-alt"></i>
-                        Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" href="admin-appointments.html">
-                        <i class="fas fa-calendar-check"></i>
-                        Quản lý Lịch hẹn
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="admin-services.html">
-                        <i class="fas fa-spa"></i>
-                        Quản lý Dịch vụ
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="admin-reports.html">
-                        <i class="fas fa-comments"></i>
-                        Tư vấn & CSKH
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="admin-customers.html">
-                        <i class="fas fa-users"></i>
-                        Quản lý Khách hàng
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">
-                        <i class="fas fa-chart-bar"></i>
-                        Báo cáo
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">
-                        <i class="fas fa-cog"></i>
-                        Cài đặt
-                    </a>
-                </li>
-                <li class="nav-item mt-4">
-                    <a class="nav-link text-danger" href="../index.html">
-                        <i class="fas fa-sign-out-alt"></i>
-                        Đăng xuất
-                    </a>
-                </li>
-            </ul>
-        </nav>
-        
-        <!-- Main Content -->
-        <div class="admin-content">
-            
-            <!-- Header -->
-            <header class="admin-header">
-                <div class="d-flex align-items-center">
-                    <button class="btn btn-light me-3" id="sidebarToggle" style="display: none;">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <h4 class="mb-0">Quản lý Lịch Hẹn</h4>
-                </div>
-                
-                <div class="d-flex align-items-center">
-                    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#addAppointmentModal">
-                        <i class="fas fa-plus me-2"></i>Tạo lịch hẹn
-                    </button>
-                </div>
-            </header>
-            
-            <!-- Main Content -->
-            <main class="admin-main">
-                
-                <!-- Search & Filter -->
-                <div class="card mb-4">
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-4">
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="fas fa-search"></i></span>
-                                    <input type="text" class="form-control" placeholder="Tìm kiếm khách hàng...">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <select class="form-select">
-                                    <option value="">Tất cả dịch vụ</option>
-                                    <option value="1">Chăm sóc da</option>
-                                    <option value="2">Massage</option>
-                                    <option value="3">Phun thêu</option>
-                                    <option value="4">Triệt lông</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <select class="form-select">
-                                    <option value="">Tất cả trạng thái</option>
-                                    <option value="pending">Chờ xác nhận</option>
-                                    <option value="confirmed">Đã xác nhận</option>
-                                    <option value="processing">Đang xử lý</option>
-                                    <option value="completed">Hoàn thành</option>
-                                    <option value="cancelled">Đã hủy</option>
-                                </select>
-                            </div>
-                            <div class="col-md-2">
-                                <button class="btn btn-outline-secondary w-100">
-                                    <i class="fas fa-filter"></i> Lọc
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Appointments Table -->
-                <div class="card">
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th>Mã</th>
-                                        <th>Khách hàng</th>
-                                        <th>SĐT</th>
-                                        <th>Dịch vụ</th>
-                                        <th>Ngày giờ</th>
-                                        <th>Trạng thái</th>
-                                        <th>Thao tác</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Chờ xác nhận -->
-                                    <tr id="appointment-1" data-status="pending">
-                                        <td><span class="badge bg-secondary">LH001</span></td>
-                                        <td><strong>Nguyễn Thị Mai</strong></td>
-                                        <td>0901 234 567</td>
-                                        <td>Chăm sóc da</td>
-                                        <td>15/02/2026 10:00</td>
-                                        <td><span class="badge bg-warning">Chờ xác nhận</span></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-success me-1" 
-                                                    title="Xác nhận lịch hẹn"
-                                                    onclick="confirmAppointment('LH001')">
-                                                <i class="fas fa-check"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-danger" 
-                                                    title="Hủy lịch hẹn"
-                                                    onclick="showDeleteConfirm('LH001')">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    
-                                    <!-- Đã xác nhận -->
-                                    <tr id="appointment-2" data-status="confirmed">
-                                        <td><span class="badge bg-secondary">LH002</span></td>
-                                        <td><strong>Trần Văn Hùng</strong></td>
-                                        <td>0912 345 678</td>
-                                        <td>Triệt lông</td>
-                                        <td>15/02/2026 14:00</td>
-                                        <td><span class="badge bg-success">Đã xác nhận</span></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary me-1" 
-                                                    title="Chỉnh sửa lịch hẹn"
-                                                    onclick="editAppointment('LH002')">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-danger" 
-                                                    title="Hủy lịch hẹn"
-                                                    onclick="showDeleteConfirm('LH002')">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    
-                                    <!-- Đang xử lý -->
-                                    <tr id="appointment-3" data-status="processing">
-                                        <td><span class="badge bg-secondary">LH003</span></td>
-                                        <td><strong>Lê Thu Thảo</strong></td>
-                                        <td>0934 567 890</td>
-                                        <td>Phun thêu môi</td>
-                                        <td>15/02/2026 15:30</td>
-                                        <td><span class="badge bg-info">Đang xử lý</span></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-danger" 
-                                                    title="Hủy lịch hẹn"
-                                                    onclick="showDeleteConfirm('LH003')">
-                                                <i class="fas fa-times"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    
-                                    <!-- Hoàn thành -->
-                                    <tr id="appointment-4" data-status="completed">
-                                        <td><span class="badge bg-secondary">LH004</span></td>
-                                        <td><strong>Phạm Minh Đức</strong></td>
-                                        <td>0945 678 901</td>
-                                        <td>Massage</td>
-                                        <td>15/02/2026 16:00</td>
-                                        <td><span class="badge bg-success">Hoàn thành</span></td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-info me-1" 
-                                                    title="Xem chi tiết lịch hẹn"
-                                                    onclick="viewAppointmentDetails('LH004')">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button class="btn btn-sm btn-outline-secondary" 
-                                                    title="In hóa đơn"
-                                                    onclick="printInvoice('LH004')">
-                                                <i class="fas fa-print"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    
-                                    <!-- Đã hủy -->
-                                    <tr id="appointment-5" data-status="cancelled">
-                                        <td><span class="badge bg-secondary">LH005</span></td>
-                                        <td><strong>Hoàng Thị Lan</strong></td>
-                                        <td>0967 890 123</td>
-                                        <td>Chăm sóc da</td>
-                                        <td>14/02/2026 11:00</td>
-                                        <td><span class="badge bg-danger">Đã hủy</span></td>
-                                        <td>
-                                            <!-- <button class="btn btn-sm btn-outline-warning me-1" 
-                                                    title="Đặt lại lịch hẹn"
-                                                    onclick="rescheduleAppointment('LH005')">
-                                                <i class="fas fa-redo"></i>
-                                            </button> -->
-                                            <button class="btn btn-sm btn-outline-secondary" 
-                                                    title="Xem lý do hủy"
-                                                    onclick="viewCancellationReason('LH005')">
-                                                <i class="fas fa-info-circle"></i>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <!-- Pagination -->
-                    <div class="card-footer bg-white border-0">
-                        <nav>
-                            <ul class="pagination justify-content-center mb-0">
-                                <li class="page-item disabled">
-                                    <a class="page-link" href="#"><i class="fas fa-chevron-left"></i></a>
-                                </li>
-                                <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                                <li class="page-item">
-                                    <a class="page-link" href="#"><i class="fas fa-chevron-right"></i></a>
-                                </li>
-                            </ul>
-                        </nav>
-                    </div>
-                </div>
-                
-            </main>
+      <!-- Sidebar -->
+      <nav class="admin-sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <i
+            class="fas fa-spa fa-2x mb-2"
+            style="color: var(--gold-primary)"
+          ></i>
+          <h3>Spa <span>ANA</span></h3>
         </div>
+
+        <ul class="nav flex-column sidebar-nav">
+          <li class="nav-item">
+            <a class="nav-link" href="dashboard.html">
+              <i class="fas fa-tachometer-alt"></i>
+              Dashboard
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="admin-appointments.html">
+              <i class="fas fa-calendar-check"></i>
+              Quản lý Lịch hẹn
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="admin-services.html">
+              <i class="fas fa-spa"></i>
+              Quản lý Dịch vụ
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="live-chat-admin.html">
+              <i class="fas fa-comments"></i>
+              Chat trực tuyến / CSKH
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="admin-staff.html">
+              <i class="fas fa-users-cog"></i>
+              Quản lý Tài khoản Nhân viên
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="admin-customers.html">
+              <i class="fas fa-users"></i>
+              Quản lý Khách hàng
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">
+              <i class="fas fa-chart-bar"></i>
+              Báo cáo
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">
+              <i class="fas fa-cog"></i>
+              Cài đặt
+            </a>
+          </li>
+          <li class="nav-item mt-4">
+            <a class="nav-link text-danger" href="../index.html">
+              <i class="fas fa-sign-out-alt"></i>
+              Đăng xuất
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- Main Content -->
+      <div class="admin-content">
+        <!-- Header -->
+        <header class="admin-header">
+          <div class="d-flex align-items-center">
+            <button
+              class="btn btn-light me-3"
+              id="sidebarToggle"
+              style="display: none"
+            >
+              <i class="fas fa-bars"></i>
+            </button>
+            <h4 class="mb-0">Quản lý Lịch Hẹn</h4>
+          </div>
+
+          <div class="d-flex align-items-center">
+            <button
+              class="btn btn-warning"
+              data-bs-toggle="modal"
+              data-bs-target="#addAppointmentModal"
+            >
+              <i class="fas fa-plus me-2"></i>Tạo lịch hẹn
+            </button>
+          </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+          <!-- Search & Filter -->
+          <div class="card mb-4">
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-4">
+                  <div class="input-group">
+                    <span class="input-group-text"
+                      ><i class="fas fa-search"></i
+                    ></span>
+                    <input
+                      type="text"
+                      class="form-control"
+                      placeholder="Tìm kiếm khách hàng..."
+                    />
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <select class="form-select">
+                    <option value="">Tất cả dịch vụ</option>
+                    <option value="1">Chăm sóc da</option>
+                    <option value="2">Massage</option>
+                    <option value="3">Phun thêu</option>
+                    <option value="4">Triệt lông</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <select class="form-select">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="pending">Chờ xác nhận</option>
+                    <option value="confirmed">Đã xác nhận</option>
+                    <option value="processing">Đang xử lý</option>
+                    <option value="completed">Hoàn thành</option>
+                    <option value="cancelled">Đã hủy</option>
+                  </select>
+                </div>
+                <div class="col-md-2">
+                  <button class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-filter"></i> Lọc
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Appointments Table -->
+          <div class="card">
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                  <thead>
+                    <tr>
+                      <th>Mã</th>
+                      <th>Khách hàng</th>
+                      <th>SĐT</th>
+                      <th>Dịch vụ</th>
+                      <th>Ngày giờ</th>
+                      <th>Trạng thái</th>
+                      <th class="text-center">Thanh toán</th>
+                      <th>Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Chờ xác nhận -->
+                    <tr
+                      id="appointment-1"
+                      data-status="pending"
+                      data-payment="pending"
+                      data-amount="500000"
+                    >
+                      <td><span class="badge bg-secondary">LH001</span></td>
+                      <td><strong>Nguyễn Thị Mai</strong></td>
+                      <td>0901 234 567</td>
+                      <td>Chăm sóc da</td>
+                      <td>15/02/2026 10:00</td>
+                      <td>
+                        <span class="badge bg-warning">Chờ xác nhận</span>
+                      </td>
+                      <td class="text-center">
+                        <span class="payment-badge payment-pending">
+                          <i class="fas fa-clock"></i>
+                          Chưa thanh toán
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          class="btn btn-sm btn-outline-success me-1"
+                          title="Xác nhận lịch hẹn"
+                          onclick="confirmAppointment('LH001')"
+                        >
+                          <i class="fas fa-check"></i>
+                        </button>
+                        <button
+                          class="btn btn-sm btn-outline-danger"
+                          title="Hủy lịch hẹn"
+                          onclick="showDeleteConfirm('LH001')"
+                        >
+                          <i class="fas fa-times"></i>
+                        </button>
+                      </td>
+                    </tr>
+
+                    <!-- Đã xác nhận -->
+                    <tr
+                      id="appointment-2"
+                      data-status="confirmed"
+                      data-payment="pending"
+                      data-amount="800000"
+                    >
+                      <td><span class="badge bg-secondary">LH002</span></td>
+                      <td><strong>Trần Văn Hùng</strong></td>
+                      <td>0912 345 678</td>
+                      <td>Triệt lông</td>
+                      <td>15/02/2026 14:00</td>
+                      <td><span class="badge bg-success">Đã xác nhận</span></td>
+                      <td class="text-center">
+                        <span class="payment-badge payment-pending">
+                          <i class="fas fa-clock"></i>
+                          Chưa thanh toán
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          class="btn btn-sm btn-outline-primary me-1"
+                          title="Chỉnh sửa lịch hẹn"
+                          onclick="editAppointment('LH002')"
+                        >
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        <button
+                          class="btn btn-sm btn-outline-danger"
+                          title="Hủy lịch hẹn"
+                          onclick="showDeleteConfirm('LH002')"
+                        >
+                          <i class="fas fa-times"></i>
+                        </button>
+                      </td>
+                    </tr>
+
+                    <!-- Đang xử lý -->
+                    <tr
+                      id="appointment-3"
+                      data-status="processing"
+                      data-payment="pending"
+                      data-amount="2500000"
+                    >
+                      <td><span class="badge bg-secondary">LH003</span></td>
+                      <td><strong>Lê Thu Thảo</strong></td>
+                      <td>0934 567 890</td>
+                      <td>Phun thêu môi</td>
+                      <td>15/02/2026 15:30</td>
+                      <td><span class="badge bg-info">Đang xử lý</span></td>
+                      <td class="text-center">
+                        <span class="payment-badge payment-pending">
+                          <i class="fas fa-clock"></i>
+                          Chưa thanh toán
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          class="btn btn-sm btn-outline-info me-1"
+                          title="Cập nhật thanh toán"
+                          onclick="openPaymentModal('LH003')"
+                        >
+                          <i class="fas fa-credit-card"></i>
+                        </button>
+                        <button
+                          class="btn btn-sm btn-outline-danger"
+                          title="Hủy lịch hẹn"
+                          onclick="showDeleteConfirm('LH003')"
+                        >
+                          <i class="fas fa-times"></i>
+                        </button>
+                      </td>
+                    </tr>
+
+                    <!-- Hoàn thành -->
+                    <tr
+                      id="appointment-4"
+                      data-status="completed"
+                      data-payment="paid"
+                      data-amount="600000"
+                    >
+                      <td><span class="badge bg-secondary">LH004</span></td>
+                      <td><strong>Phạm Minh Đức</strong></td>
+                      <td>0945 678 901</td>
+                      <td>Massage</td>
+                      <td>15/02/2026 16:00</td>
+                      <td><span class="badge bg-success">Hoàn thành</span></td>
+                      <td class="text-center">
+                        <span class="payment-badge payment-paid">
+                          <i class="fas fa-check-circle"></i>
+                          Đã thanh toán
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          class="btn btn-sm btn-outline-info me-1"
+                          title="Xem chi tiết lịch hẹn"
+                          onclick="viewAppointmentDetails('LH004')"
+                        >
+                          <i class="fas fa-eye"></i>
+                        </button>
+                        <button
+                          class="btn btn-sm btn-outline-secondary"
+                          title="In hóa đơn"
+                          onclick="printInvoice('LH004')"
+                        >
+                          <i class="fas fa-print"></i>
+                        </button>
+                      </td>
+                    </tr>
+
+                    <!-- Đã hủy -->
+                    <tr
+                      id="appointment-5"
+                      data-status="cancelled"
+                      data-payment="not-applicable"
+                      data-amount="0"
+                    >
+                      <td><span class="badge bg-secondary">LH005</span></td>
+                      <td><strong>Hoàng Thị Lan</strong></td>
+                      <td>0967 890 123</td>
+                      <td>Chăm sóc da</td>
+                      <td>14/02/2026 11:00</td>
+                      <td><span class="badge bg-danger">Đã hủy</span></td>
+                      <td class="text-center">
+                        <span class="payment-badge payment-not-applicable">
+                          <i class="fas fa-ban"></i>
+                          Không áp dụng
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          class="btn btn-sm btn-outline-secondary"
+                          title="Xem lý do hủy"
+                          onclick="viewCancellationReason('LH005')"
+                        >
+                          <i class="fas fa-info-circle"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Pagination -->
+            <div class="card-footer bg-white border-0">
+              <nav>
+                <ul class="pagination justify-content-center mb-0">
+                  <li class="page-item disabled">
+                    <a class="page-link" href="#"
+                      ><i class="fas fa-chevron-left"></i
+                    ></a>
+                  </li>
+                  <li class="page-item active">
+                    <a class="page-link" href="#">1</a>
+                  </li>
+                  <li class="page-item"><a class="page-link" href="#">2</a></li>
+                  <li class="page-item"><a class="page-link" href="#">3</a></li>
+                  <li class="page-item">
+                    <a class="page-link" href="#"
+                      ><i class="fas fa-chevron-right"></i
+                    ></a>
+                  </li>
+                </ul>
+              </nav>
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
-    
+
     <!-- Add Appointment Modal -->
     <div class="modal fade" id="addAppointmentModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-plus me-2 text-warning"></i>Tạo Lịch Hẹn Mới</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="fas fa-plus me-2 text-warning"></i>Tạo Lịch Hẹn Mới
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="addAppointmentForm">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Họ tên khách hàng *</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="addName"
+                    required
+                  />
                 </div>
-                <div class="modal-body">
-                    <form id="addAppointmentForm">
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Họ tên khách hàng *</label>
-                                <input type="text" class="form-control" id="addName" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Số điện thoại *</label>
-                                <input type="tel" class="form-control" id="addPhone" required>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Dịch vụ *</label>
-                            <select class="form-select" id="addService" required>
-                                <option value="">Chọn dịch vụ</option>
-                                <option value="1">Chăm sóc da</option>
-                                <option value="2">Massage</option>
-                                <option value="3">Phun thêu môi & mày</option>
-                                <option value="4">Triệt lông</option>
-                            </select>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Ngày *</label>
-                                <input type="date" class="form-control" id="addDate" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Giờ *</label>
-                                <input type="time" class="form-control" id="addTime" required>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Ghi chú</label>
-                            <textarea class="form-control" id="addNote" rows="3"></textarea>
-                        </div>
-                    </form>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Số điện thoại *</label>
+                  <input
+                    type="tel"
+                    class="form-control"
+                    id="addPhone"
+                    required
+                  />
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="button" class="btn btn-warning" onclick="saveNewAppointment()">Tạo lịch hẹn</button>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Dịch vụ *</label>
+                <select class="form-select" id="addService" required>
+                  <option value="">Chọn dịch vụ</option>
+                  <option value="1">Chăm sóc da</option>
+                  <option value="2">Massage</option>
+                  <option value="3">Phun thêu môi & mày</option>
+                  <option value="4">Triệt lông</option>
+                </select>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Ngày *</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="addDate"
+                    required
+                  />
                 </div>
-            </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Giờ *</label>
+                  <input
+                    type="time"
+                    class="form-control"
+                    id="addTime"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Ghi chú</label>
+                <textarea class="form-control" id="addNote" rows="3"></textarea>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              class="btn btn-warning"
+              onclick="saveNewAppointment()"
+            >
+              Tạo lịch hẹn
+            </button>
+          </div>
         </div>
+      </div>
     </div>
-    
+
     <!-- Edit Appointment Modal -->
     <div class="modal fade" id="editAppointmentModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-edit me-2 text-warning"></i>Sửa Lịch Hẹn</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-warning" id="conflictWarning" style="display: none;">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>Cảnh báo:</strong> Khung giờ này đã trùng với lịch hẹn khác!
-                    </div>
-                    
-                    <form id="editAppointmentForm">
-                        <input type="hidden" id="editAppointmentId">
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Họ tên khách hàng *</label>
-                                <input type="text" class="form-control" id="editName" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Số điện thoại *</label>
-                                <input type="tel" class="form-control" id="editPhone" required>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Dịch vụ *</label>
-                            <select class="form-select" id="editService" required>
-                                <option value="">Chọn dịch vụ</option>
-                                <option value="1">Chăm sóc da</option>
-                                <option value="2">Massage</option>
-                                <option value="3">Phun thêu môi & mày</option>
-                                <option value="4">Triệt lông</option>
-                            </select>
-                        </div>
-                        
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Ngày *</label>
-                                <input type="date" class="form-control" id="editDate" required onchange="checkConflict()">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Giờ *</label>
-                                <input type="time" class="form-control" id="editTime" required onchange="checkConflict()">
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Trạng thái</label>
-                            <select class="form-select" id="editStatus">
-                                <option value="pending">Chờ xác nhận</option>
-                                <option value="confirmed">Đã xác nhận</option>
-                                <option value="processing">Đang xử lý</option>
-                                <option value="completed">Hoàn thành</option>
-                                <option value="cancelled">Đã hủy</option>
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Ghi chú</label>
-                            <textarea class="form-control" id="editNote" rows="3"></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="button" class="btn btn-warning" onclick="saveEditedAppointment()">Lưu thay đổi</button>
-                </div>
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-warning text-dark">
+            <h5 class="modal-title">
+              <i class="fas fa-edit me-2"></i>Chỉnh Sửa Lịch Hẹn
+            </h5>
+            <button
+              type="button"
+              class="btn-close btn-close-dark"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div
+              class="alert alert-warning"
+              id="conflictWarning"
+              style="display: none"
+            >
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              <strong>Cảnh báo:</strong> Nguồn lực khung giờ này đã đầy. Bạn có
+              muốn lưu với trạng thái "Cảnh báo" không?
+              <div class="mt-2">
+                <button
+                  type="button"
+                  class="btn btn-warning btn-sm me-2"
+                  onclick="saveWithWarning()"
+                >
+                  <i class="fas fa-exclamation-triangle me-1"></i>Lưu với Cảnh
+                  báo
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  onclick="chooseNewTime()"
+                >
+                  <i class="fas fa-clock me-1"></i>Chọn lại giờ
+                </button>
+              </div>
             </div>
+
+            <form id="editAppointmentForm">
+              <input type="hidden" id="editAppointmentId" />
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Họ tên khách hàng *</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="editName"
+                    required
+                    placeholder="Nhập họ tên khách hàng"
+                  />
+                  <div class="invalid-feedback" id="editNameError">
+                    Vui lòng nhập họ tên khách hàng
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Số điện thoại *</label>
+                  <input
+                    type="tel"
+                    class="form-control"
+                    id="editPhone"
+                    required
+                    placeholder="Nhập số điện thoại"
+                    pattern="[0-9]{10}"
+                    maxlength="10"
+                  />
+                  <div class="form-text text-muted small">
+                    Chỉ cho phép nhập số (10 chữ số)
+                  </div>
+                  <div class="invalid-feedback" id="editPhoneError">
+                    Số điện thoại không hợp lệ (phải 10 chữ số)
+                  </div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Dịch vụ *</label>
+                <select class="form-select" id="editService" required>
+                  <option value="">Chọn dịch vụ</option>
+                  <option value="1">Chăm sóc da</option>
+                  <option value="2">Massage</option>
+                  <option value="3">Phun thêu môi & mày</option>
+                  <option value="4">Triệt lông</option>
+                </select>
+                <div class="invalid-feedback">Vui lòng chọn dịch vụ</div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Ngày *</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    id="editDate"
+                    required
+                    onchange="
+                      checkConflict();
+                      validateDateTime();
+                    "
+                  />
+                  <div class="invalid-feedback" id="editDateError">
+                    Vui lòng chọn ngày hợp lệ (không phải quá khứ)
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Giờ *</label>
+                  <input
+                    type="time"
+                    class="form-control"
+                    id="editTime"
+                    required
+                    onchange="
+                      checkConflict();
+                      validateDateTime();
+                    "
+                    min="08:00"
+                    max="20:00"
+                  />
+                  <div class="form-text text-muted small">
+                    Giờ làm việc: 08:00 - 20:00
+                  </div>
+                  <div class="invalid-feedback">Vui lòng chọn giờ hợp lệ</div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Trạng thái</label>
+                <select class="form-select" id="editStatus">
+                  <option value="pending">Chờ xác nhận</option>
+                  <option value="confirmed">Đã xác nhận</option>
+                  <option value="warning">Cảnh báo</option>
+                  <option value="processing">Đang xử lý</option>
+                  <option value="completed">Hoàn thành</option>
+                  <option value="cancelled">Đã hủy</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Ghi chú</label>
+                <textarea
+                  class="form-control"
+                  id="editNote"
+                  rows="3"
+                  placeholder="Nhập ghi chú (nếu có)"
+                ></textarea>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              <i class="fas fa-times me-2"></i>Hủy bỏ
+            </button>
+            <button
+              type="button"
+              class="btn btn-warning"
+              onclick="saveEditedAppointment()"
+            >
+              <i class="fas fa-save me-2"></i>Cập nhật
+            </button>
+          </div>
         </div>
+      </div>
     </div>
-    
+
     <!-- Delete Confirmation Modal -->
     <div class="modal fade" id="deleteConfirmModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2 text-danger"></i>Xác nhận hủy</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Bạn có chắc chắn muốn hủy lịch hẹn này?</p>
-                    <p class="text-muted small">Hành động này sẽ giải phóng slot lịch hẹn. Không thể hoàn tác sau khi hủy.</p>
-                    <div class="mb-3">
-                        <label class="form-label">Lý do hủy <span class="text-danger">*</span></label>
-                        <textarea class="form-control" id="cancellationReason" rows="3" placeholder="Nhập lý do hủy lịch hẹn..."></textarea>
-                    </div>
-                    <input type="hidden" id="deleteAppointmentId">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Không</button>
-                    <button type="button" class="btn btn-danger" onclick="confirmDelete()">Có, hủy lịch hẹn</button>
-                </div>
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title">
+              <i class="fas fa-exclamation-triangle me-2"></i>Xác nhận hủy lịch
+              hẹn
+            </h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-warning">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              <strong>Lưu ý quan trọng:</strong> Khi hủy lịch hẹn, trạng thái
+              thanh toán sẽ chuyển sang "Không áp dụng".
             </div>
+
+            <div class="card bg-light mb-3">
+              <div class="card-body py-2">
+                <div class="row">
+                  <div class="col-6">
+                    <strong>Mã lịch hẹn:</strong>
+                    <p class="mb-0" id="deleteAppointmentIdDisplay">LH001</p>
+                  </div>
+                  <div class="col-6">
+                    <strong>Trạng thái hiện tại:</strong>
+                    <p class="mb-0" id="deleteAppointmentStatus">
+                      Chờ xác nhận
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p>Bạn có chắc chắn muốn hủy lịch hẹn này?</p>
+            <p class="text-muted small">
+              <i class="fas fa-info-circle me-1"></i>
+              Hành động này sẽ giải phóng slot lịch hẹn. Không thể hoàn tác sau
+              khi hủy.
+            </p>
+
+            <div class="mb-3">
+              <label class="form-label"
+                >Lý do hủy <span class="text-danger">*</span></label
+              >
+              <textarea
+                class="form-control"
+                id="cancellationReason"
+                rows="3"
+                placeholder="Nhập lý do hủy lịch hẹn..."
+                required
+              ></textarea>
+            </div>
+            <input type="hidden" id="deleteAppointmentId" />
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              <i class="fas fa-times me-2"></i>Không
+            </button>
+            <button
+              type="button"
+              class="btn btn-danger"
+              onclick="confirmDelete()"
+            >
+              <i class="fas fa-check me-2"></i>Có, hủy lịch hẹn
+            </button>
+          </div>
         </div>
+      </div>
     </div>
-    
+
     <!-- View Details Modal -->
     <div class="modal fade" id="viewDetailsModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-file-alt me-2 text-info"></i>Chi tiết Lịch Hẹn</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <strong>Mã lịch hẹn:</strong> <span id="viewDetailId">LH001</span>
-                        </div>
-                        <div class="col-md-6">
-                            <strong>Trạng thái:</strong> <span id="viewDetailStatus"></span>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <strong>Họ tên:</strong> <span id="viewDetailName"></span>
-                        </div>
-                        <div class="col-md-6">
-                            <strong>Số điện thoại:</strong> <span id="viewDetailPhone"></span>
-                        </div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <strong>Dịch vụ:</strong> <span id="viewDetailService"></span>
-                        </div>
-                        <div class="col-md-6">
-                            <strong>Ngày giờ:</strong> <span id="viewDetailDateTime"></span>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <strong>Ghi chú:</strong>
-                        <p class="mt-2 text-muted" id="viewDetailNote"></p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                    <button type="button" class="btn btn-warning" id="editFromDetailBtn" onclick="editFromDetail()">
-                        <i class="fas fa-edit me-2"></i>Chỉnh sửa
-                    </button>
-                </div>
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="fas fa-file-alt me-2 text-info"></i>Chi tiết Lịch Hẹn
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <strong>Mã lịch hẹn:</strong>
+                <span id="viewDetailId">LH001</span>
+              </div>
+              <div class="col-md-6">
+                <strong>Trạng thái:</strong> <span id="viewDetailStatus"></span>
+              </div>
             </div>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <strong>Họ tên:</strong> <span id="viewDetailName"></span>
+              </div>
+              <div class="col-md-6">
+                <strong>Số điện thoại:</strong>
+                <span id="viewDetailPhone"></span>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <strong>Dịch vụ:</strong> <span id="viewDetailService"></span>
+              </div>
+              <div class="col-md-6">
+                <strong>Ngày giờ:</strong> <span id="viewDetailDateTime"></span>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <strong>Thanh toán:</strong>
+                <span id="viewDetailPayment"></span>
+              </div>
+              <div class="col-md-6">
+                <strong>Số tiền:</strong>
+                <span id="viewDetailAmount" class="text-success fw-bold"></span>
+              </div>
+            </div>
+            <div class="mb-3">
+              <strong>Ghi chú:</strong>
+              <p class="mt-2 text-muted" id="viewDetailNote"></p>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Đóng
+            </button>
+            <button
+              type="button"
+              class="btn btn-info me-2"
+              id="viewPaymentBtn"
+              onclick="openPaymentModal(currentViewingId)"
+              style="display: none"
+            >
+              <i class="fas fa-credit-card me-2"></i>Cập nhật thanh toán
+            </button>
+            <button
+              type="button"
+              class="btn btn-warning"
+              id="editFromDetailBtn"
+              onclick="editFromDetail()"
+            >
+              <i class="fas fa-edit me-2"></i>Chỉnh sửa
+            </button>
+          </div>
         </div>
+      </div>
     </div>
-    
+
     <!-- Cancellation Reason Modal -->
     <div class="modal fade" id="cancellationReasonModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-info-circle me-2 text-secondary"></i>Lý do Hủy</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-warning">
-                        <strong>Lý do hủy:</strong>
-                    </div>
-                    <p id="cancellationReasonText" class="mb-0"></p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-                </div>
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="fas fa-info-circle me-2 text-secondary"></i>Lý do Hủy
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-warning">
+              <strong>Lý do hủy:</strong>
             </div>
+            <p id="cancellationReasonText" class="mb-0"></p>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Đóng
+            </button>
+          </div>
         </div>
+      </div>
     </div>
-    
+
+    <!-- Payment Confirmation Modal -->
+    <div class="modal fade payment-modal" id="paymentModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="fas fa-credit-card me-2"></i>Xác nhận thanh toán
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div class="alert alert-info">
+              <i class="fas fa-info-circle me-2"></i>
+              Vui lòng xác nhận thông tin thanh toán trước khi tiếp tục.
+            </div>
+
+            <div class="payment-info-container">
+              <div class="payment-info-item">
+                <span class="payment-info-label">Mã lịch hẹn:</span>
+                <span class="payment-info-value" id="paymentAppointmentId"
+                  >LH001</span
+                >
+              </div>
+              <div class="payment-info-item">
+                <span class="payment-info-label">Khách hàng:</span>
+                <span class="payment-info-value" id="paymentCustomerName"
+                  >Nguyễn Thị Mai</span
+                >
+              </div>
+              <div class="payment-info-item">
+                <span class="payment-info-label">Dịch vụ:</span>
+                <span class="payment-info-value" id="paymentService"
+                  >Chăm sóc da</span
+                >
+              </div>
+              <div class="payment-info-item">
+                <span class="payment-info-label">Ngày giờ:</span>
+                <span class="payment-info-value" id="paymentDateTime"
+                  >15/02/2026 10:00</span
+                >
+              </div>
+              <div class="payment-info-item">
+                <span class="payment-info-label">Trạng thái hiện tại:</span>
+                <span class="payment-info-value" id="paymentCurrentStatus"
+                  >Chưa thanh toán</span
+                >
+              </div>
+            </div>
+
+            <div class="text-center mt-4 mb-3">
+              <p class="mb-1">Số tiền thanh toán:</p>
+              <div class="payment-amount" id="paymentAmount">500.000 ₫</div>
+            </div>
+
+            <div class="alert alert-warning mb-0">
+              <i class="fas fa-exclamation-triangle me-2"></i>
+              <strong>Xác nhận thanh toán:</strong> Bạn có chắc chắn khách hàng
+              đã hoàn tất thanh toán cho lịch hẹn này không?
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              class="btn btn-success"
+              onclick="confirmPayment()"
+            >
+              <i class="fas fa-check me-2"></i>Xác nhận thanh toán
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Success Toast -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+      <div
+        id="paymentSuccessToast"
+        class="toast"
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+      >
+        <div class="toast-header bg-success text-white">
+          <i class="fas fa-check-circle me-2"></i>
+          <strong class="me-auto">Thanh toán thành công</strong>
+          <button
+            type="button"
+            class="btn-close btn-close-white"
+            data-bs-dismiss="toast"
+          ></button>
+        </div>
+        <div class="toast-body">
+          Đã cập nhật trạng thái thanh toán cho lịch hẹn.
+        </div>
+      </div>
+
+      <!-- Update Success Toast -->
+      <div
+        id="updateSuccessToast"
+        class="toast"
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+      >
+        <div class="toast-header bg-warning text-dark">
+          <i class="fas fa-check-circle me-2"></i>
+          <strong class="me-auto">Cập nhật thành công</strong>
+          <button
+            type="button"
+            class="btn-close btn-close-dark"
+            data-bs-dismiss="toast"
+          ></button>
+        </div>
+        <div class="toast-body">Đã cập nhật thông tin lịch hẹn thành công!</div>
+      </div>
+
+      <!-- Delete Success Toast -->
+      <div
+        id="deleteSuccessToast"
+        class="toast"
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+      >
+        <div class="toast-header bg-danger text-white">
+          <i class="fas fa-trash-alt me-2"></i>
+          <strong class="me-auto">Đã hủy lịch hẹn</strong>
+          <button
+            type="button"
+            class="btn-close btn-close-white"
+            data-bs-dismiss="toast"
+          ></button>
+        </div>
+        <div class="toast-body">Đã hủy lịch hẹn thành công.</div>
+      </div>
+    </div>
+
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <!-- Custom JS -->
     <script src="../js/main.js"></script>
-    
+
     <script>
-        let deleteModalInstance;
-        let currentViewingId = null;
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            deleteModalInstance = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+      let deleteModalInstance;
+      let paymentModalInstance;
+      let currentViewingId = null;
+      let currentPaymentId = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        deleteModalInstance = new bootstrap.Modal(
+          document.getElementById("deleteConfirmModal"),
+        );
+        paymentModalInstance = new bootstrap.Modal(
+          document.getElementById("paymentModal"),
+        );
+      });
+
+      // Toggle sidebar on mobile
+      document
+        .getElementById("sidebarToggle")
+        .addEventListener("click", function () {
+          document.getElementById("sidebar").classList.toggle("show");
         });
-        
-        // Toggle sidebar on mobile
-        document.getElementById('sidebarToggle').addEventListener('click', function() {
-            document.getElementById('sidebar').classList.toggle('show');
-        });
-        
-        // ========== APPOINTMENT ACTIONS ==========
-        
-        // Xác nhận lịch hẹn
-        function confirmAppointment(id) {
-            const row = document.getElementById('appointment-' + id.split('LH')[1]);
-            const statusBadge = row.querySelector('td:nth-child(6) span');
-            
-            statusBadge.className = 'badge bg-success';
-            statusBadge.textContent = 'Đã xác nhận';
-            row.dataset.status = 'confirmed';
-            
-            updateActionButtons(id, 'confirmed');
-            alert('Đã xác nhận lịch hẹn: ' + id);
+
+      // ========== APPOINTMENT ACTIONS ==========
+
+      // Xác nhận lịch hẹn
+      function confirmAppointment(id) {
+        const row = document.getElementById("appointment-" + id.split("LH")[1]);
+        const statusBadge = row.querySelector("td:nth-child(6) span");
+
+        statusBadge.className = "badge bg-success";
+        statusBadge.textContent = "Đã xác nhận";
+        row.dataset.status = "confirmed";
+
+        updateActionButtons(id, "confirmed");
+        showToast("success", "Đã xác nhận lịch hẹn: " + id);
+      }
+
+      // Sửa lịch hẹn
+      function editAppointment(id) {
+        const row = document.getElementById("appointment-" + id.split("LH")[1]);
+
+        if (row.dataset.status === "completed") {
+          showToast("error", "Không thể sửa lịch hẹn đã hoàn thành!");
+          return;
         }
-        
-        // Sửa lịch hẹn
-        function editAppointment(id) {
-            const row = document.getElementById('appointment-' + id.split('LH')[1]);
-            
-            if (row.dataset.status === 'completed') {
-                alert('Không thể sửa lịch hẹn đã hoàn thành!');
-                return;
-            }
-            
-            document.getElementById('editAppointmentId').value = id;
-            document.getElementById('editName').value = 'Nguyễn Thị Mai';
-            document.getElementById('editPhone').value = '0901 234 567';
-            document.getElementById('editService').value = '1';
-            document.getElementById('editDate').value = '2026-02-15';
-            document.getElementById('editTime').value = '10:00';
-            document.getElementById('editStatus').value = row.dataset.status;
-            document.getElementById('editNote').value = '';
-            
-            new bootstrap.Modal(document.getElementById('editAppointmentModal')).show();
+
+        // Populate form with current data
+        document.getElementById("editAppointmentId").value = id;
+        document.getElementById("editName").value = row
+          .querySelector("td:nth-child(2)")
+          .textContent.trim();
+        document.getElementById("editPhone").value = row
+          .querySelector("td:nth-child(3)")
+          .textContent.trim();
+
+        // Map service name to value
+        const serviceName = row
+          .querySelector("td:nth-child(4)")
+          .textContent.trim();
+        const serviceMap = {
+          "Chăm sóc da": "1",
+          Massage: "2",
+          "Phun thêu môi": "3",
+          "Triệt lông": "4",
+        };
+        document.getElementById("editService").value =
+          serviceMap[serviceName] || "";
+
+        // Parse date and time
+        const dateTime = row
+          .querySelector("td:nth-child(5)")
+          .textContent.trim();
+        const [date, time] = dateTime.split(" ");
+        const [day, month, year] = date.split("/");
+        document.getElementById("editDate").value = `${year}-${month}-${day}`;
+        document.getElementById("editTime").value = time;
+
+        document.getElementById("editStatus").value = row.dataset.status;
+        document.getElementById("editNote").value = "";
+
+        // Reset validation states
+        document
+          .querySelectorAll("#editAppointmentForm .form-control")
+          .forEach((input) => {
+            input.classList.remove("is-invalid", "is-valid");
+          });
+
+        // Hide conflict warning
+        document.getElementById("conflictWarning").style.display = "none";
+
+        new bootstrap.Modal(
+          document.getElementById("editAppointmentModal"),
+        ).show();
+      }
+
+      // Hủy lịch hẹn
+      function showDeleteConfirm(id) {
+        const row = document.getElementById("appointment-" + id.split("LH")[1]);
+
+        if (row.dataset.status === "completed") {
+          alert("Không thể hủy lịch hẹn đã hoàn thành!");
+          return;
         }
-        
-        // Hủy lịch hẹn
-        function showDeleteConfirm(id) {
-            const row = document.getElementById('appointment-' + id.split('LH')[1]);
-            
-            if (row.dataset.status === 'completed') {
-                alert('Không thể hủy lịch hẹn đã hoàn thành!');
-                return;
-            }
-            
-            document.getElementById('cancellationReason').value = '';
-            document.getElementById('deleteAppointmentId').value = id;
-            deleteModalInstance.show();
+
+        document.getElementById("cancellationReason").value = "";
+        document.getElementById("deleteAppointmentId").value = id;
+
+        // Display appointment info in modal
+        document.getElementById("deleteAppointmentIdDisplay").textContent = id;
+        const statusBadge = row.querySelector("td:nth-child(6) span");
+        document.getElementById("deleteAppointmentStatus").innerHTML =
+          statusBadge.outerHTML;
+
+        deleteModalInstance.show();
+      }
+
+      // Confirm delete/cancel
+      function confirmDelete() {
+        const id = document.getElementById("deleteAppointmentId").value;
+        const reason = document
+          .getElementById("cancellationReason")
+          .value.trim();
+
+        if (!reason) {
+          showToast("error", "Vui lòng nhập lý do hủy lịch hẹn!");
+          return;
         }
-        
-        // Confirm delete/cancel
-        function confirmDelete() {
-            const id = document.getElementById('deleteAppointmentId').value;
-            const reason = document.getElementById('cancellationReason').value.trim();
-            
-            if (!reason) {
-                alert('Vui lòng nhập lý do hủy lịch hẹn!');
-                return;
-            }
-            
-            const row = document.getElementById('appointment-' + id.split('LH')[1]);
-            const statusBadge = row.querySelector('td:nth-child(6) span');
-            
-            statusBadge.className = 'badge bg-danger';
-            statusBadge.textContent = 'Đã hủy';
-            row.dataset.status = 'cancelled';
-            
-            updateActionButtons(id, 'cancelled');
-            row.dataset.cancellationReason = reason;
-            
-            deleteModalInstance.hide();
-            alert('Đã hủy lịch hẹn: ' + id);
+
+        const row = document.getElementById("appointment-" + id.split("LH")[1]);
+        const statusBadge = row.querySelector("td:nth-child(6) span");
+
+        statusBadge.className = "badge bg-danger";
+        statusBadge.textContent = "Đã hủy";
+        row.dataset.status = "cancelled";
+
+        // Update payment status to not-applicable
+        updatePaymentBadge(row, "not-applicable");
+        row.dataset.payment = "not-applicable";
+
+        updateActionButtons(id, "cancelled");
+        row.dataset.cancellationReason = reason;
+
+        deleteModalInstance.hide();
+        showToast("success", "Đã hủy lịch hẹn thành công!");
+      }
+
+      // Xem chi tiết
+      function viewAppointmentDetails(id) {
+        const row = document.getElementById("appointment-" + id.split("LH")[1]);
+        currentViewingId = id;
+
+        document.getElementById("viewDetailId").textContent = id;
+        document.getElementById("viewDetailName").textContent =
+          row.querySelector("td:nth-child(2)").textContent;
+        document.getElementById("viewDetailPhone").textContent =
+          row.querySelector("td:nth-child(3)").textContent;
+        document.getElementById("viewDetailService").textContent =
+          row.querySelector("td:nth-child(4)").textContent;
+        document.getElementById("viewDetailDateTime").textContent =
+          row.querySelector("td:nth-child(5)").textContent;
+
+        const statusBadge = row.querySelector("td:nth-child(6) span");
+        document.getElementById("viewDetailStatus").innerHTML =
+          statusBadge.outerHTML;
+
+        // Payment status
+        const paymentBadge = row.querySelector(
+          "td:nth-child(7) .payment-badge",
+        );
+        document.getElementById("viewDetailPayment").innerHTML =
+          paymentBadge.outerHTML;
+
+        // Amount
+        const amount = parseInt(row.dataset.amount);
+        document.getElementById("viewDetailAmount").textContent =
+          formatCurrency(amount);
+
+        document.getElementById("viewDetailNote").textContent =
+          "Ghi chú về lịch hẹn...";
+
+        const editBtn = document.getElementById("editFromDetailBtn");
+        const paymentBtn = document.getElementById("viewPaymentBtn");
+
+        if (row.dataset.status === "completed") {
+          editBtn.style.display = "none";
+        } else {
+          editBtn.style.display = "inline-block";
         }
-        
-        // Xem chi tiết
-        function viewAppointmentDetails(id) {
-            const row = document.getElementById('appointment-' + id.split('LH')[1]);
-            currentViewingId = id;
-            
-            document.getElementById('viewDetailId').textContent = id;
-            document.getElementById('viewDetailName').textContent = row.querySelector('td:nth-child(2)').textContent;
-            document.getElementById('viewDetailPhone').textContent = row.querySelector('td:nth-child(3)').textContent;
-            document.getElementById('viewDetailService').textContent = row.querySelector('td:nth-child(4)').textContent;
-            document.getElementById('viewDetailDateTime').textContent = row.querySelector('td:nth-child(5)').textContent;
-            
-            const statusBadge = row.querySelector('td:nth-child(6) span');
-            document.getElementById('viewDetailStatus').innerHTML = statusBadge.outerHTML;
-            
-            document.getElementById('viewDetailNote').textContent = 'Ghi chú về lịch hẹn...';
-            
-            const editBtn = document.getElementById('editFromDetailBtn');
-            if (row.dataset.status === 'completed') {
-                editBtn.style.display = 'none';
-            } else {
-                editBtn.style.display = 'inline-block';
-            }
-            
-            new bootstrap.Modal(document.getElementById('viewDetailsModal')).show();
+
+        // Show payment button for processing or completed appointments with pending payment
+        if (
+          (row.dataset.status === "processing" ||
+            row.dataset.status === "completed") &&
+          row.dataset.payment !== "paid"
+        ) {
+          paymentBtn.style.display = "inline-block";
+        } else {
+          paymentBtn.style.display = "none";
         }
-        
-        // Edit from detail modal
-        function editFromDetail() {
-            bootstrap.Modal.getInstance(document.getElementById('viewDetailsModal')).hide();
-            
-            if (currentViewingId) {
-                editAppointment(currentViewingId);
-            }
+
+        new bootstrap.Modal(document.getElementById("viewDetailsModal")).show();
+      }
+
+      // Edit from detail modal
+      function editFromDetail() {
+        bootstrap.Modal.getInstance(
+          document.getElementById("viewDetailsModal"),
+        ).hide();
+
+        if (currentViewingId) {
+          editAppointment(currentViewingId);
         }
-        
-        // In hóa đơn
-        function printInvoice(id) {
-            alert('Đang chuẩn bị in hóa đơn: ' + id);
+      }
+
+      // In hóa đơn
+      function printInvoice(id) {
+        showToast("info", "Đang chuẩn bị in hóa đơn: " + id);
+      }
+
+      // Đặt lại lịch hẹn
+      function rescheduleAppointment(id) {
+        editAppointment(id);
+      }
+
+      // Xem lý do hủy
+      function viewCancellationReason(id) {
+        const row = document.getElementById("appointment-" + id.split("LH")[1]);
+        const reason =
+          row.dataset.cancellationReason ||
+          "Khách hàng hủy do bận việc cá nhân";
+
+        document.getElementById("cancellationReasonText").textContent = reason;
+        new bootstrap.Modal(
+          document.getElementById("cancellationReasonModal"),
+        ).show();
+      }
+
+      // ========== PAYMENT MANAGEMENT ==========
+
+      // Open payment confirmation modal
+      function openPaymentModal(id) {
+        const row = document.getElementById("appointment-" + id.split("LH")[1]);
+        const status = row.dataset.status;
+        const paymentStatus = row.dataset.payment;
+
+        // Business logic: Only allow payment for processing or completed appointments
+        if (status !== "processing" && status !== "completed") {
+          alert(
+            "Chỉ có thể xác nhận thanh toán khi lịch hẹn đang xử lý hoặc đã hoàn thành!",
+          );
+          return;
         }
-        
-        // Đặt lại lịch hẹn
-        function rescheduleAppointment(id) {
-            editAppointment(id);
+
+        // Check if already paid
+        if (paymentStatus === "paid") {
+          alert("Lịch hẹn này đã được thanh toán!");
+          return;
         }
-        
-        // Xem lý do hủy
-        function viewCancellationReason(id) {
-            const row = document.getElementById('appointment-' + id.split('LH')[1]);
-            const reason = row.dataset.cancellationReason || 'Khách hàng hủy do bận việc cá nhân';
-            
-            document.getElementById('cancellationReasonText').textContent = reason;
-            new bootstrap.Modal(document.getElementById('cancellationReasonModal')).show();
+
+        currentPaymentId = id;
+
+        // Populate modal with appointment details
+        document.getElementById("paymentAppointmentId").textContent = id;
+        document.getElementById("paymentCustomerName").textContent = row
+          .querySelector("td:nth-child(2)")
+          .textContent.trim();
+        document.getElementById("paymentService").textContent = row
+          .querySelector("td:nth-child(4)")
+          .textContent.trim();
+        document.getElementById("paymentDateTime").textContent = row
+          .querySelector("td:nth-child(5)")
+          .textContent.trim();
+
+        // Get current payment status badge
+        const paymentBadge = row.querySelector(
+          "td:nth-child(7) .payment-badge",
+        );
+        document.getElementById("paymentCurrentStatus").innerHTML =
+          paymentBadge.outerHTML;
+
+        // Format and display amount
+        const amount = parseInt(row.dataset.amount);
+        document.getElementById("paymentAmount").textContent =
+          formatCurrency(amount);
+
+        paymentModalInstance.show();
+      }
+
+      // Confirm payment
+      function confirmPayment() {
+        if (!currentPaymentId) {
+          return;
         }
-        
-        // ========== HELPER FUNCTIONS ==========
-        
-        // Update action buttons based on status
-        function updateActionButtons(id, newStatus) {
-            const row = document.getElementById('appointment-' + id.split('LH')[1]);
-            const actionCell = row.querySelector('td:nth-child(7)');
-            
-            let buttonsHTML = '';
-            
-            switch(newStatus) {
-                case 'confirmed':
-                    buttonsHTML = `
+
+        const row = document.getElementById(
+          "appointment-" + currentPaymentId.split("LH")[1],
+        );
+
+        // Update payment status to paid
+        row.dataset.payment = "paid";
+
+        // Update payment badge
+        updatePaymentBadge(row, "paid");
+
+        // Close modal
+        paymentModalInstance.hide();
+
+        // Show success toast
+        const toast = new bootstrap.Toast(
+          document.getElementById("paymentSuccessToast"),
+        );
+        toast.show();
+
+        // Update action buttons to remove payment button
+        updateActionButtons(
+          row.dataset.status,
+          row.dataset.status,
+          currentPaymentId,
+        );
+
+        currentPaymentId = null;
+      }
+
+      // Update payment badge
+      function updatePaymentBadge(row, status) {
+        const paymentCell = row.querySelector("td:nth-child(7)");
+
+        switch (status) {
+          case "paid":
+            paymentCell.innerHTML = `
+                        <span class="payment-badge payment-paid">
+                            <i class="fas fa-check-circle"></i>
+                            Đã thanh toán
+                        </span>
+                    `;
+            break;
+
+          case "pending":
+            paymentCell.innerHTML = `
+                        <span class="payment-badge payment-pending">
+                            <i class="fas fa-clock"></i>
+                            Chưa thanh toán
+                        </span>
+                    `;
+            break;
+
+          case "not-applicable":
+            paymentCell.innerHTML = `
+                        <span class="payment-badge payment-not-applicable">
+                            <i class="fas fa-ban"></i>
+                            Không áp dụng
+                        </span>
+                    `;
+            break;
+        }
+      }
+
+      // Format currency
+      function formatCurrency(amount) {
+        return new Intl.NumberFormat("vi-VN", {
+          style: "currency",
+          currency: "VND",
+        }).format(amount);
+      }
+
+      // Show toast notification
+      function showToast(type, message) {
+        let toastId;
+        let toastClass;
+
+        switch (type) {
+          case "success":
+            toastId = "updateSuccessToast";
+            toastClass = "success";
+            break;
+          case "error":
+            toastId = "updateSuccessToast";
+            toastClass = "danger";
+            // For error, we'll use a custom alert for now
+            alert(message);
+            return;
+          case "warning":
+            toastId = "updateSuccessToast";
+            toastClass = "warning";
+            break;
+          case "info":
+            toastId = "updateSuccessToast";
+            toastClass = "info";
+            break;
+          default:
+            toastId = "updateSuccessToast";
+            toastClass = "success";
+        }
+
+        const toast = document.getElementById(toastId);
+        const toastBody = toast.querySelector(".toast-body");
+        const toastHeader = toast.querySelector(".toast-header");
+        const toastTitle = toastHeader.querySelector("strong");
+
+        // Update message
+        toastBody.textContent = message;
+
+        // Update header style based on type
+        toastHeader.className = "toast-header";
+        if (type === "success") {
+          toastHeader.classList.add("bg-success", "text-white");
+          toastTitle.textContent = "Thành công";
+          toast.querySelector(".fa").className = "fas fa-check-circle me-2";
+        } else if (type === "warning") {
+          toastHeader.classList.add("bg-warning", "text-dark");
+          toastTitle.textContent = "Cảnh báo";
+          toast.querySelector(".fa").className =
+            "fas fa-exclamation-triangle me-2";
+        } else if (type === "info") {
+          toastHeader.classList.add("bg-info", "text-white");
+          toastTitle.textContent = "Thông tin";
+          toast.querySelector(".fa").className = "fas fa-info-circle me-2";
+        }
+
+        // Show toast
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+      }
+
+      // ========== HELPER FUNCTIONS ==========
+
+      // Update action buttons based on status (updated to include payment button)
+      function updateActionButtons(id, newStatus, appointmentId = null) {
+        const row = document.getElementById("appointment-" + id.split("LH")[1]);
+        const actionCell = row.querySelector("td:nth-child(8)"); // Updated column index
+        const paymentStatus = row.dataset.payment;
+
+        let buttonsHTML = "";
+
+        switch (newStatus) {
+          case "confirmed":
+            buttonsHTML = `
                         <button class="btn btn-sm btn-outline-primary me-1" 
                                 title="Chỉnh sửa lịch hẹn"
                                 onclick="editAppointment('${id}')">
@@ -791,25 +1634,46 @@
                             <i class="fas fa-times"></i>
                         </button>
                     `;
-                    break;
-                    
-                case 'cancelled':
-                    buttonsHTML = `
-                        <button class="btn btn-sm btn-outline-warning me-1" 
-                                title="Đặt lại lịch hẹn"
-                                onclick="rescheduleAppointment('${id}')">
-                            <i class="fas fa-redo"></i>
-                        </button>
+            break;
+
+          case "processing":
+            // Show payment button if not yet paid
+            if (paymentStatus !== "paid") {
+              buttonsHTML = `
+                            <button class="btn btn-sm btn-outline-info me-1" 
+                                    title="Cập nhật thanh toán"
+                                    onclick="openPaymentModal('${id}')">
+                                <i class="fas fa-credit-card"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" 
+                                    title="Hủy lịch hẹn"
+                                    onclick="showDeleteConfirm('${id}')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+            } else {
+              buttonsHTML = `
+                            <button class="btn btn-sm btn-outline-danger" 
+                                    title="Hủy lịch hẹn"
+                                    onclick="showDeleteConfirm('${id}')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        `;
+            }
+            break;
+
+          case "cancelled":
+            buttonsHTML = `
                         <button class="btn btn-sm btn-outline-secondary" 
                                 title="Xem lý do hủy"
                                 onclick="viewCancellationReason('${id}')">
                             <i class="fas fa-info-circle"></i>
                         </button>
                     `;
-                    break;
-                    
-                case 'completed':
-                    buttonsHTML = `
+            break;
+
+          case "completed":
+            buttonsHTML = `
                         <button class="btn btn-sm btn-outline-info me-1" 
                                 title="Xem chi tiết lịch hẹn"
                                 onclick="viewAppointmentDetails('${id}')">
@@ -821,52 +1685,245 @@
                             <i class="fas fa-print"></i>
                         </button>
                     `;
-                    break;
-            }
-            
-            actionCell.innerHTML = buttonsHTML;
+            break;
+
+          default: // pending
+            buttonsHTML = `
+                        <button class="btn btn-sm btn-outline-success me-1" 
+                                title="Xác nhận lịch hẹn"
+                                onclick="confirmAppointment('${id}')">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" 
+                                title="Hủy lịch hẹn"
+                                onclick="showDeleteConfirm('${id}')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+            break;
         }
-        
-        // Check for time conflicts
-        function checkConflict() {
-            const date = document.getElementById('editDate').value;
-            const time = document.getElementById('editTime').value;
-            
-            const hasConflict = (date === '2026-02-15' && time === '14:00');
-            
-            if (hasConflict) {
-                document.getElementById('conflictWarning').style.display = 'block';
-            } else {
-                document.getElementById('conflictWarning').style.display = 'none';
-            }
+
+        actionCell.innerHTML = buttonsHTML;
+      }
+
+      // Validate date and time
+      function validateDateTime() {
+        const dateInput = document.getElementById("editDate");
+        const timeInput = document.getElementById("editTime");
+        const dateError = document.getElementById("editDateError");
+
+        let isValid = true;
+
+        // Check if date is not in the past
+        const selectedDate = new Date(dateInput.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (selectedDate < today) {
+          dateInput.classList.add("is-invalid");
+          dateInput.classList.remove("is-valid");
+          isValid = false;
+        } else {
+          dateInput.classList.remove("is-invalid");
+          dateInput.classList.add("is-valid");
         }
-        
-        // Save edited appointment
-        function saveEditedAppointment() {
-            const id = document.getElementById('editAppointmentId').value;
-            const hasConflict = document.getElementById('conflictWarning').style.display === 'block';
-            
-            if (hasConflict) {
-                if (!confirm('Khung giờ này đã trùng với lịch hẹn khác! Bạn có muốn lưu với cảnh báo không?')) {
-                    return;
-                }
-            }
-            
-            alert('Đã lưu thay đổi lịch hẹn: ' + id);
-            bootstrap.Modal.getInstance(document.getElementById('editAppointmentModal')).hide();
+
+        return isValid;
+      }
+
+      // Validate phone number
+      function validatePhone() {
+        const phoneInput = document.getElementById("editPhone");
+        const phonePattern = /^[0-9]{10}$/;
+        const phoneValue = phoneInput.value.replace(/\s/g, "");
+
+        if (!phonePattern.test(phoneValue)) {
+          phoneInput.classList.add("is-invalid");
+          phoneInput.classList.remove("is-valid");
+          return false;
+        } else {
+          phoneInput.classList.remove("is-invalid");
+          phoneInput.classList.add("is-valid");
+          return true;
         }
-        
-        // Save new appointment
-        function saveNewAppointment() {
-            const form = document.getElementById('addAppointmentForm');
-            if (form.checkValidity()) {
-                alert('Đã tạo lịch hẹn mới thành công!');
-                bootstrap.Modal.getInstance(document.getElementById('addAppointmentModal')).hide();
-                form.reset();
-            } else {
-                form.reportValidity();
-            }
+      }
+
+      // Check for time conflicts (overbooking)
+      function checkConflict() {
+        const date = document.getElementById("editDate").value;
+        const time = document.getElementById("editTime").value;
+
+        // Mock conflict detection - in real app, this would check against backend
+        const hasConflict = date === "2026-02-15" && time === "14:00";
+
+        if (hasConflict) {
+          document.getElementById("conflictWarning").style.display = "block";
+        } else {
+          document.getElementById("conflictWarning").style.display = "none";
         }
+      }
+
+      // Save with warning status
+      function saveWithWarning() {
+        const id = document.getElementById("editAppointmentId").value;
+        const newStatus = "warning";
+
+        // Update appointment data
+        updateAppointmentInTable(id, newStatus);
+
+        // Show success toast
+        showToast("warning", 'Đã lưu lịch hẹn với trạng thái "Cảnh báo"');
+
+        // Close modal
+        bootstrap.Modal.getInstance(
+          document.getElementById("editAppointmentModal"),
+        ).hide();
+      }
+
+      // Choose new time (clear conflict)
+      function chooseNewTime() {
+        document.getElementById("editTime").value = "";
+        document.getElementById("conflictWarning").style.display = "none";
+        showToast("info", "Vui lòng chọn khung giờ khác");
+      }
+
+      // Save edited appointment
+      function saveEditedAppointment() {
+        const id = document.getElementById("editAppointmentId").value;
+        const name = document.getElementById("editName").value.trim();
+        const phone = document.getElementById("editPhone").value.trim();
+        const service = document.getElementById("editService").value;
+        const date = document.getElementById("editDate").value;
+        const time = document.getElementById("editTime").value;
+        const status = document.getElementById("editStatus").value;
+
+        // Validate all fields
+        let isValid = true;
+
+        if (!name) {
+          document.getElementById("editName").classList.add("is-invalid");
+          isValid = false;
+        } else {
+          document.getElementById("editName").classList.remove("is-invalid");
+        }
+
+        if (!validatePhone()) {
+          isValid = false;
+        }
+
+        if (!service) {
+          document.getElementById("editService").classList.add("is-invalid");
+          isValid = false;
+        } else {
+          document.getElementById("editService").classList.remove("is-invalid");
+        }
+
+        if (!date || !validateDateTime()) {
+          document.getElementById("editDate").classList.add("is-invalid");
+          isValid = false;
+        } else {
+          document.getElementById("editDate").classList.remove("is-invalid");
+        }
+
+        if (!time) {
+          document.getElementById("editTime").classList.add("is-invalid");
+          isValid = false;
+        } else {
+          document.getElementById("editTime").classList.remove("is-invalid");
+        }
+
+        if (!isValid) {
+          showToast("error", "Vui lòng kiểm tra lại các thông tin đã nhập!");
+          return;
+        }
+
+        // Check for conflict
+        const hasConflict =
+          document.getElementById("conflictWarning").style.display === "block";
+
+        if (hasConflict) {
+          showToast(
+            "warning",
+            'Nguồn lực khung giờ này đã đầy. Vui lòng chọn "Lưu với Cảnh báo" hoặc "Chọn lại giờ"',
+          );
+          return;
+        }
+
+        // Update appointment in table
+        updateAppointmentInTable(id, status);
+
+        // Show success toast
+        showToast("success", "Đã cập nhật thông tin lịch hẹn thành công!");
+
+        // Close modal
+        bootstrap.Modal.getInstance(
+          document.getElementById("editAppointmentModal"),
+        ).hide();
+      }
+
+      // Update appointment data in table
+      function updateAppointmentInTable(id, newStatus) {
+        const row = document.getElementById("appointment-" + id.split("LH")[1]);
+        const name = document.getElementById("editName").value.trim();
+        const phone = document.getElementById("editPhone").value.trim();
+        const serviceSelect = document.getElementById("editService");
+        const serviceName =
+          serviceSelect.options[serviceSelect.selectedIndex].text;
+        const date = document.getElementById("editDate").value;
+        const time = document.getElementById("editTime").value;
+
+        // Parse date for display
+        const [year, month, day] = date.split("-");
+        const displayDate = `${day}/${month}/${year}`;
+
+        // Update table cells
+        row.querySelector("td:nth-child(2)").innerHTML =
+          `<strong>${name}</strong>`;
+        row.querySelector("td:nth-child(3)").textContent = phone;
+        row.querySelector("td:nth-child(4)").textContent = serviceName;
+        row.querySelector("td:nth-child(5)").textContent =
+          `${displayDate} ${time}`;
+
+        // Update status badge
+        const statusBadge = row.querySelector("td:nth-child(6) span");
+        updateStatusBadge(statusBadge, newStatus);
+
+        // Update dataset
+        row.dataset.status = newStatus;
+
+        // Update action buttons
+        updateActionButtons(id, newStatus);
+      }
+
+      // Update status badge display
+      function updateStatusBadge(badge, status) {
+        const statusConfig = {
+          pending: { class: "badge bg-warning", text: "Chờ xác nhận" },
+          confirmed: { class: "badge bg-success", text: "Đã xác nhận" },
+          warning: { class: "badge bg-danger", text: "Cảnh báo" },
+          processing: { class: "badge bg-info", text: "Đang xử lý" },
+          completed: { class: "badge bg-success", text: "Hoàn thành" },
+          cancelled: { class: "badge bg-danger", text: "Đã hủy" },
+        };
+
+        const config = statusConfig[status] || statusConfig["pending"];
+        badge.className = config.class;
+        badge.textContent = config.text;
+      }
+
+      // Save new appointment
+      function saveNewAppointment() {
+        const form = document.getElementById("addAppointmentForm");
+        if (form.checkValidity()) {
+          showToast("success", "Đã tạo lịch hẹn mới thành công!");
+          bootstrap.Modal.getInstance(
+            document.getElementById("addAppointmentModal"),
+          ).hide();
+          form.reset();
+        } else {
+          form.reportValidity();
+        }
+      }
     </script>
-</body>
+  </body>
 </html>
