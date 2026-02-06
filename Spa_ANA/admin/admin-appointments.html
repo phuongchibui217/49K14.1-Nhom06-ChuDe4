@@ -211,7 +211,7 @@
           <li class="nav-item">
             <a class="nav-link" href="dashboard.html">
               <i class="fas fa-tachometer-alt"></i>
-              Dashboard
+              Báo Cáo
             </a>
           </li>
           <li class="nav-item">
@@ -244,20 +244,9 @@
               Quản lý Khách hàng
             </a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">
-              <i class="fas fa-chart-bar"></i>
-              Báo cáo
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">
-              <i class="fas fa-cog"></i>
-              Cài đặt
-            </a>
-          </li>
+          
           <li class="nav-item mt-4">
-            <a class="nav-link text-danger" href="../index.html">
+            <a class="nav-link text-danger" href="../login.html">
               <i class="fas fa-sign-out-alt"></i>
               Đăng xuất
             </a>
@@ -348,6 +337,7 @@
                       <th>Khách hàng</th>
                       <th>SĐT</th>
                       <th>Dịch vụ</th>
+                      <th>Nhân viên</th>
                       <th>Phòng</th>
                       <th>Ngày giờ</th>
                       <th>Trạng thái</th>
@@ -362,14 +352,16 @@
                       data-status="pending"
                       data-payment="pending"
                       data-amount="500000"
-                      data-room="2"
+                      data-staff=""
+                      data-room=""
                       data-room-status="available"
                     >
                       <td><span class="badge bg-secondary">LH001</span></td>
                       <td><strong>Nguyễn Thị Mai</strong></td>
                       <td>0901 234 567</td>
                       <td>Chăm sóc da</td>
-                      <td><span class="badge bg-success"><i class="fas fa-door-open me-1"></i>P02 - Facial</span></td>
+                      <td><span class="text-muted small"><i class="fas fa-user-clock me-1"></i>Chưa chọn</span></td>
+                      <td><span class="text-muted small"><i class="fas fa-door-open me-1"></i>Chưa chọn</span></td>
                       <td>15/02/2026 10:00</td>
                       <td>
                         <span class="badge bg-warning">Chờ xác nhận</span>
@@ -382,11 +374,11 @@
                       </td>
                       <td>
                         <button
-                          class="btn btn-sm btn-outline-success me-1"
-                          title="Xác nhận lịch hẹn"
-                          onclick="confirmAppointment('LH001')"
+                          class="btn btn-sm btn-outline-primary me-1"
+                          title="Chỉnh sửa & Xác nhận"
+                          onclick="editAppointment('LH001')"
                         >
-                          <i class="fas fa-check"></i>
+                          <i class="fas fa-edit"></i>
                         </button>
                         <button
                           class="btn btn-sm btn-outline-danger"
@@ -404,6 +396,7 @@
                       data-status="confirmed"
                       data-payment="pending"
                       data-amount="800000"
+                      data-staff="4"
                       data-room="1"
                       data-room-status="reserved"
                     >
@@ -411,6 +404,7 @@
                       <td><strong>Trần Văn Hùng</strong></td>
                       <td>0912 345 678</td>
                       <td>Triệt lông</td>
+                      <td><span class="badge bg-info"><i class="fas fa-user me-1"></i>Lê Quốc Bảo</span></td>
                       <td><span class="badge bg-primary"><i class="fas fa-lock me-1"></i>P01 - Massage</span></td>
                       <td>15/02/2026 14:00</td>
                       <td><span class="badge bg-success">Đã xác nhận</span></td>
@@ -444,6 +438,7 @@
                       data-status="processing"
                       data-payment="pending"
                       data-amount="2500000"
+                      data-staff="3"
                       data-room="3"
                       data-room-status="occupied"
                     >
@@ -451,6 +446,7 @@
                       <td><strong>Lê Thu Thảo</strong></td>
                       <td>0934 567 890</td>
                       <td>Phun thêu môi</td>
+                      <td><span class="badge bg-info"><i class="fas fa-user me-1"></i>Phạm Thu Hương</span></td>
                       <td><span class="badge bg-danger"><i class="fas fa-door-closed me-1"></i>P03 - Tattoo</span></td>
                       <td>15/02/2026 15:30</td>
                       <td><span class="badge bg-info">Đang xử lý</span></td>
@@ -484,6 +480,7 @@
                       data-status="completed"
                       data-payment="paid"
                       data-amount="600000"
+                      data-staff="2"
                       data-room="4"
                       data-room-status="available"
                     >
@@ -491,6 +488,7 @@
                       <td><strong>Phạm Minh Đức</strong></td>
                       <td>0945 678 901</td>
                       <td>Massage</td>
+                      <td><span class="badge bg-success"><i class="fas fa-user-check me-1"></i>Trần Văn Minh</span></td>
                       <td><span class="badge bg-success"><i class="fas fa-door-open me-1"></i>P04 - General</span></td>
                       <td>15/02/2026 16:00</td>
                       <td><span class="badge bg-success">Hoàn thành</span></td>
@@ -525,6 +523,7 @@
                       data-payment="not-applicable"
                       data-amount="0"
                       data-cancellation-reason="Khách hàng không thể đến do việc đột xuất"
+                      data-staff="1"
                       data-room="2"
                       data-room-status="available"
                     >
@@ -532,6 +531,7 @@
                       <td><strong>Hoàng Thị Lan</strong></td>
                       <td>0967 890 123</td>
                       <td>Chăm sóc da</td>
+                      <td><span class="text-muted small text-decoration-line-through">Nguyễn Thị Lan</span></td>
                       <td><span class="badge bg-success"><i class="fas fa-door-open me-1"></i>P02 - Facial</span></td>
                       <td>14/02/2026 11:00</td>
                       <td><span class="badge bg-danger">Đã hủy</span></td>
@@ -660,8 +660,43 @@
               </div>
 
               <div class="mb-3">
+                <label class="form-label">Nhân viên phụ trách</label>
+                <select class="form-select" id="addStaff">
+                  <option value="">Chưa chọn nhân viên (Chờ xác nhận)</option>
+                  <option value="1">Nguyễn Thị Lan - Chuyên gia chăm sóc da</option>
+                  <option value="2">Trần Văn Minh - Kỹ thuật viên Massage</option>
+                  <option value="3">Phạm Thu Hương - Chuyên gia Phun thêu</option>
+                  <option value="4">Lê Quốc Bảo - Kỹ thuật viên Triệt lông</option>
+                  <option value="5">Hoàng Thị Mai - Chuyên gia tổng hợp</option>
+                </select>
+                <div class="form-text text-muted small">
+                  <i class="fas fa-info-circle me-1"></i>Nên chọn nhân viên phù hợp với dịch vụ
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Phòng thực hiện</label>
+                <select class="form-select" id="addRoom">
+                  <option value="">Chưa chọn phòng (Chờ xác nhận)</option>
+                  <option value="1">P01 - Massage</option>
+                  <option value="2">P02 - Facial</option>
+                  <option value="3">P03 - Tattoo</option>
+                  <option value="4">P04 - General</option>
+                  <option value="5">Phòng VIP</option>
+                </select>
+                <div class="form-text text-muted small">
+                  <i class="fas fa-door-open me-1"></i>Chọn phòng phù hợp với dịch vụ
+                </div>
+              </div>
+
+              <div class="mb-3">
                 <label class="form-label">Ghi chú</label>
-                <textarea class="form-control" id="addNote" rows="3"></textarea>
+                <textarea class="form-control" id="addNote" rows="2" placeholder="Ghi chú thêm về lịch hẹn..."></textarea>
+              </div>
+
+              <div class="alert alert-info mb-0">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Lưu ý:</strong> Nếu không chọn Nhân viên và Phòng, lịch hẹn sẽ ở trạng thái <strong>Chờ xác nhận</strong>.
               </div>
             </form>
           </div>
@@ -675,10 +710,17 @@
             </button>
             <button
               type="button"
-              class="btn btn-warning"
-              onclick="saveNewAppointment()"
+              class="btn btn-success me-2"
+              onclick="saveNewAppointment(true)"
             >
-              Tạo lịch hẹn
+              <i class="fas fa-check me-1"></i>Lưu & Xác nhận
+            </button>
+            <button
+              type="button"
+              class="btn btn-warning"
+              onclick="saveNewAppointment(false)"
+            >
+              <i class="fas fa-clock me-1"></i>Lưu Chờ xác nhận
             </button>
           </div>
         </div>
@@ -824,7 +866,57 @@
                 </div>
               </div>
 
-              <!-- BLOCK 2: Thông tin phòng (MỚI) -->
+              <!-- BLOCK 2: Thông tin nhân viên (MỚI) -->
+              <div class="card mb-3" style="border-left: 4px solid #6f42c1;">
+                <div class="card-header bg-light py-2">
+                  <h6 class="mb-0"><i class="fas fa-user-tie me-2" style="color: #6f42c1;"></i>Thông tin nhân viên ⭐</h6>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-7 mb-3">
+                      <label class="form-label">
+                        Nhân viên phụ trách *
+                        <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Chọn nhân viên phù hợp với dịch vụ"></i>
+                      </label>
+                      <select class="form-select" id="editStaff" required onchange="validateStaffForService();">
+                        <option value="">Chưa chọn nhân viên</option>
+                        <option value="1" data-specialty="skincare">Nguyễn Thị Lan - Chuyên gia chăm sóc da</option>
+                        <option value="2" data-specialty="massage">Trần Văn Minh - Kỹ thuật viên Massage</option>
+                        <option value="3" data-specialty="tattoo">Phạm Thu Hương - Chuyên gia Phun thêu</option>
+                        <option value="4" data-specialty="hair">Lê Quốc Bảo - Kỹ thuật viên Triệt lông</option>
+                        <option value="5" data-specialty="all">Hoàng Thị Mai - Chuyên gia tổng hợp</option>
+                      </select>
+                      <div class="form-text text-muted small">
+                        <i class="fas fa-user-check me-1"></i>Nên chọn nhân viên có chuyên môn phù hợp
+                      </div>
+                      <div class="invalid-feedback" id="editStaffError">
+                        Vui lòng chọn nhân viên phụ trách
+                      </div>
+                    </div>
+                    <div class="col-md-5 mb-3">
+                      <label class="form-label">Trạng thái nhân viên</label>
+                      <input
+                        type="text"
+                        class="form-control bg-light"
+                        id="editStaffStatus"
+                        readonly
+                        value="Sẵn sàng"
+                      />
+                      <div class="form-text text-muted small">
+                        <i class="fas fa-sync-alt me-1"></i>Tự động kiểm tra lịch làm việc
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Staff recommendation based on service -->
+                  <div class="alert alert-info mb-0" id="staffRecommendation" style="display: none">
+                    <i class="fas fa-lightbulb me-2"></i>
+                    <strong>Đề xuất:</strong> <span id="staffRecommendationText"></span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- BLOCK 3: Thông tin phòng (MỚI) -->
               <div class="card mb-3" style="border-left: 4px solid #0d6efd;">
                 <div class="card-header bg-light py-2">
                   <h6 class="mb-0"><i class="fas fa-door-open me-2 text-primary"></i>Thông tin phòng ⭐</h6>
@@ -893,10 +985,10 @@
                 </div>
               </div>
 
-              <!-- BLOCK 3: Thông tin thanh toán -->
+              <!-- BLOCK 4: Thông tin thanh toán -->
               <div class="card mb-3" style="border-left: 4px solid #28a745;">
                 <div class="card-header bg-light py-2">
-                  <h6 class="mb-0"><i class="fas fa-credit-card me-2 text-success"></i>Thông tin thanh toán</h6>
+                  <h6 class="mb-0"><i class="fas fa-credit-card me-2 text-success"></i>Thông tin thanh toán & Trạng thái</h6>
                 </div>
                 <div class="card-body">
                   <div class="row">
@@ -944,8 +1036,16 @@
             </button>
             <button
               type="button"
+              class="btn btn-primary me-2"
+              onclick="saveEditedAppointment(true)"
+              id="btnConfirmAppointment"
+            >
+              <i class="fas fa-check-circle me-2"></i>Xác nhận lịch hẹn
+            </button>
+            <button
+              type="button"
               class="btn btn-warning"
-              onclick="saveEditedAppointment()"
+              onclick="saveEditedAppointment(false)"
             >
               <i class="fas fa-save me-2"></i>Cập nhật
             </button>
@@ -1471,9 +1571,13 @@
         const roomId = row.dataset.room || "";
         document.getElementById("editRoom").value = roomId;
 
-        // Parse date and time
+        // Get staff ID from dataset
+        const staffId = row.dataset.staff || "";
+        document.getElementById("editStaff").value = staffId;
+
+        // Parse date and time (td:nth-child(7) vì có thêm cột Nhân viên và Phòng)
         const dateTime = row
-          .querySelector("td:nth-child(5)")
+          .querySelector("td:nth-child(7)")
           .textContent.trim();
         const [date, time] = dateTime.split(" ");
         const [day, month, year] = date.split("/");
@@ -1485,8 +1589,12 @@
         document.getElementById("editNote").value = "";
         document.getElementById("editRoomNote").value = "";
 
-        // Update room status display
+        // Update room and staff status display
         updateRoomStatusDisplay();
+        updateStaffStatusDisplay();
+
+        // Show/hide confirm button based on status
+        updateConfirmButton();
 
         // Reset validation states
         document
@@ -1515,7 +1623,7 @@
 
         // Display appointment info in modal
         document.getElementById("deleteAppointmentIdDisplay").textContent = id;
-        const statusBadge = row.querySelector("td:nth-child(6) span");
+        const statusBadge = row.querySelector("td:nth-child(8) span");  // Cập nhật index
         document.getElementById("deleteAppointmentStatus").innerHTML =
           statusBadge.outerHTML;
 
@@ -1535,7 +1643,7 @@
         }
 
         const row = document.getElementById("appointment-" + id.split("LH")[1]);
-        const statusBadge = row.querySelector("td:nth-child(6) span");
+        const statusBadge = row.querySelector("td:nth-child(8) span");  // Cập nhật index
 
         statusBadge.className = "badge bg-danger";
         statusBadge.textContent = "Đã hủy";
@@ -1565,15 +1673,15 @@
         document.getElementById("viewDetailService").textContent =
           row.querySelector("td:nth-child(4)").textContent;
         document.getElementById("viewDetailDateTime").textContent =
-          row.querySelector("td:nth-child(5)").textContent;
+          row.querySelector("td:nth-child(7)").textContent;  // Cập nhật index
 
-        const statusBadge = row.querySelector("td:nth-child(6) span");
+        const statusBadge = row.querySelector("td:nth-child(8) span");  // Cập nhật index
         document.getElementById("viewDetailStatus").innerHTML =
           statusBadge.outerHTML;
 
         // Payment status
         const paymentBadge = row.querySelector(
-          "td:nth-child(7) .payment-badge",
+          "td:nth-child(9) .payment-badge",  // Cập nhật index
         );
         document.getElementById("viewDetailPayment").innerHTML =
           paymentBadge.outerHTML;
@@ -1676,12 +1784,12 @@
           .querySelector("td:nth-child(4)")
           .textContent.trim();
         document.getElementById("paymentDateTime").textContent = row
-          .querySelector("td:nth-child(5)")
+          .querySelector("td:nth-child(7)")
           .textContent.trim();
 
         // Get current payment status badge
         const paymentBadge = row.querySelector(
-          "td:nth-child(7) .payment-badge",
+          "td:nth-child(9) .payment-badge",  // Cập nhật index
         );
         document.getElementById("paymentCurrentStatus").innerHTML =
           paymentBadge.outerHTML;
@@ -1731,7 +1839,7 @@
 
       // Update payment badge
       function updatePaymentBadge(row, status) {
-        const paymentCell = row.querySelector("td:nth-child(7)");
+        const paymentCell = row.querySelector("td:nth-child(9)");  // Cập nhật index
 
         switch (status) {
           case "paid":
@@ -1835,7 +1943,7 @@
       // Update action buttons based on status (updated to include payment button)
       function updateActionButtons(id, newStatus, appointmentId = null) {
         const row = document.getElementById("appointment-" + id.split("LH")[1]);
-        const actionCell = row.querySelector("td:nth-child(8)"); // Updated column index
+        const actionCell = row.querySelector("td:nth-child(10)"); // Cập nhật index (10 vì có thêm cột nhân viên)
         const paymentStatus = row.dataset.payment;
 
         let buttonsHTML = "";
@@ -1843,12 +1951,12 @@
         switch (newStatus) {
           case "confirmed":
             buttonsHTML = `
-                        <button class="btn btn-sm btn-outline-primary me-1" 
+                        <button class="btn btn-sm btn-outline-primary me-1"
                                 title="Chỉnh sửa lịch hẹn"
                                 onclick="editAppointment('${id}')">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" 
+                        <button class="btn btn-sm btn-outline-danger"
                                 title="Hủy lịch hẹn"
                                 onclick="showDeleteConfirm('${id}')">
                             <i class="fas fa-times"></i>
@@ -1860,12 +1968,12 @@
             // Show payment button if not yet paid
             if (paymentStatus !== "paid") {
               buttonsHTML = `
-                            <button class="btn btn-sm btn-outline-info me-1" 
+                            <button class="btn btn-sm btn-outline-info me-1"
                                     title="Cập nhật thanh toán"
                                     onclick="openPaymentModal('${id}')">
                                 <i class="fas fa-credit-card"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-danger" 
+                            <button class="btn btn-sm btn-outline-danger"
                                     title="Hủy lịch hẹn"
                                     onclick="showDeleteConfirm('${id}')">
                                 <i class="fas fa-times"></i>
@@ -1873,7 +1981,7 @@
                         `;
             } else {
               buttonsHTML = `
-                            <button class="btn btn-sm btn-outline-danger" 
+                            <button class="btn btn-sm btn-outline-danger"
                                     title="Hủy lịch hẹn"
                                     onclick="showDeleteConfirm('${id}')">
                                 <i class="fas fa-times"></i>
@@ -1884,7 +1992,7 @@
 
           case "cancelled":
             buttonsHTML = `
-                        <button class="btn btn-sm btn-outline-secondary" 
+                        <button class="btn btn-sm btn-outline-secondary"
                                 title="Xem lý do hủy"
                                 onclick="viewCancellationReason('${id}')">
                             <i class="fas fa-info-circle"></i>
@@ -1894,12 +2002,12 @@
 
           case "completed":
             buttonsHTML = `
-                        <button class="btn btn-sm btn-outline-info me-1" 
+                        <button class="btn btn-sm btn-outline-info me-1"
                                 title="Xem chi tiết lịch hẹn"
                                 onclick="viewAppointmentDetails('${id}')">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-secondary" 
+                        <button class="btn btn-sm btn-outline-secondary"
                                 title="In hóa đơn"
                                 onclick="printInvoice('${id}')">
                             <i class="fas fa-print"></i>
@@ -1909,12 +2017,12 @@
 
           default: // pending
             buttonsHTML = `
-                        <button class="btn btn-sm btn-outline-success me-1" 
-                                title="Xác nhận lịch hẹn"
-                                onclick="confirmAppointment('${id}')">
-                            <i class="fas fa-check"></i>
+                        <button class="btn btn-sm btn-outline-primary me-1"
+                                title="Chỉnh sửa & Xác nhận"
+                                onclick="editAppointment('${id}')">
+                            <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" 
+                        <button class="btn btn-sm btn-outline-danger"
                                 title="Hủy lịch hẹn"
                                 onclick="showDeleteConfirm('${id}')">
                             <i class="fas fa-times"></i>
@@ -2386,6 +2494,297 @@
 
         // Close modal
         permanentDeleteModalInstance.hide();
+      }
+
+      // ========== NEW FUNCTIONS FOR STAFF & APPOINTMENT LOGIC ==========
+
+      // Lưu lịch hẹn mới (tạo bởi nhân viên)
+      function saveNewAppointment(confirmNow = false) {
+        const name = document.getElementById("addName").value.trim();
+        const phone = document.getElementById("addPhone").value.trim();
+        const service = document.getElementById("addService").value;
+        const date = document.getElementById("addDate").value;
+        const time = document.getElementById("addTime").value;
+        const staff = document.getElementById("addStaff").value;
+        const room = document.getElementById("addRoom").value;
+        const note = document.getElementById("addNote").value.trim();
+
+        // Validation cơ bản
+        if (!name || !phone || !service || !date || !time) {
+          showToast("error", "Vui lòng điền đầy đủ thông tin bắt buộc!");
+          return;
+        }
+
+        // Determine status based on staff and room selection
+        let status = "pending";  // Mặc định là Chờ xác nhận
+        if (confirmNow && staff && room) {
+          status = "confirmed";  // Chỉ xác nhận khi có đủ nhân viên và phòng
+        }
+
+        // Tạo object dữ liệu lịch hẹn
+        const appointmentData = {
+          id: "LH" + String(Date.now()).slice(-3),  // Tạo ID tạm thời
+          name: name,
+          phone: phone,
+          service: service,
+          date: date,
+          time: time,
+          staff: staff || "",
+          room: room || "",
+          note: note,
+          status: status,
+          payment: "pending",
+          amount: calculateServiceAmount(service)
+        };
+
+        // Đóng modal
+        bootstrap.Modal.getInstance(document.getElementById("addAppointmentModal")).hide();
+
+        // Hiển thị thông báo
+        if (status === "confirmed") {
+          showToast("success", `Đã tạo và xác nhận lịch hẹn cho ${name}!`);
+        } else {
+          showToast("success", `Đã tạo lịch hẹn cho ${name} - Chờ xác nhận!`);
+        }
+
+        // Reset form
+        document.getElementById("addAppointmentForm").reset();
+
+        // TODO: Lưu vào database/backend
+        console.log("Appointment created:", appointmentData);
+
+        // Giả lập thêm vào bảng (demo purposes)
+        // Trong thực tế, bạn sẽ reload dữ liệu từ backend
+        if (typeof window.location.reload === 'function') {
+          setTimeout(() => {
+            window.location.reload();
+          }, 1500);
+        }
+      }
+
+      // Lưu chỉnh sửa lịch hẹn
+      function saveEditedAppointment(confirmNow = false) {
+        const id = document.getElementById("editAppointmentId").value;
+        const row = document.getElementById("appointment-" + id.split("LH")[1]);
+
+        if (!row) return;
+
+        // Lấy giá trị từ form
+        const name = document.getElementById("editName").value.trim();
+        const phone = document.getElementById("editPhone").value.trim();
+        const service = document.getElementById("editService").value;
+        const date = document.getElementById("editDate").value;
+        const time = document.getElementById("editTime").value;
+        const staff = document.getElementById("editStaff").value;
+        const room = document.getElementById("editRoom").value;
+        const status = document.getElementById("editStatus").value;
+        const paymentStatus = document.getElementById("editPaymentStatus").value;
+        const note = document.getElementById("editNote").value.trim();
+        const roomNote = document.getElementById("editRoomNote").value.trim();
+
+        // Validation
+        if (!name || !phone || !service || !date || !time) {
+          showToast("error", "Vui lòng điền đầy đủ thông tin bắt buộc!");
+          return;
+        }
+
+        // Validate số điện thoại
+        const phoneRegex = /^[0-9]{10}$/;
+        if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
+          showToast("error", "Số điện thoại không hợp lệ (phải 10 chữ số)!");
+          return;
+        }
+
+        // Nếu nhấn "Xác nhận lịch hẹn", phải có đủ nhân viên và phòng
+        if (confirmNow) {
+          if (!staff || !room) {
+            showToast("error", "Vui lòng chọn Nhân viên và Phòng trước khi xác nhận!");
+            return;
+          }
+
+          // Cập nhật trạng thái thành confirmed
+          row.dataset.status = "confirmed";
+          row.dataset.staff = staff;
+          row.dataset.room = room;
+
+          // Cập nhật hiển thị
+          updateRowDisplay(row, {
+            name, phone, service, date, time, staff, room,
+            status: "confirmed", paymentStatus
+          });
+
+          editModalInstance.hide();
+          showToast("success", `Đã xác nhận lịch hẹn ${id}!`);
+          updateActionButtons(id, "confirmed");
+        } else {
+          // Chỉ cập nhật thông tin
+          row.dataset.staff = staff || "";
+          row.dataset.room = room || "";
+          row.dataset.status = status;
+          row.dataset.payment = paymentStatus;
+
+          // Cập nhật hiển thị
+          updateRowDisplay(row, {
+            name, phone, service, date, time, staff, room,
+            status, paymentStatus
+          });
+
+          editModalInstance.hide();
+          showToast("success", "Đã cập nhật thông tin lịch hẹn!");
+          updateActionButtons(id, status);
+        }
+      }
+
+      // Cập nhật hiển thị một dòng trong bảng
+      function updateRowDisplay(row, data) {
+        // Cập nhật các cột (index đã thay đổi sau khi thêm cột nhân viên)
+        row.querySelector("td:nth-child(2) strong").textContent = data.name;
+        row.querySelector("td:nth-child(3)").textContent = data.phone;
+        row.querySelector("td:nth-child(4)").textContent = getServiceName(data.service);
+
+        // Cột Nhân viên (td:nth-child(5))
+        const staffCell = row.querySelector("td:nth-child(5)");
+        if (data.staff) {
+          staffCell.innerHTML = `<span class="badge bg-info"><i class="fas fa-user me-1"></i>${getStaffName(data.staff)}</span>`;
+        } else {
+          staffCell.innerHTML = `<span class="text-muted small"><i class="fas fa-user-clock me-1"></i>Chưa chọn</span>`;
+        }
+
+        // Cột Phòng (td:nth-child(6))
+        const roomCell = row.querySelector("td:nth-child(6)");
+        if (data.room) {
+          roomCell.innerHTML = `<span class="badge bg-primary"><i class="fas fa-door-open me-1"></i>${getRoomName(data.room)}</span>`;
+        } else {
+          roomCell.innerHTML = `<span class="text-muted small"><i class="fas fa-door-open me-1"></i>Chưa chọn</span>`;
+        }
+
+        // Cột Ngày giờ (td:nth-child(7))
+        const [year, month, day] = data.date.split("-");
+        row.querySelector("td:nth-child(7)").textContent = `${day}/${month}/${year} ${data.time}`;
+
+        // Cột Trạng thái (td:nth-child(8))
+        const statusCell = row.querySelector("td:nth-child(8)");
+        statusCell.innerHTML = getStatusBadge(data.status);
+
+        // Cột Thanh toán (td:nth-child(9))
+        const paymentCell = row.querySelector("td:nth-child(9)");
+        paymentCell.innerHTML = getPaymentBadge(data.paymentStatus);
+      }
+
+      // Cập nhật trạng thái hiển thị nhân viên
+      function updateStaffStatusDisplay() {
+        const staffSelect = document.getElementById("editStaff");
+        const statusInput = document.getElementById("editStaffStatus");
+
+        if (!staffSelect.value) {
+          statusInput.value = "Chưa chọn";
+          return;
+        }
+
+        // Giả lập kiểm tra trạng thái nhân viên
+        // Trong thực tế, bạn sẽ kiểm tra từ database
+        statusInput.value = "Sẵn sàng";
+      }
+
+      // Validate nhân viên có phù hợp với dịch vụ
+      function validateStaffForService() {
+        const serviceSelect = document.getElementById("editService");
+        const staffSelect = document.getElementById("editStaff");
+        const recommendationDiv = document.getElementById("staffRecommendation");
+        const recommendationText = document.getElementById("staffRecommendationText");
+
+        if (!serviceSelect.value) {
+          recommendationDiv.style.display = "none";
+          return;
+        }
+
+        // Đề xuất nhân viên dựa trên dịch vụ
+        const recommendations = {
+          "1": "Nguyễn Thị Lan (Chuyên gia chăm sóc da)",
+          "2": "Trần Văn Minh (Kỹ thuật viên Massage)",
+          "3": "Phạm Thu Hương (Chuyên gia Phun thêu)",
+          "4": "Lê Quốc Bảo (Kỹ thuật viên Triệt lông)"
+        };
+
+        if (recommendations[serviceSelect.value]) {
+          recommendationText.textContent = recommendations[serviceSelect.value];
+          recommendationDiv.style.display = "block";
+        }
+      }
+
+      // Cập nhật hiển thị nút xác nhận
+      function updateConfirmButton() {
+        const status = document.getElementById("editStatus").value;
+        const confirmBtn = document.getElementById("btnConfirmAppointment");
+
+        if (status === "confirmed" || status === "processing" || status === "completed") {
+          confirmBtn.style.display = "none";  // Ẩn nút xác nhận nếu đã xác nhận
+        } else {
+          confirmBtn.style.display = "inline-block";  // Hiện nút xác nhận
+        }
+      }
+
+      // Helper functions để lấy tên dịch vụ, nhân viên, phòng
+      function getServiceName(value) {
+        const services = {
+          "1": "Chăm sóc da",
+          "2": "Massage",
+          "3": "Phun thêu môi & mày",
+          "4": "Triệt lông"
+        };
+        return services[value] || value;
+      }
+
+      function getStaffName(value) {
+        const staffs = {
+          "1": "Nguyễn Thị Lan",
+          "2": "Trần Văn Minh",
+          "3": "Phạm Thu Hương",
+          "4": "Lê Quốc Bảo",
+          "5": "Hoàng Thị Mai"
+        };
+        return staffs[value] || value;
+      }
+
+      function getRoomName(value) {
+        const rooms = {
+          "1": "P01 - Massage",
+          "2": "P02 - Facial",
+          "3": "P03 - Tattoo",
+          "4": "P04 - General",
+          "5": "Phòng VIP"
+        };
+        return rooms[value] || value;
+      }
+
+      function getStatusBadge(status) {
+        const badges = {
+          "pending": '<span class="badge bg-warning">Chờ xác nhận</span>',
+          "confirmed": '<span class="badge bg-success">Đã xác nhận</span>',
+          "processing": '<span class="badge bg-info">Đang xử lý</span>',
+          "completed": '<span class="badge bg-success">Hoàn thành</span>',
+          "cancelled": '<span class="badge bg-danger">Đã hủy</span>'
+        };
+        return badges[status] || status;
+      }
+
+      function getPaymentBadge(status) {
+        const badges = {
+          "pending": '<span class="payment-badge payment-pending"><i class="fas fa-clock"></i>Chưa thanh toán</span>',
+          "paid": '<span class="payment-badge payment-paid"><i class="fas fa-check-circle"></i>Đã thanh toán</span>',
+          "not-applicable": '<span class="payment-badge payment-not-applicable"><i class="fas fa-ban"></i>Không áp dụng</span>'
+        };
+        return badges[status] || status;
+      }
+
+      function calculateServiceAmount(service) {
+        const amounts = {
+          "1": 500000,  // Chăm sóc da
+          "2": 800000,  // Massage
+          "3": 2500000, // Phun thêu
+          "4": 600000   // Triệt lông
+        };
+        return amounts[service] || 0;
       }
     </script>
   </body>

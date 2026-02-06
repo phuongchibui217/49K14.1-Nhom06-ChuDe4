@@ -333,16 +333,6 @@
         color: white;
       }
 
-      .customer-info-avatar-dot {
-        position: absolute;
-        bottom: 0;
-        right: 0;
-        width: 12px;
-        height: 12px;
-        background: #31a24c;
-        border-radius: 50%;
-        border: 2px solid white;
-      }
 
       .customer-info-content {
         flex: 1;
@@ -377,11 +367,7 @@
         gap: 4px;
       }
 
-      .status-text {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-      }
+     
 
       .status-dot {
         width: 10px;
@@ -801,7 +787,7 @@
           <li class="nav-item">
             <a class="nav-link" href="dashboard.html">
               <i class="fas fa-tachometer-alt"></i>
-              Dashboard
+              Báo Cáo
             </a>
           </li>
           <li class="nav-item">
@@ -839,21 +825,9 @@
               <i class="fas fa-user-circle"></i>
               Tài khoản cá nhân
             </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">
-              <i class="fas fa-chart-bar"></i>
-              Báo cáo
-            </a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#">
-              <i class="fas fa-cog"></i>
-              Cài đặt
-            </a>
-          </li>
+     
           <li class="nav-item mt-4">
-            <a class="nav-link text-danger" href="../index.html">
+            <a class="nav-link text-danger" href="../login.html">
               <i class="fas fa-sign-out-alt"></i>
               Đăng xuất
             </a>
@@ -880,51 +854,9 @@
           </div>
 
           <div class="d-flex align-items-center">
-            <div class="dropdown me-3">
-              <button
-                class="btn btn-light position-relative"
-                data-bs-toggle="dropdown"
-              >
-                <i class="fas fa-bell"></i>
-                <span
-                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                  style="font-size: 0.6rem"
-                >
-                  5
-                </span>
-              </button>
-              <ul class="dropdown-menu dropdown-menu-end">
-                <li>
-                  <a class="dropdown-item" href="admin-appointments.html"
-                    >Lịch hẹn mới (3)</a
-                  >
-                </li>
-                <li><a class="dropdown-item" href="#">Tin nhắn mới (2)</a></li>
-              </ul>
-            </div>
+      
 
-            <div class="dropdown">
-              <button
-                class="btn btn-outline-warning dropdown-toggle"
-                data-bs-toggle="dropdown"
-              >
-                <i class="fas fa-user me-2"></i>
-                Admin
-              </button>
-              <ul class="dropdown-menu dropdown-menu-end">
-                <li>
-                  <a class="dropdown-item" href="profile.html"
-                    ><i class="fas fa-user-circle me-2"></i>Tài khoản cá nhân</a
-                  >
-                </li>
-                <li><hr class="dropdown-divider" /></li>
-                <li>
-                  <a class="dropdown-item text-danger" href="../index.html"
-                    ><i class="fas fa-sign-out-alt me-2"></i>Đăng xuất</a
-                  >
-                </li>
-              </ul>
-            </div>
+  
           </div>
         </header>
 
@@ -942,7 +874,7 @@
                 <input
                   type="text"
                   class="search-input"
-                  placeholder="Tìm kiếm khách hàng..."
+                  placeholder="       Tìm kiếm khách hàng..."
                   id="searchInput"
                 />
               </div>
@@ -990,7 +922,7 @@
                   <div class="customer-status">
                     <div class="status-indicator">
                       <div class="status-dot" id="statusDot"></div>
-                      <span class="status-text" id="statusText">--</span>
+                      <!-- <span class="status-text" id="statusText">--</span> -->
                     </div>
                     <div class="customer-meta">
                       <span id="lastMessageTime">--</span>
@@ -1336,7 +1268,7 @@
           const statusDot = document.getElementById("statusDot");
           const statusText = document.getElementById("statusText");
 
-          if (currentConversation.status === "online") {
+          /*if (currentConversation.status === "online") {
             statusDot.className = "status-dot status-online";
             statusText.textContent = "Đang online";
             statusText.style.color = "#31a24c";
@@ -1348,7 +1280,7 @@
             statusDot.className = "status-dot status-away";
             statusText.textContent = "Đang hoạt động";
             statusText.style.color = "#f59e0b";
-          }
+          }*/
 
           // Update customer status dot in header
           const customerStatusDot =
