@@ -302,7 +302,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-      // Mock Data - Yêu cầu tư vấn
+      // Mock Data - Yêu cầu hỗ trợ/tư vấn
       const supportRequests = [
         {
           id: 'YCT001',
@@ -402,6 +402,102 @@
               timestamp: '2026-02-02 09:00',
               content: 'Cảm ơn anh Nam đã chấp nhận lời xin lỗi. Voucher đã được gửi qua email của anh.',
               responder: 'CSKH - Nguyễn Thị Hương'
+            }
+          ]
+        },
+        {
+          id: 'YCT007',
+          customerName: 'Đỗ Thị Kim',
+          email: 'kim.do@email.com',
+          phone: '0967890123',
+          type: 'consultation',
+          typeName: 'Tư vấn',
+          content: 'Tôi có làn da sạm và tàn nhang nhẹ. Tôi muốn biết liệu trình nào có hiệu quả tốt nhất cho trường hợp của tôi?',
+          date: '2026-02-06 08:45',
+          status: 'new',
+          responses: []
+        },
+        {
+          id: 'YCT008',
+          customerName: 'Ngô Thanh Tuấn',
+          email: 'tuan.ngo@email.com',
+          phone: '0978901234',
+          type: 'feedback',
+          typeName: 'Góp ý',
+          content: 'Không gian Spa rất đẹp và thư giãn. Nhân viên massage tay nghề rất tốt. Tôi sẽ quay lại và giới thiệu cho bạn bè.',
+          date: '2026-02-05 18:20',
+          status: 'completed',
+          responses: [
+            {
+              timestamp: '2026-02-05 19:00',
+              content: 'Cảm ơn anh Tuấn đánh giá 5 sao về dịch vụ. Chúng tôi mong đón tiếp anh trong lần tới!',
+              responder: 'CSKH - Trần Thị Hương'
+            }
+          ]
+        },
+        {
+          id: 'YCT009',
+          customerName: 'Lý Minh Tuấn',
+          email: 'tuan.ly@email.com',
+          phone: '0989012345',
+          type: 'complaint',
+          typeName: 'Phàn nàn',
+          content: 'Tôi đặt lịch qua website nhưng không nhận được SMS xác nhận. Đã chờ 2 tiếng rồi mà vẫn chưa có phản hồi.',
+          date: '2026-02-06 10:15',
+          status: 'processing',
+          responses: [
+            {
+              timestamp: '2026-02-06 10:45',
+              content: 'Chào anh Tuấn, rất xin lỗi vì sự cố kỹ thuật. Chúng tôi đã kích hoạt lại hệ thống SMS và gửi lại mã xác nhận.',
+              responder: 'Kỹ thuật - Phạm Văn Đức'
+            }
+          ]
+        },
+        {
+          id: 'YCT010',
+          customerName: 'Phan Thị Hương',
+          email: 'huong.phan@email.com',
+          phone: '0990123456',
+          type: 'other',
+          typeName: 'Khác',
+          content: 'Tôi muốn hỏi về việc mua thẻ thành viên. Có gói ưu đãi nào cho khách hàng đăng ký thẻ cả năm không?',
+          date: '2026-02-05 15:30',
+          status: 'new',
+          responses: []
+        },
+        {
+          id: 'YCT011',
+          customerName: 'Vũ Hoàng Nam',
+          email: 'nam.vu@email.com',
+          phone: '0912345678',
+          type: 'consultation',
+          typeName: 'Tư vấn',
+          content: 'Tôi muốn biết chi phí và hiệu quả của liệu trình triệt lông vĩnh viễn bằng công nghệ Diode Laser.',
+          date: '2026-02-04 14:20',
+          status: 'processing',
+          responses: [
+            {
+              timestamp: '2026-02-04 15:00',
+              content: 'Chào anh Nam, liệu trình triệt lông Diode Laser giá 800.000đ/buổi. Cần 8-10 buổi để hiệu quả vĩnh viễn. CSKH sẽ gọi tư vấn chi tiết.',
+              responder: 'CSKH - Lê Thu Thảo'
+            }
+          ]
+        },
+        {
+          id: 'YCT012',
+          customerName: 'Trần Thị Mai',
+          email: 'mai.tran@email.com',
+          phone: '0923456789',
+          type: 'feedback',
+          typeName: 'Góp ý',
+          content: 'Ngoài việc massage, Spa có bổ sung thêm các dịch vụ yoga hay thiền không ạ? Tôi nghĩ sẽ rất thu hút khách hàng.',
+          date: '2026-02-03 11:10',
+          status: 'completed',
+          responses: [
+            {
+              timestamp: '2026-02-03 14:00',
+              content: 'Cảm ơn chị Mai về ý tưởng rất hay. Chúng tôi đang nghiên cứu và sẽ cân nhắc bổ sung các dịch vụ này trong quý tới.',
+              responder: 'Quản lý - Nguyễn Văn An'
             }
           ]
         }
