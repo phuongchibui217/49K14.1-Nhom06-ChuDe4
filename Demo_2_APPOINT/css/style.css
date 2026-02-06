@@ -808,30 +808,39 @@ button {
 }
 
 /* ============================================
-   Floating Button (Zalo/Hotline)
+   Floating Buttons (Zalo, Chat, Facebook, Hotline)
    ============================================ */
 
 .floating-button {
     position: fixed;
-    bottom: 30px;
-    right: 30px;
+    bottom: 2rem;
+    right: 2rem;
     z-index: 999;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 0.75rem;
 }
 
 .floating-btn {
-    width: 60px;
-    height: 60px;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.5rem;
     color: white;
-    box-shadow: var(--shadow-gold);
-    transition: var(--transition);
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    position: relative;
+}
+
+/* Pulse animation for main buttons */
+.floating-btn.zalo,
+.floating-btn.chat {
     animation: pulse 2s infinite;
 }
 
@@ -844,17 +853,72 @@ button {
     }
 }
 
+/* Zalo Button - Blue gradient */
 .floating-btn.zalo {
-    background: #0068ff;
+    background: linear-gradient(135deg, #0068ff, #00c6ff);
 }
 
+.floating-btn.zalo:hover {
+    transform: translateY(-4px) scale(1.1);
+    box-shadow: 0 8px 25px rgba(0, 104, 255, 0.4);
+}
+
+/* Chat Button - Blue & Gold gradient */
+.floating-btn.chat {
+    background: linear-gradient(135deg, var(--primary-blue), var(--gold-primary));
+}
+
+.floating-btn.chat:hover {
+    transform: translateY(-4px) scale(1.1);
+    box-shadow: 0 8px 25px rgba(212, 168, 83, 0.4);
+}
+
+/* Facebook Button - Facebook blue */
+.floating-btn.facebook {
+    background: linear-gradient(135deg, #1877f2, #42b72a);
+}
+
+.floating-btn.facebook:hover {
+    transform: translateY(-4px) scale(1.1);
+    box-shadow: 0 8px 25px rgba(24, 119, 242, 0.4);
+}
+
+/* Hotline Button - Gold gradient */
 .floating-btn.hotline {
-    background: var(--success-color);
+    background: linear-gradient(135deg, var(--gold-dark), var(--gold-primary));
 }
 
-.floating-btn:hover {
-    transform: scale(1.2);
-    box-shadow: var(--shadow-lg);
+.floating-btn.hotline:hover {
+    transform: translateY(-4px) scale(1.1);
+    box-shadow: 0 8px 25px rgba(212, 168, 83, 0.4);
+}
+
+/* Tooltip on hover */
+.floating-btn[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    right: 70px;
+    background: rgba(30, 58, 95, 0.95);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    animation: fadeIn 0.3s ease;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .floating-button {
+        bottom: 1.5rem;
+        right: 1rem;
+    }
+    
+    .floating-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 1.25rem;
+    }
 }
 
 /* ============================================

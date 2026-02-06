@@ -822,7 +822,7 @@
       </section>
     </main>
 
-    <!-- Floating Buttons (Zalo & Hotline) -->
+    <!-- Floating Buttons (Zalo, Chat, Facebook, Hotline) -->
     <div class="floating-button">
       <a href="https://zalo.me/4376616698826320568" target="_blank" class="floating-btn zalo" title="Chat Zalo">
         <i class="fa-solid fa-message"></i>
@@ -830,8 +830,8 @@
       <button class="floating-btn chat" onclick="toggleChat()" title="Chat tư vấn trực tuyến" aria-label="Mở chat tư vấn">
         <i class="fas fa-comments"></i>
       </button>
-      <a href="https://web.facebook.com/AnspaDaNang?_rdc=1&_rdr#" class="floating-btn hotline" title="Facebook">
-        <i class="fa-brands fa-facebook" style="color: #065fa2"></i>
+      <a href="https://web.facebook.com/AnspaDaNang?_rdc=1&_rdr#" target="_blank" class="floating-btn facebook" title="Facebook">
+        <i class="fa-brands fa-facebook-f"></i>
       </a>
       <a href="tel:0382434901" class="floating-btn hotline" title="Hotline">
         <i class="fas fa-phone-alt"></i>
@@ -1080,36 +1080,10 @@
             }
 
             // Add guest customer info
-              showAlert(
-                '<i class="fas fa-exclamation-circle"></i>Vui lòng chọn dịch vụ',
-                "danger",
-              );
-              isValid = false;
-            }
-
-            // Validate date
-            if (!date) {
-              showError(
-                "date",
-                '<i class="fas fa-exclamation-circle"></i>Vui lòng chọn ngày hẹn',
-              );
-              isValid = false;
-            }
-
-            // Validate time
-            if (!time) {
-              showError(
-                "time",
-                '<i class="fas fa-exclamation-circle"></i>Vui lòng chọn khung giờ hợp lệ',
-              );
-              isValid = false;
-            }
-
-            // Add guest customer info
             bookingData.customer_id = null;
             bookingData.customer_name = fullName;
             bookingData.customer_phone = phone;
-            bookingData.customer_email = email || null;
+            bookingData.customer_email = null;
             bookingData.is_guest = true;
           }
 
