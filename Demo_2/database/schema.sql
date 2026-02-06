@@ -60,6 +60,25 @@ CREATE TABLE IF NOT EXISTS services (
 );
 
 -- ============================================
+-- TABLE: ROOMS (Phong)
+-- ============================================
+CREATE TABLE IF NOT EXISTS rooms (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(200) NOT NULL,
+    room_type VARCHAR(100) NOT NULL,
+    capacity INTEGER DEFAULT 1,
+    status VARCHAR(50) DEFAULT 'available',
+    description TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Room status values: 'available' (Trống), 'occupied' (Đang sử dụng), 'maintenance' (Bảo trì), 'reserved' (Đã giữ)
+-- Room types: 'massage', 'facial', 'tattoo', 'general', 'vip'
+
+-- ============================================
 -- TABLE: APPOINTMENTS (LichHen)
 -- ============================================
 CREATE TABLE IF NOT EXISTS appointments (
@@ -68,19 +87,25 @@ CREATE TABLE IF NOT EXISTS appointments (
     customer_id INTEGER NOT NULL,
     staff_id INTEGER,
     service_id INTEGER NOT NULL,
+    room_id INTEGER,
     appointment_date DATETIME NOT NULL,
     notes TEXT,
+    room_notes TEXT,
     status VARCHAR(50) DEFAULT 'pending',
+    payment_status VARCHAR(50) DEFAULT 'pending',
+    amount DECIMAL(12, 2) DEFAULT 0.00,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     cancelled_at DATETIME,
     cancellation_reason TEXT,
     FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (staff_id) REFERENCES users(id) ON DELETE SET NULL,
-    FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE RESTRICT
+    FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE RESTRICT,
+    FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE SET NULL
 );
 
--- Status values: 'pending', 'confirmed', 'processing', 'completed', 'cancelled'
+-- Status values: 'pending', 'confirmed', 'warning', 'processing', 'completed', 'cancelled'
+-- Payment status values: 'pending', 'paid', 'not-applicable'
 
 -- ============================================
 -- TABLE: CONSULTATIONS (YeuCauTuVan)
@@ -206,11 +231,22 @@ INSERT INTO services (code, name, description, price, duration_minutes, category
 ('DV008', 'Phun Môi Công Nghệ Mới', 'Môi căng bóng, màu tự nhiên', 1800000, 90, 'tattoo', TRUE),
 ('DV009', 'Triệt Lông Toàn Thân', 'Gói triệt lông toàn thân', 2500000, 90, 'hair', TRUE);
 
+-- Insert Rooms
+INSERT INTO rooms (code, name, room_type, capacity, status, description, is_active) VALUES
+('P01', 'Phòng 01', 'massage', 2, 'available', 'Phòng massage chuyên nghiệp với 2 giường', TRUE),
+('P02', 'Phòng 02', 'facial', 1, 'available', 'Phòng chăm sóc da chuyên sâu', TRUE),
+('P03', 'Phòng 03', 'tattoo', 1, 'available', 'Phòng phun thêu môi & mày', TRUE),
+('P04', 'Phòng 04', 'general', 2, 'available', 'Phòng đa dịch vụ', TRUE),
+('VIP', 'Phòng VIP', 'vip', 1, 'available', 'Phòng VIP với đầy đủ tiện nghi', TRUE),
+('P05', 'Phòng 05', 'massage', 2, 'maintenance', 'Đang bảo trì thiết bị', FALSE);
+
 -- Insert Sample Appointments
-INSERT INTO appointments (code, customer_id, service_id, appointment_date, notes, status) VALUES
-('LH001', 2, 1, datetime('now', '+1 day'), 'Khách hàng mong muốn điều trị mụn', 'pending'),
-('LH002', 3, 2, datetime('now', '+2 days'), NULL, 'confirmed'),
-('LH003', 2, 3, datetime('now', '+3 days'), 'Phun thêu môi 3D', 'processing');
+INSERT INTO appointments (code, customer_id, service_id, room_id, appointment_date, notes, status, payment_status, amount) VALUES
+('LH001', 2, 1, 2, datetime('now', '+1 day'), 'Khách hàng mong muốn điều trị mụn', 'pending', 'pending', 500000.00),
+('LH002', 3, 2, 1, datetime('now', '+2 days'), NULL, 'confirmed', 'pending', 800000.00),
+('LH003', 2, 3, 3, datetime('now', '+3 days'), 'Phun thêu môi 3D', 'processing', 'pending', 2500000.00),
+('LH004', 2, 4, 4, datetime('now', '+4 days'), 'Triệt lông toàn thân', 'completed', 'paid', 600000.00),
+('LH005', 3, 1, 2, datetime('now', '-1 day'), 'Khách hàng không thể đến do việc đột xuất', 'cancelled', 'not-applicable', 0.00);
 
 -- Insert Sample Consultations
 INSERT INTO consultations (code, customer_name, customer_phone, customer_email, service_id, message, status) VALUES

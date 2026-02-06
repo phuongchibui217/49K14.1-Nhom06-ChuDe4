@@ -348,6 +348,7 @@
                       <th>Khách hàng</th>
                       <th>SĐT</th>
                       <th>Dịch vụ</th>
+                      <th>Phòng</th>
                       <th>Ngày giờ</th>
                       <th>Trạng thái</th>
                       <th class="text-center">Thanh toán</th>
@@ -361,11 +362,14 @@
                       data-status="pending"
                       data-payment="pending"
                       data-amount="500000"
+                      data-room="2"
+                      data-room-status="available"
                     >
                       <td><span class="badge bg-secondary">LH001</span></td>
                       <td><strong>Nguyễn Thị Mai</strong></td>
                       <td>0901 234 567</td>
                       <td>Chăm sóc da</td>
+                      <td><span class="badge bg-success"><i class="fas fa-door-open me-1"></i>P02 - Facial</span></td>
                       <td>15/02/2026 10:00</td>
                       <td>
                         <span class="badge bg-warning">Chờ xác nhận</span>
@@ -400,11 +404,14 @@
                       data-status="confirmed"
                       data-payment="pending"
                       data-amount="800000"
+                      data-room="1"
+                      data-room-status="reserved"
                     >
                       <td><span class="badge bg-secondary">LH002</span></td>
                       <td><strong>Trần Văn Hùng</strong></td>
                       <td>0912 345 678</td>
                       <td>Triệt lông</td>
+                      <td><span class="badge bg-primary"><i class="fas fa-lock me-1"></i>P01 - Massage</span></td>
                       <td>15/02/2026 14:00</td>
                       <td><span class="badge bg-success">Đã xác nhận</span></td>
                       <td class="text-center">
@@ -437,11 +444,14 @@
                       data-status="processing"
                       data-payment="pending"
                       data-amount="2500000"
+                      data-room="3"
+                      data-room-status="occupied"
                     >
                       <td><span class="badge bg-secondary">LH003</span></td>
                       <td><strong>Lê Thu Thảo</strong></td>
                       <td>0934 567 890</td>
                       <td>Phun thêu môi</td>
+                      <td><span class="badge bg-danger"><i class="fas fa-door-closed me-1"></i>P03 - Tattoo</span></td>
                       <td>15/02/2026 15:30</td>
                       <td><span class="badge bg-info">Đang xử lý</span></td>
                       <td class="text-center">
@@ -474,11 +484,14 @@
                       data-status="completed"
                       data-payment="paid"
                       data-amount="600000"
+                      data-room="4"
+                      data-room-status="available"
                     >
                       <td><span class="badge bg-secondary">LH004</span></td>
                       <td><strong>Phạm Minh Đức</strong></td>
                       <td>0945 678 901</td>
                       <td>Massage</td>
+                      <td><span class="badge bg-success"><i class="fas fa-door-open me-1"></i>P04 - General</span></td>
                       <td>15/02/2026 16:00</td>
                       <td><span class="badge bg-success">Hoàn thành</span></td>
                       <td class="text-center">
@@ -512,11 +525,14 @@
                       data-payment="not-applicable"
                       data-amount="0"
                       data-cancellation-reason="Khách hàng không thể đến do việc đột xuất"
+                      data-room="2"
+                      data-room-status="available"
                     >
                       <td><span class="badge bg-secondary">LH005</span></td>
                       <td><strong>Hoàng Thị Lan</strong></td>
                       <td>0967 890 123</td>
                       <td>Chăm sóc da</td>
+                      <td><span class="badge bg-success"><i class="fas fa-door-open me-1"></i>P02 - Facial</span></td>
                       <td>14/02/2026 11:00</td>
                       <td><span class="badge bg-danger">Đã hủy</span></td>
                       <td class="text-center">
@@ -714,110 +730,207 @@
             <form id="editAppointmentForm">
               <input type="hidden" id="editAppointmentId" />
 
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Họ tên khách hàng *</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="editName"
-                    required
-                    placeholder="Nhập họ tên khách hàng"
-                  />
-                  <div class="invalid-feedback" id="editNameError">
-                    Vui lòng nhập họ tên khách hàng
-                  </div>
+              <!-- BLOCK 1: Thông tin lịch hẹn -->
+              <div class="card mb-3" style="border-left: 4px solid #ffc107;">
+                <div class="card-header bg-light py-2">
+                  <h6 class="mb-0"><i class="fas fa-calendar-check me-2 text-warning"></i>Thông tin lịch hẹn</h6>
                 </div>
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Số điện thoại *</label>
-                  <input
-                    type="tel"
-                    class="form-control"
-                    id="editPhone"
-                    required
-                    placeholder="Nhập số điện thoại"
-                    pattern="[0-9]{10}"
-                    maxlength="10"
-                  />
-                  <div class="form-text text-muted small">
-                    Chỉ cho phép nhập số (10 chữ số)
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Họ tên khách hàng *</label>
+                      <input
+                        type="text"
+                        class="form-control"
+                        id="editName"
+                        required
+                        placeholder="Nhập họ tên khách hàng"
+                      />
+                      <div class="invalid-feedback" id="editNameError">
+                        Vui lòng nhập họ tên khách hàng
+                      </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Số điện thoại *</label>
+                      <input
+                        type="tel"
+                        class="form-control"
+                        id="editPhone"
+                        required
+                        placeholder="Nhập số điện thoại"
+                        pattern="[0-9]{10}"
+                        maxlength="10"
+                      />
+                      <div class="form-text text-muted small">
+                        Chỉ cho phép nhập số (10 chữ số)
+                      </div>
+                      <div class="invalid-feedback" id="editPhoneError">
+                        Số điện thoại không hợp lệ (phải 10 chữ số)
+                      </div>
+                    </div>
                   </div>
-                  <div class="invalid-feedback" id="editPhoneError">
-                    Số điện thoại không hợp lệ (phải 10 chữ số)
+
+                  <div class="mb-3">
+                    <label class="form-label">Dịch vụ *</label>
+                    <select class="form-select" id="editService" required>
+                      <option value="">Chọn dịch vụ</option>
+                      <option value="1">Chăm sóc da</option>
+                      <option value="2">Massage</option>
+                      <option value="3">Phun thêu môi & mày</option>
+                      <option value="4">Triệt lông</option>
+                    </select>
+                    <div class="invalid-feedback">Vui lòng chọn dịch vụ</div>
+                  </div>
+
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Ngày *</label>
+                      <input
+                        type="date"
+                        class="form-control"
+                        id="editDate"
+                        required
+                        onchange="
+                          checkConflict();
+                          validateDateTime();
+                          checkRoomConflict();
+                        "
+                      />
+                      <div class="invalid-feedback" id="editDateError">
+                        Vui lòng chọn ngày hợp lệ (không phải quá khứ)
+                      </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Giờ *</label>
+                      <input
+                        type="time"
+                        class="form-control"
+                        id="editTime"
+                        required
+                        onchange="
+                          checkConflict();
+                          validateDateTime();
+                          checkRoomConflict();
+                        "
+                        min="08:00"
+                        max="20:00"
+                      />
+                      <div class="form-text text-muted small">
+                        Giờ làm việc: 08:00 - 20:00
+                      </div>
+                      <div class="invalid-feedback">Vui lòng chọn giờ hợp lệ</div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div class="mb-3">
-                <label class="form-label">Dịch vụ *</label>
-                <select class="form-select" id="editService" required>
-                  <option value="">Chọn dịch vụ</option>
-                  <option value="1">Chăm sóc da</option>
-                  <option value="2">Massage</option>
-                  <option value="3">Phun thêu môi & mày</option>
-                  <option value="4">Triệt lông</option>
-                </select>
-                <div class="invalid-feedback">Vui lòng chọn dịch vụ</div>
-              </div>
+              <!-- BLOCK 2: Thông tin phòng (MỚI) -->
+              <div class="card mb-3" style="border-left: 4px solid #0d6efd;">
+                <div class="card-header bg-light py-2">
+                  <h6 class="mb-0"><i class="fas fa-door-open me-2 text-primary"></i>Thông tin phòng ⭐</h6>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">
+                        Phòng sử dụng *
+                        <i class="fas fa-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Chỉ Lễ tân / Chủ Spa được chỉnh sửa"></i>
+                      </label>
+                      <select class="form-select" id="editRoom" required onchange="checkRoomConflict(); updateRoomStatusDisplay();">
+                        <option value="">Chọn phòng</option>
+                        <option value="1" data-room-name="P01 - Massage" data-capacity="2">P01 - Massage (Sức chứa: 2)</option>
+                        <option value="2" data-room-name="P02 - Facial" data-capacity="1">P02 - Facial (Sức chứa: 1)</option>
+                        <option value="3" data-room-name="P03 - Tattoo" data-capacity="1">P03 - Tattoo (Sức chứa: 1)</option>
+                        <option value="4" data-room-name="P04 - General" data-capacity="2">P04 - General (Sức chứa: 2)</option>
+                        <option value="5" data-room-name="Phòng VIP" data-capacity="1">Phòng VIP (Sức chứa: 1)</option>
+                        <option value="6" data-room-name="P05 - Massage" data-capacity="2" disabled>P05 - Massage (Đang bảo trì)</option>
+                      </select>
+                      <div class="form-text text-muted small">
+                        <i class="fas fa-shield-alt me-1"></i>Phòng đang bảo trì sẽ bị tắt chọn
+                      </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Trạng thái phòng</label>
+                      <input
+                        type="text"
+                        class="form-control bg-light"
+                        id="editRoomStatus"
+                        readonly
+                        value="Trống"
+                      />
+                      <div class="form-text text-muted small">
+                        <i class="fas fa-sync-alt me-1"></i>Tự động cập nhật theo thời gian & lịch hẹn khác
+                      </div>
+                    </div>
+                  </div>
 
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Ngày *</label>
-                  <input
-                    type="date"
-                    class="form-control"
-                    id="editDate"
-                    required
-                    onchange="
-                      checkConflict();
-                      validateDateTime();
-                    "
-                  />
-                  <div class="invalid-feedback" id="editDateError">
-                    Vui lòng chọn ngày hợp lệ (không phải quá khứ)
+                  <div class="mb-3">
+                    <label class="form-label">Ghi chú phòng (Optional)</label>
+                    <textarea
+                      class="form-control"
+                      id="editRoomNote"
+                      rows="2"
+                      placeholder="Ví dụ: Phòng cần máy xông, Khách VIP - ưu tiên phòng yên tĩnh..."
+                    ></textarea>
+                  </div>
+
+                  <!-- Room Conflict Warning -->
+                  <div class="alert alert-danger" id="roomConflictWarning" style="display: none">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Cảnh báo trùng phòng:</strong> Phòng này đã có lịch hẹn trong khung giờ đã chọn!
+                    <div class="mt-2">
+                      <button type="button" class="btn btn-warning btn-sm me-2" onclick="saveWithRoomWarning()">
+                        <i class="fas fa-exclamation-triangle me-1"></i>Lưu với Cảnh báo
+                      </button>
+                      <button type="button" class="btn btn-secondary btn-sm me-2" onclick="chooseNewRoom()">
+                        <i class="fas fa-door-open me-1"></i>Chọn phòng khác
+                      </button>
+                      <button type="button" class="btn btn-outline-danger btn-sm" onclick="chooseNewTime()">
+                        <i class="fas fa-clock me-1"></i>Đổi giờ hẹn
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div class="col-md-6 mb-3">
-                  <label class="form-label">Giờ *</label>
-                  <input
-                    type="time"
-                    class="form-control"
-                    id="editTime"
-                    required
-                    onchange="
-                      checkConflict();
-                      validateDateTime();
-                    "
-                    min="08:00"
-                    max="20:00"
-                  />
-                  <div class="form-text text-muted small">
-                    Giờ làm việc: 08:00 - 20:00
-                  </div>
-                  <div class="invalid-feedback">Vui lòng chọn giờ hợp lệ</div>
+              </div>
+
+              <!-- BLOCK 3: Thông tin thanh toán -->
+              <div class="card mb-3" style="border-left: 4px solid #28a745;">
+                <div class="card-header bg-light py-2">
+                  <h6 class="mb-0"><i class="fas fa-credit-card me-2 text-success"></i>Thông tin thanh toán</h6>
                 </div>
-              </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Trạng thái</label>
+                      <select class="form-select" id="editStatus" onchange="updateRoomStatusDisplay()">
+                        <option value="pending">Chờ xác nhận</option>
+                        <option value="confirmed">Đã xác nhận</option>
+                        <option value="warning">Cảnh báo</option>
+                        <option value="processing">Đang xử lý</option>
+                        <option value="completed">Hoàn thành</option>
+                        <option value="cancelled">Đã hủy</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                      <label class="form-label">Trạng thái thanh toán</label>
+                      <select class="form-select" id="editPaymentStatus">
+                        <option value="pending">Chưa thanh toán</option>
+                        <option value="paid">Đã thanh toán</option>
+                        <option value="not-applicable">Không áp dụng</option>
+                      </select>
+                    </div>
+                  </div>
 
-              <div class="mb-3">
-                <label class="form-label">Trạng thái</label>
-                <select class="form-select" id="editStatus">
-                  <option value="pending">Chờ xác nhận</option>
-                  <option value="confirmed">Đã xác nhận</option>
-                  <option value="warning">Cảnh báo</option>
-                  <option value="processing">Đang xử lý</option>
-                  <option value="completed">Hoàn thành</option>
-                  <option value="cancelled">Đã hủy</option>
-                </select>
-              </div>
-
-              <div class="mb-3">
-                <label class="form-label">Ghi chú</label>
-                <textarea
-                  class="form-control"
-                  id="editNote"
-                  rows="3"
-                  placeholder="Nhập ghi chú (nếu có)"
-                ></textarea>
+                  <div class="mb-3">
+                    <label class="form-label">Ghi chú lịch hẹn</label>
+                    <textarea
+                      class="form-control"
+                      id="editNote"
+                      rows="2"
+                      placeholder="Nhập ghi chú (nếu có)"
+                    ></textarea>
+                  </div>
+                </div>
               </div>
             </form>
           </div>
@@ -1354,6 +1467,10 @@
         document.getElementById("editService").value =
           serviceMap[serviceName] || "";
 
+        // Get room ID from dataset
+        const roomId = row.dataset.room || "";
+        document.getElementById("editRoom").value = roomId;
+
         // Parse date and time
         const dateTime = row
           .querySelector("td:nth-child(5)")
@@ -1364,7 +1481,12 @@
         document.getElementById("editTime").value = time;
 
         document.getElementById("editStatus").value = row.dataset.status;
+        document.getElementById("editPaymentStatus").value = row.dataset.payment || "pending";
         document.getElementById("editNote").value = "";
+        document.getElementById("editRoomNote").value = "";
+
+        // Update room status display
+        updateRoomStatusDisplay();
 
         // Reset validation states
         document
@@ -1861,6 +1983,139 @@
         }
       }
 
+      // ========== ROOM MANAGEMENT FUNCTIONS ==========
+
+      // Check for room conflicts
+      function checkRoomConflict() {
+        const roomId = document.getElementById("editRoom").value;
+        const date = document.getElementById("editDate").value;
+        const time = document.getElementById("editTime").value;
+        const conflictWarning = document.getElementById("roomConflictWarning");
+
+        if (!roomId || !date || !time) {
+          conflictWarning.style.display = "none";
+          return false;
+        }
+
+        // Mock room conflict detection - in real app, this would check against backend
+        // Simulate conflict: Room 2 (P02) on 2026-02-15 at 10:00
+        const hasRoomConflict = 
+          roomId === "2" && 
+          date === "2026-02-15" && 
+          time === "10:00";
+
+        if (hasRoomConflict) {
+          conflictWarning.style.display = "block";
+          return true;
+        } else {
+          conflictWarning.style.display = "none";
+          return false;
+        }
+      }
+
+      // Update room status display based on appointment status
+      function updateRoomStatusDisplay() {
+        const roomId = document.getElementById("editRoom").value;
+        const statusInput = document.getElementById("editRoomStatus");
+        const appointmentStatus = document.getElementById("editStatus").value;
+
+        // Room status mapping based on appointment status
+        const roomStatusMap = {
+          'pending': 'Trống',
+          'confirmed': 'Đã giữ phòng',
+          'warning': 'Đang giữ (màu vàng)',
+          'processing': 'Đang sử dụng',
+          'completed': 'Giải phóng phòng',
+          'cancelled': 'Giải phóng phòng'
+        };
+
+        if (roomId) {
+          statusInput.value = roomStatusMap[appointmentStatus] || 'Trống';
+        } else {
+          statusInput.value = 'Chưa chọn phòng';
+        }
+      }
+
+      // Save with room warning status
+      function saveWithRoomWarning() {
+        const id = document.getElementById("editAppointmentId").value;
+        const newStatus = "warning";
+
+        // Update appointment data
+        updateAppointmentInTable(id, newStatus);
+
+        // Show success toast
+        showToast("warning", 'Đã lưu lịch hẹn với trạng thái "Cảnh báo" - Trùng phòng!');
+
+        // Close modal
+        bootstrap.Modal.getInstance(document.getElementById("editAppointmentModal")).hide();
+
+        // Hide conflict warning
+        document.getElementById("roomConflictWarning").style.display = "none";
+      }
+
+      // Choose new room (clear room selection)
+      function chooseNewRoom() {
+        document.getElementById("editRoom").value = "";
+        document.getElementById("editRoomStatus").value = "Chưa chọn phòng";
+        document.getElementById("roomConflictWarning").style.display = "none";
+        showToast("info", "Vui lòng chọn phòng khác");
+      }
+
+      // Update room badge in table based on status
+      function updateRoomBadge(row, roomId, newStatus) {
+        const roomCell = row.querySelector("td:nth-child(5)");
+        
+        if (!roomId) {
+          roomCell.innerHTML = '<span class="badge bg-secondary"><i class="fas fa-question me-1"></i>Chưa chọn phòng</span>';
+          return;
+        }
+
+        // Room status based on appointment status
+        const roomStatusConfig = {
+          'pending': { badge: 'bg-success', icon: 'fa-door-open', text: 'Trống' },
+          'confirmed': { badge: 'bg-primary', icon: 'fa-lock', text: 'Đã giữ' },
+          'warning': { badge: 'bg-warning', icon: 'fa-exclamation-triangle', text: 'Trùng phòng' },
+          'processing': { badge: 'bg-danger', icon: 'fa-door-closed', text: 'Đang dùng' },
+          'completed': { badge: 'bg-success', icon: 'fa-door-open', text: 'Trống' },
+          'cancelled': { badge: 'bg-success', icon: 'fa-door-open', text: 'Trống' }
+        };
+
+        // Get room name from room ID
+        const roomNames = {
+          '1': 'P01 - Massage',
+          '2': 'P02 - Facial',
+          '3': 'P03 - Tattoo',
+          '4': 'P04 - General',
+          '5': 'Phòng VIP'
+        };
+
+        const config = roomStatusConfig[newStatus] || roomStatusConfig['pending'];
+        const roomName = roomNames[roomId] || `Phòng ${roomId}`;
+
+        roomCell.innerHTML = `
+          <span class="badge ${config.badge}">
+            <i class="fas ${config.icon} me-1"></i>${roomName}
+          </span>
+        `;
+
+        // Update dataset
+        row.dataset.room = roomId;
+        row.dataset.roomStatus = newStatus === 'pending' || newStatus === 'completed' || newStatus === 'cancelled' ? 'available' : 'reserved';
+      }
+
+      // Check payment before allowing completion
+      function checkPaymentBeforeCompletion(status) {
+        const paymentStatus = document.getElementById("editPaymentStatus").value;
+        
+        if (status === "completed" && paymentStatus !== "paid") {
+          alert("❗ Không thể hoàn thành lịch hẹn khi chưa thanh toán!\n\nVui lòng cập nhật trạng thái thanh toán trước khi hoàn thành.");
+          return false;
+        }
+        
+        return true;
+      }
+
       // Save with warning status
       function saveWithWarning() {
         const id = document.getElementById("editAppointmentId").value;
@@ -1894,6 +2149,7 @@
         const date = document.getElementById("editDate").value;
         const time = document.getElementById("editTime").value;
         const status = document.getElementById("editStatus").value;
+        const room = document.getElementById("editRoom").value;
 
         // Validate all fields
         let isValid = true;
@@ -1930,8 +2186,20 @@
           document.getElementById("editTime").classList.remove("is-invalid");
         }
 
+        if (!room) {
+          document.getElementById("editRoom").classList.add("is-invalid");
+          isValid = false;
+        } else {
+          document.getElementById("editRoom").classList.remove("is-invalid");
+        }
+
         if (!isValid) {
           showToast("error", "Vui lòng kiểm tra lại các thông tin đã nhập!");
+          return;
+        }
+
+        // Check payment before allowing completion
+        if (!checkPaymentBeforeCompletion(status)) {
           return;
         }
 
@@ -1939,10 +2207,21 @@
         const hasConflict =
           document.getElementById("conflictWarning").style.display === "block";
 
+        // Check for room conflict
+        const hasRoomConflict = checkRoomConflict();
+
         if (hasConflict) {
           showToast(
             "warning",
             'Nguồn lực khung giờ này đã đầy. Vui lòng chọn "Lưu với Cảnh báo" hoặc "Chọn lại giờ"',
+          );
+          return;
+        }
+
+        if (hasRoomConflict) {
+          showToast(
+            "warning",
+            'Phòng đã có lịch hẹn trong khung giờ này. Vui lòng chọn "Lưu với Cảnh báo", "Chọn phòng khác" hoặc "Đổi giờ hẹn"',
           );
           return;
         }
@@ -1969,6 +2248,8 @@
           serviceSelect.options[serviceSelect.selectedIndex].text;
         const date = document.getElementById("editDate").value;
         const time = document.getElementById("editTime").value;
+        const room = document.getElementById("editRoom").value;
+        const paymentStatus = document.getElementById("editPaymentStatus").value;
 
         // Parse date for display
         const [year, month, day] = date.split("-");
@@ -1982,9 +2263,21 @@
         row.querySelector("td:nth-child(5)").textContent =
           `${displayDate} ${time}`;
 
+        // Update room badge
+        updateRoomBadge(row, room, newStatus);
+
         // Update status badge
-        const statusBadge = row.querySelector("td:nth-child(6) span");
+        const statusBadge = row.querySelector("td:nth-child(7) span");
         updateStatusBadge(statusBadge, newStatus);
+
+        // Update room badge when status changes
+        updateRoomBadge(row, document.getElementById("editRoom").value, newStatus);
+
+        // Update payment status
+        if (paymentStatus) {
+          updatePaymentBadge(row, paymentStatus);
+          row.dataset.payment = paymentStatus;
+        }
 
         // Update dataset
         row.dataset.status = newStatus;
