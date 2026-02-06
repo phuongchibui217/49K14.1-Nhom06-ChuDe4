@@ -122,53 +122,6 @@
         }
       }
 
-      /* Progress Steps */
-      .progress-steps {
-        display: flex;
-        justify-content: center;
-        gap: 2rem;
-        margin-top: 2rem;
-        animation: fadeInUp 0.8s ease 0.4s backwards;
-      }
-
-      .progress-step {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0.75rem 1.5rem;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 50px;
-        backdrop-filter: blur(10px);
-        transition: all 0.3s ease;
-      }
-
-      .progress-step.active {
-        background: rgba(212, 168, 55, 0.3);
-      }
-
-      .step-number {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.2);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        font-size: 0.9rem;
-        transition: all 0.3s ease;
-      }
-
-      .progress-step.active .step-number {
-        background: var(--gold-primary);
-      }
-
-      .step-label {
-        font-size: 0.85rem;
-        font-weight: 500;
-        opacity: 0.9;
-      }
-
       .booking-form-section {
         padding: 3rem 0 4rem;
         margin-top: -2rem;
@@ -247,110 +200,6 @@
         font-size: 0.9rem;
       }
 
-      /* Room Type Selection - Enhanced */
-      .room-selection {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 1rem;
-        margin-bottom: 1rem;
-      }
-
-      .room-card {
-        position: relative;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      }
-
-      .room-card input[type="radio"] {
-        position: absolute;
-        opacity: 0;
-        pointer-events: none;
-      }
-
-      .room-card-label {
-        display: block;
-        padding: 1.5rem;
-        border: 2px solid var(--border-color);
-        border-radius: var(--radius-lg);
-        background: white;
-        transition: all 0.3s ease;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
-      }
-
-      .room-card-label::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, var(--gold-primary), var(--gold-secondary));
-        transform: scaleX(0);
-        transition: transform 0.3s ease;
-      }
-
-      .room-card:hover .room-card-label {
-        border-color: var(--gold-primary);
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-md);
-      }
-
-      .room-card input[type="radio"]:checked + .room-card-label {
-        border-color: var(--gold-primary);
-        background: linear-gradient(135deg, rgba(212, 168, 55, 0.08), rgba(241, 196, 15, 0.05));
-        box-shadow: 0 8px 24px rgba(212, 168, 55, 0.25);
-      }
-
-      .room-card input[type="radio"]:checked + .room-card-label::before {
-        transform: scaleX(1);
-      }
-
-      .room-icon {
-        font-size: 2.5rem;
-        margin-bottom: 0.75rem;
-        display: block;
-        transition: transform 0.3s ease;
-      }
-
-      .room-card:hover .room-icon {
-        transform: scale(1.1);
-      }
-
-      .room-card input[type="radio"]:checked + .room-card-label .room-icon {
-        animation: bounce 0.5s ease;
-      }
-
-      @keyframes bounce {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.2); }
-      }
-
-      .room-name {
-        font-weight: 700;
-        font-size: 1rem;
-        color: var(--text-dark);
-        margin-bottom: 0.25rem;
-        display: block;
-      }
-
-      .room-desc {
-        font-size: 0.85rem;
-        color: var(--text-muted);
-      }
-
-      .vip-badge {
-        display: inline-block;
-        background: linear-gradient(135deg, var(--gold-primary), var(--gold-secondary));
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        margin-top: 0.5rem;
-      }
-
       /* Service Selection - Enhanced */
       .service-section {
         margin-bottom: 2.5rem;
@@ -387,208 +236,6 @@
         .service-grid {
           grid-template-columns: repeat(4, 1fr);
         }
-      }
-
-      /* Tablet: 3 services per row */
-      @media (min-width: 768px) and (max-width: 991px) {
-        .service-grid {
-          grid-template-columns: repeat(3, 1fr);
-        }
-      }
-
-      /* Mobile: 2 services per row */
-      @media (max-width: 767px) {
-        .service-grid {
-          grid-template-columns: repeat(2, 1fr);
-        }
-      }
-
-      .service-chip {
-        border: 2px solid var(--border-color);
-        border-radius: var(--radius-lg);
-        padding: 1.5rem 1rem;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        background: white;
-        position: relative;
-        text-align: center;
-        min-height: 100px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        overflow: hidden;
-      }
-
-      .service-chip::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(135deg, rgba(212, 168, 55, 0.05), rgba(241, 196, 15, 0.03));
-        opacity: 0;
-        transition: opacity 0.3s ease;
-      }
-
-      .service-chip:hover {
-        border-color: var(--gold-primary);
-        transform: translateY(-4px);
-        box-shadow: 0 8px 24px rgba(212, 168, 55, 0.15);
-      }
-
-      .service-chip:hover::before {
-        opacity: 1;
-      }
-
-      .service-chip.selected {
-        border-color: var(--gold-primary);
-        border-width: 2px;
-        background: white;
-        box-shadow: 0 8px 32px rgba(212, 168, 55, 0.25);
-        transform: translateY(-4px);
-      }
-
-      .service-chip.selected::before {
-        opacity: 1;
-      }
-
-      .service-chip > * {
-        position: relative;
-        z-index: 1;
-      }
-
-      .service-chip-name {
-        font-weight: 600;
-        color: var(--text-dark);
-        font-size: 0.9rem;
-        line-height: 1.4;
-        margin-bottom: 0.5rem;
-      }
-
-      .service-chip-price {
-        font-size: 0.85rem;
-        color: var(--gold-primary);
-        font-weight: 700;
-        padding: 0.25rem 0.75rem;
-        background: var(--gold-light);
-        border-radius: 20px;
-        display: inline-block;
-      }
-
-      /* Check indicator for selected service */
-      .check-indicator {
-        position: absolute;
-        top: -8px;
-        right: -8px;
-        width: 28px;
-        height: 28px;
-        background: linear-gradient(135deg, var(--gold-primary), var(--gold-secondary));
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transform: scale(0);
-        transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        box-shadow: 0 4px 12px rgba(212, 168, 55, 0.4);
-        z-index: 2;
-      }
-
-      .check-indicator i {
-        color: white;
-        font-size: 12px;
-      }
-
-      .service-chip.selected .check-indicator {
-        opacity: 1;
-        transform: scale(1);
-      }
-
-      /* Booking Summary Panel */
-      .booking-summary {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: var(--radius-lg);
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-        border: 2px solid var(--border-color);
-      }
-
-      .summary-title {
-        font-size: 0.85rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: var(--text-muted);
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      }
-
-      .summary-title i {
-        color: var(--gold-primary);
-      }
-
-      .summary-items {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-      }
-
-      .summary-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.75rem 1rem;
-        background: white;
-        border-radius: var(--radius-md);
-        border: 1px solid var(--border-color);
-        transition: all 0.3s ease;
-      }
-
-      .summary-item:hover {
-        box-shadow: var(--shadow-sm);
-        transform: translateX(4px);
-      }
-
-      .summary-item-label {
-        font-size: 0.85rem;
-        color: var(--text-muted);
-        font-weight: 500;
-      }
-
-      .summary-item-value {
-        font-size: 0.9rem;
-        color: var(--text-dark);
-        font-weight: 600;
-      }
-
-      .summary-item-placeholder {
-        color: #cbd5e0;
-        font-style: italic;
-      }
-
-      .summary-total {
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 2px dashed var(--border-color);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-
-      .total-label {
-        font-size: 1rem;
-        font-weight: 700;
-        color: var(--text-dark);
-      }
-
-      .total-value {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: var(--gold-primary);
       }
 
       /* Error Messages */
@@ -757,16 +404,6 @@
           padding: 2rem 1.5rem;
           border-radius: var(--radius-lg);
         }
-
-        .progress-steps {
-          flex-wrap: wrap;
-          gap: 1rem;
-        }
-
-        .progress-step {
-          padding: 0.625rem 1rem;
-          font-size: 0.85rem;
-        }
       }
 
       @media (max-width: 576px) {
@@ -788,27 +425,6 @@
 
         .section-title {
           font-size: 0.8rem;
-        }
-
-        .service-chip {
-          padding: 1.25rem 0.75rem;
-          min-height: 90px;
-        }
-
-        .service-chip-name {
-          font-size: 0.85rem;
-        }
-
-        .service-chip-price {
-          font-size: 0.75rem;
-        }
-
-        .room-selection {
-          grid-template-columns: 1fr;
-        }
-
-        .room-card-label {
-          padding: 1.25rem;
         }
 
         .btn-submit {
@@ -940,22 +556,6 @@
           <p class="subtitle mb-0">
             Trải nghiệm dịch vụ spa tuyệt vời trong vài bước đơn giản
           </p>
-
-          <!-- Progress Steps -->
-          <div class="progress-steps">
-            <div class="progress-step active">
-              <span class="step-number">1</span>
-              <span class="step-label">Thông tin</span>
-            </div>
-            <div class="progress-step">
-              <span class="step-number">2</span>
-              <span class="step-label">Dịch vụ</span>
-            </div>
-            <div class="progress-step">
-              <span class="step-number">3</span>
-              <span class="step-label">Xác nhận</span>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -966,373 +566,167 @@
             <!-- Alert Container -->
             <div id="bookingAlert"></div>
 
-            <!-- Booking Summary Panel -->
-            <div class="booking-summary" id="bookingSummary">
-              <div class="summary-title">
-                <i class="fas fa-receipt"></i>
-                Tóm tắt đặt lịch
-              </div>
-              <div class="summary-items">
-                <div class="summary-item">
-                  <span class="summary-item-label">Khách hàng</span>
-                  <span class="summary-item-value summary-item-placeholder" id="summaryName">Chưa nhập</span>
-                </div>
-                <div class="summary-item">
-                  <span class="summary-item-label">Số điện thoại</span>
-                  <span class="summary-item-value summary-item-placeholder" id="summaryPhone">Chưa nhập</span>
-                </div>
-                <div class="summary-item">
-                  <span class="summary-item-label">Loại phòng</span>
-                  <span class="summary-item-value" id="summaryRoom">Phòng thường</span>
-                </div>
-                <div class="summary-item">
-                  <span class="summary-item-label">Dịch vụ</span>
-                  <span class="summary-item-value summary-item-placeholder" id="summaryService">Chưa chọn</span>
-                </div>
-                <div class="summary-item">
-                  <span class="summary-item-label">Ngày giờ</span>
-                  <span class="summary-item-value summary-item-placeholder" id="summaryDateTime">Chưa chọn</span>
-                </div>
-                <div class="summary-total">
-                  <span class="total-label">Tổng estimated:</span>
-                  <span class="total-value" id="summaryTotal">0đ</span>
-                </div>
-              </div>
-            </div>
-
             <form id="bookingForm" novalidate>
-              <div class="row g-4">
-                <!-- Left Column: Customer Info & Date/Time -->
-                <div class="col-lg-4">
-                  
-                  <!-- LOGGED-IN CUSTOMER INFO (Read-only) -->
-                  <!-- <div id="loggedInCustomerInfo" style="display: none;">
-                    <div class="customer-info-display card bg-light p-4 mb-4" style="border-radius: 16px; border-left: 4px solid var(--gold-primary);">
-                      <div class="text-center mb-3">
-                        <div class="avatar-circle mb-2" style="width: 60px; height: 60px; background: var(--gradient-spa); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">
-                          <i class="fas fa-user fa-2x text-white"></i>
-                        </div>
-                        <h5 class="mb-1" id="displayCustomerName"></h5>
-                        <span class="badge bg-warning text-dark mb-2">Khách hàng thân thiết</span>
-                      </div>
-                      
-                      <div class="info-item mb-2">
-                        <i class="fas fa-phone text-warning me-2"></i>
-                        <span id="displayCustomerPhone" class="fw-medium"></span>
-                      </div>
-                      <div class="info-item mb-2">
-                        <i class="fas fa-envelope text-warning me-2"></i>
-                        <span id="displayCustomerEmail" class="text-muted"></span>
-                      </div>
-                      
-                      <div class="mt-3 pt-3 border-top">
-                        <p class="text-muted small mb-2">
-                          <i class="fas fa-info-circle me-1"></i>Bạn đang đặt lịch với tài khoản của mình
-                        </p>
-                        <a href="profile.html" class="btn btn-outline-warning btn-sm w-100">
-                          <i class="fas fa-edit me-2"></i>Cập nhật thông tin
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                   -->
-
-                  <!-- CUSTOMER INFO FORM -->
-                  <div id="guestCustomerInfo" style="display: block;">
-                    <h6 class="section-title">
-                      <i class="fas fa-user-plus"></i>Thông tin khách hàng
-                    </h6>
-
-                    <!-- Full Name -->
-                    <div class="mb-4">
-                      <label for="fullName" class="form-label">
-                        Họ tên <span class="required-mark">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        class="form-control"
-                        id="fullName"
-                        placeholder="Nhập họ và tên của bạn"
-                        required
-                      />
-                      <div class="field-error" id="fullNameError"></div>
-                      <small class="text-muted helper-text"
-                        >Tối thiểu 2 ký tự</small
-                      >
-                    </div>
-
-                    <!-- Phone -->
-                    <div class="mb-4">
-                      <label for="phone" class="form-label">
-                        Số điện thoại <span class="required-mark">*</span>
-                      </label>
-                      <input
-                        type="tel"
-                        class="form-control"
-                        id="phone"
-                        placeholder="Nhập số điện thoại"
-                        pattern="[0-9]{10}"
-                        required
-                      />
-                      <div class="field-error" id="phoneError"></div>
-                      <small class="text-muted helper-text"
-                        >10 số, bắt đầu bằng số 0</small
-                      >
-                    </div>
-
-                    <!-- Room Type -->
-                    <div class="mb-4">
-                      <label class="form-label">
-                        Loại phòng <span class="required-mark">*</span>
-                      </label>
-                      <div class="room-selection">
-                        <div class="room-card">
-                          <input
-                            type="radio"
-                            name="roomType"
-                            id="roomRegular"
-                            value="regular"
-                            checked
-                          >
-                          <label class="room-card-label" for="roomRegular">
-                            <i class="fas fa-door-open room-icon text-secondary"></i>
-                            <span class="room-name">Phòng thường</span>
-                            <span class="room-desc">Tiêu chuẩn</span>
-                          </label>
-                        </div>
-                        <div class="room-card">
-                          <input
-                            type="radio"
-                            name="roomType"
-                            id="roomVIP"
-                            value="vip"
-                          >
-                          <label class="room-card-label" for="roomVIP">
-                            <i class="fas fa-crown room-icon text-warning"></i>
-                            <span class="room-name">Phòng VIP</span>
-                            <span class="room-desc">Đặc biệt</span>
-                            <span class="vip-badge">+20%</span>
-                          </label>
-                        </div>
-                      </div>
-                      <div class="field-error" id="roomTypeError"></div>
-                      <small class="helper-text">
-                        <i class="fas fa-info-circle"></i>
-                        Phòng VIP có không gian riêng tư, trang thiết bị cao cấp
-                      </small>
-                    </div>
-
-                  </div>
-
-                  <!-- Date Selection -->
-                  <h6 class="section-title mt-4">
-                    <i class="fas fa-calendar-alt"></i>Chọn ngày
-                    <span class="required-mark">*</span>
-                  </h6>
-                  <div class="mb-4">
-                    <input
-                      type="date"
-                      class="form-control"
-                      id="date"
-                      required
-                    />
-                    <div class="field-error" id="dateError"></div>
-                  </div>
-
-                  <!-- Time Selection -->
+              <!-- Row 1: Customer Information -->
+              <div class="row g-4 mb-4">
+                <div class="col-12">
                   <h6 class="section-title">
-                    <i class="fas fa-clock"></i>Chọn giờ
-                    <span class="required-mark">*</span>
+                    <i class="fas fa-user-plus"></i>Thông tin khách hàng
                   </h6>
-                  <div class="mb-4">
-                    <select class="form-select" id="time" required>
-                      <option value="">-- Chọn giờ --</option>
-                      <option value="09:30">09:30</option>
-                      <option value="10:00">10:00</option>
-                      <option value="10:30">10:30</option>
-                      <option value="11:00">11:00</option>
-                      <option value="11:30">11:30</option>
-                      <option value="12:00">12:00</option>
-                      <option value="12:30">12:30</option>
-                      <option value="13:00">13:00</option>
-                      <option value="13:30">13:30</option>
-                      <option value="14:00">14:00</option>
-                      <option value="14:30">14:30</option>
-                      <option value="15:00">15:00</option>
-                      <option value="15:30">15:30</option>
-                      <option value="16:00">16:00</option>
-                      <option value="16:30">16:30</option>
-                      <option value="17:00">17:00</option>
-                      <option value="17:30">17:30</option>
-                      <option value="18:00">18:00</option>
-                      <option value="18:30">18:30</option>
-                      <option value="19:00">19:00</option>
-                      <option value="19:30">19:30</option>
-                      <option value="20:00">20:00</option>
-                      <option value="20:30">20:30</option>
-                      <option value="21:00">21:00</option>
-                      <option value="21:30">21:30</option>
-                      <option value="22:00">22:00</option>
-                    </select>
-                    <div class="field-error" id="timeError"></div>
-                    <small class="text-muted helper-text"
-                      >Giờ hoạt động: Thứ 2 - Chủ Nhật, 09:30 - 22:00</small
-                    >
-                  </div>
-
-                  <!-- Notes (Optional) -->
-                  <h6 class="section-title">
-                    <i class="fas fa-sticky-note"></i>Ghi chú
-                  </h6>
-                  <div>
-                    <textarea
-                      class="form-control"
-                      id="notes"
-                      rows="3"
-                      placeholder="Ghi chú hoặc yêu cầu đặc biệt (nếu có)"
-                    ></textarea>
-                  </div>
                 </div>
 
-                <!-- Right Column: Appointment Info -->
-                <div class="col-lg-8">
-                  <!-- Service Selection -->
+                <!-- Full Name -->
+                <div class="col-md-6">
+                  <label for="fullName" class="form-label">
+                    Họ tên <span class="required-mark">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="fullName"
+                    placeholder="Nhập họ và tên của bạn"
+                    required
+                  />
+                  <div class="field-error" id="fullNameError"></div>
+                  <small class="helper-text">Tối thiểu 2 ký tự</small>
+                </div>
+
+                <!-- Phone -->
+                <div class="col-md-6">
+                  <label for="phone" class="form-label">
+                    Số điện thoại <span class="required-mark">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    class="form-control"
+                    id="phone"
+                    placeholder="Nhập số điện thoại"
+                    pattern="[0-9]{10}"
+                    required
+                  />
+                  <div class="field-error" id="phoneError"></div>
+                  <small class="helper-text">10 số, bắt đầu bằng số 0</small>
+                </div>
+              </div>
+
+              <!-- Row 2: Service Selection -->
+              <div class="row g-4 mb-4">
+                <!-- Service Selection (Dropdown) -->
+                <div class="col-12">
                   <h6 class="section-title">
                     <i class="fas fa-spa"></i>Chọn dịch vụ
                     <span class="required-mark">*</span>
                   </h6>
+                  <select class="form-select form-select-lg" id="serviceSelect" required>
+                    <option value="">-- Chọn dịch vụ --</option>
 
-                  <div class="service-section mb-3">
-                    <div class="service-group-title">Chăm sóc da</div>
-                    <div class="service-grid">
-                      <div class="service-chip" data-service="1">
-                        <div class="check-indicator">
-                          <i class="fas fa-check"></i>
-                        </div>
-                        <div class="service-chip-name">Chăm sóc da cơ bản</div>
-                        <div class="service-chip-price">800.000đ</div>
-                      </div>
+                    <optgroup label="💆 Chăm sóc da">
+                      <option value="1">Chăm sóc da cơ bản -- 800.000đ</option>
+                      <option value="2">Chăm sóc da chuyên sâu -- 1.500.000đ</option>
+                      <option value="3">Trị mụn -- 1.200.000đ</option>
+                      <option value="4">Trị nám - tàn nhang -- 1.800.000đ</option>
+                      <option value="5">Trẻ hóa da -- 2.000.000đ</option>
+                      <option value="6">Căng bóng da -- 2.500.000đ</option>
+                    </optgroup>
 
-                      <div class="service-chip" data-service="2">
-                        <div class="check-indicator">
-                          <i class="fas fa-check"></i>
-                        </div>
-                        <div class="service-chip-name">
-                          Chăm sóc da chuyên sâu
-                        </div>
-                        <div class="service-chip-price">1.500.000đ</div>
-                      </div>
+                    <optgroup label="⚡ Điều trị & Công nghệ">
+                      <option value="7">Điều trị da công nghệ cao -- 2.200.000đ</option>
+                      <option value="8">Laser trị liệu -- 1.500.000đ</option>
+                      <option value="9">Phi kim - Meso -- 1.800.000đ</option>
+                      <option value="10">Peel da sinh học -- 900.000đ</option>
+                    </optgroup>
 
-                      <div class="service-chip" data-service="3">
-                        <div class="check-indicator">
-                          <i class="fas fa-check"></i>
-                        </div>
-                        <div class="service-chip-name">Trị mụn</div>
-                        <div class="service-chip-price">1.200.000đ</div>
-                      </div>
+                    <optgroup label="🌸 Thư giãn & Khác">
+                      <option value="11">Massage thư giãn -- 800.000đ</option>
+                      <option value="12">Massage mặt -- 600.000đ</option>
+                      <option value="13">Tư vấn da chuyên sâu -- Miễn phí</option>
+                    </optgroup>
+                  </select>
+                  <div class="field-error" id="serviceSelectError"></div>
+                  <small class="helper-text">
+                    <i class="fas fa-info-circle"></i>
+                    Chọn dịch vụ bạn muốn trải nghiệm
+                  </small>
+                </div>
+              </div>
 
-                      <div class="service-chip" data-service="4">
-                        <div class="check-indicator">
-                          <i class="fas fa-check"></i>
-                        </div>
-                        <div class="service-chip-name">Trị nám - tàn nhang</div>
-                        <div class="service-chip-price">1.800.000đ</div>
-                      </div>
+              <!-- Row 3: Date & Time Selection -->
+              <div class="row g-4 mb-4">
+                <!-- Date Selection -->
+                <div class="col-md-6">
+                  <h6 class="section-title">
+                    <i class="fas fa-calendar-alt"></i>Chọn ngày
+                    <span class="required-mark">*</span>
+                  </h6>
+                  <input
+                    type="date"
+                    class="form-control form-control-lg"
+                    id="date"
+                    required
+                  />
+                  <div class="field-error" id="dateError"></div>
+                </div>
 
-                      <div class="service-chip" data-service="5">
-                        <div class="check-indicator">
-                          <i class="fas fa-check"></i>
-                        </div>
-                        <div class="service-chip-name">Trẻ hóa da</div>
-                        <div class="service-chip-price">2.000.000đ</div>
-                      </div>
+                <!-- Time Selection -->
+                <div class="col-md-6">
+                  <h6 class="section-title">
+                    <i class="fas fa-clock"></i>Chọn giờ
+                    <span class="required-mark">*</span>
+                  </h6>
+                  <select class="form-select form-select-lg" id="time" required>
+                    <option value="">-- Chọn giờ --</option>
+                    <option value="09:30">09:30</option>
+                    <option value="10:00">10:00</option>
+                    <option value="10:30">10:30</option>
+                    <option value="11:00">11:00</option>
+                    <option value="11:30">11:30</option>
+                    <option value="12:00">12:00</option>
+                    <option value="12:30">12:30</option>
+                    <option value="13:00">13:00</option>
+                    <option value="13:30">13:30</option>
+                    <option value="14:00">14:00</option>
+                    <option value="14:30">14:30</option>
+                    <option value="15:00">15:00</option>
+                    <option value="15:30">15:30</option>
+                    <option value="16:00">16:00</option>
+                    <option value="16:30">16:30</option>
+                    <option value="17:00">17:00</option>
+                    <option value="17:30">17:30</option>
+                    <option value="18:00">18:00</option>
+                    <option value="18:30">18:30</option>
+                    <option value="19:00">19:00</option>
+                    <option value="19:30">19:30</option>
+                    <option value="20:00">20:00</option>
+                    <option value="20:30">20:30</option>
+                    <option value="21:00">21:00</option>
+                    <option value="21:30">21:30</option>
+                    <option value="22:00">22:00</option>
+                  </select>
+                  <div class="field-error" id="timeError"></div>
+                  <small class="helper-text">
+                    <i class="fas fa-clock"></i>
+                    Giờ hoạt động: Thứ 2 - Chủ Nhật, 09:30 - 22:00
+                  </small>
+                </div>
+              </div>
 
-                      <div class="service-chip" data-service="6">
-                        <div class="check-indicator">
-                          <i class="fas fa-check"></i>
-                        </div>
-                        <div class="service-chip-name">Căng bóng da</div>
-                        <div class="service-chip-price">2.500.000đ</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="service-section mb-3">
-                    <div class="service-group-title">Điều trị & Công nghệ</div>
-                    <div class="service-grid">
-                      <div class="service-chip" data-service="7">
-                        <div class="check-indicator">
-                          <i class="fas fa-check"></i>
-                        </div>
-                        <div class="service-chip-name">
-                          Điều trị da công nghệ cao
-                        </div>
-                        <div class="service-chip-price">2.200.000đ</div>
-                      </div>
-
-                      <div class="service-chip" data-service="8">
-                        <div class="check-indicator">
-                          <i class="fas fa-check"></i>
-                        </div>
-                        <div class="service-chip-name">Laser trị liệu</div>
-                        <div class="service-chip-price">1.500.000đ</div>
-                      </div>
-
-                      <div class="service-chip" data-service="9">
-                        <div class="check-indicator">
-                          <i class="fas fa-check"></i>
-                        </div>
-                        <div class="service-chip-name">Phi kim - Meso</div>
-                        <div class="service-chip-price">1.800.000đ</div>
-                      </div>
-
-                      <div class="service-chip" data-service="10">
-                        <div class="check-indicator">
-                          <i class="fas fa-check"></i>
-                        </div>
-                        <div class="service-chip-name">Peel da sinh học</div>
-                        <div class="service-chip-price">900.000đ</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="service-section mb-3">
-                    <div class="service-group-title">Thư giãn & Khác</div>
-                    <div class="service-grid">
-                      <div class="service-chip" data-service="11">
-                        <div class="check-indicator">
-                          <i class="fas fa-check"></i>
-                        </div>
-                        <div class="service-chip-name">Massage thư giãn</div>
-                        <div class="service-chip-price">800.000đ</div>
-                      </div>
-
-                      <div class="service-chip" data-service="12">
-                        <div class="check-indicator">
-                          <i class="fas fa-check"></i>
-                        </div>
-                        <div class="service-chip-name">Massage mặt</div>
-                        <div class="service-chip-price">600.000đ</div>
-                      </div>
-
-                      <div class="service-chip" data-service="13">
-                        <div class="check-indicator">
-                          <i class="fas fa-check"></i>
-                        </div>
-                        <div class="service-chip-name">
-                          Tư vấn da chuyên sâu
-                        </div>
-                        <div class="service-chip-price">Miễn phí</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <input type="hidden" id="selectedService" value="" />
+              <!-- Row 4: Notes (Optional) -->
+              <div class="row g-4 mb-4">
+                <div class="col-12">
+                  <h6 class="section-title">
+                    <i class="fas fa-sticky-note"></i>Ghi chú
+                  </h6>
+                  <textarea
+                    class="form-control"
+                    id="notes"
+                    rows="3"
+                    placeholder="Ghi chú hoặc yêu cầu đặc biệt (nếu có)"
+                  ></textarea>
                 </div>
               </div>
 
               <!-- Submit Button -->
-              <div class="row mt-4">
+              <div class="row">
                 <div class="col-12">
                   <button type="submit" class="btn btn-submit btn-lg w-100">
                     <i class="fas fa-calendar-check me-2"></i>Đặt lịch ngay
@@ -1346,6 +740,9 @@
                   </p>
                 </div>
               </div>
+
+              <!-- Hidden input for service -->
+              <input type="hidden" id="selectedService" value="" />
             </form>
           </div>
         </div>
@@ -1480,27 +877,16 @@
       };
 
       // ========================================
-      // SERVICE SELECTION
+      // SERVICE SELECTION (Dropdown)
       // ========================================
-      
-      document.querySelectorAll(".service-chip").forEach((item) => {
-        item.addEventListener("click", function () {
-          // Remove selected class from all items
-          document.querySelectorAll(".service-chip").forEach((si) => {
-            si.classList.remove("selected");
-          });
 
-          // Add selected class to clicked item
-          this.classList.add("selected");
-
+      const serviceSelect = document.getElementById('serviceSelect');
+      if (serviceSelect) {
+        serviceSelect.addEventListener('change', function() {
           // Update hidden input
-          document.getElementById("selectedService").value =
-            this.dataset.service;
-
-          // Update booking summary
-          updateBookingSummary();
+          document.getElementById('selectedService').value = this.value;
         });
-      });
+      }
 
       // ========================================
       // FORM SUBMISSION - SESSION AWARE
@@ -1519,11 +905,11 @@
           const currentUser = isLoggedIn ? JSON.parse(localStorage.getItem('currentUser')) : null;
 
           // Validate form based on login status
-          const service = document.getElementById("selectedService").value;
+          const service = document.getElementById("serviceSelect").value;
           const date = document.getElementById("date").value;
           const time = document.getElementById("time").value;
           const notes = document.getElementById("notes").value.trim();
-          
+
           let isValid = true;
           let bookingData = {
             service: service,
@@ -1541,9 +927,9 @@
             
             // Validate service
             if (!service) {
-              showAlert(
+              showError(
+                "serviceSelect",
                 '<i class="fas fa-exclamation-circle"></i>Vui lòng chọn dịch vụ',
-                "danger",
               );
               isValid = false;
             }
@@ -1601,9 +987,9 @@
 
             // Validate service
             if (!service) {
-              showAlert(
+              showError(
+                "serviceSelect",
                 '<i class="fas fa-exclamation-circle"></i>Vui lòng chọn dịch vụ',
-                "danger",
               );
               isValid = false;
             }
@@ -1782,18 +1168,6 @@
             showAlert(successMessage, "success");
           }
 
-          // Get selected room type
-          const roomTypeRadios = document.querySelectorAll('input[name="roomType"]');
-          let selectedRoomType = 'regular';
-          roomTypeRadios.forEach(radio => {
-            if (radio.checked) {
-              selectedRoomType = radio.value;
-            }
-          });
-          
-          // Add room type to booking data
-          bookingData.room_type = selectedRoomType;
-          
           // Store booking (simulated)
           console.log("Booking data:", bookingData);
 
@@ -1801,111 +1175,10 @@
           setTimeout(() => {
             document.getElementById("bookingForm").reset();
             // Reset service selection
-            document.querySelectorAll(".service-chip").forEach((si) => {
-              si.classList.remove("selected");
-            });
             document.getElementById("selectedService").value = "";
           }, 5000);
         }, 1500);
       }
-
-      // ========================================
-      // BOOKING SUMMARY UPDATE
-      // ========================================
-
-      // Service prices mapping
-      const servicePrices = {
-        '1': 800000,
-        '2': 1500000,
-        '3': 1200000,
-        '4': 1800000,
-        '5': 2000000,
-        '6': 2500000,
-        '7': 2200000,
-        '8': 1500000,
-        '9': 1800000,
-        '10': 900000,
-        '11': 800000,
-        '12': 600000,
-        '13': 0
-      };
-
-      const serviceNames = {
-        '1': 'Chăm sóc da cơ bản',
-        '2': 'Chăm sóc da chuyên sâu',
-        '3': 'Trị mụn',
-        '4': 'Trị nám - tàn nhang',
-        '5': 'Trẻ hóa da',
-        '6': 'Căng bóng da',
-        '7': 'Điều trị da công nghệ cao',
-        '8': 'Laser trị liệu',
-        '9': 'Phi kim - Meso',
-        '10': 'Peel da sinh học',
-        '11': 'Massage thư giãn',
-        '12': 'Massage mặt',
-        '13': 'Tư vấn da chuyên sâu'
-      };
-
-      function updateBookingSummary() {
-        const fullName = document.getElementById('fullName').value.trim();
-        const phone = document.getElementById('phone').value.trim();
-        const roomType = document.querySelector('input[name="roomType"]:checked').value;
-        const selectedService = document.getElementById('selectedService').value;
-        const date = document.getElementById('date').value;
-        const time = document.getElementById('time').value;
-
-        // Update summary
-        document.getElementById('summaryName').textContent = fullName || 'Chưa nhập';
-        document.getElementById('summaryName').classList.toggle('summary-item-placeholder', !fullName);
-
-        document.getElementById('summaryPhone').textContent = phone || 'Chưa nhập';
-        document.getElementById('summaryPhone').classList.toggle('summary-item-placeholder', !phone);
-
-        const roomLabel = roomType === 'vip' ? 'Phòng VIP' : 'Phòng thường';
-        document.getElementById('summaryRoom').textContent = roomLabel;
-
-        const serviceName = selectedService ? serviceNames[selectedService] : 'Chưa chọn';
-        document.getElementById('summaryService').textContent = serviceName;
-        document.getElementById('summaryService').classList.toggle('summary-item-placeholder', !selectedService);
-
-        const dateTime = (date && time) ? `${date} - ${time}` : 'Chưa chọn';
-        document.getElementById('summaryDateTime').textContent = dateTime;
-        document.getElementById('summaryDateTime').classList.toggle('summary-item-placeholder', !(date && time));
-
-        // Calculate total
-        let total = 0;
-        if (selectedService) {
-          total = servicePrices[selectedService] || 0;
-          if (roomType === 'vip') {
-            total = total * 1.2;
-          }
-        }
-
-        document.getElementById('summaryTotal').textContent = total > 0
-          ? total.toLocaleString('vi-VN') + 'đ'
-          : '0đ';
-      }
-
-      // Add event listeners for real-time summary updates
-      document.addEventListener('DOMContentLoaded', function() {
-        // Form inputs
-        const inputs = ['fullName', 'phone', 'date', 'time'];
-        inputs.forEach(id => {
-          const element = document.getElementById(id);
-          if (element) {
-            element.addEventListener('input', updateBookingSummary);
-            element.addEventListener('change', updateBookingSummary);
-          }
-        });
-
-        // Room type
-        document.querySelectorAll('input[name="roomType"]').forEach(radio => {
-          radio.addEventListener('change', updateBookingSummary);
-        });
-
-        // Initial update
-        updateBookingSummary();
-      });
     </script>
   </body>
 </html>

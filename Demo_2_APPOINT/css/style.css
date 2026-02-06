@@ -280,16 +280,7 @@ button {
     color: var(--primary-blue);
 }
 
-.section-title::after {
-    content: '';
-    position: absolute;
-    bottom: -10px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 60px;
-    height: 3px;
-    background: var(--gradient-gold);
-}
+
 
 .section-subtitle {
     font-size: 1.1rem;
@@ -305,7 +296,7 @@ button {
     background: var(--gradient-gold);
     border: none;
     font-weight: 600;
-    padding: 0.7rem 1.2rem;
+    padding: 0.5rem 1.2rem;
     transition: var(--transition);
     color: white;
 }
