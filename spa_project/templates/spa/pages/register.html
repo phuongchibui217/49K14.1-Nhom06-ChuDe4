@@ -1,0 +1,265 @@
+{% extends 'spa/base.html' %}
+
+{% block title %}Đăng ký - Spa ANA{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-card {
+        max-width: 500px;
+        margin: 2rem auto;
+    }
+    .field-error {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+    .is-invalid {
+        border-color: #dc3545 !important;
+    }
+    .password-strength {
+        height: 5px;
+        border-radius: 2px;
+        margin-top: 5px;
+        transition: all 0.3s;
+    }
+    .password-strength.weak {
+        width: 33%;
+        background: #dc3545;
+    }
+    .password-strength.medium {
+        width: 66%;
+        background: #ffc107;
+    }
+    .password-strength.strong {
+        width: 100%;
+        background: #28a745;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card shadow border-0 auth-card">
+                    <div class="card-body p-5">
+                        <div class="text-center mb-4">
+                            <i class="fas fa-spa text-warning fa-3x mb-3"></i>
+                            <h3 class="fw-bold">Đăng ký tài khoản</h3>
+                            <p class="text-muted">Tạo tài khoản để đặt lịch và nhận ưu đãi</p>
+                        </div>
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <form method="post" action="{% url 'register' %}" id="registerForm" novalidate>
+                            {% csrf_token %}
+
+                            <div class="mb-3">
+                                <label for="id_full_name" class="form-label">
+                                    Họ và tên <span class="text-danger">*</span>
+                                </label>
+                                <input type="text"
+                                       class="form-control {% if form.full_name.errors %}is-invalid{% endif %}"
+                                       id="id_full_name"
+                                       name="full_name"
+                                       placeholder="Nhập họ và tên đầy đủ"
+                                       required
+                                       value="{{ form.full_name.value|default:'' }}">
+                                {% if form.full_name.errors %}
+                                {% for error in form.full_name.errors %}
+                                <div class="field-error">
+                                    <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                </div>
+                                {% endfor %}
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="id_phone" class="form-label">
+                                    Số điện thoại <span class="text-danger">*</span>
+                                </label>
+                                <input type="tel"
+                                       class="form-control {% if form.phone.errors %}is-invalid{% endif %}"
+                                       id="id_phone"
+                                       name="phone"
+                                       placeholder="Nhập số điện thoại (10-11 số)"
+                                       pattern="[0-9]{10,11}"
+                                       required
+                                       value="{{ form.phone.value|default:'' }}">
+                                {% if form.phone.errors %}
+                                {% for error in form.phone.errors %}
+                                <div class="field-error">
+                                    <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                </div>
+                                {% endfor %}
+                                {% else %}
+                                <small class="text-muted">Số điện thoại sẽ dùng để đăng nhập</small>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="id_email" class="form-label">Email</label>
+                                <input type="email"
+                                       class="form-control {% if form.email.errors %}is-invalid{% endif %}"
+                                       id="id_email"
+                                       name="email"
+                                       placeholder="Nhập email (nếu có)"
+                                       value="{{ form.email.value|default:'' }}">
+                                {% if form.email.errors %}
+                                {% for error in form.email.errors %}
+                                <div class="field-error">
+                                    <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                </div>
+                                {% endfor %}
+                                {% endif %}
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_gender" class="form-label">Giới tính</label>
+                                    <select class="form-select" id="id_gender" name="gender">
+                                        <option value="">-- Chọn giới tính --</option>
+                                        <option value="M" {% if form.gender.value == 'M' %}selected{% endif %}>Nam</option>
+                                        <option value="F" {% if form.gender.value == 'F' %}selected{% endif %}>Nữ</option>
+                                        <option value="O" {% if form.gender.value == 'O' %}selected{% endif %}>Khác</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_dob" class="form-label">Ngày sinh</label>
+                                    <input type="date"
+                                           class="form-control"
+                                           id="id_dob"
+                                           name="dob"
+                                           value="{{ form.dob.value|default:'' }}">
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="id_password1" class="form-label">
+                                    Mật khẩu <span class="text-danger">*</span>
+                                </label>
+                                <input type="password"
+                                       class="form-control {% if form.password1.errors %}is-invalid{% endif %}"
+                                       id="id_password1"
+                                       name="password1"
+                                       placeholder="Nhập mật khẩu (ít nhất 6 ký tự)"
+                                       required>
+                                <div class="password-strength" id="passwordStrength" style="width: 0%"></div>
+                                {% if form.password1.errors %}
+                                {% for error in form.password1.errors %}
+                                <div class="field-error">
+                                    <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                </div>
+                                {% endfor %}
+                                {% else %}
+                                <small class="text-muted">Mật khẩu ít nhất 6 ký tự</small>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="id_password2" class="form-label">
+                                    Xác nhận mật khẩu <span class="text-danger">*</span>
+                                </label>
+                                <input type="password"
+                                       class="form-control {% if form.password2.errors %}is-invalid{% endif %}"
+                                       id="id_password2"
+                                       name="password2"
+                                       placeholder="Nhập lại mật khẩu"
+                                       required>
+                                {% if form.password2.errors %}
+                                {% for error in form.password2.errors %}
+                                <div class="field-error">
+                                    <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                </div>
+                                {% endfor %}
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="id_address" class="form-label">Địa chỉ</label>
+                                <textarea class="form-control"
+                                          id="id_address"
+                                          name="address"
+                                          rows="2"
+                                          placeholder="Nhập địa chỉ của bạn">{{ form.address.value|default:'' }}</textarea>
+                            </div>
+
+                            <div class="mb-3 form-check">
+                                <input type="checkbox"
+                                       class="form-check-input"
+                                       id="id_agree_terms"
+                                       required>
+                                <label class="form-check-label" for="id_agree_terms">
+                                    Tôi đồng ý với <a href="#" class="text-warning">Điều khoản dịch vụ</a> và <a href="#" class="text-warning">Chính sách bảo mật</a>
+                                </label>
+                            </div>
+
+                            <button type="submit" class="btn btn-warning w-100 btn-lg">
+                                <i class="fas fa-user-plus me-2"></i>Đăng ký
+                            </button>
+                        </form>
+
+                        <div class="text-center mt-4">
+                            <p class="text-muted mb-0">
+                                Đã có tài khoản?
+                                <a href="{% url 'login' %}" class="text-warning fw-bold">Đăng nhập</a>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Password strength indicator (client-side only for UX)
+document.addEventListener('DOMContentLoaded', function() {
+    const password1 = document.getElementById('id_password1');
+    const password2 = document.getElementById('id_password2');
+    const passwordStrength = document.getElementById('passwordStrength');
+
+    if (password1 && passwordStrength) {
+        password1.addEventListener('input', function() {
+            const password = this.value;
+            let strength = 0;
+
+            if (password.length >= 6) strength++;
+            if (password.length >= 8) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+            passwordStrength.className = 'password-strength';
+            if (strength <= 2) {
+                passwordStrength.classList.add('weak');
+            } else if (strength <= 3) {
+                passwordStrength.classList.add('medium');
+            } else {
+                passwordStrength.classList.add('strong');
+            }
+        });
+    }
+
+    // Real-time password match validation (UX only)
+    if (password2 && password1) {
+        password2.addEventListener('input', function() {
+            if (this.value && this.value !== password1.value) {
+                this.setCustomValidity('Mật khẩu không khớp');
+            } else {
+                this.setCustomValidity('');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

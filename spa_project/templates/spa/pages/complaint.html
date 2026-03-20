@@ -1,0 +1,339 @@
+{% extends 'spa/base.html' %}
+
+{% block title %}Hỗ trợ & CSKH - Spa ANA{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, rgba(212, 168, 53, 0.9), rgba(241, 196, 15, 0.8)),
+                    url('https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=1920') center/cover;
+        padding: 6rem 0 3rem;
+        text-align: center;
+        color: white;
+    }
+
+    .complaint-form-container {
+        max-width: 900px;
+        margin: -3rem auto 3rem;
+        position: relative;
+        z-index: 10;
+    }
+
+    .complaint-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        padding: 3rem;
+        animation: fadeInUp 0.6s ease;
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .complaint-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #d4a853, #f1c40f);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+    }
+
+    .complaint-icon i {
+        font-size: 2.5rem;
+        color: white;
+    }
+
+    .form-control, .form-select {
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #d4a835;
+        box-shadow: 0 0 0 3px rgba(212, 168, 55, 0.1);
+    }
+
+    .field-error {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+
+    .is-invalid {
+        border-color: #dc3545 !important;
+    }
+
+    .upload-area {
+        border: 2px dashed #ddd;
+        padding: 2rem;
+        text-align: center;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .upload-area:hover {
+        border-color: #d4a853;
+        background: rgba(212, 168, 53, 0.05);
+    }
+
+    .info-card {
+        text-align: center;
+        padding: 2rem 1rem;
+        height: 100%;
+        border-radius: 16px;
+        transition: all 0.3s ease;
+    }
+
+    .info-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>Hỗ Trợ & Chăm Sóc Khách Hàng</h1>
+        <p class="lead mb-0">Chúng tôi luôn sẵn sàng hỗ trợ bạn. Vui lòng để lại thông tin để được phục vụ tốt nhất</p>
+    </div>
+</section>
+
+<!-- Complaint Form -->
+<section class="py-5">
+    <div class="container">
+        <div class="complaint-form-container">
+            <div class="complaint-card">
+                
+                <div class="text-center mb-4">
+                    <div class="complaint-icon">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <h3>Gửi Yêu Cầu Hỗ Trợ</h3>
+                    <p class="text-muted">Điền thông tin chi tiết để chúng tôi có thể hỗ trợ bạn nhanh chóng</p>
+                </div>
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger" role="alert">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <form method="post" action="{% url 'complaint' %}" novalidate>
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.full_name.id_for_label }}" class="form-label">
+                                <i class="fas fa-user me-2 text-warning"></i>Họ và tên <span class="text-danger">*</span>
+                            </label>
+                            {{ form.full_name }}
+                            {% if form.full_name.errors %}
+                            {% for error in form.full_name.errors %}
+                            <div class="field-error">
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                            </div>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.phone.id_for_label }}" class="form-label">
+                                <i class="fas fa-phone me-2 text-warning"></i>Số điện thoại <span class="text-danger">*</span>
+                            </label>
+                            {{ form.phone }}
+                            {% if form.phone.errors %}
+                            {% for error in form.phone.errors %}
+                            <div class="field-error">
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                            </div>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.email.id_for_label }}" class="form-label">
+                            <i class="fas fa-envelope me-2 text-warning"></i>Email <span class="text-danger">*</span>
+                        </label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                        {% for error in form.email.errors %}
+                        <div class="field-error">
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.support_type.id_for_label }}" class="form-label">
+                            <i class="fas fa-tag me-2 text-warning"></i>Loại hỗ trợ <span class="text-danger">*</span>
+                        </label>
+                        {{ form.support_type }}
+                        {% if form.support_type.errors %}
+                        {% for error in form.support_type.errors %}
+                        <div class="field-error">
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.support_date.id_for_label }}" class="form-label">
+                                <i class="fas fa-calendar-alt me-2 text-warning"></i>Ngày cần hỗ trợ (nếu có)
+                            </label>
+                            {{ form.support_date }}
+                            {% if form.support_date.errors %}
+                            {% for error in form.support_date.errors %}
+                            <div class="field-error">
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                            </div>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.appointment_code.id_for_label }}" class="form-label">
+                                <i class="fas fa-calendar-check me-2 text-warning"></i>Mã lịch hẹn (nếu có)
+                            </label>
+                            {{ form.appointment_code }}
+                            {% if form.appointment_code.errors %}
+                            {% for error in form.appointment_code.errors %}
+                            <div class="field-error">
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                            </div>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.related_service.id_for_label }}" class="form-label">
+                            <i class="fas fa-spa me-2 text-warning"></i>Dịch vụ liên quan
+                        </label>
+                        {{ form.related_service }}
+                        {% if form.related_service.errors %}
+                        {% for error in form.related_service.errors %}
+                        <div class="field-error">
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.content.id_for_label }}" class="form-label">
+                            <i class="fas fa-comment-alt me-2 text-warning"></i>Nội dung yêu cầu <span class="text-danger">*</span>
+                        </label>
+                        {{ form.content }}
+                        {% if form.content.errors %}
+                        {% for error in form.content.errors %}
+                        <div class="field-error">
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                        <small class="text-muted">Vui lòng mô tả chi tiết để chúng tôi có thể hỗ trợ tốt nhất (tối thiểu 20 ký tự)</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.expected_solution.id_for_label }}" class="form-label">
+                            <i class="fas fa-lightbulb me-2 text-warning"></i>Giải pháp mong muốn (tùy chọn)
+                        </label>
+                        {{ form.expected_solution }}
+                        {% if form.expected_solution.errors %}
+                        {% for error in form.expected_solution.errors %}
+                        <div class="field-error">
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">
+                            <i class="fas fa-paperclip me-2 text-warning"></i>Hình ảnh/Minh chứng (tùy chọn)
+                        </label>
+                        <div class="upload-area">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                            <p class="text-muted mb-0">Kéo thả file vào đây hoặc <a href="#" class="text-warning text-decoration-none">chọn file</a></p>
+                            <small class="text-muted">Hỗ trợ: JPG, PNG, PDF (Tối đa 5MB)</small>
+                        </div>
+                    </div>
+
+                    <div class="form-check mb-4">
+                        {{ form.agree_processing }}
+                        <label class="form-check-label" for="{{ form.agree_processing.id_for_label }}">
+                            Tôi đồng ý để lại thông tin để Spa ANA hỗ trợ
+                        </label>
+                        {% if form.agree_processing.errors %}
+                        {% for error in form.agree_processing.errors %}
+                        <div class="field-error">
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="btn btn-warning btn-lg w-100">
+                        <i class="fas fa-paper-plane me-2"></i>Gửi Yêu Cầu
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Info Cards -->
+        <div class="row mt-5">
+            <div class="col-md-4">
+                <div class="card info-card h-100">
+                    <div class="card-body">
+                        <i class="fas fa-phone-alt fa-2x text-primary mb-3"></i>
+                        <h5>Hotline Hỗ Trợ</h5>
+                        <p class="text-primary fw-bold mb-0">1900 1234</p>
+                        <small class="text-muted">Hỗ trợ 24/7</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card info-card h-100">
+                    <div class="card-body">
+                        <i class="fas fa-clock fa-2x text-warning mb-3"></i>
+                        <h5>Thời Gian Xử Lý</h5>
+                        <p class="text-muted mb-0">Trong vòng 24-48h</p>
+                        <small class="text-muted">Chúng tôi sẽ phản hồi sớm nhất</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card info-card h-100">
+                    <div class="card-body">
+                        <i class="fas fa-shield-alt fa-2x text-success mb-3"></i>
+                        <h5>Bảo Mật Thông Tin</h5>
+                        <p class="text-muted mb-0">Thông tin được bảo mật tuyệt đối</p>
+                        <small class="text-muted">Chỉ dùng để hỗ trợ khách hàng</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

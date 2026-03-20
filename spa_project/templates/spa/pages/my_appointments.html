@@ -1,0 +1,264 @@
+{% extends 'spa/base.html' %}
+
+{% block title %}Lịch hẹn của tôi - Spa ANA{% endblock %}
+
+{% block extra_css %}
+<style>
+    .appointments-section {
+        padding: 4rem 0;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, rgba(30, 58, 95, 0.9), rgba(44, 82, 130, 0.9)),
+                    url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920') center/cover;
+        padding: 4rem 0 3rem;
+        text-align: center;
+        color: white;
+        margin-bottom: 3rem;
+    }
+
+    .filter-tabs {
+        background: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        margin-bottom: 2rem;
+    }
+
+    .filter-tab {
+        border: none;
+        background: transparent;
+        padding: 0.75rem 1.5rem;
+        border-radius: 50px;
+        font-weight: 500;
+        color: #64748b;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .filter-tab:hover {
+        background: rgba(212, 168, 55, 0.1);
+        color: #d4a835;
+    }
+
+    .filter-tab.active {
+        background: linear-gradient(135deg, #d4a835, #f1c40f);
+        color: white;
+    }
+
+    .filter-tab .badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: #dc3545;
+        color: white;
+        border-radius: 50%;
+        width: 22px;
+        height: 22px;
+        font-size: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .appointment-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #d4a835;
+        transition: all 0.3s ease;
+    }
+
+    .appointment-card:hover {
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+        transform: translateY(-2px);
+    }
+
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .status-pending {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .status-confirmed {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .status-completed {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-cancelled {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .status-no_show {
+        background: #e2e3e5;
+        color: #383d41;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>Lịch Hẹn Của Tôi</h1>
+        <p class="lead mb-0">Quản lý và theo dõi các lịch hẹn đặt tại Spa ANA</p>
+    </div>
+</section>
+
+<!-- Appointments Section -->
+<section class="appointments-section">
+    <div class="container">
+        <!-- Filter Tabs -->
+        <div class="filter-tabs">
+            <div class="d-flex flex-wrap gap-2 justify-content-center">
+                <a href="?status=all"
+                   class="filter-tab {% if status_filter == 'all' %}active{% endif %}">
+                    Tất cả
+                    {% if status_counts.all > 0 %}
+                    <span class="badge">{{ status_counts.all }}</span>
+                    {% endif %}
+                </a>
+                <a href="?status=pending"
+                   class="filter-tab {% if status_filter == 'pending' %}active{% endif %}">
+                    Chờ xác nhận
+                    {% if status_counts.pending > 0 %}
+                    <span class="badge">{{ status_counts.pending }}</span>
+                    {% endif %}
+                </a>
+                <a href="?status=confirmed"
+                   class="filter-tab {% if status_filter == 'confirmed' %}active{% endif %}">
+                    Đã xác nhận
+                    {% if status_counts.confirmed > 0 %}
+                    <span class="badge">{{ status_counts.confirmed }}</span>
+                    {% endif %}
+                </a>
+                <a href="?status=completed"
+                   class="filter-tab {% if status_filter == 'completed' %}active{% endif %}">
+                    Đã hoàn thành
+                    {% if status_counts.completed > 0 %}
+                    <span class="badge">{{ status_counts.completed }}</span>
+                    {% endif %}
+                </a>
+                <a href="?status=cancelled"
+                   class="filter-tab {% if status_filter == 'cancelled' %}active{% endif %}">
+                    Đã hủy
+                    {% if status_counts.cancelled > 0 %}
+                    <span class="badge">{{ status_counts.cancelled }}</span>
+                    {% endif %}
+                </a>
+            </div>
+        </div>
+
+        <!-- Appointments List -->
+        {% if appointments %}
+        <div class="row">
+            {% for appointment in appointments %}
+            <div class="col-lg-6">
+                <div class="appointment-card">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="mb-1">{{ appointment.service.name }}</h5>
+                            <p class="text-muted mb-0 small">
+                                <i class="fas fa-hashtag me-1"></i> {{ appointment.appointment_code }}
+                            </p>
+                        </div>
+                        <span class="status-badge status-{{ appointment.status }}">
+                            {{ appointment.get_status_display }}
+                        </span>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <p class="mb-1 small">
+                                <i class="fas fa-calendar me-2 text-warning"></i>
+                                <strong>Ngày:</strong> {{ appointment.appointment_date|date:"d/m/Y" }}
+                            </p>
+                        </div>
+                        <div class="col-6">
+                            <p class="mb-1 small">
+                                <i class="fas fa-clock me-2 text-warning"></i>
+                                <strong>Giờ:</strong> {{ appointment.appointment_time|time:"H:i" }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 flex-wrap">
+                        {% if appointment.status == 'pending' or appointment.status == 'confirmed' %}
+                        <form method="post" action="{% url 'cancel_appointment' appointment.id %}"
+                              onsubmit="return confirm('Bạn có chắc muốn hủy lịch hẹn này?')">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-times me-1"></i>Hủy lịch
+                            </button>
+                        </form>
+                        {% endif %}
+
+                        {% if appointment.status == 'completed' %}
+                        <button class="btn btn-outline-warning btn-sm" disabled>
+                            <i class="fas fa-star me-1"></i>Đánh giá
+                            <small class="text-muted">(TODO)</small>
+                        </button>
+                        {% endif %}
+
+                        <a href="{% url 'service_detail' appointment.service.id %}"
+                           class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-info-circle me-1"></i>Chi tiết dịch vụ
+                        </a>
+                    </div>
+
+                    {% if appointment.notes %}
+                    <div class="mt-3 p-2 bg-light rounded small">
+                        <i class="fas fa-sticky-note me-1 text-muted"></i>
+                        <strong>Ghi chú:</strong> {{ appointment.notes }}
+                    </div>
+                    {% endif %}
+
+                    <div class="mt-2 small text-muted">
+                        <i class="fas fa-clock me-1"></i>
+                        Đặt lịch: {{ appointment.created_at|date:"d/m/Y H:i" }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-calendar-times fa-4x text-muted mb-3"></i>
+            <h3>Không tìm thấy lịch hẹn nào</h3>
+            <p class="text-muted mb-4">
+                {% if status_filter != 'all' %}
+                Không có lịch hẹn nào ở trạng thái này.
+                {% else %}
+                Bạn chưa đặt lịch hẹn nào. Hãy trải nghiệm dịch vụ của chúng tôi!
+                {% endif %}
+            </p>
+            <a href="{% url 'booking' %}" class="btn btn-warning btn-lg">
+                <i class="fas fa-calendar-plus me-2"></i>Đặt lịch ngay
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

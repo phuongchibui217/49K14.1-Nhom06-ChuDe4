@@ -1,0 +1,187 @@
+{% extends 'spa/base.html' %}
+
+{% block title %}Đăng ký tư vấn - Spa ANA{% endblock %}
+
+{% block extra_css %}
+<style>
+    .consultation-hero {
+        background: linear-gradient(135deg, rgba(30, 58, 95, 0.9), rgba(44, 82, 130, 0.9)),
+                    url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920') center/cover;
+        padding: 5rem 0 4rem;
+        text-align: center;
+        color: white;
+    }
+
+    .consultation-section {
+        padding: 4rem 0;
+    }
+
+    .consultation-card {
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 10px 40px rgba(30, 58, 95, 0.15);
+        padding: 3rem;
+        border: 1px solid #e2e8f0;
+    }
+
+    .form-control, .form-select {
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #d4a835;
+        box-shadow: 0 0 0 3px rgba(212, 168, 55, 0.1);
+    }
+
+    .field-error {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+
+    .is-invalid {
+        border-color: #dc3545 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="consultation-hero">
+    <div class="container">
+        <h1>Đăng Ký Tư Vấn</h1>
+        <p class="lead mb-0">Để lại thông tin, chuyên gia của chúng tôi sẽ liên hệ tư vấn miễn phí</p>
+    </div>
+</section>
+
+<!-- Consultation Form Section -->
+<section class="consultation-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="consultation-card">
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger" role="alert">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <form method="post" action="{% url 'consultation' %}" novalidate>
+                        {% csrf_token %}
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.full_name.id_for_label }}" class="form-label">
+                                    Họ và tên <span class="text-danger">*</span>
+                                </label>
+                                {{ form.full_name }}
+                                {% if form.full_name.errors %}
+                                {% for error in form.full_name.errors %}
+                                <div class="field-error">
+                                    <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                </div>
+                                {% endfor %}
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ form.phone.id_for_label }}" class="form-label">
+                                    Số điện thoại <span class="text-danger">*</span>
+                                </label>
+                                {{ form.phone }}
+                                {% if form.phone.errors %}
+                                {% for error in form.phone.errors %}
+                                <div class="field-error">
+                                    <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                </div>
+                                {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">Email</label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                            {% for error in form.email.errors %}
+                            <div class="field-error">
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                            </div>
+                            {% endfor %}
+                            {% endif %}
+                            <small class="text-muted">Để lại email nếu bạn muốn nhận phản hồi qua email</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.request_type.id_for_label }}" class="form-label">
+                                Loại yêu cầu tư vấn <span class="text-danger">*</span>
+                            </label>
+                            {{ form.request_type }}
+                            {% if form.request_type.errors %}
+                            {% for error in form.request_type.errors %}
+                            <div class="field-error">
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                            </div>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.content.id_for_label }}" class="form-label">
+                                Nội dung cần tư vấn <span class="text-danger">*</span>
+                            </label>
+                            {{ form.content }}
+                            {% if form.content.errors %}
+                            {% for error in form.content.errors %}
+                            <div class="field-error">
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                            </div>
+                            {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.preferred_contact_time.id_for_label }}" class="form-label">
+                                Thời gian liên hệ mong muốn
+                            </label>
+                            {{ form.preferred_contact_time }}
+                            {% if form.preferred_contact_time.errors %}
+                            {% for error in form.preferred_contact_time.errors %}
+                            <div class="field-error">
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                            </div>
+                            {% endfor %}
+                            {% endif %}
+                            <small class="text-muted">Ví dụ: Buổi sáng, Chiều, T2-T6...</small>
+                        </div>
+
+                        <div class="mb-3 form-check">
+                            {{ form.agree_contact }}
+                            {% if form.agree_contact.errors %}
+                            {% for error in form.agree_contact.errors %}
+                            <div class="field-error">
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                            </div>
+                            {% endfor %}
+                            {% endif %}
+                            <label class="form-check-label" for="{{ form.agree_contact.id_for_label }}">
+                                Tôi đồng ý để Spa ANA liên hệ tư vấn qua số điện thoại đã cung cấp
+                            </label>
+                        </div>
+
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-warning btn-lg px-5">
+                                <i class="fas fa-paper-plane me-2"></i>Gửi yêu cầu tư vấn
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

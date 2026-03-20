@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find spa_project/templates/spa -type f -name *.html)",
+      "Bash(python manage.py makemigrations)",
+      "Bash(rm -f db.sqlite3)",
+      "Bash(python manage.py migrate --run-syncdb)",
+      "Bash(rm db.sqlite3)",
+      "Bash(python manage.py migrate)",
+      "Bash(ls -la spa/*.py)"
+    ]
+  }
+}

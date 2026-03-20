@@ -1,0 +1,225 @@
+{% extends 'spa/base.html' %}
+
+{% block title %}Spa ANA - Hệ thống Quản lý Spa Cao Cấp{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Fixed header offset fix */
+    .main-content {
+        padding-top: 80px;
+    }
+
+    @media (max-width: 991px) {
+        .main-content {
+            padding-top: 70px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Banner Slider -->
+<section id="banner-slider" class="hero-section">
+    <div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel">
+        <div class="carousel-indicators">
+            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active"></button>
+            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1"></button>
+            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2"></button>
+        </div>
+        <div class="carousel-inner">
+            <div class="carousel-item active" style="background: linear-gradient(rgba(30, 58, 95, 0.4), rgba(30, 58, 95, 0.6)), url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920') center/cover;">
+                <div class="carousel-caption">
+                    <h1>Trải Nghiệm Thư Giãn Tuyệt Đối</h1>
+                    <p class="lead">Tận hưởng những liệu trình spa cao cấp, tái tạo năng lượng và vẻ đẹp tự nhiên</p>
+                    <a href="{% url 'booking' %}" class="btn btn-warning btn-lg">Đặt lịch ngay</a>
+                </div>
+            </div>
+            <div class="carousel-item" style="background: linear-gradient(rgba(30, 58, 95, 0.4), rgba(30, 58, 95, 0.6)), url('https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=1920') center/cover;">
+                <div class="carousel-caption">
+                    <h1>Ưu Đãi Đặc Biệt</h1>
+                    <p class="lead">Giảm ngay 30% cho liệu trình chăm sóc da trong tháng này</p>
+                    <a href="{% url 'service_list' %}" class="btn btn-warning btn-lg">Xem chi tiết</a>
+                </div>
+            </div>
+            <div class="carousel-item" style="background: linear-gradient(rgba(30, 58, 95, 0.4), rgba(30, 58, 95, 0.6)), url('https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=1920') center/cover;">
+                <div class="carousel-caption">
+                    <h1>Đội Ngũ Chuyên Gia</h1>
+                    <p class="lead">Kỹ thuật viên chuyên nghiệp, tận tâm mang lại trải nghiệm hoàn hảo</p>
+                    <a href="{% url 'about' %}" class="btn btn-warning btn-lg">Tìm hiểu thêm</a>
+                </div>
+            </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span>
+        </button>
+    </div>
+</section>
+
+<!-- Featured Services -->
+<section class="services-section py-5 spa-gradient-bg">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title">Dịch Vụ Nổi Bật</h2>
+            <p class="section-subtitle text-muted">Những liệu trình được khách hàng yêu thích nhất</p>
+        </div>
+
+        <div class="row g-4">
+            {% for service in services %}
+            <div class="col-md-6 col-lg-3">
+                <div class="service-card card h-100 border-0 shadow-sm">
+                    {% if service.image %}
+                    <img src="{{ service.image.url }}" class="card-img-top" alt="{{ service.name }}">
+                    {% else %}
+                    <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400" class="card-img-top" alt="{{ service.name }}">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ service.name }}</h5>
+                        <p class="card-text text-muted small">{{ service.description|truncatewords:10 }}</p>
+                        <p class="text-warning fw-bold">{{ service.price|floatformat:0 }}đ</p>
+                        <a href="{% url 'service_detail' service.id %}" class="btn btn-outline-warning w-100">Xem chi tiết</a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <!-- Default services if no data -->
+            <div class="col-md-6 col-lg-3">
+                <div class="service-card card h-100 border-0 shadow-sm">
+                    <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400" class="card-img-top" alt="Chăm sóc da">
+                    <div class="card-body">
+                        <h5 class="card-title">Chăm Sóc Da Chuyên Sâu</h5>
+                        <p class="card-text text-muted small">Điều trị mụn, tái tạo da, trẻ hóa da</p>
+                        <p class="text-warning fw-bold">1.500.000đ</p>
+                        <a href="{% url 'service_list' %}" class="btn btn-outline-warning w-100">Xem chi tiết</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="service-card card h-100 border-0 shadow-sm">
+                    <img src="https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400" class="card-img-top" alt="Massage">
+                    <div class="card-body">
+                        <h5 class="card-title">Massage Thư Giãn</h5>
+                        <p class="card-text text-muted small">Massage toàn thân, giảm stress, thư giãn</p>
+                        <p class="text-warning fw-bold">800.000đ</p>
+                        <a href="{% url 'service_list' %}" class="btn btn-outline-warning w-100">Xem chi tiết</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="service-card card h-100 border-0 shadow-sm">
+                    <img src="https://images.unsplash.com/photo-1560750588-73207b1ef5b8?w=400" class="card-img-top" alt="Phun thêu">
+                    <div class="card-body">
+                        <h5 class="card-title">Phun Thêu Môi & Mày</h5>
+                        <p class="card-text text-muted small">Kỹ thuật 3D tự nhiên, bền màu</p>
+                        <p class="text-warning fw-bold">2.500.000đ</p>
+                        <a href="{% url 'service_list' %}" class="btn btn-outline-warning w-100">Xem chi tiết</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-3">
+                <div class="service-card card h-100 border-0 shadow-sm">
+                    <img src="https://images.unsplash.com/photo-1562322140-8baeececf3df?w=400" class="card-img-top" alt="Triệt lông">
+                    <div class="card-body">
+                        <h5 class="card-title">Triệt Lông Vĩnh Viễn</h5>
+                        <p class="card-text text-muted small">Công nghệ Diode Laser hiện đại</p>
+                        <p class="text-warning fw-bold">800.000đ</p>
+                        <a href="{% url 'service_list' %}" class="btn btn-outline-warning w-100">Xem chi tiết</a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="text-center mt-5">
+            <a href="{% url 'service_list' %}" class="btn btn-warning px-5">Xem tất cả dịch vụ</a>
+        </div>
+    </div>
+</section>
+
+<!-- Why Choose Us -->
+<section class="why-us-section py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title">Tại Sao Chọn Spa ANA?</h2>
+            <p class="section-subtitle text-muted">Cam kết mang đến trải nghiệm tốt nhất cho bạn</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="feature-box text-center">
+                    <div class="feature-icon mb-4">
+                        <i class="fas fa-award fa-3x text-warning"></i>
+                    </div>
+                    <h4>Uy Tín 10 Năm</h4>
+                    <p class="text-muted">Spa cao cấp uy tín hàng đầu với hơn 10 năm kinh nghiệm</p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="feature-box text-center">
+                    <div class="feature-icon mb-4">
+                        <i class="fas fa-user-md fa-3x text-warning"></i>
+                    </div>
+                    <h4>Đội Ngũ Chuyên Gia</h4>
+                    <p class="text-muted">Kỹ thuật viên chuyên nghiệp, được đào tạo bài bản và chứng chỉ quốc tế</p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="feature-box text-center">
+                    <div class="feature-icon mb-4">
+                        <i class="fas fa-microscope fa-3x text-warning"></i>
+                    </div>
+                    <h4>Công Nghệ Hiện Đại</h4>
+                    <p class="text-muted">Sở hữu hệ thống thiết bị spa tiên tiến nhất thế giới</p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="feature-box text-center">
+                    <div class="feature-icon mb-4">
+                        <i class="fas fa-shield-alt fa-3x text-warning"></i>
+                    </div>
+                    <h4>An Toàn Tuyệt Đối</h4>
+                    <p class="text-muted">Quy trình khử khuẩn đạt chuẩn, cam kết an toàn cho khách hàng</p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="feature-box text-center">
+                    <div class="feature-icon mb-4">
+                        <i class="fas fa-tags fa-3x text-warning"></i>
+                    </div>
+                    <h4>Giá Cả Hợp Lý</h4>
+                    <p class="text-muted">Chất lượng 5 sao với mức giá cạnh tranh nhất thị trường</p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="feature-box text-center">
+                    <div class="feature-icon mb-4">
+                        <i class="fas fa-headset fa-3x text-warning"></i>
+                    </div>
+                    <h4>Hỗ Trợ 24/7</h4>
+                    <p class="text-muted">Đội ngũ tư vấn nhiệt tình, hỗ trợ khách hàng mọi lúc</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section py-5 spa-gradient-bg">
+    <div class="container text-center">
+        <h2 class="mb-4">Sẵn Sàng Đổi Lấy Vẻ Đẹp Của Bạn?</h2>
+        <p class="lead mb-4">Đăng ký ngay để nhận tư vấn miễn phí từ chuyên gia</p>
+        <a href="{% url 'booking' %}" class="btn btn-warning btn-lg px-5 me-3">Đặt lịch hẹn</a>
+        <a href="{% url 'consultation' %}" class="btn btn-outline-warning btn-lg px-5">Đăng ký tư vấn</a>
+    </div>
+</section>
+{% endblock %}

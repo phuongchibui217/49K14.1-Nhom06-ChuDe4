@@ -1,0 +1,179 @@
+{% extends 'spa/base.html' %}
+
+{% block title %}Dịch vụ - Spa ANA{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, rgba(30, 58, 95, 0.9), rgba(44, 82, 130, 0.9)),
+                    url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920') center/cover;
+        padding: 6rem 0 3rem;
+        text-align: center;
+        color: white;
+    }
+
+    .services-section {
+        padding: 4rem 0;
+    }
+
+    .service-card {
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(39, 119, 42, 0.08);
+        transition: all 0.3s ease;
+        height: 100%;
+        border: 1px solid #e2e8f0;
+    }
+
+    .service-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 10px 30px rgba(212, 168, 53, 0.2);
+        border-color: #d4a835;
+    }
+
+    .service-image {
+        height: 200px;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .service-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+
+    .service-card:hover .service-image img {
+        transform: scale(1.1);
+    }
+
+    .service-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+        padding: 1rem 1.5rem;
+        color: white;
+    }
+
+    .service-info {
+        padding: 1.5rem;
+    }
+
+    .service-price {
+        color: #d4a835;
+        font-weight: 700;
+        font-size: 1.25rem;
+    }
+
+    .category-badge {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background: linear-gradient(135deg, #d4a835, #f1c40f);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>Dịch Vụ Của Chúng Tôi</h1>
+        <p class="lead mb-0">Khám phá các dịch vụ thư giãn và chăm sóc sắc đẹp chất lượng cao tại Spa ANA</p>
+    </div>
+</section>
+
+<!-- Services Section -->
+<section class="services-section">
+    <div class="container">
+        <!-- Filter -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="d-flex flex-wrap justify-content-center gap-2">
+                    <button class="btn btn-warning active" onclick="filterServices('all')">Tất cả</button>
+                    <button class="btn btn-outline-warning" onclick="filterServices('skincare')">Chăm sóc da</button>
+                    <button class="btn btn-outline-warning" onclick="filterServices('massage')">Massage</button>
+                    <button class="btn btn-outline-warning" onclick="filterServices('tattoo')">Phun thêu</button>
+                    <button class="btn btn-outline-warning" onclick="filterServices('hair')">Triệt lông</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Services Grid -->
+        <div class="row" id="servicesGrid">
+            {% for service in services %}
+            <div class="col-md-6 col-lg-4 mb-4 service-item" data-category="{{ service.category|default:'skincare' }}">
+                <div class="service-card">
+                    <div class="service-image">
+                        <span class="category-badge">{{ service.category_name|default:'Chăm sóc da' }}</span>
+                        {% if service.image %}
+                        <img src="{{ service.image.url }}" alt="{{ service.name }}">
+                        {% else %}
+                        <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400" alt="{{ service.name }}">
+                        {% endif %}
+                        <div class="service-overlay">
+                            <span class="badge bg-warning">{{ service.duration|default:'90' }} phút</span>
+                        </div>
+                    </div>
+                    <div class="service-info">
+                        <h5 class="card-title">{{ service.name }}</h5>
+                        <p class="card-text text-muted small">{{ service.description|truncatewords:15 }}</p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="service-price">{{ service.price }} VNĐ</span>
+                            <a href="{% url 'service_detail' service.id %}" class="btn btn-outline-warning btn-sm">
+                                Xem chi tiết
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center">
+                <p class="text-muted">Chưa có dịch vụ nào.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterServices(category) {
+    const items = document.querySelectorAll('.service-item');
+    const buttons = document.querySelectorAll('[onclick^="filterServices"]');
+
+    // Update active button
+    buttons.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent.trim().toLowerCase().includes(
+            category === 'all' ? 'tất cả' :
+            category === 'skincare' ? 'chăm sóc da' :
+            category === 'massage' ? 'massage' :
+            category === 'tattoo' ? 'phun thêu' :
+            category === 'hair' ? 'triệt lông' : ''
+        )) {
+            btn.classList.add('active');
+        }
+    });
+
+    // Filter items
+    items.forEach(item => {
+        if (category === 'all' || item.dataset.category === category) {
+            item.style.display = 'block';
+        } else {
+            item.style.display = 'none';
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,219 @@
+{% extends 'spa/base.html' %}
+
+{% block title %}{{ service.name }} - Spa ANA{% endblock %}
+
+{% block extra_css %}
+<style>
+    .page-header {
+        background: linear-gradient(135deg, rgba(243, 156, 18, 0.9), rgba(241, 196, 15, 0.9)),
+                    url('https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=1920') center/cover;
+        padding: 6rem 0 3rem;
+        text-align: center;
+        color: white;
+    }
+
+    .service-detail-section {
+        padding: 4rem 0;
+    }
+
+    .service-image {
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 20px 40px rgba(37, 157, 97, 0.15);
+        margin-bottom: 2rem;
+    }
+
+    .service-image img {
+        width: 100%;
+        height: 400px;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+
+    .service-image:hover img {
+        transform: scale(1.05);
+    }
+
+    .price-card {
+        background: linear-gradient(135deg, #f39c12, #e67e22);
+        color: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 15px 35px rgba(243, 156, 18, 0.3);
+    }
+
+    .price-display {
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+
+    .feature-item {
+        padding: 1rem 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .feature-item:last-child {
+        border-bottom: none;
+    }
+
+    .feature-icon {
+        color: #f39c12;
+        width: 40px;
+        font-size: 1.5rem;
+    }
+
+    .related-service {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+
+    .related-service:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+    }
+
+    .related-image {
+        height: 150px;
+        overflow: hidden;
+    }
+
+    .related-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .related-service:hover .related-image img {
+        transform: scale(1.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>{{ service.name }}</h1>
+        <p class="lead mb-0">{{ service.category_name|default:'Dịch vụ chăm sóc sắc đẹp' }}</p>
+    </div>
+</section>
+
+<!-- Service Detail Section -->
+<section class="service-detail-section">
+    <div class="container">
+        <div class="row">
+            <!-- Left Column - Service Info -->
+            <div class="col-lg-8">
+                <!-- Service Image -->
+                <div class="service-image">
+                    {% if service.image %}
+                    <img src="{{ service.image.url }}" alt="{{ service.name }}">
+                    {% else %}
+                    <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=1920" alt="{{ service.name }}">
+                    {% endif %}
+                </div>
+
+                <!-- Service Description -->
+                <div class="mb-5">
+                    <h2 class="mb-4">Giới thiệu</h2>
+                    <p class="text-muted">{{ service.description }}</p>
+                </div>
+
+                <!-- Service Features -->
+                <div class="mb-5">
+                    <h3 class="mb-4">Đặc điểm nổi bật</h3>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="feature-item d-flex">
+                                <i class="fas fa-clock feature-icon me-3"></i>
+                                <div>
+                                    <h6 class="mb-1">Thời gian</h6>
+                                    <p class="text-muted mb-0">{{ service.duration|default:'90' }} phút</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="feature-item d-flex">
+                                <i class="fas fa-certificate feature-icon me-3"></i>
+                                <div>
+                                    <h6 class="mb-1">Chất lượng</h6>
+                                    <p class="text-muted mb-0">Cam kết hài lòng</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="feature-item d-flex">
+                                <i class="fas fa-user-md feature-icon me-3"></i>
+                                <div>
+                                    <h6 class="mb-1">Chuyên gia</h6>
+                                    <p class="text-muted mb-0">Kỹ thuật viên chuyên nghiệp</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="feature-item d-flex">
+                                <i class="fas fa-leaf feature-icon me-3"></i>
+                                <div>
+                                    <h6 class="mb-1">Sản phẩm</h6>
+                                    <p class="text-muted mb-0">100% tự nhiên</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Booking Card -->
+            <div class="col-lg-4">
+                <div class="price-card sticky-top" style="top: 100px;">
+                    <h4 class="mb-3">Giá dịch vụ</h4>
+                    <div class="price-display mb-3">{{ service.price }} VNĐ</div>
+                    <p class="mb-4">Giá đã bao gồm tất cả thuế và phí</p>
+
+                    <a href="{% url 'booking' %}?service={{ service.id }}" class="btn btn-dark w-100 btn-lg mb-3">
+                        <i class="fas fa-calendar-alt me-2"></i>Đặt lịch ngay
+                    </a>
+
+                    <a href="{% url 'consultation' %}?service={{ service.id }}" class="btn btn-outline-light w-100">
+                        <i class="fas fa-comments me-2"></i>Đăng ký tư vấn
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Related Services -->
+        {% if related_services %}
+        <div class="row mt-5">
+            <div class="col-12">
+                <h3 class="text-center mb-4">Dịch vụ liên quan</h3>
+            </div>
+            {% for related in related_services %}
+            <div class="col-md-6 col-lg-3 mb-4">
+                <div class="related-service">
+                    <div class="related-image">
+                        {% if related.image %}
+                        <img src="{{ related.image.url }}" alt="{{ related.name }}">
+                        {% else %}
+                        <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400" alt="{{ related.name }}">
+                        {% endif %}
+                    </div>
+                    <div class="p-3">
+                        <h6 class="mb-2">{{ related.name }}</h6>
+                        <p class="text-warning fw-bold mb-2">{{ related.price }} VNĐ</p>
+                        <a href="{% url 'service_detail' related.id %}" class="btn btn-outline-warning btn-sm w-100">
+                            Xem chi tiết
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
