@@ -1,0 +1,333 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+
+{% block title %}Quản lý Dịch vụ - Spa ANA{% endblock %}
+
+{% block page_title %}Quản lý Dịch vụ{% endblock %}
+
+{% block header_extra %}
+<button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addServiceModal">
+    <i class="fas fa-plus me-2"></i>
+    Thêm dịch vụ mới
+</button>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin-services.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Search & Filter -->
+<div class="card">
+    <div class="card-body">
+        <form method="get" action="{% url 'spa:admin_services' %}">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control" name="search" placeholder="Tìm kiếm dịch vụ..." value="{{ search_query }}">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="category">
+                        <option value="">Tất cả danh mục</option>
+                        <option value="1" {% if category_filter == '1' %}selected{% endif %}>Chăm sóc da</option>
+                        <option value="2" {% if category_filter == '2' %}selected{% endif %}>Massage</option>
+                        <option value="3" {% if category_filter == '3' %}selected{% endif %}>Phun thêu</option>
+                        <option value="4" {% if category_filter == '4' %}selected{% endif %}>Triệt lông</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="status">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Đang hoạt động</option>
+                        <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Ngừng hoạt động</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-secondary w-100">
+                        <i class="fas fa-filter me-2"></i>
+                        Lọc
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Services Table -->
+<div class="card">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="fas fa-list" style="color: #d4a853; margin-right: 0.5rem;"></i>
+                Danh sách dịch vụ
+            </h5>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addServiceModal">
+                <i class="fas fa-plus me-2"></i>
+                Thêm dịch vụ mới
+            </button>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Mã</th>
+                        <th>Hình ảnh</th>
+                        <th>Tên dịch vụ</th>
+                        <th>Danh mục</th>
+                        <th>Giá</th>
+                        <th>Thời gian</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if services %}
+                        {% for service in services %}
+                        <tr>
+                            <td><span class="badge bg-secondary">{{ service.code }}</span></td>
+                            <td>
+                                {% if service.image and service.image.url %}
+                                <img src="{{ service.image.url }}"
+                                     class="rounded"
+                                     style="width: 50px; height: 50px; object-fit: cover;"
+                                     alt="{{ service.name }}"
+                                     onerror="this.src='https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=100'">
+                                {% else %}
+                                <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=100"
+                                     class="rounded"
+                                     style="width: 50px; height: 50px; object-fit: cover;"
+                                     alt="{{ service.name }}">
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>{{ service.name }}</strong>
+                                <br>
+                                <small class="text-muted">{% if service.short_description %}{{ service.short_description|truncatewords:10 }}{% else %}{{ service.description|truncatewords:10 }}{% endif %}</small>
+                            </td>
+                            <td>{{ service.get_category_name }}</td>
+                            <td class="fw-bold text-warning">{% if service.price %}{{ service.price|floatformat:0 }}đ{% else %}0đ{% endif %}</td>
+                            <td>{{ service.duration_minutes }} phút</td>
+                            <td>
+                                <span class="badge {% if service.status == 'active' %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {% if service.status == 'active' %}Đang hoạt động{% else %}Ngừng hoạt động{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" onclick="editService({{ service.id }})" title="Sửa">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteService({{ service.id }})" title="Xóa">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <p class="mb-0 text-muted">Chưa có dịch vụ nào trong hệ thống</p>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if services.has_other_pages %}
+    <div class="card-footer">
+        <nav>
+            <ul class="pagination justify-content-center">
+                {% if services.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ services.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% for page_num in services.paginator.page_range %}
+                    {% if page_num == services.number %}
+                        <li class="page-item active"><a class="page-link" href="#">{{ page_num }}</a></li>
+                    {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">{{ page_num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if services.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ services.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Service Modal -->
+<div class="modal fade" id="addServiceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus" style="color: #d4a853; margin-right: 0.5rem;"></i>
+                    Thêm dịch vụ mới
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="addServiceForm" method="post" action="{% url 'spa:api_service_create' %}" enctype="multipart/form-data" onsubmit="return submitServiceForm(event)">
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-hashtag"></i>
+                                Mã dịch vụ
+                            </label>
+                            <input type="text" class="form-control" name="service_code_preview" value="{{ next_service_code }}" readonly>
+                            <small class="text-muted">Mã dịch vụ tự động tạo</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-folder"></i>
+                                Danh mục
+                            </label>
+                            <select class="form-select" name="category_number" required>
+                                <option value="">Chọn danh mục</option>
+                                <option value="1">Chăm sóc da</option>
+                                <option value="2">Massage</option>
+                                <option value="3">Phun thêu</option>
+                                <option value="4">Triệt lông</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-tag"></i>
+                            Tên dịch vụ
+                        </label>
+                        <input type="text" class="form-control" name="name" placeholder="Nhập tên dịch vụ..." required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-align-left"></i>
+                            Mô tả
+                        </label>
+                        <textarea class="form-control" name="description" rows="3" placeholder="Mô tả chi tiết về dịch vụ..." required></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-dollar-sign"></i>
+                                Giá (VNĐ)
+                            </label>
+                            <input type="number" class="form-control" name="price" placeholder="0" min="1" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-clock"></i>
+                                Thời gian (phút)
+                            </label>
+                            <input type="number" class="form-control" name="duration_minutes" placeholder="90" min="5" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-toggle-on"></i>
+                                Trạng thái
+                            </label>
+                            <select class="form-select" name="status" required>
+                                <option value="active" selected>Đang hoạt động</option>
+                                <option value="inactive">Ngừng hoạt động</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-image"></i>
+                            Hình ảnh
+                        </label>
+                        <input type="file" class="form-control" name="image" accept="image/jpeg,image/jpg,image/png,image/webp" required onchange="previewImage(this)">
+                        <small class="text-muted">Chọn hình ảnh dịch vụ (JPG, PNG, WebP - Max 5MB, Min 300x300px)</small>
+                        <div id="imagePreview" class="mt-2" style="display: none;">
+                            <img id="previewImg" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid #e9ecef;">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Hủy
+                </button>
+                <button type="submit" class="btn btn-primary" form="addServiceForm">
+                    <i class="fas fa-plus me-2"></i>
+                    Thêm dịch vụ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer">
+    {% if messages %}
+        {% for message in messages %}
+        <div class="toast {% if message.tags %}{{ message.tags }}{% endif %} show">
+            <div class="toast-header">
+                <span class="toast-title">
+                    {% if message.tags == 'success' %}Thành công{% elif message.tags == 'error' %}Lỗi{% else %}Thông báo{% endif %}
+                </span>
+                <button class="toast-close" onclick="hideToast()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="toast-body">{{ message }}</div>
+        </div>
+        {% endfor %}
+    {% endif %}
+    <div class="toast" id="toast">
+        <div class="toast-header">
+            <span class="toast-title" id="toastTitle">Thông báo</span>
+            <button class="toast-close" onclick="hideToast()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="toast-body" id="toastMessage"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/admin-services.js' %}"></script>
+{% endblock %}

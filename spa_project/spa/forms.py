@@ -6,7 +6,54 @@ Updated for Phase 6: Booking form with guest/authenticated support
 
 from django import forms
 from django.contrib.auth.models import User
-from .models import Service, CustomerProfile, Appointment, ConsultationRequest, SupportRequest
+from django.contrib.auth.forms import AuthenticationForm
+from .models import Service, CustomerProfile, Appointment, ConsultationRequest, SupportRequest, Complaint, ComplaintReply
+
+
+# =====================================================
+# Admin Authentication Forms
+# =====================================================
+
+class AdminLoginForm(AuthenticationForm):
+    """
+    Form đăng nhập Admin
+
+    Kế thừa từ Django's AuthenticationForm để:
+    - Tự động validate username/password
+    - Hỗ trợ CSRF protection
+    - Tương thích với Django auth system
+    """
+    username = forms.CharField(
+        label='Tên đăng nhập',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Nhập tên đăng nhập',
+            'autocapitalize': 'none',
+            'autocomplete': 'username'
+        })
+    )
+
+    password = forms.CharField(
+        label='Mật khẩu',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Nhập mật khẩu',
+            'autocomplete': 'current-password'
+        })
+    )
+
+    remember_me = forms.BooleanField(
+        label='Ghi nhớ đăng nhập',
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        })
+    )
+
+    error_messages = {
+        'invalid_login': 'Tên đăng nhập hoặc mật khẩu không chính xác.',
+        'inactive': 'Tài khoản này đã bị vô hiệu hóa.',
+    }
 
 
 # =====================================================
@@ -14,48 +61,220 @@ from .models import Service, CustomerProfile, Appointment, ConsultationRequest, 
 # =====================================================
 
 class ServiceForm(forms.ModelForm):
-    """Form tạo/cập nhật dịch vụ - dùng trong admin nếu cần"""
+    """
+    Form tạo/cập nhật dịch vụ
+
+    VALIDATION RULES:
+    - Mã dịch vụ: tự động sinh (DV0001, DV0002, ...)
+    - Danh mục: bắt buộc chọn
+    - Tên dịch vụ: bắt buộc, không chỉ số, không trùng
+    - Mô tả: bắt buộc
+    - Giá: bắt buộc, số dương
+    - Thời gian: bắt buộc, số nguyên dương
+    - Trạng thái: mặc định active
+    - Hình ảnh: bắt buộc, chỉ jpg/jpeg/png/webp, max 5MB, min 300x300px
+    """
+    category_number = forms.ChoiceField(
+        label='Danh mục',
+        choices=[
+            ('1', 'Chăm sóc da'),
+            ('2', 'Massage'),
+            ('3', 'Phun thêu'),
+            ('4', 'Triệt lông'),
+        ],
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
+        error_messages={'required': 'Vui lòng chọn danh mục'}
+    )
+
+    name = forms.CharField(
+        label='Tên dịch vụ',
+        max_length=200,
+        required=True,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Nhập tên dịch vụ...'
+        }),
+        error_messages={'required': 'Tên dịch vụ không hợp lệ'}
+    )
+
+    description = forms.CharField(
+        label='Mô tả',
+        required=True,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Mô tả chi tiết về dịch vụ...'
+        }),
+        error_messages={'required': 'Vui lòng nhập mô tả dịch vụ'}
+    )
+
+    price = forms.IntegerField(
+        label='Giá (VNĐ)',
+        required=True,
+        min_value=1,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': '0',
+            'min': '0'
+        }),
+        error_messages={'min_value': 'Giá dịch vụ không hợp lệ'}
+    )
+
+    duration_minutes = forms.IntegerField(
+        label='Thời gian (phút)',
+        required=True,
+        min_value=5,
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control',
+            'placeholder': '90',
+            'min': '5'
+        }),
+        error_messages={'min_value': 'Thời gian không hợp lệ'}
+    )
+
+    status = forms.ChoiceField(
+        label='Trạng thái',
+        choices=[
+            ('active', 'Đang hoạt động'),
+            ('inactive', 'Ngừng hoạt động'),
+        ],
+        initial='active',
+        required=True,
+        widget=forms.Select(attrs={
+            'class': 'form-select'
+        }),
+        error_messages={'required': 'Vui lòng chọn trạng thái dịch vụ'}
+    )
+
+    image = forms.ImageField(
+        label='Hình ảnh',
+        required=False,
+        widget=forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': 'image/jpeg,image/jpg,image/png,image/webp'
+        })
+    )
 
     class Meta:
         model = Service
-        fields = ['name', 'slug', 'category', 'short_description', 'description',
-                  'price', 'duration_minutes', 'image', 'is_active']
-        widgets = {
-            'name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Nhập tên dịch vụ'
-            }),
-            'slug': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Tự động tạo từ tên'
-            }),
-            'category': forms.Select(attrs={
-                'class': 'form-select'
-            }),
-            'short_description': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Mô tả ngắn (hiển thị trong card)'
-            }),
-            'description': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 5,
-                'placeholder': 'Mô tả chi tiết về dịch vụ'
-            }),
-            'price': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Giá dịch vụ (VNĐ)'
-            }),
-            'duration_minutes': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Thời lượng (phút)'
-            }),
-            'image': forms.FileInput(attrs={
-                'class': 'form-control'
-            }),
-            'is_active': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            })
-        }
+        fields = []
+        # Không dùng trực tiếp fields từ model, ta đã định nghĩa ở trên
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set label for duration_minutes
+        self.fields['duration_minutes'].label = 'Thời gian (phút)'
+
+    def clean_name(self):
+        """Validate tên dịch vụ"""
+        name = self.cleaned_data.get('name', '').strip()
+
+        # Check if name is not empty
+        if not name:
+            raise forms.ValidationError('Tên dịch vụ không hợp lệ')
+
+        # Check if name contains only numbers
+        if name.isdigit():
+            raise forms.ValidationError('Tên dịch vụ không hợp lệ')
+
+        # Check if name already exists (case-insensitive, ignore extra spaces)
+        normalized_name = ' '.join(name.split())
+        existing_services = Service.objects.filter(name__iexact=normalized_name)
+
+        # If editing, exclude current instance
+        if self.instance and self.instance.pk:
+            existing_services = existing_services.exclude(pk=self.instance.pk)
+
+        if existing_services.exists():
+            raise forms.ValidationError('Dịch vụ đã tồn tại')
+
+        return name
+
+    def clean_description(self):
+        """Validate mô tả"""
+        description = self.cleaned_data.get('description', '').strip()
+        if not description:
+            raise forms.ValidationError('Vui lòng nhập mô tả dịch vụ')
+        return description
+
+    def clean_price(self):
+        """Validate giá"""
+        price = self.cleaned_data.get('price')
+        if price is None or price <= 0:
+            raise forms.ValidationError('Giá dịch vụ không hợp lệ')
+        return price
+
+    def clean_duration_minutes(self):
+        """Validate thời gian"""
+        duration = self.cleaned_data.get('duration_minutes')
+        if duration is None or duration <= 0:
+            raise forms.ValidationError('Thời gian không hợp lệ')
+        return duration
+
+    def clean_image(self):
+        """Validate hình ảnh"""
+        image = self.cleaned_data.get('image')
+
+        # If no image is provided
+        if not image:
+            # If this is an edit and the instance already has an image, keep it
+            if self.instance and self.instance.pk and self.instance.image:
+                return self.instance.image
+            # If creating new service, image is required
+            raise forms.ValidationError('Vui lòng chọn hình ảnh dịch vụ')
+
+        # Check file size (max 5MB)
+        if image.size > 5 * 1024 * 1024:
+            raise forms.ValidationError('Hình ảnh không được quá 5MB')
+
+        # Check file type
+        allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+        if image.content_type not in allowed_types:
+            raise forms.ValidationError('Chỉ chấp nhận file ảnh (JPG, PNG, WebP)')
+
+        # Check image dimensions (min 300x300)
+        from PIL import Image
+        try:
+            img = Image.open(image)
+            width, height = img.size
+            if width < 300 or height < 300:
+                raise forms.ValidationError('Kích thước ảnh tối thiểu là 300x300px')
+        except Exception as e:
+            raise forms.ValidationError('Có lỗi khi đọc hình ảnh')
+
+        return image
+
+    def clean_category_number(self):
+        """Validate và map category number sang category code"""
+        category_num = self.cleaned_data.get('category_number')
+        if not category_num:
+            raise forms.ValidationError('Vui lòng chọn danh mục')
+        return Service.CATEGORY_MAP.get(category_num, 'skincare')
+
+    def save(self, commit=True):
+        """Override save để xử lý mapping và sinh mã"""
+        service = super().save(commit=False)
+
+        # Map category_number to category
+        category_num = self.cleaned_data.get('category_number')
+        service.category = Service.CATEGORY_MAP.get(category_num, 'skincare')
+
+        # Map status to is_active
+        service.status = self.cleaned_data.get('status', 'active')
+        service.is_active = (service.status == 'active')
+
+        # Generate code if not exists
+        if not service.code:
+            service.code = Service.generate_service_code()
+
+        if commit:
+            service.save()
+
+        return service
+
 
 
 # =====================================================
@@ -367,3 +586,208 @@ class SupportRequestForm(forms.ModelForm):
         if not agree_processing:
             raise forms.ValidationError('Bạn cần đồng ý để chúng tôi xử lý yêu cầu.')
         return agree_processing
+
+
+# =====================================================
+# Complaint Forms
+# =====================================================
+
+class CustomerComplaintForm(forms.ModelForm):
+    """Form khách hàng gửi khiếu nại"""
+
+    class Meta:
+        model = Complaint
+        fields = ['title', 'content', 'complaint_type', 'priority',
+                  'incident_date', 'appointment_code', 'related_service',
+                  'expected_solution']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Tiêu đề khiếu nại'
+            }),
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 5,
+                'placeholder': 'Mô tả chi tiết vấn đề của bạn...'
+            }),
+            'complaint_type': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'incident_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'appointment_code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Mã lịch hẹn (nếu có)'
+            }),
+            'expected_solution': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Bạn mong muốn được giải quyết như thế nào?'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['related_service'].queryset = Service.objects.filter(is_active=True)
+        self.fields['related_service'].required = False
+        self.fields['related_service'].empty_label = "-- Chọn dịch vụ liên quan (nếu có) --"
+        self.fields['related_service'].widget.attrs.update({'class': 'form-select'})
+
+    def clean_title(self):
+        title = self.cleaned_data.get('title', '').strip()
+        if not title or len(title) < 5:
+            raise forms.ValidationError('Tiêu đề phải có ít nhất 5 ký tự.')
+        return title
+
+    def clean_content(self):
+        content = self.cleaned_data.get('content', '').strip()
+        if not content or len(content) < 10:
+            raise forms.ValidationError('Nội dung phải có ít nhất 10 ký tự.')
+        return content
+
+
+class GuestComplaintForm(forms.ModelForm):
+    """Form khách chưa đăng nhập gửi khiếu nại"""
+
+    class Meta:
+        model = Complaint
+        fields = ['full_name', 'phone', 'email', 'title', 'content',
+                  'complaint_type', 'priority', 'incident_date',
+                  'appointment_code', 'related_service', 'expected_solution']
+        widgets = {
+            'full_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Họ và tên của bạn'
+            }),
+            'phone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Số điện thoại',
+                'pattern': '[0-9]{10,11}'
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Email (không bắt buộc)'
+            }),
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Tiêu đề khiếu nại'
+            }),
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 5,
+                'placeholder': 'Mô tả chi tiết vấn đề của bạn...'
+            }),
+            'complaint_type': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'priority': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'incident_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'appointment_code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Mã lịch hẹn (nếu có)'
+            }),
+            'expected_solution': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Bạn mong muốn được giải quyết như thế nào?'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['related_service'].queryset = Service.objects.filter(is_active=True)
+        self.fields['related_service'].required = False
+        self.fields['related_service'].empty_label = "-- Chọn dịch vụ liên quan (nếu có) --"
+        self.fields['related_service'].widget.attrs.update({'class': 'form-select'})
+
+    def clean_title(self):
+        title = self.cleaned_data.get('title', '').strip()
+        if not title or len(title) < 5:
+            raise forms.ValidationError('Tiêu đề phải có ít nhất 5 ký tự.')
+        return title
+
+    def clean_content(self):
+        content = self.cleaned_data.get('content', '').strip()
+        if not content or len(content) < 10:
+            raise forms.ValidationError('Nội dung phải có ít nhất 10 ký tự.')
+        return content
+
+    def clean_phone(self):
+        phone = self.cleaned_data.get('phone', '').strip()
+        if not phone:
+            raise forms.ValidationError('Vui lòng nhập số điện thoại.')
+        return phone
+
+
+class ComplaintReplyForm(forms.ModelForm):
+    """Form phản hồi khiếu nại"""
+
+    class Meta:
+        model = ComplaintReply
+        fields = ['message', 'is_internal']
+        widgets = {
+            'message': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Nhập nội dung phản hồi...'
+            }),
+            'is_internal': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+
+    def clean_message(self):
+        message = self.cleaned_data.get('message', '').strip()
+        if not message or len(message) < 3:
+            raise forms.ValidationError('Nội dung phản hồi phải có ít nhất 3 ký tự.')
+        return message
+
+
+class ComplaintStatusForm(forms.ModelForm):
+    """Form cập nhật trạng thái khiếu nại"""
+
+    class Meta:
+        model = Complaint
+        fields = ['status', 'resolution']
+        widgets = {
+            'status': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'resolution': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Kết quả xử lý (nếu hoàn thành)'
+            }),
+        }
+
+
+class ComplaintAssignForm(forms.ModelForm):
+    """Form phân công người phụ trách"""
+
+    class Meta:
+        model = Complaint
+        fields = ['assigned_to']
+        widgets = {
+            'assigned_to': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Chỉ lấy staff users
+        self.fields['assigned_to'].queryset = User.objects.filter(
+            is_staff=True, is_active=True
+        ).order_by('first_name', 'last_name')
+        self.fields['assigned_to'].empty_label = "-- Chọn nhân viên --"
+        self.fields['assigned_to'].required = True

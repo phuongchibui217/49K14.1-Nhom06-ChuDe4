@@ -129,7 +129,7 @@
                         <p class="card-text text-muted small">{{ service.description|truncatewords:15 }}</p>
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="service-price">{{ service.price }} VNĐ</span>
-                            <a href="{% url 'service_detail' service.id %}" class="btn btn-outline-warning btn-sm">
+                            <a href="{% url 'spa:service_detail' service.id %}" class="btn btn-outline-warning btn-sm">
                                 Xem chi tiết
                             </a>
                         </div>

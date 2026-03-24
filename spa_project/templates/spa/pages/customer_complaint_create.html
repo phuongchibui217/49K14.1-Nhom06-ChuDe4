@@ -1,0 +1,177 @@
+{% extends 'spa/base.html' %}
+{% load static %}
+
+{% block title %}Gửi khiếu nại - Spa ANA{% endblock %}
+
+{% block extra_css %}
+<style>
+.page-header {
+    background: linear-gradient(135deg, #e91e63 0%, #9c27b0 100%);
+    color: white;
+    padding: 40px 0;
+    margin-bottom: 30px;
+}
+.form-card {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    padding: 30px;
+}
+.form-label {
+    font-weight: 600;
+    color: #333;
+}
+.required-star {
+    color: #e91e63;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="container">
+        <h1><i class="fas fa-paper-plane"></i> Gửi khiếu nại</h1>
+        <p class="mb-0">Chúng tôi sẵn sàng lắng nghe và giải quyết vấn đề của bạn</p>
+    </div>
+</div>
+
+<div class="container">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'spa:customer_complaint_list' %}">Khiếu nại của tôi</a></li>
+            <li class="breadcrumb-item active">Gửi khiếu nại</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="form-card">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Họ và tên <span class="required-star">*</span></label>
+                            <input type="text" name="full_name" class="form-control" 
+                                   value="{{ form.full_name.value|default:'' }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Số điện thoại <span class="required-star">*</span></label>
+                            <input type="tel" name="phone" class="form-control" 
+                                   value="{{ form.phone.value|default:'' }}" 
+                                   pattern="[0-9]{10,11}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control" 
+                               value="{{ form.email.value|default:'' }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Tiêu đề khiếu nại <span class="required-star">*</span></label>
+                        <input type="text" name="title" class="form-control" 
+                               value="{{ form.title.value|default:'' }}" 
+                               placeholder="Tóm tắt vấn đề của bạn" required>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Loại khiếu nại <span class="required-star">*</span></label>
+                            <select name="complaint_type" class="form-select" required>
+                                {% for value, label in form.fields.complaint_type.choices %}
+                                <option value="{{ value }}" {% if form.complaint_type.value == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Mức độ ưu tiên</label>
+                            <select name="priority" class="form-select">
+                                {% for value, label in form.fields.priority.choices %}
+                                <option value="{{ value }}" {% if form.priority.value == value %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Nội dung khiếu nại <span class="required-star">*</span></label>
+                        <textarea name="content" class="form-control" rows="5" 
+                                  placeholder="Mô tả chi tiết vấn đề của bạn..." required>{{ form.content.value|default:'' }}</textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Ngày xảy ra vấn đề</label>
+                            <input type="date" name="incident_date" class="form-control" 
+                                   value="{{ form.incident_date.value|default:'' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Mã lịch hẹn liên quan</label>
+                            <input type="text" name="appointment_code" class="form-control" 
+                                   value="{{ form.appointment_code.value|default:'' }}" 
+                                   placeholder="Nếu có">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Dịch vụ liên quan</label>
+                        <select name="related_service" class="form-select">
+                            <option value="">-- Chọn dịch vụ (nếu có) --</option>
+                            {% for service in form.fields.related_service.queryset %}
+                            <option value="{{ service.id }}" 
+                                    {% if form.related_service.value|stringformat:"s" == service.id|stringformat:"s" %}selected{% endif %}>
+                                {{ service.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Giải pháp mong muốn</label>
+                        <textarea name="expected_solution" class="form-control" rows="3" 
+                                  placeholder="Bạn mong muốn được giải quyết như thế nào?">{{ form.expected_solution.value|default:'' }}</textarea>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Lưu ý:</strong> Khiếu nại của bạn sẽ được xử lý trong vòng 24-48 giờ làm việc. 
+                        Chúng tôi sẽ liên hệ với bạn qua số điện thoại hoặc email đã cung cấp.
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Gửi khiếu nại
+                        </button>
+                        <a href="{% url 'spa:customer_complaint_list' %}" class="btn btn-outline-secondary">
+                            Hủy
+                        </a>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Support Info -->
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h5><i class="fas fa-headset text-primary"></i> Hỗ trợ nhanh</h5>
+                    <p class="mb-2">Nếu bạn cần hỗ trợ gấp, hãy liên hệ ngay:</p>
+                    <div class="d-flex gap-3 flex-wrap">
+                        <a href="tel:1900xxxx" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-phone"></i> Hotline: 1900 xxxx
+                        </a>
+                        <a href="https://zalo.me" target="_blank" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-comment"></i> Chat Zalo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

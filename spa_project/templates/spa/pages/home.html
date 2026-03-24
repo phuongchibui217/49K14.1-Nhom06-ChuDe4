@@ -31,21 +31,21 @@
                 <div class="carousel-caption">
                     <h1>Trải Nghiệm Thư Giãn Tuyệt Đối</h1>
                     <p class="lead">Tận hưởng những liệu trình spa cao cấp, tái tạo năng lượng và vẻ đẹp tự nhiên</p>
-                    <a href="{% url 'booking' %}" class="btn btn-warning btn-lg">Đặt lịch ngay</a>
+                    <a href="{% url 'spa:booking' %}" class="btn btn-warning btn-lg">Đặt lịch ngay</a>
                 </div>
             </div>
             <div class="carousel-item" style="background: linear-gradient(rgba(30, 58, 95, 0.4), rgba(30, 58, 95, 0.6)), url('https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=1920') center/cover;">
                 <div class="carousel-caption">
                     <h1>Ưu Đãi Đặc Biệt</h1>
                     <p class="lead">Giảm ngay 30% cho liệu trình chăm sóc da trong tháng này</p>
-                    <a href="{% url 'service_list' %}" class="btn btn-warning btn-lg">Xem chi tiết</a>
+                    <a href="{% url 'spa:service_list' %}" class="btn btn-warning btn-lg">Xem chi tiết</a>
                 </div>
             </div>
             <div class="carousel-item" style="background: linear-gradient(rgba(30, 58, 95, 0.4), rgba(30, 58, 95, 0.6)), url('https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=1920') center/cover;">
                 <div class="carousel-caption">
                     <h1>Đội Ngũ Chuyên Gia</h1>
                     <p class="lead">Kỹ thuật viên chuyên nghiệp, tận tâm mang lại trải nghiệm hoàn hảo</p>
-                    <a href="{% url 'about' %}" class="btn btn-warning btn-lg">Tìm hiểu thêm</a>
+                    <a href="{% url 'spa:about' %}" class="btn btn-warning btn-lg">Tìm hiểu thêm</a>
                 </div>
             </div>
         </div>
@@ -79,7 +79,7 @@
                         <h5 class="card-title">{{ service.name }}</h5>
                         <p class="card-text text-muted small">{{ service.description|truncatewords:10 }}</p>
                         <p class="text-warning fw-bold">{{ service.price|floatformat:0 }}đ</p>
-                        <a href="{% url 'service_detail' service.id %}" class="btn btn-outline-warning w-100">Xem chi tiết</a>
+                        <a href="{% url 'spa:service_detail' service.id %}" class="btn btn-outline-warning w-100">Xem chi tiết</a>
                     </div>
                 </div>
             </div>
@@ -92,7 +92,7 @@
                         <h5 class="card-title">Chăm Sóc Da Chuyên Sâu</h5>
                         <p class="card-text text-muted small">Điều trị mụn, tái tạo da, trẻ hóa da</p>
                         <p class="text-warning fw-bold">1.500.000đ</p>
-                        <a href="{% url 'service_list' %}" class="btn btn-outline-warning w-100">Xem chi tiết</a>
+                        <a href="{% url 'spa:service_list' %}" class="btn btn-outline-warning w-100">Xem chi tiết</a>
                     </div>
                 </div>
             </div>
@@ -104,7 +104,7 @@
                         <h5 class="card-title">Massage Thư Giãn</h5>
                         <p class="card-text text-muted small">Massage toàn thân, giảm stress, thư giãn</p>
                         <p class="text-warning fw-bold">800.000đ</p>
-                        <a href="{% url 'service_list' %}" class="btn btn-outline-warning w-100">Xem chi tiết</a>
+                        <a href="{% url 'spa:service_list' %}" class="btn btn-outline-warning w-100">Xem chi tiết</a>
                     </div>
                 </div>
             </div>
@@ -116,7 +116,7 @@
                         <h5 class="card-title">Phun Thêu Môi & Mày</h5>
                         <p class="card-text text-muted small">Kỹ thuật 3D tự nhiên, bền màu</p>
                         <p class="text-warning fw-bold">2.500.000đ</p>
-                        <a href="{% url 'service_list' %}" class="btn btn-outline-warning w-100">Xem chi tiết</a>
+                        <a href="{% url 'spa:service_list' %}" class="btn btn-outline-warning w-100">Xem chi tiết</a>
                     </div>
                 </div>
             </div>
@@ -128,7 +128,7 @@
                         <h5 class="card-title">Triệt Lông Vĩnh Viễn</h5>
                         <p class="card-text text-muted small">Công nghệ Diode Laser hiện đại</p>
                         <p class="text-warning fw-bold">800.000đ</p>
-                        <a href="{% url 'service_list' %}" class="btn btn-outline-warning w-100">Xem chi tiết</a>
+                        <a href="{% url 'spa:service_list' %}" class="btn btn-outline-warning w-100">Xem chi tiết</a>
                     </div>
                 </div>
             </div>
@@ -136,7 +136,7 @@
         </div>
 
         <div class="text-center mt-5">
-            <a href="{% url 'service_list' %}" class="btn btn-warning px-5">Xem tất cả dịch vụ</a>
+            <a href="{% url 'spa:service_list' %}" class="btn btn-warning px-5">Xem tất cả dịch vụ</a>
         </div>
     </div>
 </section>
@@ -218,8 +218,8 @@
     <div class="container text-center">
         <h2 class="mb-4">Sẵn Sàng Đổi Lấy Vẻ Đẹp Của Bạn?</h2>
         <p class="lead mb-4">Đăng ký ngay để nhận tư vấn miễn phí từ chuyên gia</p>
-        <a href="{% url 'booking' %}" class="btn btn-warning btn-lg px-5 me-3">Đặt lịch hẹn</a>
-        <a href="{% url 'consultation' %}" class="btn btn-outline-warning btn-lg px-5">Đăng ký tư vấn</a>
+        <a href="{% url 'spa:booking' %}" class="btn btn-warning btn-lg px-5 me-3">Đặt lịch hẹn</a>
+        <a href="{% url 'spa:consultation' %}" class="btn btn-outline-warning btn-lg px-5">Đăng ký tư vấn</a>
     </div>
 </section>
 {% endblock %}

@@ -3,7 +3,7 @@
 <header class="header-fixed">
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'home' %}">
+            <a class="navbar-brand" href="{% url 'spa:home' %}">
                 <i class="fas fa-spa text-warning me-2"></i>
                 <span class="brand-text">Spa ANA</span>
             </a>
@@ -13,35 +13,35 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">Trang chủ</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'spa:home' %}">Trang chủ</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}" href="{% url 'about' %}">Về Spa ANA</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}" href="{% url 'spa:about' %}">Về Spa ANA</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'service_list' %}active{% endif %}" href="{% url 'service_list' %}">Dịch vụ</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'service_list' %}active{% endif %}" href="{% url 'spa:service_list' %}">Dịch vụ</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'booking' %}active{% endif %}" href="{% url 'booking' %}">Đặt lịch</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'booking' %}active{% endif %}" href="{% url 'spa:booking' %}">Đặt lịch</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'complaint' %}active{% endif %}" href="{% url 'complaint' %}">
-                            <i class="fas fa-headset me-1"></i>Hỗ trợ
+                        <a class="nav-link {% if request.resolver_match.url_name == 'complaint' %}active{% endif %}" href="{% url 'spa:complaint' %}">
+                            <i class="fas fa-headset me-1"></i>Hỗ trợ & CSKH
                         </a>
                     </li>
                     {% if user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'my_appointments' %}active{% endif %}" href="{% url 'my_appointments' %}">Lịch hẹn của tôi</a>
+                            <a class="nav-link {% if request.resolver_match.url_name == 'my_appointments' %}active{% endif %}" href="{% url 'spa:my_appointments' %}">Lịch hẹn của tôi</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link btn btn-warning text-white px-3" href="{% url 'logout' %}">Đăng xuất</a>
+                            <a class="nav-link btn btn-warning text-white px-3" href="{% url 'spa:logout' %}">Đăng xuất</a>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}" href="{% url 'login' %}">Đăng nhập</a>
+                            <a class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}" href="{% url 'spa:login' %}">Đăng nhập</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link btn btn-warning text-white px-3" href="{% url 'register' %}">Đăng ký</a>
+                            <a class="nav-link btn btn-warning text-white px-3" href="{% url 'spa:register' %}">Đăng ký</a>
                         </li>
                     {% endif %}
                 </ul>

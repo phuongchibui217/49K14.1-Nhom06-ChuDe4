@@ -117,7 +117,7 @@
             </div>
             {% endif %}
 
-            <form method="post" action="{% url 'booking' %}" id="bookingForm" novalidate>
+            <form method="post" action="{% url 'spa:booking' %}" id="bookingForm" novalidate>
                 {% csrf_token %}
 
                 <!-- Customer Information (Read-only if logged in) -->
@@ -126,11 +126,11 @@
                     <div class="row">
                         <div class="col-md-6">
                             <label class="form-label">Họ và tên</label>
-                            <input type="text" class="form-control" value="{{ customer_profile.full_name }}" readonly>
+                            <input type="text" class="form-control" value="{{ customer_profile.full_name|default:request.user.get_full_name|default:request.user.username }}" readonly>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Số điện thoại</label>
-                            <input type="tel" class="form-control" value="{{ customer_profile.phone }}" readonly>
+                            <input type="tel" class="form-control" value="{{ customer_profile.phone|default:request.user.username }}" readonly>
                         </div>
                     </div>
                 </div>
@@ -153,10 +153,10 @@
                             {% endif %}
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label">Ghi chú dịch vụ</label>
-                            <small class="text-muted">
+                            <label class="form-label">Thông tin dịch vụ</label>
+                            <div class="form-control-plaintext text-muted">
                                 Thời lượng: <span id="serviceDuration">-</span> phút |
-                                Giá: <span id="servicePrice">-</span> VNĐ
+                                Giá: <
                             </small>
                         </div>
                     </div>

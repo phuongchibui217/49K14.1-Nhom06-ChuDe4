@@ -58,7 +58,7 @@
                         </div>
                         {% endif %}
 
-                        <form method="post" action="{% url 'register' %}" id="registerForm" novalidate>
+<form method="post" action="" id="registerForm" novalidate>
                             {% csrf_token %}
 
                             <div class="mb-3">
@@ -209,7 +209,7 @@
                         <div class="text-center mt-4">
                             <p class="text-muted mb-0">
                                 Đã có tài khoản?
-                                <a href="{% url 'login' %}" class="text-warning fw-bold">Đăng nhập</a>
+<a href="{% url 'spa:login' %}" class="text-warning fw-bold">Đăng nhập</a>
                             </p>
                         </div>
                     </div>

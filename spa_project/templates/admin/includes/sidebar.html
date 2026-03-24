@@ -1,0 +1,60 @@
+{% load static %}
+<!-- Admin Sidebar -->
+<nav class="admin-sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <i class="fas fa-spa fa-2x mb-2" style="color: var(--gold-primary);"></i>
+        <h3>Spa <span>ANA</span></h3>
+    </div>
+    
+    <ul class="nav flex-column sidebar-nav">
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'admin_appointments' %}active{% endif %}" href="{% url 'spa:admin_appointments' %}">
+                <i class="fas fa-calendar-check"></i>
+                Quản lý lịch hẹn
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'admin_services' %}active{% endif %}" href="{% url 'spa:admin_services' %}">
+                <i class="fas fa-spa"></i>
+                Quản lý dịch vụ
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'admin_live_chat' %}active{% endif %}" href="{% url 'spa:admin_live_chat' %}">
+                <i class="fas fa-comments"></i>
+                Chat trực tuyến
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'admin_complaints' %}active{% endif %}" href="{% url 'spa:admin_complaints' %}">
+                <i class="fas fa-exclamation-triangle"></i>
+                Quản lý khiếu nại
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'admin_customers' %}active{% endif %}" href="{% url 'spa:admin_customers' %}">
+                <i class="fas fa-users"></i>
+                Quản lý khách hàng
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'admin_staff' %}active{% endif %}" href="{% url 'spa:admin_staff' %}">
+                <i class="fas fa-user-tie"></i>
+                Quản lý nhân viên
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'admin_profile' %}active{% endif %}" href="{% url 'spa:admin_profile' %}">
+                <i class="fas fa-user-cog"></i>
+                Tài khoản cá nhân
+            </a>
+        </li>
+    </ul>
+    
+    <div class="sidebar-footer">
+        <a href="{% url 'spa:admin_logout' %}" class="btn btn-logout">
+            <i class="fas fa-sign-out-alt"></i>
+            Đăng xuất
+        </a>
+    </div>
+</nav>

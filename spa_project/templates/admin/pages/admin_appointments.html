@@ -1,0 +1,273 @@
+{% extends "admin/base.html" %}
+
+{% load static %}
+
+{% block title %}Quản lý Lịch hẹn - Spa ANA{% endblock %}
+
+{% block page_title %}Lịch hẹn{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/admin-appointments.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="scheduler-card">
+
+  <!-- Tabs -->
+  <div class="tabs-bar">
+    <ul class="nav nav-pills" id="mainTabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-room" data-bs-toggle="pill" data-bs-target="#pane-room" type="button" role="tab">
+          <i class="fas fa-border-all me-2"></i>Lịch theo phòng
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-web" data-bs-toggle="pill" data-bs-target="#pane-web" type="button" role="tab">
+          <i class="fas fa-globe me-2"></i>Yêu cầu đặt lịch
+          <span class="badge badge-soft ms-2" id="webCount">0</span>
+        </button>
+      </li>
+    </ul>
+  </div>
+
+  <div class="tab-content">
+
+    <!-- TAB: Lịch theo phòng -->
+    <div class="tab-pane fade show active" id="pane-room" role="tabpanel">
+
+      <!-- Search Bar -->
+      <div class="search-bar-wrapper">
+        <div class="appointment-search">
+          <i class="fas fa-search"></i>
+          <input
+            type="text"
+            class="form-control"
+            id="searchInput"
+            placeholder="Tìm kiếm theo tên, SĐT, dịch vụ hoặc mã lịch hẹn..."
+          />
+        </div>
+      </div>
+
+      <div class="topbar">
+        <div class="left">
+          <div class="pill">
+            <i class="fas fa-calendar-day"></i>
+            <button class="btn btn-sm btn-outline-secondary" id="btnPrev" title="Ngày trước">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" id="btnToday">Hôm nay</button>
+            <button class="btn btn-sm btn-outline-secondary" id="btnNext" title="Ngày sau">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+            <input type="date" class="form-control form-control-sm" id="dayPicker" style="width: 150px;" />
+          </div>
+        </div>
+
+        <div class="hint">
+          <i class="fas fa-mouse-pointer me-1"></i>
+          Click ô trống để tạo lịch • Click lịch để sửa
+        </div>
+      </div>
+
+      <div class="scheduler-wrap" id="schedulerWrap">
+        <div class="time-header" id="timeHeader"></div>
+        <div class="grid" id="grid"></div>
+      </div>
+    </div>
+
+    <!-- TAB: Yêu cầu đặt lịch -->
+    <div class="tab-pane fade" id="pane-web" role="tabpanel">
+      <div class="p-3" style="background:#fff;">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+          <div class="fw-bold">
+            <i class="fas fa-inbox me-2"></i>Danh sách yêu cầu đặt lịch trực tuyến
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Mã</th>
+                <th>Khách</th>
+                <th>SĐT</th>
+                <th>Email</th>
+                <th>Dịch vụ</th>
+                <th>Ngày</th>
+                <th>Giờ</th>
+                <th>Thời lượng</th>
+                <th>Ghi chú</th>
+                <th>Trạng thái</th>
+                <th class="text-end">Hành động</th>
+              </tr>
+            </thead>
+            <tbody id="webTbody">
+              <!-- render bằng JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /tab-content -->
+</div>
+
+<!-- Appointment Modal (Create/Edit) -->
+<div class="modal fade" id="apptModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;">
+        <h5 class="modal-title">
+          <i class="fas fa-calendar-plus me-2"></i>
+          <span id="modalTitle">Tạo lịch hẹn</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body" style="max-height:70vh;overflow:auto;">
+        <div class="alert alert-danger d-none" id="modalError"></div>
+
+        <form id="apptForm" class="needs-validation" novalidate>
+          <input type="hidden" id="apptId" />
+
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                Họ tên khách hàng <span class="text-danger">*</span>
+              </label>
+              <input class="form-control" id="customerName" required />
+              <div class="invalid-feedback">Vui lòng nhập họ tên khách hàng</div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                Số điện thoại <span class="text-danger">*</span>
+              </label>
+              <input class="form-control" id="phone" required placeholder="VD: 0901234567" inputmode="numeric" />
+              <div class="invalid-feedback">Số điện thoại không hợp lệ</div>
+            </div>
+
+            <!-- email (để support UC4) -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Email</label>
+              <input class="form-control" id="email" placeholder="VD: abc@gmail.com" />
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                Dịch vụ <span class="text-danger">*</span>
+              </label>
+              <select class="form-select" id="service" required>
+                <option value="">-- Chọn dịch vụ --</option>
+                <option>Chăm sóc da</option>
+                <option>Massage</option>
+                <option>Phun thêu môi</option>
+                <option>Triệt lông</option>
+              </select>
+              <div class="invalid-feedback">Vui lòng chọn dịch vụ</div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                Phòng <span class="text-danger">*</span>
+              </label>
+              <select class="form-select" id="room" required></select>
+              <div class="invalid-feedback">Vui lòng chọn phòng</div>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">
+                Số khách <span class="text-danger">*</span>
+              </label>
+              <input type="number" class="form-control" id="guests" required min="1" />
+              <div class="invalid-feedback">Số khách không hợp lệ</div>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">
+                Ngày hẹn <span class="text-danger">*</span>
+              </label>
+              <input type="date" class="form-control" id="date" required />
+              <div class="invalid-feedback">Ngày hẹn không hợp lệ</div>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">
+                Giờ hẹn <span class="text-danger">*</span>
+              </label>
+              <input type="time" class="form-control" id="time" required min="09:00" max="22:00" />
+              <div class="invalid-feedback">Giờ hẹn không hợp lệ</div>
+            </div>
+
+            <!-- THÊM THỜI LƯỢNG -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">
+                Thời lượng <span class="text-danger">*</span>
+              </label>
+              <select class="form-select" id="duration" required>
+                <option value="">-- Chọn thời lượng --</option>
+                <option value="30">30 phút</option>
+                <option value="60">60 phút</option>
+                <option value="90">90 phút</option>
+                <option value="120">120 phút</option>
+              </select>
+              <div class="invalid-feedback">Vui lòng chọn thời lượng</div>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Trạng thái lịch hẹn</label>
+              <select class="form-select" id="apptStatus">
+                <option value="pending">Chờ xác nhận</option>
+                <option value="not_arrived">Chưa đến</option>
+                <option value="arrived">Đã đến</option>
+                <option value="completed">Hoàn thành</option>
+                <option value="cancelled">Đã hủy</option>
+              </select>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Trạng thái thanh toán</label>
+              <select class="form-select" id="payStatus">
+                <option value="unpaid">Chưa thanh toán</option>
+                <option value="partial">Đã thanh toán một phần</option>
+                <option value="paid">Đã thanh toán</option>
+              </select>
+            </div>
+
+            <div class="col-12">
+              <label class="form-label fw-semibold">Ghi chú</label>
+              <textarea class="form-control" id="note" rows="3"></textarea>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-danger d-none" id="btnDelete">
+          <i class="fas fa-trash me-2"></i>Xóa
+        </button>
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+        <button type="button" class="btn btn-warning" id="btnSave">
+          <i class="fas fa-save me-2"></i>Lưu lịch hẹn
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+  <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-header">
+      <i class="fas fa-check-circle me-2"></i>
+      <strong class="me-auto" id="toastTitle">Thông báo</strong>
+      <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+    </div>
+    <div class="toast-body" id="toastBody">...</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/admin-appointments.js' %}"></script>
+{% endblock %}

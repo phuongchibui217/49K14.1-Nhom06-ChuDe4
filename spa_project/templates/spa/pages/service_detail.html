@@ -175,11 +175,11 @@
                     <div class="price-display mb-3">{{ service.price }} VNĐ</div>
                     <p class="mb-4">Giá đã bao gồm tất cả thuế và phí</p>
 
-                    <a href="{% url 'booking' %}?service={{ service.id }}" class="btn btn-dark w-100 btn-lg mb-3">
+                    <a href="{% url 'spa:booking' %}?service={{ service.id }}" class="btn btn-dark w-100 btn-lg mb-3">
                         <i class="fas fa-calendar-alt me-2"></i>Đặt lịch ngay
                     </a>
 
-                    <a href="{% url 'consultation' %}?service={{ service.id }}" class="btn btn-outline-light w-100">
+                    <a href="{% url 'spa:consultation' %}?service={{ service.id }}" class="btn btn-outline-light w-100">
                         <i class="fas fa-comments me-2"></i>Đăng ký tư vấn
                     </a>
                 </div>
@@ -205,7 +205,7 @@
                     <div class="p-3">
                         <h6 class="mb-2">{{ related.name }}</h6>
                         <p class="text-warning fw-bold mb-2">{{ related.price }} VNĐ</p>
-                        <a href="{% url 'service_detail' related.id %}" class="btn btn-outline-warning btn-sm w-100">
+                        <a href="{% url 'spa:service_detail' related.id %}" class="btn btn-outline-warning btn-sm w-100">
                             Xem chi tiết
                         </a>
                     </div>

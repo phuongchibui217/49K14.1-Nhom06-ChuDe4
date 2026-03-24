@@ -7,7 +7,12 @@
       "Bash(python manage.py migrate --run-syncdb)",
       "Bash(rm db.sqlite3)",
       "Bash(python manage.py migrate)",
-      "Bash(ls -la spa/*.py)"
+      "Bash(ls -la spa/*.py)",
+      "Bash(python manage.py check)",
+      "Bash(python create_services.py)",
+      "Bash(python manage.py makemigrations spa --empty --name populate_service_codes)",
+      "Bash(python manage.py runserver 0.0.0.0:8000)",
+      "Bash(where python:*)"
     ]
   }
 }
