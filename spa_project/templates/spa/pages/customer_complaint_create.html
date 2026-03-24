@@ -1,7 +1,7 @@
 {% extends 'spa/base.html' %}
 {% load static %}
 
-{% block title %}Gửi khiếu nại - Spa ANA{% endblock %}
+{% block title %}Gửi yêu cầu hỗ trợ - Spa ANA{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -30,7 +30,7 @@
 {% block content %}
 <div class="page-header">
     <div class="container">
-        <h1><i class="fas fa-paper-plane"></i> Gửi khiếu nại</h1>
+        <h1><i class="fas fa-paper-plane"></i> Gửi yêu cầu hỗ trợ</h1>
         <p class="mb-0">Chúng tôi sẵn sàng lắng nghe và giải quyết vấn đề của bạn</p>
     </div>
 </div>
@@ -38,9 +38,9 @@
 <div class="container">
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'home' %}">Trang chủ</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'spa:customer_complaint_list' %}">Khiếu nại của tôi</a></li>
-            <li class="breadcrumb-item active">Gửi khiếu nại</li>
+            <li class="breadcrumb-item"><a href="{% url 'spa:home' %}">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'spa:customer_complaint_list' %}">Yêu cầu hỗ trợ của tôi</a></li>
+            <li class="breadcrumb-item active">Gửi yêu cầu hỗ trợ</li>
         </ol>
     </nav>
 
@@ -50,28 +50,28 @@
                 <form method="post">
                     {% csrf_token %}
                     
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Họ và tên <span class="required-star">*</span></label>
-                            <input type="text" name="full_name" class="form-control" 
-                                   value="{{ form.full_name.value|default:'' }}" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Số điện thoại <span class="required-star">*</span></label>
-                            <input type="tel" name="phone" class="form-control" 
-                                   value="{{ form.phone.value|default:'' }}" 
-                                   pattern="[0-9]{10,11}" required>
-                        </div>
+                    {# Hiển thị lỗi form nếu có #}
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            <p class="mb-0">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    {# Thông tin khách hàng (lấy tự động từ profile) #}
+                    <div class="alert alert-info mb-3">
+                        <i class="fas fa-user"></i> 
+                        <strong>Thông tin liên hệ:</strong> 
+                        {{ customer_profile.full_name }} - {{ customer_profile.phone }}
+                        <br><small class="text-muted">Thông tin này được lấy từ hồ sơ của bạn.</small>
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input type="email" name="email" class="form-control" 
-                               value="{{ form.email.value|default:'' }}">
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Tiêu đề khiếu nại <span class="required-star">*</span></label>
+                        <label class="form-label">Tiêu đề <span class="required-star">*</span></label>
+                        {% if form.title.errors %}
+                            <div class="text-danger small">{{ form.title.errors.0 }}</div>
+                        {% endif %}
                         <input type="text" name="title" class="form-control" 
                                value="{{ form.title.value|default:'' }}" 
                                placeholder="Tóm tắt vấn đề của bạn" required>
@@ -79,7 +79,7 @@
                     
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Loại khiếu nại <span class="required-star">*</span></label>
+                            <label class="form-label">Loại yêu cầu <span class="required-star">*</span></label>
                             <select name="complaint_type" class="form-select" required>
                                 {% for value, label in form.fields.complaint_type.choices %}
                                 <option value="{{ value }}" {% if form.complaint_type.value == value %}selected{% endif %}>
@@ -101,7 +101,7 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label">Nội dung khiếu nại <span class="required-star">*</span></label>
+                        <label class="form-label">Nội dung <span class="required-star">*</span></label>
                         <textarea name="content" class="form-control" rows="5" 
                                   placeholder="Mô tả chi tiết vấn đề của bạn..." required>{{ form.content.value|default:'' }}</textarea>
                     </div>
@@ -141,13 +141,13 @@
                     
                     <div class="alert alert-info">
                         <i class="fas fa-info-circle"></i> 
-                        <strong>Lưu ý:</strong> Khiếu nại của bạn sẽ được xử lý trong vòng 24-48 giờ làm việc. 
+                        <strong>Lưu ý:</strong> Yêu cầu của bạn sẽ được xử lý trong vòng 24-48 giờ làm việc. 
                         Chúng tôi sẽ liên hệ với bạn qua số điện thoại hoặc email đã cung cấp.
                     </div>
                     
                     <div class="d-flex gap-2">
                         <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-paper-plane"></i> Gửi khiếu nại
+                            <i class="fas fa-paper-plane"></i> Gửi yêu cầu
                         </button>
                         <a href="{% url 'spa:customer_complaint_list' %}" class="btn btn-outline-secondary">
                             Hủy

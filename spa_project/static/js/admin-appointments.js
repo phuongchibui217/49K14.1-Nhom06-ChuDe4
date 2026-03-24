@@ -54,6 +54,57 @@ function getCSRFToken() {
   return cookieValue ? cookieValue.split('=')[1] : '';
 }
 
+// ===== LOADING STATE HELPER =====
+// Biến theo dõi trạng thái đang submit để tránh submit lặp
+let isSubmitting = false;
+
+/**
+ * Bật loading state cho button
+ * @param {HTMLElement} btn - Button cần set loading
+ * @param {string} loadingText - Text hiển thị khi loading
+ * @param {string} originalText - Text gốc để restore sau này
+ */
+function setButtonLoading(btn, loadingText = 'Đang xử lý...', originalText = null) {
+  if (!btn) return;
+  
+  // Lưu text gốc nếu chưa có
+  if (!btn.dataset.originalText) {
+    btn.dataset.originalText = originalText || btn.innerHTML;
+  }
+  
+  btn.disabled = true;
+  btn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${loadingText}`;
+}
+
+/**
+ * Tắt loading state và restore button về trạng thái ban đầu
+ * @param {HTMLElement} btn - Button cần restore
+ */
+function resetButton(btn) {
+  if (!btn) return;
+  
+  btn.disabled = false;
+  if (btn.dataset.originalText) {
+    btn.innerHTML = btn.dataset.originalText;
+    delete btn.dataset.originalText;
+  }
+}
+
+/**
+ * Hiển thị confirm dialog rõ ràng hơn
+ * @param {string} title - Tiêu đề
+ * @param {string} message - Nội dung xác nhận
+ * @param {string} confirmText - Text nút xác nhận
+ * @param {string} cancelText - Text nút hủy
+ * @returns {boolean} - true nếu người dùng xác nhận
+ */
+function confirmAction(title, message, confirmText = 'Xác nhận', cancelText = 'Hủy') {
+  // Sử dụng confirm mặc định của browser (đơn giản, không cần thêm thư viện)
+  // Có thể nâng cấp lên modal đẹp hơn sau
+  const fullMessage = `${title}\n\n${message}`;
+  return confirm(fullMessage);
+}
+
 // ===== API CALLS =====
 async function apiGet(url) {
   try {
@@ -341,6 +392,13 @@ btnSave.addEventListener("click", ()=> form.requestSubmit());
 
 form.addEventListener("submit", async (e)=>{
   e.preventDefault();
+  
+  // ===== NGĂN SUBMIT LẶP =====
+  if (isSubmitting) {
+    console.log('Đang xử lý, bỏ qua submit lặp');
+    return;
+  }
+  
   resetModalError();
   form.classList.add("was-validated");
   const id = apptId.value.trim();
@@ -387,6 +445,11 @@ form.addEventListener("submit", async (e)=>{
 
   const payload = { customerName: nameVal, phone: phoneVal.replace(/\D/g,""), email: email.value.trim(), serviceId: serviceVal, roomId: roomVal, guests: guestsVal, date: dayVal, time: startVal, duration: durationVal, note: note.value.trim(), apptStatus: apptStatus.value, payStatus: payStatus.value };
 
+  // ===== BẬT LOADING STATE =====
+  isSubmitting = true;
+  const loadingText = id ? 'Đang cập nhật...' : 'Đang tạo lịch...';
+  setButtonLoading(btnSave, loadingText);
+
   try{
     let result;
     if(id){ result = await apiPost(`${API_BASE}/appointments/${id}/update/`, payload); }
@@ -404,19 +467,50 @@ form.addEventListener("submit", async (e)=>{
   }catch(err){
     modalError.textContent = "Không thể lưu lịch hẹn. Vui lòng thử lại sau";
     modalError.classList.remove("d-none");
+  } finally {
+    // ===== TẮT LOADING STATE =====
+    isSubmitting = false;
+    resetButton(btnSave);
   }
 });
 
 btnDelete.addEventListener("click", async ()=>{
   const id = apptId.value.trim();
-  if(!id || !confirm("Xóa lịch hẹn này?")) return;
-  const result = await apiPost(`${API_BASE}/appointments/${id}/delete/`, {});
-  if (result.success) {
-    if (modal) modal.hide();
-    await refreshData();
-    showToast("success","Đã xóa",`Đã hủy lịch hẹn ${id}`);
-  } else {
-    showToast("error","Lỗi", result.error || "Không thể xóa lịch hẹn");
+  
+  // ===== NGĂN XÓA LẶP =====
+  if (isSubmitting) {
+    console.log('Đang xử lý, bỏ qua click lặp');
+    return;
+  }
+  
+  // ===== CONFIRM RÕ RÀNG =====
+  const customerNameVal = customerName.value.trim();
+  const confirmMessage = `Bạn có chắc muốn XÓA lịch hẹn này?\n\n` +
+    `Mã lịch hẹn: ${id}\n` +
+    `Khách hàng: ${customerNameVal}\n\n` +
+    `Hành động này không thể hoàn tác!`;
+  
+  if(!id || !confirm(confirmMessage)) return;
+  
+  // ===== BẬT LOADING STATE =====
+  isSubmitting = true;
+  setButtonLoading(btnDelete, 'Đang xóa...');
+  
+  try {
+    const result = await apiPost(`${API_BASE}/appointments/${id}/delete/`, {});
+    if (result.success) {
+      if (modal) modal.hide();
+      await refreshData();
+      showToast("success","Đã xóa",`Đã hủy lịch hẹn ${id}`);
+    } else {
+      showToast("error","Lỗi", result.error || "Không thể xóa lịch hẹn");
+    }
+  } catch (err) {
+    showToast("error","Lỗi", "Không thể xóa lịch hẹn. Vui lòng thử lại sau");
+  } finally {
+    // ===== TẮT LOADING STATE =====
+    isSubmitting = false;
+    resetButton(btnDelete);
   }
 });
 

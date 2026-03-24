@@ -19,6 +19,41 @@ let isEditMode = false;
 let editingServiceId = null;
 let existingImageUrl = null;
 
+// ===== LOADING STATE HELPER =====
+// Biến theo dõi trạng thái đang submit để tránh submit lặp
+let isSubmitting = false;
+
+/**
+ * Bật loading state cho button
+ * @param {HTMLElement} btn - Button cần set loading
+ * @param {string} loadingText - Text hiển thị khi loading
+ */
+function setButtonLoading(btn, loadingText = 'Đang xử lý...') {
+    if (!btn) return;
+    
+    // Lưu text gốc nếu chưa có
+    if (!btn.dataset.originalText) {
+        btn.dataset.originalText = btn.innerHTML;
+    }
+    
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${loadingText}`;
+}
+
+/**
+ * Tắt loading state và restore button về trạng thái ban đầu
+ * @param {HTMLElement} btn - Button cần restore
+ */
+function resetButton(btn) {
+    if (!btn) return;
+    
+    btn.disabled = false;
+    if (btn.dataset.originalText) {
+        btn.innerHTML = btn.dataset.originalText;
+        delete btn.dataset.originalText;
+    }
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
     loadServicesTable();
@@ -278,6 +313,12 @@ function clearAllFieldErrors() {
 function submitServiceForm(event) {
     event.preventDefault();
 
+    // ===== NGĂN SUBMIT LẶP =====
+    if (isSubmitting) {
+        console.log('Đang xử lý, bỏ qua submit lặp');
+        return false;
+    }
+
     const form = document.getElementById('addServiceForm');
     if (!form) return false;
 
@@ -301,12 +342,11 @@ function submitServiceForm(event) {
         return false;
     }
 
-    // Show loading state
+    // ===== BẬT LOADING STATE =====
+    isSubmitting = true;
     const submitBtn = document.querySelector('#addServiceModal .modal-footer .btn-primary');
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang lưu...';
-    }
+    const loadingText = isEditMode ? 'Đang cập nhật...' : 'Đang thêm...';
+    setButtonLoading(submitBtn, loadingText);
 
     // Create FormData for AJAX submission
     const formData = new FormData(form);
@@ -337,25 +377,16 @@ function submitServiceForm(event) {
             }, 1000);
         } else {
             showToast('error', data.error || 'Có lỗi xảy ra!');
-            // Reset button
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = isEditMode 
-                    ? '<i class="fas fa-save me-2"></i> Cập nhật' 
-                    : '<i class="fas fa-plus me-2"></i> Thêm dịch vụ';
-            }
         }
     })
     .catch(error => {
         console.error('Error:', error);
         showToast('error', 'Có lỗi xảy ra khi lưu dữ liệu!');
-        // Reset button
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = isEditMode 
-                ? '<i class="fas fa-save me-2"></i> Cập nhật' 
-                : '<i class="fas fa-plus me-2"></i> Thêm dịch vụ';
-        }
+    })
+    .finally(() => {
+        // ===== TẮT LOADING STATE =====
+        isSubmitting = false;
+        resetButton(submitBtn);
     });
 
     return false;
@@ -499,37 +530,53 @@ function editService(serviceId) {
 
 // Delete Service
 function deleteService(serviceId) {
-    if (confirm('Bạn có chắc muốn xóa dịch vụ này không?')) {
-        // Show loading
-        showToast('warning', 'Đang xóa dịch vụ...');
-
-        // Submit delete via API
-        const csrfToken = getCookie('csrftoken');
-        
-        fetch(`/api/services/${serviceId}/delete/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken,
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast('success', data.message);
-                // Reload page after success
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-            } else {
-                showToast('error', data.error || 'Có lỗi xảy ra khi xóa!');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('error', 'Có lỗi xảy ra khi xóa dịch vụ!');
-        });
+    // ===== NGĂN XÓA LẶP =====
+    if (isSubmitting) {
+        console.log('Đang xử lý, bỏ qua click lặp');
+        return;
     }
+    
+    // ===== CONFIRM RÕ RÀNG =====
+    const confirmMessage = `⚠️ CẢNH BÁO: Xóa dịch vụ\n\n` +
+        `Bạn có chắc muốn XÓA dịch vụ này?\n` +
+        `Mã dịch vụ: ${serviceId}\n\n` +
+        `⚠️ Hành động này KHÔNG THỂ hoàn tác!\n` +
+        `Tất cả lịch hẹn liên quan có thể bị ảnh hưởng.`;
+    
+    if (!confirm(confirmMessage)) return;
+    
+    // ===== BẬT LOADING STATE =====
+    isSubmitting = true;
+    showToast('warning', 'Đang xóa dịch vụ...');
+
+    // Submit delete via API
+    const csrfToken = getCookie('csrftoken');
+    
+    fetch(`/api/services/${serviceId}/delete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('success', data.message);
+            // Reload page after success
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            showToast('error', data.error || 'Có lỗi xảy ra khi xóa!');
+            isSubmitting = false; // Reset khi lỗi
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('error', 'Có lỗi xảy ra khi xóa dịch vụ!');
+        isSubmitting = false; // Reset khi lỗi
+    });
 }
 
 // Show Toast

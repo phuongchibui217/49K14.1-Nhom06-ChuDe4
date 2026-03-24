@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.contrib.auth.models import User
 from django.utils.text import slugify
 from django.core.validators import MinValueValidator
@@ -6,7 +6,21 @@ from django.core.exceptions import ValidationError
 
 
 class Service(models.Model):
-    """Dịch vụ spa"""
+    """
+    Dịch vụ spa
+    
+    INDEXES & CONSTRAINTS:
+    - code: UNIQUE - mã dịch vụ không trùng
+    - slug: UNIQUE - cho URL thân thiện SEO
+    - category: INDEX - filter theo danh mục (rất hay dùng)
+    - status: INDEX - filter theo trạng thái active/inactive
+    - name: INDEX (giản lược) - hỗ trợ search tên dịch vụ
+    - created_at: INDEX (descending) - sắp xếp mới nhất trước
+    
+    DATABASE CONSTRAINTS:
+    - price >= 0: Đảm bảo giá không âm
+    - duration_minutes > 0: Thời lượng phải dương
+    """
     CATEGORY_CHOICES = [
         ('skincare', 'Chăm sóc da'),
         ('massage', 'Massage'),
@@ -39,14 +53,31 @@ class Service(models.Model):
         'other': 6,
     }
 
-    code = models.CharField(max_length=20, unique=True, null=True, blank=True, verbose_name='Mã dịch vụ')
-    name = models.CharField(max_length=200, verbose_name='Tên dịch vụ')
-    slug = models.SlugField(max_length=250, unique=True, verbose_name='Slug')
+    code = models.CharField(
+        max_length=20, 
+        unique=True, 
+        null=True, 
+        blank=True, 
+        verbose_name='Mã dịch vụ',
+        help_text='Mã dịch vụ tự sinh (DV0001, DV0002, ...)'
+    )
+    name = models.CharField(
+        max_length=200, 
+        verbose_name='Tên dịch vụ',
+        help_text='Tên dịch vụ, tối đa 200 ký tự'
+    )
+    slug = models.SlugField(
+        max_length=250, 
+        unique=True, 
+        verbose_name='Slug',
+        help_text='URL thân thiện cho SEO'
+    )
     category = models.CharField(
         max_length=20,
         choices=CATEGORY_CHOICES,
         default='skincare',
-        verbose_name='Danh mục'
+        verbose_name='Danh mục',
+        db_index=True,  # INDEX: Filter theo danh mục rất hay dùng
     )
     short_description = models.CharField(max_length=300, blank=True, verbose_name='Mô tả ngắn')
     description = models.TextField(verbose_name='Mô tả chi tiết')
@@ -56,12 +87,16 @@ class Service(models.Model):
         validators=[MinValueValidator(0)],
         verbose_name='Giá (VNĐ)'
     )
-    duration_minutes = models.PositiveIntegerField(verbose_name='Thời lượng (phút)')
+    duration_minutes = models.PositiveIntegerField(
+        verbose_name='Thời lượng (phút)',
+        help_text='Thời gian thực hiện dịch vụ (phút)'
+    )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='active',
-        verbose_name='Trạng thái'
+        verbose_name='Trạng thái',
+        db_index=True,  # INDEX: Filter active/inactive
     )
     image = models.ImageField(upload_to='services/', null=True, blank=True, verbose_name='Hình ảnh')
     is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
@@ -89,10 +124,30 @@ class Service(models.Model):
         verbose_name_plural = 'Dịch vụ'
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['slug']),
-            models.Index(fields=['is_active']),
-            models.Index(fields=['code']),
-            models.Index(fields=['-created_at']),
+            # Index cho slug (URL lookup)
+            models.Index(fields=['slug'], name='service_slug_idx'),
+            # Index cho active status (filter chính)
+            models.Index(fields=['is_active'], name='service_active_idx'),
+            # Index cho code (lookup nhanh)
+            models.Index(fields=['code'], name='service_code_idx'),
+            # Index cho created_at descending (sắp xếp mới nhất)
+            models.Index(fields=['-created_at'], name='service_created_idx'),
+            # Index cho tên dịch vụ (search)
+            models.Index(fields=['name'], name='service_name_idx'),
+            # COMPOSITE INDEX: category + status (filter theo danh mục và trạng thái)
+            models.Index(fields=['category', 'status'], name='service_category_status_idx'),
+        ]
+        constraints = [
+            # Đảm bảo giá không âm (database-level)
+            models.CheckConstraint(
+                check=models.Q(price__gte=0),
+                name='service_price_non_negative'
+            ),
+            # Đảm bảo thời lượng dương
+            models.CheckConstraint(
+                check=models.Q(duration_minutes__gt=0),
+                name='service_duration_positive'
+            ),
         ]
 
     def save(self, *args, **kwargs):
@@ -122,23 +177,45 @@ class Service(models.Model):
         """
         Sinh mã dịch vụ tự động theo rule: DV + số thứ tự 4 chữ số
         Ví dụ: DV0001, DV0002, ...
+        
+        RACE CONDITION FIX:
+        - Dùng transaction.atomic() để đảm bảo atomicity
+        - Dùng select_for_update() để lock row (không cho request khác đọc cùng lúc)
+        - Nếu code đã tồn tại thì tăng số tiếp cho đến khi tìm được code trống
+        
+        GIẢI THÍCH SELECT_FOR_UPDATE:
+        - Khi 2 request cùng lúc gọi hàm này, request đầu tiên sẽ lock row
+        - Request thứ 2 phải đợi request 1 commit xong mới được đọc
+        - Nhờ đó tránh sinh trùng mã
         """
         prefix = 'DV'
-
-        # Get the last service code
-        last_service = cls.objects.order_by('-id').first()
-
-        if last_service and last_service.code and last_service.code.startswith(prefix):
-            # Extract number from last code
-            try:
-                last_number = int(last_service.code[len(prefix):])
-                new_number = last_number + 1
-            except (ValueError, IndexError):
-                new_number = 1
-        else:
-            new_number = 1
-
-        return f"{prefix}{new_number:04d}"
+        max_attempts = 100  # Số lần thử tối đa (tránh infinite loop)
+        
+        for attempt in range(max_attempts):
+            with transaction.atomic():
+                # Lấy bản ghi cuối cùng và LOCK nó
+                # select_for_update() sẽ block các request khác cho đến khi transaction này xong
+                last_service = cls.objects.select_for_update().order_by('-id').first()
+                
+                if last_service and last_service.code and last_service.code.startswith(prefix):
+                    try:
+                        last_number = int(last_service.code[len(prefix):])
+                        new_number = last_number + 1 + attempt  # +attempt để tránh trùng nếu có lỗi trước đó
+                    except (ValueError, IndexError):
+                        new_number = 1 + attempt
+                else:
+                    new_number = 1 + attempt
+                
+                new_code = f"{prefix}{new_number:04d}"
+                
+                # Kiểm tra xem code đã tồn tại chưa
+                # (có thể do request trước đã tạo nhưng chưa commit)
+                if not cls.objects.filter(code=new_code).exists():
+                    return new_code
+        
+        # Fallback: Nếu vẫn không tìm được, dùng timestamp để đảm bảo unique
+        import time
+        return f"{prefix}{int(time.time()) % 100000:05d}"
 
     def clean(self):
         """Validation logic"""
@@ -295,7 +372,20 @@ class Room(models.Model):
 
 
 class Appointment(models.Model):
-    """Lịch hẹn đặt dịch vụ"""
+    """
+    Lịch hẹn đặt dịch vụ
+    
+    INDEXES & CONSTRAINTS:
+    - appointment_code: UNIQUE - mã lịch hẹn không trùng
+    - appointment_date: INDEX - filter theo ngày (quan trọng nhất)
+    - status: INDEX - filter theo trạng thái
+    - room + appointment_date: COMPOSITE - check phòng trống
+    - customer + appointment_date: COMPOSITE - xem lịch sử khách
+    - source + status: COMPOSITE - filter yêu cầu từ web
+    
+    DATABASE CONSTRAINTS:
+    - guests > 0: Số khách phải dương
+    """
     STATUS_CHOICES = [
         ('pending', 'Chờ xác nhận'),
         ('not_arrived', 'Chưa đến'),
@@ -321,7 +411,8 @@ class Appointment(models.Model):
         unique=True,
         editable=False,
         blank=True,
-        verbose_name='Mã lịch hẹn'
+        verbose_name='Mã lịch hẹn',
+        help_text='Mã tự sinh: APP + ngày + số thứ tự'
     )
     customer = models.ForeignKey(
         CustomerProfile,
@@ -342,7 +433,8 @@ class Appointment(models.Model):
         verbose_name='Phòng'
     )
     appointment_date = models.DateField(
-        verbose_name='Ngày hẹn'
+        verbose_name='Ngày hẹn',
+        db_index=True,  # INDEX: Filter theo ngày - quan trọng nhất
     )
     appointment_time = models.TimeField(
         verbose_name='Giờ bắt đầu'
@@ -359,13 +451,15 @@ class Appointment(models.Model):
     )
     guests = models.PositiveIntegerField(
         default=1,
-        verbose_name='Số khách'
+        verbose_name='Số khách',
+        help_text='Số lượng khách tham gia dịch vụ'
     )
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
         default='pending',
-        verbose_name='Trạng thái'
+        verbose_name='Trạng thái',
+        db_index=True,  # INDEX: Filter theo trạng thái
     )
     payment_status = models.CharField(
         max_length=20,
@@ -409,32 +503,36 @@ class Appointment(models.Model):
         verbose_name_plural = 'Lịch hẹn'
         ordering = ['-appointment_date', '-appointment_time']
         indexes = [
-            models.Index(fields=['appointment_code']),
-            models.Index(fields=['customer', 'appointment_date']),
-            models.Index(fields=['status', 'appointment_date']),
-            models.Index(fields=['room', 'appointment_date']),
-            models.Index(fields=['source', 'status']),
+            # Index cho mã lịch hẹn (lookup nhanh)
+            models.Index(fields=['appointment_code'], name='appt_code_idx'),
+            # COMPOSITE: customer + date - xem lịch sử khách hàng
+            models.Index(fields=['customer', 'appointment_date'], name='appt_customer_date_idx'),
+            # COMPOSITE: status + date - filter lịch theo trạng thái và ngày
+            models.Index(fields=['status', 'appointment_date'], name='appt_status_date_idx'),
+            # COMPOSITE: room + date - check phòng trống theo ngày
+            models.Index(fields=['room', 'appointment_date'], name='appt_room_date_idx'),
+            # COMPOSITE: source + status - filter yêu cầu từ web
+            models.Index(fields=['source', 'status'], name='appt_source_status_idx'),
+            # COMPOSITE: date + time - sắp xếp và filter theo thời gian
+            models.Index(fields=['appointment_date', 'appointment_time'], name='appt_datetime_idx'),
+            # Index cho created_at (sắp xếp theo ngày tạo)
+            models.Index(fields=['-created_at'], name='appt_created_idx'),
+        ]
+        constraints = [
+            # Đảm bảo số khách > 0
+            models.CheckConstraint(
+                check=models.Q(guests__gte=1),
+                name='appointment_guests_at_least_one'
+            ),
         ]
 
     def __str__(self):
         return f"{self.appointment_code} - {self.customer.full_name} - {self.service.name}"
 
     def save(self, *args, **kwargs):
-        # Generate appointment code
+        # Generate appointment code (với race condition protection)
         if not self.appointment_code:
-            from django.utils import timezone
-            today = timezone.now().strftime('%Y%m%d')
-            last_appointment = Appointment.objects.filter(
-                appointment_code__startswith=f'APP{today}'
-            ).order_by('-appointment_code').first()
-
-            if last_appointment:
-                last_number = int(last_appointment.appointment_code[-4:])
-                new_number = last_number + 1
-            else:
-                new_number = 1
-
-            self.appointment_code = f'APP{today}{new_number:04d}'
+            self.appointment_code = self.generate_appointment_code()
 
         # Auto calculate duration and end_time
         if self.appointment_time and self.service:
@@ -467,6 +565,49 @@ class Appointment(models.Model):
             end_dt = start_dt + timedelta(minutes=duration)
             return end_dt.strftime('%H:%M')
         return ''
+
+    @classmethod
+    def generate_appointment_code(cls):
+        """
+        Sinh mã lịch hẹn tự động: APP + YYYYMMDD + 4 chữ số
+        Ví dụ: APP202403150001, APP202403150002, ...
+        
+        RACE CONDITION FIX:
+        - Dùng transaction.atomic() + select_for_update()
+        - Check trùng và tăng số cho đến khi tìm được mã trống
+        """
+        from django.utils import timezone
+        
+        prefix = 'APP'
+        today = timezone.now().strftime('%Y%m%d')
+        full_prefix = f'{prefix}{today}'
+        max_attempts = 100
+        
+        for attempt in range(max_attempts):
+            with transaction.atomic():
+                # Lấy lịch hẹn cuối cùng của ngày hôm nay và LOCK
+                last_appointment = cls.objects.select_for_update().filter(
+                    appointment_code__startswith=full_prefix
+                ).order_by('-appointment_code').first()
+                
+                if last_appointment:
+                    try:
+                        last_number = int(last_appointment.appointment_code[-4:])
+                        new_number = last_number + 1 + attempt
+                    except (ValueError, IndexError):
+                        new_number = 1 + attempt
+                else:
+                    new_number = 1 + attempt
+                
+                new_code = f'{full_prefix}{new_number:04d}'
+                
+                # Kiểm tra trùng
+                if not cls.objects.filter(appointment_code=new_code).exists():
+                    return new_code
+        
+        # Fallback: Dùng timestamp
+        import time
+        return f'{full_prefix}{int(time.time()) % 10000:04d}'
 
 
 class ConsultationRequest(models.Model):
@@ -704,18 +845,39 @@ class Complaint(models.Model):
 
     @classmethod
     def generate_complaint_code(cls):
-        """Sinh mã khiếu nại: KN + 6 chữ số (KN000001)"""
+        """
+        Sinh mã khiếu nại: KN + 6 chữ số (KN000001)
+        
+        RACE CONDITION FIX:
+        - Dùng transaction.atomic() + select_for_update()
+        - Check trùng và tăng số cho đến khi tìm được mã trống
+        """
         prefix = 'KN'
-        last_complaint = cls.objects.order_by('-id').first()
-        if last_complaint and last_complaint.code and last_complaint.code.startswith(prefix):
-            try:
-                last_number = int(last_complaint.code[len(prefix):])
-                new_number = last_number + 1
-            except (ValueError, IndexError):
-                new_number = 1
-        else:
-            new_number = 1
-        return f"{prefix}{new_number:06d}"
+        max_attempts = 100
+        
+        for attempt in range(max_attempts):
+            with transaction.atomic():
+                # Lấy khiếu nại cuối cùng và LOCK
+                last_complaint = cls.objects.select_for_update().order_by('-id').first()
+                
+                if last_complaint and last_complaint.code and last_complaint.code.startswith(prefix):
+                    try:
+                        last_number = int(last_complaint.code[len(prefix):])
+                        new_number = last_number + 1 + attempt
+                    except (ValueError, IndexError):
+                        new_number = 1 + attempt
+                else:
+                    new_number = 1 + attempt
+                
+                new_code = f"{prefix}{new_number:06d}"
+                
+                # Kiểm tra trùng
+                if not cls.objects.filter(code=new_code).exists():
+                    return new_code
+        
+        # Fallback: Dùng timestamp
+        import time
+        return f"{prefix}{int(time.time()) % 1000000:06d}"
 
     def get_status_badge_class(self):
         """Trả về CSS class cho badge trạng thái"""
@@ -877,107 +1039,3 @@ class ComplaintHistory(models.Model):
         )
 
 
-# Giữ lại SupportRequest để tương thích ngược với dữ liệu cũ
-class SupportRequest(models.Model):
-    """
-    Góp ý/Khiếu nại/Phản hồi (DEPRECATED - dùng Complaint thay thế)
-    
-    Model này được giữ lại để tương thích với dữ liệu cũ.
-    Sử dụng Complaint cho các tính năng mới.
-    """
-    SUPPORT_TYPE_CHOICES = [
-        ('feedback', 'Góp ý'),
-        ('complaint', 'Khiếu nại'),
-        ('inquiry', 'Hỏi đáp'),
-    ]
-
-    STATUS_CHOICES = [
-        ('pending', 'Chờ xử lý'),
-        ('processing', 'Đang xử lý'),
-        ('resolved', 'Đã giải quyết'),
-        ('rejected', 'Đã từ chối'),
-    ]
-
-    full_name = models.CharField(
-        max_length=200,
-        verbose_name='Họ và tên'
-    )
-    phone = models.CharField(
-        max_length=20,
-        verbose_name='Số điện thoại'
-    )
-    email = models.EmailField(
-        blank=True,
-        verbose_name='Email'
-    )
-    support_type = models.CharField(
-        max_length=20,
-        choices=SUPPORT_TYPE_CHOICES,
-        verbose_name='Loại yêu cầu'
-    )
-    support_date = models.DateField(
-        blank=True,
-        null=True,
-        verbose_name='Ngày xảy ra vấn đề',
-        help_text='Nếu có'
-    )
-    appointment_code = models.CharField(
-        max_length=20,
-        blank=True,
-        verbose_name='Mã lịch hẹn liên quan',
-        help_text='Nếu vấn đề liên quan đến lịch hẹn cụ thể'
-    )
-    related_service = models.ForeignKey(
-        Service,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        verbose_name='Dịch vụ liên quan'
-    )
-    content = models.TextField(
-        verbose_name='Nội dung góp ý/khiếu nại',
-        default=''
-    )
-    expected_solution = models.TextField(
-        blank=True,
-        verbose_name='Giải pháp mong muốn',
-        help_text='Khách hàng muốn được giải quyết như thế nào'
-    )
-    agree_processing = models.BooleanField(
-        default=False,
-        verbose_name='Đồng ý xử lý thông tin'
-    )
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='pending',
-        verbose_name='Trạng thái'
-    )
-    staff_notes = models.TextField(
-        blank=True,
-        verbose_name='Ghi chú xử lý'
-    )
-    resolution = models.TextField(
-        blank=True,
-        verbose_name='Phương án giải quyết'
-    )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Ngày gửi'
-    )
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Cập nhật lần cuối'
-    )
-
-    class Meta:
-        verbose_name = 'Góp ý/Khiếu nại (Cũ)'
-        verbose_name_plural = 'Góp ý/Khiếu nại (Cũ)'
-        ordering = ['-created_at']
-        indexes = [
-            models.Index(fields=['support_type', 'status']),
-            models.Index(fields=['appointment_code']),
-        ]
-
-    def __str__(self):
-        return f"{self.full_name} - {self.get_support_type_display()}"

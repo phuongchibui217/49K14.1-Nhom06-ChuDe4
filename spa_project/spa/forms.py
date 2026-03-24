@@ -7,7 +7,9 @@ Updated for Phase 6: Booking form with guest/authenticated support
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
-from .models import Service, CustomerProfile, Appointment, ConsultationRequest, SupportRequest, Complaint, ComplaintReply
+from django.utils import timezone
+from .models import Service, CustomerProfile, Appointment, ConsultationRequest, Complaint, ComplaintReply
+from .services import validate_appointment_date, validate_appointment_time
 
 
 # =====================================================
@@ -457,13 +459,62 @@ class AppointmentForm(forms.ModelForm):
         self.fields['service'].required = True
 
     def clean_appointment_date(self):
-        """Validate không chọn ngày quá khứ"""
+        """
+        Validate ngày hẹn - sử dụng timezone
+        
+        QUAN TRỌNG: Dùng timezone.now().date() thay vì date.today()
+        để đảm bảo đúng múi giờ configured trong settings.TIME_ZONE
+        """
         appointment_date = self.cleaned_data.get('appointment_date')
         if appointment_date:
-            from datetime import date
-            if appointment_date < date.today():
-                raise forms.ValidationError('Không thể chọn ngày trong quá khứ.')
+            # Dùng service để validate (đã xử lý timezone đúng)
+            try:
+                validate_appointment_date(appointment_date)
+            except Exception as e:
+                raise forms.ValidationError(str(e.message))
         return appointment_date
+
+    def clean_appointment_time(self):
+        """
+        Validate giờ hẹn
+        
+        - Nếu đặt hôm nay: phải trước ít nhất 30 phút
+        - Giờ làm việc: 8:00 - 20:00
+        """
+        appointment_time = self.cleaned_data.get('appointment_time')
+        appointment_date = self.cleaned_data.get('appointment_date')
+        
+        if appointment_time and appointment_date:
+            try:
+                validate_appointment_time(appointment_time, appointment_date)
+            except Exception as e:
+                raise forms.ValidationError(str(e.message))
+        
+        return appointment_time
+
+    def clean(self):
+        """
+        Validate tổng hợp cho form đặt lịch
+        
+        Kiểm tra:
+        - Ngày hợp lệ
+        - Giờ hợp lệ
+        """
+        cleaned_data = super().clean()
+        
+        # Lấy dữ liệu đã validate
+        appointment_date = cleaned_data.get('appointment_date')
+        appointment_time = cleaned_data.get('appointment_time')
+        service = cleaned_data.get('service')
+        
+        # Nếu đã có lỗi ở field riêng thì không check thêm
+        if not appointment_date or not appointment_time or not service:
+            return cleaned_data
+        
+        # Các validation bổ sung có thể thêm ở đây
+        # Ví dụ: check phòng trống (nếu form có chọn phòng)
+        
+        return cleaned_data
 
 
 # =====================================================
@@ -515,77 +566,6 @@ class ConsultationRequestForm(forms.ModelForm):
         if not agree_contact:
             raise forms.ValidationError('Bạn cần đồng ý để được liên hệ tư vấn.')
         return agree_contact
-
-
-# =====================================================
-# SupportRequest Forms
-# =====================================================
-
-class SupportRequestForm(forms.ModelForm):
-    """Form gửi góp ý/khiếu nại"""
-
-    class Meta:
-        model = SupportRequest
-        fields = ['full_name', 'phone', 'email', 'support_type',
-                  'support_date', 'appointment_code', 'related_service',
-                  'content', 'expected_solution', 'agree_processing']
-        widgets = {
-            'full_name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Họ và tên của bạn'
-            }),
-            'phone': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Số điện thoại',
-                'pattern': '[0-9]{10,11}'
-            }),
-            'email': forms.EmailInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Email (không bắt buộc)'
-            }),
-            'support_type': forms.Select(attrs={
-                'class': 'form-select'
-            }),
-            'support_date': forms.DateInput(attrs={
-                'class': 'form-control',
-                'type': 'date'
-            }),
-            'appointment_code': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Mã lịch hẹn (nếu có)'
-            }),
-            'related_service': forms.Select(attrs={
-                'class': 'form-select'
-            }),
-            'content': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 5,
-                'placeholder': 'Nội dung góp ý/khiếu nại...',
-                'required': 'required'
-            }),
-            'expected_solution': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3,
-                'placeholder': 'Bạn muốn được giải quyết như thế nào?'
-            }),
-            'agree_processing': forms.CheckboxInput(attrs={
-                'class': 'form-check-input',
-                'required': 'required'
-            })
-        }
-
-    def __init__(self, *args, **kwargs):
-        """Filter only active services"""
-        super().__init__(*args, **kwargs)
-        self.fields['related_service'].queryset = Service.objects.filter(is_active=True)
-        self.fields['related_service'].required = False
-        self.fields['related_service'].empty_label = "-- Chọn dịch vụ (nếu có) --"
-
-    def clean_agree_processing(self):
-        agree_processing = self.cleaned_data.get('agree_processing')
-        if not agree_processing:
-            raise forms.ValidationError('Bạn cần đồng ý để chúng tôi xử lý yêu cầu.')
-        return agree_processing
 
 
 # =====================================================

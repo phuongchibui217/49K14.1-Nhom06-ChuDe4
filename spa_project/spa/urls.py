@@ -14,15 +14,14 @@ urlpatterns = [
     path('services/', views.service_list, name='service_list'),
     path('service/<int:service_id>/', views.service_detail, name='service_detail'),
     path('booking/', views.booking, name='booking'),
-    path('dang-ky-tu-van/', views.consultation, name='consultation'),
-    path('gop-y-khieu-nai/', views.complaint, name='complaint'),
+    path('dang-ky-tu-van/', views.consultation, name='consultation'), # bỏ rồi mà
 
     # Authentication
     path('login/', views.login_view, name='login'),
     path('register/', views.register, name='register'),
     path('logout/', views.logout_view, name='logout'),
     path('lich-hen-cua-toi/', views.my_appointments, name='my_appointments'),
-    path('hoc-hen/cancel/<int:appointment_id>/', views.cancel_appointment, name='cancel_appointment'),
+    path('lich-hen/cancel/<int:appointment_id>/', views.cancel_appointment, name='cancel_appointment'),
 
     # Admin pages (using /manage/ prefix to avoid conflict with Django admin)
     path('manage/login/', views.admin_login, name='admin_login'),

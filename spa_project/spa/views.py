@@ -8,16 +8,40 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 import json
 from .models import (
-    Service, Appointment, ConsultationRequest, SupportRequest, CustomerProfile,
+    Service, Appointment, ConsultationRequest, CustomerProfile,
     Complaint, ComplaintReply, ComplaintHistory, Room
 )
 from .forms import (
     CustomerRegistrationForm, AppointmentForm,
-    ConsultationRequestForm, SupportRequestForm, AdminLoginForm, ServiceForm,
+    ConsultationRequestForm, AdminLoginForm, ServiceForm,
     CustomerComplaintForm, GuestComplaintForm, ComplaintReplyForm,
     ComplaintStatusForm, ComplaintAssignForm
+)
+from .services import (
+    validate_appointment_create,
+    check_room_availability,
+    get_min_booking_date
+)
+from .service_services import (
+    validate_service_data,
+    create_service as create_service_from_data,
+    update_service as update_service_from_data,
+    serialize_service,
+)
+from .appointment_services import (
+    parse_appointment_data,
+    validate_appointment_data,
+    create_appointment as create_appointment_from_data,
+    update_appointment as update_appointment_from_data,
+    serialize_appointment,
+    serialize_appointments,
+)
+from .api_response import (
+    ApiResponse, staff_api, safe_api, 
+    get_or_404, check_staff_permission
 )
 
 
@@ -143,20 +167,6 @@ def consultation(request):
         form = ConsultationRequestForm()
 
     return render(request, 'spa/pages/consultation.html', {'form': form})
-
-
-def complaint(request):
-    """Góp ý/Khiếu nại"""
-    if request.method == 'POST':
-        form = SupportRequestForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Gửi góp ý thành công! Cảm ơn phản hồi của bạn.')
-            return redirect('spa:home')
-    else:
-        form = SupportRequestForm()
-
-    return render(request, 'spa/pages/complaint.html', {'form': form})
 
 
 @login_required
@@ -574,11 +584,16 @@ def api_services_list(request):
 
 
 @require_http_methods(["POST"])
-@csrf_exempt
+@staff_api
 def api_service_create(request):
-    """API: Thêm dịch vụ mới"""
-    if not (request.user.is_staff or request.user.is_superuser):
-        return JsonResponse({'error': 'Không có quyền truy cập'}, status=403)
+    """
+    API: Thêm dịch vụ mới
+    
+    ĐÃ BỔ SUNG:
+    - CSRF protection qua @staff_api decorator
+    - Error handling chi tiết
+    - Validation đầy đủ
+    """
 
     try:
         # Check if multipart/form-data (for file upload)
@@ -691,14 +706,21 @@ def api_service_create(request):
 
 
 @require_http_methods(["POST", "PUT"])
-@csrf_exempt
+@staff_api
 def api_service_update(request, service_id):
-    """API: Cập nhật dịch vụ"""
-    if not (request.user.is_staff or request.user.is_superuser):
-        return JsonResponse({'error': 'Không có quyền truy cập'}, status=403)
+    """
+    API: Cập nhật dịch vụ
+    
+    ĐÃ BỔ SUNG:
+    - CSRF protection qua @staff_api decorator
+    - Error handling chi tiết
+    """
+    # Lấy service hoặc trả về 404
+    service, error = get_or_404(Service, id=service_id)
+    if error:
+        return error
 
     try:
-        service = get_object_or_404(Service, id=service_id)
 
         # Check if multipart/form-data (for file upload)
         if request.content_type and 'multipart/form-data' in request.content_type:
@@ -800,14 +822,21 @@ def api_service_update(request, service_id):
 
 
 @require_http_methods(["DELETE", "POST"])
-@csrf_exempt
+@staff_api
 def api_service_delete(request, service_id):
-    """API: Xóa dịch vụ"""
-    if not (request.user.is_staff or request.user.is_superuser):
-        return JsonResponse({'error': 'Không có quyền truy cập'}, status=403)
+    """
+    API: Xóa dịch vụ
+    
+    ĐÃ BỔ SUNG:
+    - CSRF protection qua @staff_api decorator
+    - Error handling chi tiết
+    """
+    # Lấy service hoặc trả về 404
+    service, error = get_or_404(Service, id=service_id)
+    if error:
+        return error
 
     try:
-        service = get_object_or_404(Service, id=service_id)
         service_name = service.name
         service.delete()
 
@@ -816,7 +845,7 @@ def api_service_delete(request, service_id):
             'message': f'Đã xóa dịch vụ: {service_name}'
         })
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=400)
+        return ApiResponse.error(f'Lỗi khi xóa dịch vụ: {str(e)}')
 
 
 
@@ -1088,67 +1117,65 @@ def admin_complaint_complete(request, complaint_id):
 @login_required
 def customer_complaint_create(request):
     """Khách hàng gửi khiếu nại"""
-    try:
-        customer_profile = request.user.customer_profile
-    except CustomerProfile.DoesNotExist:
-        customer_profile = None
-    
+    # Lấy hoặc tạo CustomerProfile cho user
+    customer_profile, created = CustomerProfile.objects.get_or_create(
+        user=request.user,
+        defaults={
+            'full_name': request.user.get_full_name() or request.user.username,
+            'phone': request.user.username,
+        }
+    )
+
     if request.method == 'POST':
-        if customer_profile:
-            form = CustomerComplaintForm(request.POST)
-        else:
-            form = GuestComplaintForm(request.POST)
+        form = CustomerComplaintForm(request.POST)
         
         if form.is_valid():
             complaint = form.save(commit=False)
-            
-            if customer_profile:
-                complaint.customer = customer_profile
-                complaint.full_name = customer_profile.full_name
-                complaint.phone = customer_profile.phone
-            else:
-                # Tạo profile cho user nếu chưa có
-                customer_profile = CustomerProfile.objects.create(
-                    user=request.user,
-                    phone=form.cleaned_data.get('phone', request.user.username),
-                    full_name=form.cleaned_data.get('full_name', request.user.username),
-                )
-                complaint.customer = customer_profile
-            
+            complaint.customer = customer_profile
+            complaint.full_name = customer_profile.full_name
+            complaint.phone = customer_profile.phone
             complaint.save()
             
-            ComplaintHistory.log(
-                complaint=complaint,
-                action='created',
-                note='Khách hàng tạo khiếu nại',
-                performed_by=request.user
-            )
+            # Log history (bọc trong try để không ảnh hưởng luồng chính)
+            try:
+                ComplaintHistory.log(
+                    complaint=complaint,
+                    action='created',
+                    note='Khách hàng tạo khiếu nại',
+                    performed_by=request.user
+                )
+            except Exception as e:
+                print(f"Warning: Could not log complaint history: {e}")
             
             messages.success(request, f'Đã gửi khiếu nại thành công! Mã khiếu nại: {complaint.code}')
             return redirect('spa:customer_complaint_list')
     else:
-        if customer_profile:
-            initial = {
-                'full_name': customer_profile.full_name,
-                'phone': customer_profile.phone,
-            }
-            form = CustomerComplaintForm(initial=initial)
-        else:
-            form = GuestComplaintForm()
+        # GET request - luôn dùng CustomerComplaintForm
+        form = CustomerComplaintForm()
     
-    return render(request, 'spa/pages/customer_complaint_create.html', {'form': form})
+    return render(request, 'spa/pages/customer_complaint_create.html', {
+        'form': form,
+        'customer_profile': customer_profile,
+    })
 
 
 @login_required
 def customer_complaint_list(request):
     """Danh sách khiếu nại của khách hàng"""
-    try:
-        customer_profile = request.user.customer_profile
-        complaints = customer_profile.complaints.all().order_by('-created_at')
-    except CustomerProfile.DoesNotExist:
-        complaints = Complaint.objects.none()
+    # Dùng cùng logic với create để đảm bảo nhất quán
+    customer_profile, created = CustomerProfile.objects.get_or_create(
+        user=request.user,
+        defaults={
+            'full_name': request.user.get_full_name() or request.user.username,
+            'phone': request.user.username,
+        }
+    )
+    complaints = customer_profile.complaints.all().order_by('-created_at')
     
-    return render(request, 'spa/pages/customer_complaint_list.html', {'complaints': complaints})
+    return render(request, 'spa/pages/customer_complaint_list.html', {
+        'complaints': complaints,
+        'customer_profile': customer_profile,
+    })
 
 
 @login_required
@@ -1343,11 +1370,16 @@ def api_appointment_detail(request, appointment_code):
 
 
 @require_http_methods(["POST"])
-@csrf_exempt
+@staff_api
 def api_appointment_create(request):
-    """API: Tạo lịch hẹn mới từ admin"""
-    if not (request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser)):
-        return JsonResponse({'success': False, 'error': 'Không có quyền truy cập'}, status=403)
+    """
+    API: Tạo lịch hẹn mới từ admin
+    
+    ĐÃ BỔ SUNG:
+    - CSRF protection qua @staff_api decorator
+    - Error handling chi tiết
+    - Validation tập trung qua services.py
+    """
     
     try:
         data = json.loads(request.body)
@@ -1421,6 +1453,28 @@ def api_appointment_create(request):
         except ValueError:
             return JsonResponse({'success': False, 'error': 'Định dạng giờ không hợp lệ'}, status=400)
         
+        # =====================================================
+        # VALIDATION: Ngày quá khứ + Phòng trống
+        # Sử dụng services.py để validate tập trung
+        # =====================================================
+        duration_minutes = int(duration) if duration else service.duration_minutes
+        
+        # Validate ngày và giờ (bao gồm timezone)
+        validation_result = validate_appointment_create(
+            appointment_date=appointment_date,
+            appointment_time=appointment_time,
+            duration_minutes=duration_minutes,
+            room_code=room_id if room_id else None,
+            exclude_appointment_code=None  # Tạo mới nên không cần exclude
+        )
+        
+        if not validation_result['valid']:
+            # Trả về lỗi validation (đã có message tiếng Việt rõ ràng)
+            return JsonResponse({
+                'success': False,
+                'error': validation_result['errors'][0]  # Lấy lỗi đầu tiên
+            }, status=400)
+        
         # Create appointment
         appointment = Appointment.objects.create(
             customer=customer,
@@ -1457,17 +1511,20 @@ def api_appointment_create(request):
 
 
 @require_http_methods(["POST", "PUT"])
-@csrf_exempt
+@staff_api
 def api_appointment_update(request, appointment_code):
-    """API: Cập nhật lịch hẹn"""
-    if not (request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser)):
-        return JsonResponse({'success': False, 'error': 'Không có quyền truy cập'}, status=403)
+    """
+    API: Cập nhật lịch hẹn
     
-    try:
-        appointment = Appointment.objects.get(appointment_code=appointment_code)
-    except Appointment.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Không tìm thấy lịch hẹn'}, status=404)
-    
+    ĐÃ BỔ SUNG:
+    - CSRF protection qua @staff_api decorator
+    - Error handling chi tiết
+    """
+    # Lấy appointment hoặc trả về 404
+    appointment, error = get_or_404(Appointment, appointment_code=appointment_code)
+    if error:
+        return error
+
     try:
         data = json.loads(request.body)
         
@@ -1536,17 +1593,20 @@ def api_appointment_update(request, appointment_code):
 
 
 @require_http_methods(["POST"])
-@csrf_exempt
+@staff_api
 def api_appointment_status(request, appointment_code):
-    """API: Đổi trạng thái lịch hẹn"""
-    if not (request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser)):
-        return JsonResponse({'success': False, 'error': 'Không có quyền truy cập'}, status=403)
+    """
+    API: Đổi trạng thái lịch hẹn
     
-    try:
-        appointment = Appointment.objects.get(appointment_code=appointment_code)
-    except Appointment.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Không tìm thấy lịch hẹn'}, status=404)
-    
+    ĐÃ BỔ SUNG:
+    - CSRF protection qua @staff_api decorator
+    - Error handling chi tiết
+    """
+    # Lấy appointment hoặc trả về 404
+    appointment, error = get_or_404(Appointment, appointment_code=appointment_code)
+    if error:
+        return error
+
     try:
         data = json.loads(request.body)
         new_status = data.get('status', '')
@@ -1568,17 +1628,21 @@ def api_appointment_status(request, appointment_code):
 
 
 @require_http_methods(["POST", "DELETE"])
-@csrf_exempt
+@staff_api
 def api_appointment_delete(request, appointment_code):
-    """API: Xóa lịch hẹn"""
-    if not (request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser)):
-        return JsonResponse({'success': False, 'error': 'Không có quyền truy cập'}, status=403)
+    """
+    API: Xóa lịch hẹn (soft delete - chuyển sang cancelled)
     
-    try:
-        appointment = Appointment.objects.get(appointment_code=appointment_code)
-    except Appointment.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Không tìm thấy lịch hẹn'}, status=404)
-    
+    ĐÃ BỔ SUNG:
+    - CSRF protection qua @staff_api decorator
+    - Error handling chi tiết
+    - Soft delete thay vì xóa thật
+    """
+    # Lấy appointment hoặc trả về 404
+    appointment, error = get_or_404(Appointment, appointment_code=appointment_code)
+    if error:
+        return error
+
     try:
         # Thay vì xóa thật, chuyển sang cancelled
         appointment.status = 'cancelled'

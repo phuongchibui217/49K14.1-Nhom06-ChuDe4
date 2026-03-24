@@ -1,7 +1,7 @@
 {% extends 'spa/base.html' %}
 {% load static %}
 
-{% block title %}{{ complaint.code }} - Chi tiết khiếu nại{% endblock %}
+{% block title %}{{ complaint.code }} - Chi tiết yêu cầu hỗ trợ{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -66,7 +66,7 @@
 {% block content %}
 <div class="page-header">
     <div class="container">
-        <h1><i class="fas fa-clipboard-list"></i> Chi tiết khiếu nại</h1>
+        <h1><i class="fas fa-headset"></i> Chi tiết yêu cầu hỗ trợ</h1>
         <p class="mb-0">{{ complaint.code }}</p>
     </div>
 </div>
@@ -74,8 +74,8 @@
 <div class="container">
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'home' %}">Trang chủ</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'spa:customer_complaint_list' %}">Khiếu nại của tôi</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'spa:home' %}">Trang chủ</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'spa:customer_complaint_list' %}">Yêu cầu hỗ trợ của tôi</a></li>
             <li class="breadcrumb-item active">{{ complaint.code }}</li>
         </ol>
     </nav>
@@ -153,7 +153,7 @@
             </div>
             {% else %}
             <div class="alert alert-success">
-                <i class="fas fa-check-circle"></i> Khiếu nại này đã được giải quyết. Cảm ơn bạn đã phản hồi!
+                <i class="fas fa-check-circle"></i> Yêu cầu hỗ trợ này đã được giải quyết. Cảm ơn bạn đã phản hồi!
             </div>
             {% endif %}
         </div>
