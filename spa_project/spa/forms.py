@@ -8,7 +8,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
 from django.utils import timezone
-from .models import Service, CustomerProfile, Appointment, ConsultationRequest, Complaint, ComplaintReply
+from .models import Service, CustomerProfile, Appointment, Complaint, ComplaintReply
 from .services import validate_appointment_date, validate_appointment_time
 
 
@@ -515,57 +515,6 @@ class AppointmentForm(forms.ModelForm):
         # Ví dụ: check phòng trống (nếu form có chọn phòng)
         
         return cleaned_data
-
-
-# =====================================================
-# ConsultationRequest Forms
-# =====================================================
-
-class ConsultationRequestForm(forms.ModelForm):
-    """Form đăng ký tư vấn"""
-
-    class Meta:
-        model = ConsultationRequest
-        fields = ['full_name', 'phone', 'email', 'request_type',
-                  'content', 'preferred_contact_time', 'agree_contact']
-        widgets = {
-            'full_name': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Họ và tên của bạn'
-            }),
-            'phone': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Số điện thoại',
-                'pattern': '[0-9]{10,11}'
-            }),
-            'email': forms.EmailInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Email (không bắt buộc)'
-            }),
-            'request_type': forms.Select(attrs={
-                'class': 'form-select'
-            }),
-            'content': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 4,
-                'placeholder': 'Nội dung cần tư vấn...',
-                'required': 'required'
-            }),
-            'preferred_contact_time': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Ví dụ: Buổi sáng, Chiều, T2-T6...'
-            }),
-            'agree_contact': forms.CheckboxInput(attrs={
-                'class': 'form-check-input',
-                'required': 'required'
-            })
-        }
-
-    def clean_agree_contact(self):
-        agree_contact = self.cleaned_data.get('agree_contact')
-        if not agree_contact:
-            raise forms.ValidationError('Bạn cần đồng ý để được liên hệ tư vấn.')
-        return agree_contact
 
 
 # =====================================================

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Service, CustomerProfile, Room, Appointment, 
-    ConsultationRequest, Complaint, ComplaintReply, ComplaintHistory
+    Complaint, ComplaintReply, ComplaintHistory
 )
 
 
@@ -66,30 +66,6 @@ class AppointmentAdmin(admin.ModelAdmin):
         }),
         ('Ghi chú', {
             'fields': ('notes', 'staff_notes')
-        }),
-        ('Thời gian', {
-            'fields': ('created_at', 'updated_at'),
-            'classes': ('collapse',)
-        }),
-    )
-
-
-@admin.register(ConsultationRequest)
-class ConsultationRequestAdmin(admin.ModelAdmin):
-    """Admin cho yêu cầu tư vấn"""
-    list_display = ['full_name', 'phone', 'request_type', 'status', 'agree_contact', 'created_at']
-    list_filter = ['request_type', 'status', 'agree_contact', 'created_at']
-    search_fields = ['full_name', 'phone', 'email']
-    readonly_fields = ['created_at', 'updated_at']
-    fieldsets = (
-        ('Thông tin liên hệ', {
-            'fields': ('full_name', 'phone', 'email')
-        }),
-        ('Nội dung tư vấn', {
-            'fields': ('request_type', 'content', 'preferred_contact_time')
-        }),
-        ('Xử lý', {
-            'fields': ('status', 'agree_contact', 'staff_notes')
         }),
         ('Thời gian', {
             'fields': ('created_at', 'updated_at'),

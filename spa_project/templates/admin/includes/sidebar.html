@@ -37,12 +37,14 @@
                 Quản lý khách hàng
             </a>
         </li>
+        {% if request.user.is_superuser %}
         <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.url_name == 'admin_staff' %}active{% endif %}" href="{% url 'spa:admin_staff' %}">
                 <i class="fas fa-user-tie"></i>
                 Quản lý nhân viên
             </a>
         </li>
+        {% endif %}
         <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.url_name == 'admin_profile' %}active{% endif %}" href="{% url 'spa:admin_profile' %}">
                 <i class="fas fa-user-cog"></i>

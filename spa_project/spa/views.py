@@ -11,12 +11,12 @@ from django.db.models import Q
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 import json
 from .models import (
-    Service, Appointment, ConsultationRequest, CustomerProfile,
+    Service, Appointment, CustomerProfile,
     Complaint, ComplaintReply, ComplaintHistory, Room
 )
 from .forms import (
     CustomerRegistrationForm, AppointmentForm,
-    ConsultationRequestForm, AdminLoginForm, ServiceForm,
+    AdminLoginForm, ServiceForm,
     CustomerComplaintForm, GuestComplaintForm, ComplaintReplyForm,
     ComplaintStatusForm, ComplaintAssignForm
 )
@@ -153,20 +153,6 @@ def booking(request):
         'services': services,
         'customer_profile': customer_profile,
     })
-
-
-def consultation(request):
-    """Đăng ký tư vấn"""
-    if request.method == 'POST':
-        form = ConsultationRequestForm(request.POST)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Đăng ký tư vấn thành công! Chúng tôi sẽ liên hệ sớm.')
-            return redirect('spa:home')
-    else:
-        form = ConsultationRequestForm()
-
-    return render(request, 'spa/pages/consultation.html', {'form': form})
 
 
 @login_required
@@ -860,10 +846,10 @@ def admin_customers(request):
 
 @login_required(login_url='spa:admin_login')
 def admin_staff(request):
-    """Quản lý nhân viên"""
-    if not (request.user.is_staff or request.user.is_superuser):
-        messages.error(request, 'Bạn không có quyền truy cập trang này.')
-        return redirect('spa:home')
+    """Quản lý nhân viên - Chỉ dành cho Superuser"""
+    if not request.user.is_superuser:
+        messages.error(request, 'Bạn không có quyền truy cập trang này. Chỉ Superuser mới được quản lý nhân viên.')
+        return redirect('spa:admin_appointments')
     return render(request, 'admin/pages/admin_staff.html')
 
 

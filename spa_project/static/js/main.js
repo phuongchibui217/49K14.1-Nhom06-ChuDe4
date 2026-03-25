@@ -297,35 +297,6 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // ============================================
-    // CONSULTATION FORM (Real submit to backend)
-    // ============================================
-
-    const consultationForm = document.querySelector('form[action*="consultation"]');
-    if (consultationForm) {
-        // Optional client-side validation for better UX
-        const phoneInput = consultationForm.querySelector('input[name="phone"]');
-        const emailInput = consultationForm.querySelector('input[name="email"]');
-
-        if (phoneInput) {
-            phoneInput.addEventListener('blur', function() {
-                clearFieldError('phone');
-                if (this.value && !validatePhone(this.value)) {
-                    showFieldError('phone', 'Số điện thoại không hợp lệ!');
-                }
-            });
-        }
-
-        if (emailInput) {
-            emailInput.addEventListener('blur', function() {
-                clearFieldError('email');
-                if (this.value && !validateEmail(this.value)) {
-                    showFieldError('email', 'Email không hợp lệ!');
-                }
-            });
-        }
-    }
-
-    // ============================================
     // COMPLAINT FORM (Real submit to backend)
     // ============================================
 

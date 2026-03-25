@@ -14,7 +14,6 @@ urlpatterns = [
     path('services/', views.service_list, name='service_list'),
     path('service/<int:service_id>/', views.service_detail, name='service_detail'),
     path('booking/', views.booking, name='booking'),
-    path('dang-ky-tu-van/', views.consultation, name='consultation'), # bỏ rồi mà
 
     # Authentication
     path('login/', views.login_view, name='login'),

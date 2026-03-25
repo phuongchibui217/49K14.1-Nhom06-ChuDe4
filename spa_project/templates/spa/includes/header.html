@@ -24,9 +24,6 @@
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'booking' %}active{% endif %}" href="{% url 'spa:booking' %}">Đặt lịch</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'consultation' %}active{% endif %}" href="{% url 'spa:consultation' %}">Hỗ trợ & CSKH</a>
-                    </li>
                 </ul>
                 <!-- Right side: User menu -->
                 <div class="d-flex align-items-center">
