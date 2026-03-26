@@ -121,13 +121,7 @@
                         <div class="d-flex align-items-center gap-2 flex-wrap">
                             <span class="text-muted">{{ complaint.code }}</span>
                             <span class="status-badge status-{{ complaint.status }}">{{ complaint.get_status_display }}</span>
-                            <span class="priority-{{ complaint.priority }}">
-                                <i class="fas fa-flag"></i> {{ complaint.get_priority_display }}
-                            </span>
                         </div>
-                    </div>
-                    <div>
-                        <span class="badge bg-secondary">{{ complaint.get_complaint_type_display }}</span>
                     </div>
                 </div>
                 <div class="complaint-body">

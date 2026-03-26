@@ -616,19 +616,6 @@ class Complaint(models.Model):
     
     Hỗ trợ các loại: Khiếu nại, Góp ý, Hỏi đáp
     """
-    COMPLAINT_TYPE_CHOICES = [
-        ('complaint', 'Khiếu nại'),
-        ('feedback', 'Góp ý'),
-        ('inquiry', 'Hỏi đáp'),
-    ]
-
-    PRIORITY_CHOICES = [
-        ('low', 'Thấp'),
-        ('medium', 'Trung bình'),
-        ('high', 'Cao'),
-        ('urgent', 'Khẩn cấp'),
-    ]
-
     STATUS_CHOICES = [
         ('new', 'Mới tạo'),
         ('pending', 'Chờ tiếp nhận'),
@@ -676,18 +663,6 @@ class Complaint(models.Model):
     )
     content = models.TextField(
         verbose_name='Nội dung khiếu nại'
-    )
-    complaint_type = models.CharField(
-        max_length=20,
-        choices=COMPLAINT_TYPE_CHOICES,
-        default='complaint',
-        verbose_name='Loại khiếu nại'
-    )
-    priority = models.CharField(
-        max_length=20,
-        choices=PRIORITY_CHOICES,
-        default='medium',
-        verbose_name='Mức độ ưu tiên'
     )
     # Thông tin liên quan
     incident_date = models.DateField(
@@ -752,7 +727,6 @@ class Complaint(models.Model):
         indexes = [
             models.Index(fields=['code']),
             models.Index(fields=['status', 'created_at']),
-            models.Index(fields=['complaint_type', 'status']),
             models.Index(fields=['assigned_to']),
         ]
 

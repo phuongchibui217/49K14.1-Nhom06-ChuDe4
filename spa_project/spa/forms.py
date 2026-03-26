@@ -526,7 +526,7 @@ class CustomerComplaintForm(forms.ModelForm):
 
     class Meta:
         model = Complaint
-        fields = ['title', 'content', 'complaint_type', 'priority',
+        fields = ['title', 'content',
                   'incident_date', 'appointment_code', 'related_service',
                   'expected_solution']
         widgets = {
@@ -538,12 +538,6 @@ class CustomerComplaintForm(forms.ModelForm):
                 'class': 'form-control',
                 'rows': 5,
                 'placeholder': 'Mô tả chi tiết vấn đề của bạn...'
-            }),
-            'complaint_type': forms.Select(attrs={
-                'class': 'form-select'
-            }),
-            'priority': forms.Select(attrs={
-                'class': 'form-select'
             }),
             'incident_date': forms.DateInput(attrs={
                 'class': 'form-control',
@@ -586,7 +580,7 @@ class GuestComplaintForm(forms.ModelForm):
     class Meta:
         model = Complaint
         fields = ['full_name', 'phone', 'email', 'title', 'content',
-                  'complaint_type', 'priority', 'incident_date',
+                  'incident_date',
                   'appointment_code', 'related_service', 'expected_solution']
         widgets = {
             'full_name': forms.TextInput(attrs={
@@ -610,12 +604,6 @@ class GuestComplaintForm(forms.ModelForm):
                 'class': 'form-control',
                 'rows': 5,
                 'placeholder': 'Mô tả chi tiết vấn đề của bạn...'
-            }),
-            'complaint_type': forms.Select(attrs={
-                'class': 'form-select'
-            }),
-            'priority': forms.Select(attrs={
-                'class': 'form-select'
             }),
             'incident_date': forms.DateInput(attrs={
                 'class': 'form-control',

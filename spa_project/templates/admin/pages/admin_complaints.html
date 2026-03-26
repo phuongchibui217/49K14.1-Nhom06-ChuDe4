@@ -143,15 +143,6 @@
                     <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Đã đóng</option>
                 </select>
             </div>
-            <div class="filter-select">
-                <select class="form-select" name="type">
-                    <option value="">Tất cả loại</option>
-                    <option value="complaint" {% if type_filter == 'complaint' %}selected{% endif %}>Khiếu nại</option>
-                    <option value="feedback" {% if type_filter == 'feedback' %}selected{% endif %}>Góp ý</option>
-                    <option value="inquiry" {% if type_filter == 'inquiry' %}selected{% endif %}>Hỏi đáp</option>
-                    <option value="other" {% if type_filter == 'other' %}selected{% endif %}>Khác</option>
-                </select>
-            </div>
             <div class="filter-btn">
                 <button type="submit" class="btn btn-primary w-100 btn-nowrap" style="background: linear-gradient(135deg, #1e3a5f, #2c5282); border: none;">
                     <i class="fas fa-search me-1"></i> Tìm
@@ -166,10 +157,9 @@
             <table class="table admin-table table-hover mb-0">
                 <thead>
                     <tr>
-                        <th>Mã KN</th>
+                    <th>Mã KN</th>
                         <th>Tiêu đề</th>
                         <th>Khách hàng</th>
-                        <th>Loại</th>
                         <th>Trạng thái</th>
                         <th>Người xử lý</th>
                         <th>Ngày tạo</th>
@@ -185,7 +175,6 @@
                             {{ complaint.full_name }}<br>
                             <small class="text-muted">{{ complaint.phone }}</small>
                         </td>
-                        <td><span class="status-badge" style="background:#f5f5f5;color:#666;">{{ complaint.get_complaint_type_display }}</span></td>
                         <td><span class="status-badge status-{{ complaint.status }}">{{ complaint.get_status_display }}</span></td>
                         <td>
                             {% if complaint.assigned_to %}
@@ -220,7 +209,7 @@
                 <ul class="pagination justify-content-center mb-0">
                     {% if complaints.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ complaints.previous_page_number }}&search={{ search }}&status={{ status_filter }}&type={{ type_filter }}">
+                        <a class="page-link" href="?page={{ complaints.previous_page_number }}&search={{ search }}&status={{ status_filter }}">
                             <i class="fas fa-chevron-left"></i>
                         </a>
                     </li>
@@ -231,14 +220,14 @@
                         <li class="page-item active"><span class="page-link">{{ num }}</span></li>
                         {% elif num > complaints.number|add:'-3' and num < complaints.number|add:'3' %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ num }}&search={{ search }}&status={{ status_filter }}&type={{ type_filter }}">{{ num }}</a>
+                            <a class="page-link" href="?page={{ num }}&search={{ search }}&status={{ status_filter }}">{{ num }}</a>
                         </li>
                         {% endif %}
                     {% endfor %}
                     
                     {% if complaints.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ complaints.next_page_number }}&search={{ search }}&status={{ status_filter }}&type={{ type_filter }}">
+                        <a class="page-link" href="?page={{ complaints.next_page_number }}&search={{ search }}&status={{ status_filter }}">
                             <i class="fas fa-chevron-right"></i>
                         </a>
                     </li>

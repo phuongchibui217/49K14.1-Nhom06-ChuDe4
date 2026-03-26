@@ -103,8 +103,8 @@ class ComplaintHistoryInline(admin.TabularInline):
 @admin.register(Complaint)
 class ComplaintAdmin(admin.ModelAdmin):
     """Admin cho khiếu nại - Quản lý đầy đủ"""
-    list_display = ['code', 'title', 'customer', 'complaint_type', 'status', 'priority', 'assigned_to', 'created_at']
-    list_filter = ['status', 'complaint_type', 'priority', 'created_at']
+    list_display = ['code', 'title', 'customer', 'status', 'assigned_to', 'created_at']
+    list_filter = ['status', 'created_at']
     search_fields = ['code', 'title', 'customer__full_name', 'customer__phone', 'content']
     readonly_fields = ['code', 'created_at', 'updated_at', 'resolved_at']
     inlines = [ComplaintReplyInline, ComplaintHistoryInline]
@@ -112,7 +112,7 @@ class ComplaintAdmin(admin.ModelAdmin):
     list_select_related = ['customer', 'assigned_to']
     fieldsets = (
         ('Thông tin khiếu nại', {
-            'fields': ('code', 'customer', 'title', 'content', 'complaint_type', 'priority')
+            'fields': ('code', 'customer', 'title', 'content')
         }),
         ('Thông tin liên hệ', {
             'fields': ('full_name', 'phone', 'email')

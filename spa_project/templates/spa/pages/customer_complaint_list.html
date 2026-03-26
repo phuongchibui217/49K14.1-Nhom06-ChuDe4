@@ -374,10 +374,6 @@
                     <p class="complaint-preview">{{ complaint.content|truncatewords:40 }}</p>
                     
                     <div class="complaint-meta">
-                        <span class="meta-badge">
-                            <i class="fas fa-tag"></i>
-                            {{ complaint.get_complaint_type_display }}
-                        </span>
                         {% if complaint.assigned_to %}
                         <span class="meta-badge">
                             <i class="fas fa-user-check"></i>

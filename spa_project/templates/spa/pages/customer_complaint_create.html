@@ -5,173 +5,345 @@
 
 {% block extra_css %}
 <style>
-.page-header {
-    background: linear-gradient(135deg, #e91e63 0%, #9c27b0 100%);
-    color: white;
-    padding: 40px 0;
-    margin-bottom: 30px;
-}
-.form-card {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    padding: 30px;
-}
-.form-label {
-    font-weight: 600;
-    color: #333;
-}
-.required-star {
-    color: #e91e63;
-}
+    /* Hero Section - Đồng bộ với booking.html */
+    .complaint-hero {
+        background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
+        padding: 5rem 0 4rem;
+        text-align: center;
+        color: white;
+    }
+
+    /* Form Section */
+    .complaint-form-section {
+        padding: 3rem 0 4rem;
+        margin-top: -2rem;
+        position: relative;
+        z-index: 2;
+    }
+
+    /* Form Card - Đồng bộ với booking-card */
+    .complaint-card {
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 10px 40px rgba(30, 58, 95, 0.15);
+        padding: 3rem;
+        border: 1px solid #e2e8f0;
+    }
+
+    /* Section Title - Đồng bộ style */
+    .section-title {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: #2d3748;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #d4a835;
+        display: inline-block;
+    }
+
+    /* Form Controls - Đồng bộ với booking */
+    .form-control, .form-select {
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #d4a835;
+        box-shadow: 0 0 0 3px rgba(212, 168, 55, 0.1);
+    }
+
+    /* Customer Info Box */
+    .customer-info {
+        background: #f7fafc;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #d4a835;
+    }
+
+    /* Breadcrumb Style */
+    .breadcrumb-wrapper {
+        margin-bottom: 1.5rem;
+    }
+
+    .breadcrumb {
+        background: transparent;
+        padding: 0;
+        margin-bottom: 0;
+    }
+
+    .breadcrumb-item a {
+        color: #1e3a5f;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+
+    .breadcrumb-item a:hover {
+        color: #d4a835;
+    }
+
+    .breadcrumb-item.active {
+        color: #64748b;
+    }
+
+    /* Field Error */
+    .field-error {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+
+    .is-invalid {
+        border-color: #dc3545 !important;
+    }
+
+    /* Required Star */
+    .required-star {
+        color: #dc3545;
+    }
+
+    /* Info Alert */
+    .info-alert {
+        background: linear-gradient(135deg, rgba(30, 58, 95, 0.05), rgba(212, 168, 53, 0.05));
+        border: 1px solid #e2e8f0;
+        border-left: 4px solid #d4a835;
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+    }
+
+    .info-alert i {
+        color: #d4a835;
+    }
+
+    /* Support Card */
+    .support-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        padding: 1.5rem;
+        border: 1px solid #e2e8f0;
+    }
+
+    .support-card h5 {
+        color: #1e3a5f;
+    }
+
+    .support-card .btn-outline-primary {
+        border-color: #d4a835;
+        color: #d4a835;
+    }
+
+    .support-card .btn-outline-primary:hover {
+        background: linear-gradient(135deg, #d4a835, #f1c40f);
+        border-color: #d4a835;
+        color: white;
+    }
+
+    /* Button Group */
+    .btn-group-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .complaint-hero {
+            padding: 4rem 0 3rem;
+        }
+
+        .complaint-card {
+            padding: 1.5rem;
+        }
+
+        .btn-group-actions {
+            flex-direction: column;
+        }
+
+        .btn-group-actions .btn {
+            width: 100%;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
+<!-- Hero Section -->
+<section class="complaint-hero">
     <div class="container">
-        <h1><i class="fas fa-paper-plane"></i> Gửi yêu cầu hỗ trợ</h1>
-        <p class="mb-0">Chúng tôi sẵn sàng lắng nghe và giải quyết vấn đề của bạn</p>
+        <h1><i class="fas fa-paper-plane me-3"></i>Gửi Yêu Cầu Hỗ Trợ</h1>
+        <p class="subtitle mb-0">Chúng tôi sẵn sàng lắng nghe và giải quyết vấn đề của bạn</p>
     </div>
-</div>
+</section>
 
-<div class="container">
-    <nav aria-label="breadcrumb" class="mb-4">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'spa:home' %}">Trang chủ</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'spa:customer_complaint_list' %}">Yêu cầu hỗ trợ của tôi</a></li>
-            <li class="breadcrumb-item active">Gửi yêu cầu hỗ trợ</li>
-        </ol>
-    </nav>
+<!-- Complaint Form Section -->
+<section class="complaint-form-section">
+    <div class="container">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb-wrapper">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'spa:home' %}">
+                            <i class="fas fa-home me-1"></i>Trang chủ
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'spa:customer_complaint_list' %}">Yêu cầu hỗ trợ của tôi</a>
+                    </li>
+                    <li class="breadcrumb-item active">Gửi yêu cầu mới</li>
+                </ol>
+            </nav>
+        </div>
 
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="form-card">
-                <form method="post">
-                    {% csrf_token %}
-                    
-                    {# Hiển thị lỗi form nếu có #}
-                    {% if form.non_field_errors %}
-                    <div class="alert alert-danger">
-                        {% for error in form.non_field_errors %}
-                            <p class="mb-0">{{ error }}</p>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                    
-                    {# Thông tin khách hàng (lấy tự động từ profile) #}
-                    <div class="alert alert-info mb-3">
-                        <i class="fas fa-user"></i> 
-                        <strong>Thông tin liên hệ:</strong> 
-                        {{ customer_profile.full_name }} - {{ customer_profile.phone }}
-                        <br><small class="text-muted">Thông tin này được lấy từ hồ sơ của bạn.</small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Tiêu đề <span class="required-star">*</span></label>
-                        {% if form.title.errors %}
-                            <div class="text-danger small">{{ form.title.errors.0 }}</div>
-                        {% endif %}
-                        <input type="text" name="title" class="form-control" 
-                               value="{{ form.title.value|default:'' }}" 
-                               placeholder="Tóm tắt vấn đề của bạn" required>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Loại yêu cầu <span class="required-star">*</span></label>
-                            <select name="complaint_type" class="form-select" required>
-                                {% for value, label in form.fields.complaint_type.choices %}
-                                <option value="{{ value }}" {% if form.complaint_type.value == value %}selected{% endif %}>
-                                    {{ label }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Mức độ ưu tiên</label>
-                            <select name="priority" class="form-select">
-                                {% for value, label in form.fields.priority.choices %}
-                                <option value="{{ value }}" {% if form.priority.value == value %}selected{% endif %}>
-                                    {{ label }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Nội dung <span class="required-star">*</span></label>
-                        <textarea name="content" class="form-control" rows="5" 
-                                  placeholder="Mô tả chi tiết vấn đề của bạn..." required>{{ form.content.value|default:'' }}</textarea>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Ngày xảy ra vấn đề</label>
-                            <input type="date" name="incident_date" class="form-control" 
-                                   value="{{ form.incident_date.value|default:'' }}">
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Mã lịch hẹn liên quan</label>
-                            <input type="text" name="appointment_code" class="form-control" 
-                                   value="{{ form.appointment_code.value|default:'' }}" 
-                                   placeholder="Nếu có">
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Dịch vụ liên quan</label>
-                        <select name="related_service" class="form-select">
-                            <option value="">-- Chọn dịch vụ (nếu có) --</option>
-                            {% for service in form.fields.related_service.queryset %}
-                            <option value="{{ service.id }}" 
-                                    {% if form.related_service.value|stringformat:"s" == service.id|stringformat:"s" %}selected{% endif %}>
-                                {{ service.name }}
-                            </option>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="complaint-card">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {# Hiển thị lỗi form nếu có #}
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            {% for error in form.non_field_errors %}
+                                {{ error }}
                             {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Giải pháp mong muốn</label>
-                        <textarea name="expected_solution" class="form-control" rows="3" 
-                                  placeholder="Bạn mong muốn được giải quyết như thế nào?">{{ form.expected_solution.value|default:'' }}</textarea>
-                    </div>
-                    
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i> 
-                        <strong>Lưu ý:</strong> Yêu cầu của bạn sẽ được xử lý trong vòng 24-48 giờ làm việc. 
-                        Chúng tôi sẽ liên hệ với bạn qua số điện thoại hoặc email đã cung cấp.
-                    </div>
-                    
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-paper-plane"></i> Gửi yêu cầu
-                        </button>
-                        <a href="{% url 'spa:customer_complaint_list' %}" class="btn btn-outline-secondary">
-                            Hủy
-                        </a>
-                    </div>
-                </form>
-            </div>
-            
-            <!-- Support Info -->
-            <div class="card mt-4">
-                <div class="card-body">
-                    <h5><i class="fas fa-headset text-primary"></i> Hỗ trợ nhanh</h5>
-                    <p class="mb-2">Nếu bạn cần hỗ trợ gấp, hãy liên hệ ngay:</p>
+                        </div>
+                        {% endif %}
+                        
+                        {# Thông tin khách hàng #}
+                        <div class="customer-info">
+                            <h4 class="section-title mb-3">
+                                <i class="fas fa-user me-2"></i>Thông tin liên hệ
+                            </h4>
+                            <div class="row">
+                                <div class="col-md-6 mb-2 mb-md-0">
+                                    <label class="form-label text-muted small">Họ và tên</label>
+                                    <input type="text" class="form-control" 
+                                           value="{{ customer_profile.full_name|default:request.user.get_full_name|default:request.user.username }}" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-muted small">Số điện thoại</label>
+                                    <input type="tel" class="form-control" 
+                                           value="{{ customer_profile.phone|default:'' }}" readonly>
+                                </div>
+                            </div>
+                            <small class="text-muted mt-2 d-block">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Thông tin được lấy từ hồ sơ của bạn
+                            </small>
+                        </div>
+                        
+                        {# Nội dung yêu cầu #}
+                        <div class="mb-4">
+                            <h4 class="section-title">
+                                <i class="fas fa-edit me-2"></i>Nội dung yêu cầu
+                            </h4>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Tiêu đề <span class="required-star">*</span></label>
+                                <input type="text" name="title" class="form-control {% if form.title.errors %}is-invalid{% endif %}" 
+                                       value="{{ form.title.value|default:'' }}" 
+                                       placeholder="Tóm tắt ngắn gọn vấn đề của bạn" required>
+                                {% if form.title.errors %}
+                                    <div class="field-error">
+                                        <i class="fas fa-exclamation-circle me-1"></i>{{ form.title.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Nội dung chi tiết <span class="required-star">*</span></label>
+                                <textarea name="content" class="form-control {% if form.content.errors %}is-invalid{% endif %}" 
+                                          rows="5" placeholder="Mô tả chi tiết vấn đề của bạn..." required>{{ form.content.value|default:'' }}</textarea>
+                                {% if form.content.errors %}
+                                    <div class="field-error">
+                                        <i class="fas fa-exclamation-circle me-1"></i>{{ form.content.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {# Thông tin liên quan #}
+                        <div class="mb-4">
+                            <h4 class="section-title">
+                                <i class="fas fa-link me-2"></i>Thông tin liên quan
+                            </h4>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Ngày xảy ra vấn đề</label>
+                                    <input type="date" name="incident_date" class="form-control" 
+                                           value="{{ form.incident_date.value|default:'' }}">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Mã lịch hẹn liên quan</label>
+                                    <input type="text" name="appointment_code" class="form-control" 
+                                           value="{{ form.appointment_code.value|default:'' }}" 
+                                           placeholder="Nhập mã nếu có">
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Dịch vụ liên quan</label>
+                                <select name="related_service" class="form-select">
+                                    <option value="">-- Chọn dịch vụ (nếu có) --</option>
+                                    {% for service in form.fields.related_service.queryset %}
+                                    <option value="{{ service.id }}" 
+                                            {% if form.related_service.value|stringformat:"s" == service.id|stringformat:"s" %}selected{% endif %}>
+                                        {{ service.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Giải pháp mong muốn</label>
+                                <textarea name="expected_solution" class="form-control" rows="3" 
+                                          placeholder="Bạn mong muốn được giải quyết như thế nào?">{{ form.expected_solution.value|default:'' }}</textarea>
+                            </div>
+                        </div>
+                        
+                        {# Lưu ý #}
+                        <div class="info-alert mb-4">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Lưu ý:</strong> Yêu cầu của bạn sẽ được xử lý trong vòng 24-48 giờ làm việc. 
+                            Chúng tôi sẽ liên hệ với bạn qua số điện thoại hoặc email đã cung cấp.
+                        </div>
+                        
+                        {# Buttons #}
+                        <div class="btn-group-actions">
+                            <button type="submit" class="btn btn-warning btn-lg px-5">
+                                <i class="fas fa-paper-plane me-2"></i>Gửi yêu cầu
+                            </button>
+                            <a href="{% url 'spa:customer_complaint_list' %}" class="btn btn-outline-secondary btn-lg px-5">
+                                <i class="fas fa-times me-2"></i>Hủy
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Support Info Card -->
+                <div class="support-card mt-4">
+                    <h5><i class="fas fa-headset me-2"></i>Hỗ trợ nhanh</h5>
+                    <p class="text-muted mb-3">Nếu bạn cần hỗ trợ gấp, hãy liên hệ ngay:</p>
                     <div class="d-flex gap-3 flex-wrap">
-                        <a href="tel:1900xxxx" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-phone"></i> Hotline: 1900 xxxx
+                        <a href="tel:1900xxxx" class="btn btn-outline-primary">
+                            <i class="fas fa-phone me-2"></i>Hotline: 1900 xxxx
                         </a>
-                        <a href="https://zalo.me" target="_blank" class="btn btn-outline-primary btn-sm">
-                            <i class="fas fa-comment"></i> Chat Zalo
+                        <a href="https://zalo.me" target="_blank" class="btn btn-outline-primary">
+                            <i class="fas fa-comment me-2"></i>Chat Zalo
                         </a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+</section>
 {% endblock %}
