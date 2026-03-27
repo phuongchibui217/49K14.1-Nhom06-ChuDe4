@@ -1,0 +1,512 @@
+{% extends 'spa/base.html' %}
+
+{% block title %}Tài khoản cá nhân - Spa ANA{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Page Header */
+    .page-header {
+        background: linear-gradient(135deg, rgba(30, 58, 95, 0.92), rgba(44, 82, 130, 0.92)),
+                    url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920') center/cover;
+        padding: 4.5rem 0 3.5rem;
+        text-align: center;
+        color: white;
+        margin-bottom: 3rem;
+    }
+
+    .page-header h1 {
+        font-weight: 500;
+        margin: 2rem 0 1rem 0;
+        font-size: 2.5rem;
+    }
+
+    .page-header .subtitle {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+
+    /* Profile Section */
+    .profile-section {
+        padding: 0 0 4rem;
+    }
+
+    .profile-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e2e8f0;
+        margin-bottom: 2rem;
+        overflow: hidden;
+    }
+
+    .profile-card-header {
+        background: linear-gradient(135deg, #1e3a5f, #2c5282);
+        color: white;
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .profile-card-header i {
+        color: #d4a853;
+        font-size: 1.2rem;
+    }
+
+    .profile-card-header h5 {
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .profile-card-body {
+        padding: 1.5rem;
+    }
+
+    /* Avatar Section */
+    .avatar-section {
+        text-align: center;
+        padding: 2rem;
+        background: linear-gradient(135deg, rgba(30, 58, 95, 0.02), rgba(212, 168, 83, 0.02));
+        border-radius: 16px;
+        margin-bottom: 2rem;
+    }
+
+    .avatar-large {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #1e3a5f, #2c5282);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        font-weight: 600;
+        margin: 0 auto 1rem;
+        border: 4px solid #d4a853;
+        box-shadow: 0 8px 25px rgba(212, 168, 83, 0.3);
+    }
+
+    .avatar-name {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1e3a5f;
+        margin-bottom: 0.5rem;
+    }
+
+    .avatar-phone {
+        color: #718096;
+        font-size: 1rem;
+    }
+
+    /* Stats Cards */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.25rem;
+        text-align: center;
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+        border-color: #d4a853;
+        box-shadow: 0 4px 15px rgba(212, 168, 83, 0.15);
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1e3a5f;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        color: #718096;
+        font-weight: 500;
+    }
+
+    /* Info List */
+    .info-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .info-item {
+        display: flex;
+        padding: 1rem 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .info-item:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        width: 140px;
+        font-weight: 500;
+        color: #718096;
+        flex-shrink: 0;
+    }
+
+    .info-value {
+        color: #1e3a5f;
+        font-weight: 500;
+    }
+
+    /* Form Styles */
+    .form-control, .form-select {
+        border-radius: 10px;
+        border: 2px solid #e2e8f0;
+        padding: 0.75rem 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #d4a853;
+        box-shadow: 0 0 0 3px rgba(212, 168, 83, 0.1);
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: #1e3a5f;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Buttons */
+    .btn-spa-primary {
+        background: linear-gradient(135deg, #d4a853, #f1c40f);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 0.75rem 2rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(212, 168, 83, 0.3);
+    }
+
+    .btn-spa-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(212, 168, 83, 0.4);
+        color: white;
+    }
+
+    .btn-spa-secondary {
+        background: linear-gradient(135deg, #1e3a5f, #2c5282);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 0.75rem 2rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-spa-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(30, 58, 95, 0.3);
+        color: white;
+    }
+
+    /* Error styling */
+    .field-error {
+        color: #e53e3e;
+        font-size: 0.85rem;
+        margin-top: 0.25rem;
+    }
+
+    .is-invalid {
+        border-color: #e53e3e !important;
+    }
+
+    /* Alert */
+    .alert-spa {
+        border-radius: 12px;
+        border: none;
+        padding: 1rem 1.5rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 991px) {
+        .stats-row {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    @media (max-width: 767px) {
+        .page-header {
+            padding: 3rem 0 2rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+        }
+
+        .stats-row {
+            grid-template-columns: 1fr;
+        }
+
+        .info-item {
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .info-label {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h1>Tài Khoản Cá Nhân</h1>
+        <p class="subtitle mb-0">Quản lý thông tin và bảo mật tài khoản của bạn</p>
+    </div>
+</section>
+
+<!-- Profile Section -->
+<section class="profile-section">
+    <div class="container">
+        <div class="row">
+            <!-- Left Column - Avatar & Stats -->
+            <div class="col-lg-4 mb-4">
+                <!-- Avatar Card -->
+                <div class="profile-card">
+                    <div class="profile-card-body">
+                        <div class="avatar-section">
+                            <div class="avatar-large">
+                                {{ customer_profile.full_name|slice:":1"|upper|default:request.user.username|slice:":1"|upper }}
+                            </div>
+                            <div class="avatar-name">{{ customer_profile.full_name|default:request.user.username }}</div>
+                            <div class="avatar-phone">
+                                <i class="fas fa-phone me-2"></i>{{ customer_profile.phone }}
+                            </div>
+                        </div>
+
+                        <!-- Stats -->
+                        <div class="stats-row">
+                            <div class="stat-card">
+                                <div class="stat-number">{{ appointments_count }}</div>
+                                <div class="stat-label">Lịch hẹn</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number">{{ completed_appointments }}</div>
+                                <div class="stat-label">Hoàn thành</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number">{{ pending_appointments }}</div>
+                                <div class="stat-label">Chờ xác nhận</div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'spa:my_appointments' %}" class="btn btn-spa-secondary">
+                                <i class="fas fa-calendar-check me-2"></i>Xem lịch hẹn
+                            </a>
+                            <a href="{% url 'spa:customer_complaint_list' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-clipboard-list me-2"></i>Khiếu nại của tôi
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Forms -->
+            <div class="col-lg-8">
+                <!-- View Profile Info -->
+                <div class="profile-card">
+                    <div class="profile-card-header">
+                        <i class="fas fa-user"></i>
+                        <h5>Thông tin cá nhân</h5>
+                    </div>
+                    <div class="profile-card-body">
+                        <ul class="info-list">
+                            <li class="info-item">
+                                <span class="info-label">Họ và tên:</span>
+                                <span class="info-value">{{ customer_profile.full_name|default:"Chưa cập nhật" }}</span>
+                            </li>
+                            <li class="info-item">
+                                <span class="info-label">Số điện thoại:</span>
+                                <span class="info-value">{{ customer_profile.phone }}</span>
+                            </li>
+                            <li class="info-item">
+                                <span class="info-label">Email:</span>
+                                <span class="info-value">{{ customer_profile.email|default:"Chưa cập nhật" }}</span>
+                            </li>
+                            <li class="info-item">
+                                <span class="info-label">Tên đăng nhập:</span>
+                                <span class="info-value">{{ request.user.username }}</span>
+                            </li>
+                            <li class="info-item">
+                                <span class="info-label">Giới tính:</span>
+                                <span class="info-value">{{ customer_profile.get_gender_display|default:"Chưa cập nhật" }}</span>
+                            </li>
+                            <li class="info-item">
+                                <span class="info-label">Ngày sinh:</span>
+                                <span class="info-value">{{ customer_profile.dob|date:"d/m/Y"|default:"Chưa cập nhật" }}</span>
+                            </li>
+                            <li class="info-item">
+                                <span class="info-label">Địa chỉ:</span>
+                                <span class="info-value">{{ customer_profile.address|default:"Chưa cập nhật" }}</span>
+                            </li>
+                            <li class="info-item">
+                                <span class="info-label">Ngày đăng ký:</span>
+                                <span class="info-value">{{ customer_profile.created_at|date:"d/m/Y H:i" }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Update Profile Form -->
+                <div class="profile-card">
+                    <div class="profile-card-header">
+                        <i class="fas fa-edit"></i>
+                        <h5>Cập nhật thông tin</h5>
+                    </div>
+                    <div class="profile-card-body">
+                        {% if profile_form.non_field_errors %}
+                        <div class="alert alert-spa alert-danger mb-3">
+                            {% for error in profile_form.non_field_errors %}
+                                <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <form method="post" action="{% url 'spa:customer_profile' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="update_profile">
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
+                                    {{ profile_form.full_name }}
+                                    {% if profile_form.full_name.errors %}
+                                        {% for error in profile_form.full_name.errors %}
+                                            <div class="field-error"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                                    {{ profile_form.phone }}
+                                    {% if profile_form.phone.errors %}
+                                        {% for error in profile_form.phone.errors %}
+                                            <div class="field-error"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Email</label>
+                                    {{ profile_form.email }}
+                                    {% if profile_form.email.errors %}
+                                        {% for error in profile_form.email.errors %}
+                                            <div class="field-error"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Giới tính</label>
+                                    {{ profile_form.gender }}
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Ngày sinh</label>
+                                    {{ profile_form.dob }}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Địa chỉ</label>
+                                    {{ profile_form.address }}
+                                </div>
+                            </div>
+
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-spa-primary">
+                                    <i class="fas fa-save me-2"></i>Lưu thay đổi
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Change Password Form -->
+                <div class="profile-card">
+                    <div class="profile-card-header">
+                        <i class="fas fa-lock"></i>
+                        <h5>Đổi mật khẩu</h5>
+                    </div>
+                    <div class="profile-card-body">
+                        {% if password_form.non_field_errors %}
+                        <div class="alert alert-spa alert-danger mb-3">
+                            {% for error in password_form.non_field_errors %}
+                                <i class="fas fa-exclamation-circle me-2"></i>{{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <form method="post" action="{% url 'spa:customer_profile' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="change_password">
+
+                            <div class="mb-3">
+                                <label class="form-label">Mật khẩu hiện tại <span class="text-danger">*</span></label>
+                                {{ password_form.current_password }}
+                                {% if password_form.current_password.errors %}
+                                    {% for error in password_form.current_password.errors %}
+                                        <div class="field-error"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Mật khẩu mới <span class="text-danger">*</span></label>
+                                    {{ password_form.new_password }}
+                                    {% if password_form.new_password.errors %}
+                                        {% for error in password_form.new_password.errors %}
+                                            <div class="field-error"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Xác nhận mật khẩu mới <span class="text-danger">*</span></label>
+                                    {{ password_form.confirm_password }}
+                                    {% if password_form.confirm_password.errors %}
+                                        {% for error in password_form.confirm_password.errors %}
+                                            <div class="field-error"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                                        {% endfor %}
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-spa-secondary">
+                                    <i class="fas fa-key me-2"></i>Đổi mật khẩu
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

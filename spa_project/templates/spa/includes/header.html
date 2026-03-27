@@ -60,6 +60,12 @@
                                         <span>Khiếu nại của tôi</span>
                                     </a>
                                 </li>
+                                <li>
+                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'customer_profile' %}active{% endif %}" href="{% url 'spa:customer_profile' %}">
+                                        <i class="fas fa-user-cog"></i>
+                                        <span>Tài khoản cá nhân</span>
+                                    </a>
+                                </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
                                     <a class="dropdown-item text-danger" href="{% url 'spa:logout' %}">
@@ -131,6 +137,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    text-align: center;
 }
 
 .avatar-chevron {

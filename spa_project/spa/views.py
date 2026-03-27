@@ -18,7 +18,8 @@ from .forms import (
     CustomerRegistrationForm, AppointmentForm,
     AdminLoginForm, ServiceForm,
     CustomerComplaintForm, GuestComplaintForm, ComplaintReplyForm,
-    ComplaintStatusForm, ComplaintAssignForm
+    ComplaintStatusForm, ComplaintAssignForm,
+    CustomerProfileForm, ChangePasswordForm
 )
 from .services import (
     validate_appointment_create,
@@ -318,6 +319,76 @@ def logout_view(request):
     logout(request)
     messages.info(request, 'Đã đăng xuất!')
     return redirect('spa:home')
+
+
+# =====================================================
+# VIEWS - Customer Account
+# =====================================================
+
+
+@login_required
+def customer_profile(request):
+    """
+    Tài khoản cá nhân của khách hàng
+    
+    Features:
+    - Xem thông tin tài khoản
+    - Cập nhật thông tin cá nhân
+    - Đổi mật khẩu
+    """
+    # Lấy hoặc tạo customer profile
+    try:
+        customer_profile = request.user.customer_profile
+    except CustomerProfile.DoesNotExist:
+        customer_profile = CustomerProfile.objects.create(
+            user=request.user,
+            phone=request.user.username,
+            full_name=request.user.get_full_name() or request.user.username,
+        )
+    
+    # Khởi tạo forms
+    profile_form = CustomerProfileForm(instance=customer_profile)
+    password_form = None
+    
+    # Xử lý cập nhật thông tin
+    if request.method == 'POST':
+        action = request.POST.get('action', '')
+        
+        if action == 'update_profile':
+            profile_form = CustomerProfileForm(request.POST, instance=customer_profile)
+            if profile_form.is_valid():
+                # Lưu thông tin cập nhật
+                profile_form.save()
+                messages.success(request, 'Cập nhật thông tin thành công!')
+                return redirect('spa:customer_profile')
+            else:
+                messages.error(request, 'Vui lòng kiểm tra lại thông tin.')
+        
+        elif action == 'change_password':
+            password_form = ChangePasswordForm(request.user, request.POST)
+            if password_form.is_valid():
+                password_form.save()
+                messages.success(request, 'Đổi mật khẩu thành công! Vui lòng đăng nhập lại.')
+                logout(request)
+                return redirect('spa:login')
+            else:
+                messages.error(request, 'Đổi mật khẩu thất bại. Vui lòng kiểm tra lại.')
+    
+    # Thống kê
+    appointments_count = customer_profile.appointments.count()
+    completed_appointments = customer_profile.appointments.filter(status='completed').count()
+    pending_appointments = customer_profile.appointments.filter(status='pending').count()
+    
+    context = {
+        'customer_profile': customer_profile,
+        'profile_form': profile_form,
+        'password_form': password_form or ChangePasswordForm(request.user),
+        'appointments_count': appointments_count,
+        'completed_appointments': completed_appointments,
+        'pending_appointments': pending_appointments,
+    }
+    
+    return render(request, 'spa/pages/customer_profile.html', context)
 
 
 # =====================================================

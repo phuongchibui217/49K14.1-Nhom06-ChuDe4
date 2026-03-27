@@ -285,6 +285,10 @@ class CustomerProfile(models.Model):
         verbose_name='Số điện thoại',
         help_text='Dùng cho login (username = phone)'
     )
+    email = models.EmailField(
+        blank=True,
+        verbose_name='Email'
+    )
     full_name = models.CharField(
         max_length=200,
         verbose_name='Họ và tên đầy đủ',

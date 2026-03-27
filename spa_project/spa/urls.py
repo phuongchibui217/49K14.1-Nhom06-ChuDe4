@@ -19,6 +19,9 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('register/', views.register, name='register'),
     path('logout/', views.logout_view, name='logout'),
+    
+    # Customer Account
+    path('tai-khoan/', views.customer_profile, name='customer_profile'),
     path('lich-hen-cua-toi/', views.my_appointments, name='my_appointments'),
     path('lich-hen/cancel/<int:appointment_id>/', views.cancel_appointment, name='cancel_appointment'),
 
