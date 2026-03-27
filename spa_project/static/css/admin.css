@@ -35,10 +35,12 @@
     left: 0;
     top: 0;
     width: 260px;
-    padding: 0;
+    padding: 0 0 100px 0 !important;
+    margin: 0 !important;
     z-index: 1000;
     transition: transform 0.3s ease;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
 }
 
 .sidebar-header {
@@ -133,11 +135,6 @@
     background: transparent;
 }
 
-.admin-sidebar {
-    position: relative;
-    padding-bottom: 80px;
-}
-
 .btn-logout {
     display: flex !important;
     align-items: center !important;
@@ -159,11 +156,13 @@
 
 /* Main Content Area */
 .admin-content {
-    margin-left: 260px;
+    margin-left: 260px !important;
     flex: 1;
-    padding: 0;
+    padding: 0 !important;
     min-height: 100vh;
     background: #f8f9fa;
+    width: calc(100% - 260px);
+    box-sizing: border-box;
 }
 
 .admin-header {
@@ -488,7 +487,8 @@
     }
     
     .admin-content {
-        margin-left: 0;
+        margin-left: 0 !important;
+        width: 100% !important;
     }
     
     .admin-sidebar.show {

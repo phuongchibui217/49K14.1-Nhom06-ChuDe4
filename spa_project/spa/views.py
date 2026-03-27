@@ -73,8 +73,6 @@ def service_detail(request, service_id):
 
     # Lấy các dịch vụ liên quan (cùng category)
     related_services = Service.objects.filter(
-        category=service.category,
-        status='active'
     ).exclude(id=service_id)[:4]
 
     return render(request, 'spa/pages/service_detail.html', {
