@@ -162,7 +162,7 @@ def my_appointments(request):
 
     Features:
     - Lọc theo trạng thái: ?status=pending|confirmed|completed|cancelled|all
-    - Sắp xếp theo ngày hẹn (mới nhất trước)
+    - Sắp xếp theo người đặt gần nhất (created_at)
     - Đếm số lượng theo từng trạng thái
     """
     try:
@@ -178,8 +178,8 @@ def my_appointments(request):
         if status_filter != 'all':
             appointments = appointments.filter(status=status_filter)
 
-        # Sắp xếp: ngày hẹn gần nhất lên đầu
-        appointments = appointments.order_by('-appointment_date', '-appointment_time')
+        # Sắp xếp: người đặt gần nhất lên đầu
+        appointments = appointments.order_by('-created_at')
 
         # Đếm số lượng theo từng trạng thái
         status_counts = {}

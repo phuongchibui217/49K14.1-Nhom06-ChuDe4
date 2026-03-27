@@ -4,32 +4,52 @@
 
 {% block extra_css %}
 <style>
-    .booking-hero {
-        background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
-        padding: 5rem 0 4rem;
+    /* Page Header - Đồng bộ với các trang khác */
+    .page-header {
+        background:
+            linear-gradient(135deg, rgba(30, 58, 95, 0.92), rgba(44, 82, 130, 0.92)),
+            url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920') center/cover;
+        padding: 4.5rem 0 3.5rem;
         text-align: center;
         color: white;
-    }
-
-    .booking-form-section {
-        padding: 3rem 0 4rem;
-        margin-top: -2rem;
+        margin-bottom: 3rem;
         position: relative;
-        z-index: 2;
+        z-index: 1;
     }
 
+
+    .page-header h1 {
+        font-weight: 500;
+        margin: 2rem 0 1rem 0;
+        font-size: 2.5rem;
+    }
+    
+    .page-header .subtitle {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+
+    /* Main Section */
+    .booking-section {
+        padding: 0 0 4rem;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Booking Card */
     .booking-card {
         background: white;
-        border-radius: 24px;
-        box-shadow: 0 10px 40px rgba(30, 58, 95, 0.15);
-        padding: 3rem;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        padding: 2.5rem;
         border: 1px solid #e2e8f0;
     }
 
+    /* Section Title */
     .section-title {
         font-size: 0.85rem;
         font-weight: 700;
-        color: #2d3748;
+        color: #1e3a5f;
         text-transform: uppercase;
         letter-spacing: 1.5px;
         margin-bottom: 1.5rem;
@@ -38,18 +58,47 @@
         display: inline-block;
     }
 
+    .section-title i {
+        color: #d4a835;
+        margin-right: 0.5rem;
+    }
+
+    /* Form Controls */
     .form-control, .form-select {
         border-radius: 12px;
         border: 2px solid #e2e8f0;
         padding: 0.75rem 1rem;
         transition: all 0.3s ease;
+        font-size: 0.95rem;
     }
 
     .form-control:focus, .form-select:focus {
         border-color: #d4a835;
-        box-shadow: 0 0 0 3px rgba(212, 168, 55, 0.1);
+        box-shadow: 0 0 0 3px rgba(212, 168, 53, 0.1);
     }
 
+    .form-label {
+        font-weight: 500;
+        color: #1e3a5f;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    /* Customer Info Box */
+    .customer-info {
+        background: linear-gradient(135deg, rgba(30, 58, 95, 0.02), rgba(212, 168, 53, 0.02));
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        border: 1px solid #f1f5f9;
+    }
+
+    .customer-info .form-control {
+        background: white;
+        border-color: #e2e8f0;
+    }
+
+    /* Time Slots */
     .time-slots {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -64,11 +113,14 @@
         cursor: pointer;
         transition: all 0.3s ease;
         background: white;
+        font-weight: 500;
+        color: #475569;
     }
 
     .time-slot:hover {
         border-color: #d4a835;
-        background: rgba(212, 168, 55, 0.05);
+        background: rgba(212, 168, 53, 0.05);
+        color: #1e3a5f;
     }
 
     .time-slot.selected {
@@ -77,9 +129,29 @@
         border-color: #d4a835;
     }
 
+    /* Button Style */
+    .btn-spa-primary {
+        background: linear-gradient(135deg, #d4a835, #f1c40f);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 0.875rem 2.5rem;
+        font-weight: 500;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(212, 168, 53, 0.3);
+    }
+
+    .btn-spa-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(212, 168, 53, 0.4);
+        color: white;
+    }
+
+    /* Error Styling */
     .field-error {
         color: #dc3545;
-        font-size: 0.875rem;
+        font-size: 0.8rem;
         margin-top: 0.25rem;
     }
 
@@ -87,30 +159,93 @@
         border-color: #dc3545 !important;
     }
 
-    .customer-info {
-        background: #f7fafc;
-        padding: 1.5rem;
+    /* Alert Style */
+    .alert-danger-ana {
+        background: linear-gradient(135deg, #fee2e2, #fecaca);
+        border: 1px solid #fca5a5;
         border-radius: 12px;
+        padding: 1rem 1.5rem;
+        color: #991b1b;
         margin-bottom: 1.5rem;
+    }
+
+    /* Service Info */
+    .service-info-box {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 1rem;
+        border: 1px solid #e2e8f0;
+    }
+
+    .service-info-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #64748b;
+        font-size: 0.875rem;
+    }
+
+    .service-info-item i {
+        color: #d4a835;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .page-header {
+            padding: 3rem 0 2rem;
+        }
+
+        .booking-card {
+            padding: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+        }
+
+        .time-slots {
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        }
+    }
+
+    @media (max-width: 576px) {
+        .page-header {
+            padding: 2rem 0 1.5rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.5rem;
+        }
+
+        .booking-card {
+            padding: 1.25rem;
+        }
+
+        .btn-spa-primary {
+            width: 100%;
+            padding: 0.75rem 1.5rem;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<section class="booking-hero">
+<!-- Page Header -->
+<section class="page-header">
     <div class="container">
         <h1>Đặt Lịch Hẹn</h1>
         <p class="subtitle mb-0">Chọn dịch vụ và thời gian phù hợp để trải nghiệm dịch vụ tốt nhất</p>
     </div>
 </section>
 
-<!-- Booking Form Section -->
-<section class="booking-form-section">
+<!-- Booking Section -->
+<section class="booking-section">
     <div class="container">
+        <!-- Booking Card -->
         <div class="booking-card">
             {% if form.non_field_errors %}
-            <div class="alert alert-danger" role="alert">
+            <div class="alert alert-danger-ana" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
                 {% for error in form.non_field_errors %}
                     {{ error }}
                 {% endfor %}
@@ -122,24 +257,36 @@
 
                 <!-- Customer Information (Read-only if logged in) -->
                 <div class="customer-info">
-                    <h4 class="section-title mb-3">Thông tin khách hàng</h4>
+                    <h4 class="section-title">
+                        <i class="fas fa-user"></i>
+                        Thông tin khách hàng
+                    </h4>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label">Họ và tên</label>
-                            <input type="text" class="form-control" value="{{ customer_profile.full_name|default:request.user.get_full_name|default:request.user.username }}" readonly>
+                            <input type="text"
+                                   class="form-control"
+                                   value="{{ customer_profile.full_name|default:request.user.get_full_name|default:request.user.username }}"
+                                   readonly>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label">Số điện thoại</label>
-                            <input type="tel" class="form-control" value="{{ customer_profile.phone|default:request.user.username }}" readonly>
+                            <input type="tel"
+                                   class="form-control"
+                                   value="{{ customer_profile.phone|default:request.user.username }}"
+                                   readonly>
                         </div>
                     </div>
                 </div>
 
                 <!-- Service Selection -->
                 <div class="mb-4">
-                    <h4 class="section-title">Chọn dịch vụ</h4>
+                    <h4 class="section-title">
+                        <i class="fas fa-spa"></i>
+                        Chọn dịch vụ
+                    </h4>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-6 mb-3">
                             <label for="{{ form.service.id_for_label }}" class="form-label">
                                 Dịch vụ <span class="text-danger">*</span>
                             </label>
@@ -152,21 +299,30 @@
                             {% endfor %}
                             {% endif %}
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 mb-3">
                             <label class="form-label">Thông tin dịch vụ</label>
-                            <div class="form-control-plaintext text-muted">
-                                Thời lượng: <span id="serviceDuration">-</span> phút |
-                                Giá: <
-                            </small>
+                            <div class="service-info-box">
+                                <div class="service-info-item mb-2">
+                                    <i class="far fa-clock"></i>
+                                    <span>Thời lượng: <span id="serviceDuration">-</span> phút</span>
+                                </div>
+                                <div class="service-info-item">
+                                    <i class="fas fa-tag"></i>
+                                    <span>Giá: <span id="servicePrice">-</span></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Date & Time Selection -->
                 <div class="mb-4">
-                    <h4 class="section-title">Chọn ngày & giờ</h4>
+                    <h4 class="section-title">
+                        <i class="far fa-calendar-alt"></i>
+                        Chọn ngày & giờ
+                    </h4>
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-6 mb-3">
                             <label for="{{ form.appointment_date.id_for_label }}" class="form-label">
                                 Ngày hẹn <span class="text-danger">*</span>
                             </label>
@@ -179,7 +335,7 @@
                             {% endfor %}
                             {% endif %}
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-6 mb-3">
                             <label for="{{ form.appointment_time.id_for_label }}" class="form-label">
                                 Giờ hẹn <span class="text-danger">*</span>
                             </label>
@@ -191,7 +347,8 @@
                             </div>
                             {% endfor %}
                             {% endif %}
-                            <small class="text-muted">
+                            <small class="text-muted d-block mt-1">
+                                <i class="far fa-clock me-1"></i>
                                 Giờ làm việc: 9:00 - 17:00
                             </small>
                         </div>
@@ -200,22 +357,28 @@
 
                 <!-- Notes -->
                 <div class="mb-4">
-                    <h4 class="section-title">Ghi chú</h4>
-                    <label for="{{ form.notes.id_for_label }}" class="form-label">Yêu cầu đặc biệt (nếu có)</label>
-                    {{ form.notes }}
-                    {% if form.notes.errors %}
-                    {% for error in form.notes.errors %}
-                    <div class="field-error">
-                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                    <h4 class="section-title">
+                        <i class="far fa-sticky-note"></i>
+                        Ghi chú
+                    </h4>
+                    <div class="mb-3">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">Yêu cầu đặc biệt (nếu có)</label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                        {% for error in form.notes.errors %}
+                        <div class="field-error">
+                            <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                        </div>
+                        {% endfor %}
+                        {% endif %}
                     </div>
-                    {% endfor %}
-                    {% endif %}
                 </div>
 
-                <!-- Submit -->
+                <!-- Submit Button -->
                 <div class="text-center">
-                    <button type="submit" class="btn btn-warning btn-lg px-5">
-                        <i class="fas fa-calendar-check me-2"></i>Xác nhận đặt lịch
+                    <button type="submit" class="btn btn-spa-primary">
+                        <i class="fas fa-calendar-check me-2"></i>
+                        Xác nhận đặt lịch
                     </button>
                 </div>
             </form>
@@ -226,6 +389,18 @@
 
 {% block extra_js %}
 <script>
+// Services data from backend
+const servicesData = {
+    {% for service in services %}
+    {{ service.id }}: {
+        id: {{ service.id }},
+        name: "{{ service.name|escapejs }}",
+        duration: {{ service.duration_minutes }},
+        price: {{ service.price }}
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     // Set minimum date to today
     const dateInput = document.getElementById('{{ form.appointment_date.id_for_label }}');
@@ -244,10 +419,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const updateServiceInfo = function() {
             const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
             if (selectedOption && selectedOption.value) {
-                // Get service data from data attributes (if added)
-                // For now, just show selected
-                durationSpan.textContent = '...';
-                priceSpan.textContent = '...';
+                const serviceId = parseInt(selectedOption.value);
+                const service = servicesData[serviceId];
+
+                if (service) {
+                    // Format price with thousand separators
+                    const formattedPrice = service.price.toLocaleString('vi-VN');
+                    durationSpan.textContent = service.duration;
+                    priceSpan.textContent = formattedPrice + ' VNĐ';
+                } else {
+                    durationSpan.textContent = '-';
+                    priceSpan.textContent = '-';
+                }
             } else {
                 durationSpan.textContent = '-';
                 priceSpan.textContent = '-';

@@ -1,7 +1,7 @@
 {% extends 'spa/base.html' %}
 {% load static %}
 
-{% block title %}Gửi yêu cầu hỗ trợ - Spa ANA{% endblock %}
+{% block title %}Gửi khiếu nại - Spa ANA{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -176,7 +176,7 @@
 <!-- Hero Section -->
 <section class="complaint-hero">
     <div class="container">
-        <h1><i class="fas fa-paper-plane me-3"></i>Gửi Yêu Cầu Hỗ Trợ</h1>
+        <h1><i class="fas fa-paper-plane me-3"></i>Gửi Khiếu Nại</h1>
         <p class="subtitle mb-0">Chúng tôi sẵn sàng lắng nghe và giải quyết vấn đề của bạn</p>
     </div>
 </section>
@@ -194,9 +194,9 @@
                         </a>
                     </li>
                     <li class="breadcrumb-item">
-                        <a href="{% url 'spa:customer_complaint_list' %}">Yêu cầu hỗ trợ của tôi</a>
+                        <a href="{% url 'spa:customer_complaint_list' %}">Khiếu nại của tôi</a>
                     </li>
-                    <li class="breadcrumb-item active">Gửi yêu cầu mới</li>
+                    <li class="breadcrumb-item active">Gửi khiếu nại mới</li>
                 </ol>
             </nav>
         </div>
@@ -240,10 +240,10 @@
                             </small>
                         </div>
                         
-                        {# Nội dung yêu cầu #}
+                        {# Nội dung khiếu nại #}
                         <div class="mb-4">
                             <h4 class="section-title">
-                                <i class="fas fa-edit me-2"></i>Nội dung yêu cầu
+                                <i class="fas fa-edit me-2"></i>Nội dung khiếu nại
                             </h4>
                             
                             <div class="mb-3">
@@ -313,14 +313,14 @@
                         {# Lưu ý #}
                         <div class="info-alert mb-4">
                             <i class="fas fa-info-circle me-2"></i>
-                            <strong>Lưu ý:</strong> Yêu cầu của bạn sẽ được xử lý trong vòng 24-48 giờ làm việc. 
+                            <strong>Lưu ý:</strong> Khiếu nại của bạn sẽ được xử lý trong vòng 24-48 giờ làm việc. 
                             Chúng tôi sẽ liên hệ với bạn qua số điện thoại hoặc email đã cung cấp.
                         </div>
                         
                         {# Buttons #}
                         <div class="btn-group-actions">
                             <button type="submit" class="btn btn-warning btn-lg px-5">
-                                <i class="fas fa-paper-plane me-2"></i>Gửi yêu cầu
+                                <i class="fas fa-paper-plane me-2"></i>Gửi khiếu nại
                             </button>
                             <a href="{% url 'spa:customer_complaint_list' %}" class="btn btn-outline-secondary btn-lg px-5">
                                 <i class="fas fa-times me-2"></i>Hủy
