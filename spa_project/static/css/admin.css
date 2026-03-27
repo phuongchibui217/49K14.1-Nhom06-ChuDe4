@@ -92,11 +92,11 @@
 
 .sidebar-nav .nav-item {
     margin-bottom: 0.125rem;
-    color: white;
+    color: #FFFFFF !important;
 }
 
 .sidebar-nav .nav-link {
-    color: var(--sidebar-text);
+    color: #FFFFFF !important;
     padding: 0.875rem 1rem;
     border-radius: 8px;
     transition: all 0.25s ease;
@@ -110,20 +110,20 @@
 
 .sidebar-nav .nav-link:hover {
     background: var(--sidebar-hover);
-    color: var(--sidebar-text);
+    color: #FFFFFF !important;
     padding-left: 1.25rem;
 }
 
 .sidebar-nav .nav-link.active {
     background: var(--sidebar-active);
-    color: var(--sidebar-text);
+    color: #FFFFFF !important;
     padding-left: 1.25rem;
     box-shadow: 0 4px 12px rgba(224, 178, 27, 0.4);
     font-weight: 700;
 }
 
 .sidebar-nav .nav-link.active i {
-    color: var(--sidebar-text);
+    color: #FFFFFF !important;
 }
 
 .sidebar-nav .nav-link i {
@@ -132,7 +132,7 @@
     font-size: 1rem;
     text-align: center;
     flex-shrink: 0;
-    color: var(--sidebar-icon);
+    color: #FFFFFF !important;
 }
 
 .sidebar-nav .logout-link {
