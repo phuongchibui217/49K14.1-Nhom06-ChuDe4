@@ -130,6 +130,19 @@ def booking(request):
     if request.method == 'POST':
         form = AppointmentForm(request.POST)
         if form.is_valid():
+            # Cập nhật thông tin khách hàng từ form
+            customer_name = request.POST.get('customer_name', '').strip()
+            customer_phone = request.POST.get('customer_phone', '').strip()
+            customer_email = request.POST.get('customer_email', '').strip()
+            
+            if customer_name:
+                customer_profile.full_name = customer_name
+            if customer_phone:
+                customer_profile.phone = customer_phone
+            if customer_email:
+                customer_profile.email = customer_email
+            customer_profile.save()
+            
             appointment = form.save(commit=False)
             appointment.customer = customer_profile
             appointment.source = 'web'  # Đánh dấu là đặt từ web

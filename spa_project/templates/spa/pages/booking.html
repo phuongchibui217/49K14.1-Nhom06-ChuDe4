@@ -279,7 +279,17 @@
                                    placeholder="Nhập số điện thoại">
                         </div>
                         <div class="col-md-4 mb-3">
-                            <label class
+                            <label class="form-label">Email</label>
+                            <input type="email"
+                                   name="customer_email"
+                                   class="form-control"
+                                   value="{{ customer_profile.email|default:request.user.email }}"
+                                   placeholder="Nhập email">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service Selection -->
                 <div class="mb-4">
                     <h4 class="section-title">
                         <i class="fas fa-spa"></i>
