@@ -121,6 +121,42 @@
     color: white !important;
 }
 
+/* Sidebar Footer */
+.sidebar-footer {
+    padding: 1.5rem;
+    margin-top: auto;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: transparent;
+}
+
+.admin-sidebar {
+    position: relative;
+    padding-bottom: 80px;
+}
+
+.btn-logout {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
+    width: 100% !important;
+    padding: 0.85rem 1.5rem;
+    background: white;
+    color: #e74c3c;
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+}
+
+.btn-logout i {
+    font-size: 1.1rem;
+    color: #e74c3c !important;
+}
+
 /* Main Content Area */
 .admin-content {
     margin-left: 260px;

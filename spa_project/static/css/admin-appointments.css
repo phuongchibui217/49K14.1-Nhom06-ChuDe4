@@ -238,6 +238,8 @@
 .appointment-search {
   position: relative;
   max-width: 400px;
+  width: 320px;
+  flex-shrink: 1;
 }
 
 .appointment-search i {

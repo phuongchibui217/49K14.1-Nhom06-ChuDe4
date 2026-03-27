@@ -255,31 +255,31 @@
             <form method="post" action="{% url 'spa:booking' %}" id="bookingForm" novalidate>
                 {% csrf_token %}
 
-                <!-- Customer Information (Read-only if logged in) -->
+                <!-- Customer Information -->
                 <div class="customer-info">
                     <h4 class="section-title">
                         <i class="fas fa-user"></i>
                         Thông tin khách hàng
                     </h4>
                     <div class="row">
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">Họ và tên</label>
                             <input type="text"
+                                   name="customer_name"
                                    class="form-control"
                                    value="{{ customer_profile.full_name|default:request.user.get_full_name|default:request.user.username }}"
-                                   readonly>
+                                   placeholder="Nhập họ và tên">
                         </div>
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-4 mb-3">
                             <label class="form-label">Số điện thoại</label>
                             <input type="tel"
+                                   name="customer_phone"
                                    class="form-control"
                                    value="{{ customer_profile.phone|default:request.user.username }}"
-                                   readonly>
+                                   placeholder="Nhập số điện thoại">
                         </div>
-                    </div>
-                </div>
-
-                <!-- Service Selection -->
+                        <div class="col-md-4 mb-3">
+                            <label class
                 <div class="mb-4">
                     <h4 class="section-title">
                         <i class="fas fa-spa"></i>
@@ -416,6 +416,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const priceSpan = document.getElementById('servicePrice');
 
     if (serviceSelect) {
+        // Check for service_id in URL and pre-select
+        const urlParams = new URLSearchParams(window.location.search);
+        const serviceIdFromUrl = urlParams.get('service_id');
+        if (serviceIdFromUrl) {
+            serviceSelect.value = serviceIdFromUrl;
+        }
+
         const updateServiceInfo = function() {
             const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
             if (selectedOption && selectedOption.value) {
