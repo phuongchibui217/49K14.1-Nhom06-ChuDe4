@@ -223,15 +223,22 @@
                                 <i class="fas fa-user me-2"></i>Thông tin liên hệ
                             </h4>
                             <div class="row">
-                                <div class="col-md-6 mb-2 mb-md-0">
+                                <div class="col-md-6 mb-3">
                                     <label class="form-label text-muted small">Họ và tên</label>
-                                    <input type="text" class="form-control" 
+                                    <input type="text" class="form-control"
                                            value="{{ customer_profile.full_name|default:request.user.get_full_name|default:request.user.username }}" readonly>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-6 mb-3">
                                     <label class="form-label text-muted small">Số điện thoại</label>
-                                    <input type="tel" class="form-control" 
+                                    <input type="tel" class="form-control"
                                            value="{{ customer_profile.phone|default:'' }}" readonly>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-12">
+                                    <label class="form-label text-muted small">Email</label>
+                                    <input type="email" class="form-control"
+                                           value="{{ request.user.email|default:'' }}" readonly>
                                 </div>
                             </div>
                             <small class="text-muted mt-2 d-block">
