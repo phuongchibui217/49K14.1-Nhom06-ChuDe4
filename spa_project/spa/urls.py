@@ -20,6 +20,10 @@ urlpatterns = [
     path('register/', views.register, name='register'),
     path('logout/', views.logout_view, name='logout'),
     
+    # Password Reset
+    path('quen-mat-khau/', views.password_reset_request, name='password_reset'),
+    path('reset-mat-khau/<uidb64>/<token>/', views.password_reset_confirm, name='password_reset_confirm'),
+    
     # Customer Account
     path('tai-khoan/', views.customer_profile, name='customer_profile'),
     path('lich-hen-cua-toi/', views.my_appointments, name='my_appointments'),

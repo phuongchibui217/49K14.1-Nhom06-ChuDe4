@@ -322,6 +322,134 @@ def logout_view(request):
 
 
 # =====================================================
+# VIEWS - Password Reset
+# =====================================================
+
+
+def password_reset_request(request):
+    """
+    Yêu cầu đặt lại mật khẩu
+    
+    Sử dụng email để gửi link đặt lại mật khẩu
+    """
+    if request.user.is_authenticated:
+        return redirect('spa:home')
+    
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        
+        if not email:
+            messages.error(request, 'Vui lòng nhập email.')
+            return render(request, 'spa/pages/password_reset.html')
+        
+        # Tìm user theo email
+        try:
+            user = User.objects.get(email=email)
+            
+            # Gửi email đặt lại mật khẩu sử dụng Django's built-in
+            from django.contrib.auth.views import PasswordResetView
+            from django.core.mail import send_mail
+            from django.utils.http import urlsafe_base64_encode
+            from django.utils.encoding import force_bytes
+            from django.contrib.auth.tokens import default_token_generator
+            from django.conf import settings
+            
+            # Tạo token đặt lại mật khẩu
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            
+            # Tạo link đặt lại mật khẩu
+            reset_url = request.build_absolute_uri(
+                reverse('spa:password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
+            )
+            
+            # Gửi email
+            subject = 'Đặt lại mật khẩu - Spa ANA'
+            message = f'''
+Xin chào {user.get_full_name() or user.username},
+
+Bạn đã yêu cầu đặt lại mật khẩu tại Spa ANA.
+
+Vui lòng click vào link dưới để đặt lại mật khẩu mới:
+{reset_url}
+
+Link này sẽ hết hạn sau 24 giờ.
+
+Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.
+
+Trân trọng,
+Đội ngũ Spa ANA
+'''
+            
+            send_mail(
+                subject,
+                message,
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+            
+            messages.success(request, f'Link đặt lại mật khẩu đã được gửi đến {email}. Vui lòng kiểm tra email của bạn.')
+            return render(request, 'spa/pages/password_reset_sent.html', {
+                'email': email,
+            })
+            
+        except User.DoesNotExist:
+            # Không tiết lộ user có tồn tại hay không
+            messages.success(request, 'Nếu email tồn tại trong hệ thống, bạn sẽ nhận được link đặt lại mật khẩu.')
+            return render(request, 'spa/pages/password_reset_sent.html', {
+                'email': email,
+            })
+    
+    return render(request, 'spa/pages/password_reset.html')
+
+
+def password_reset_confirm(request, uidb64, token):
+    """
+    Xác nhận đặt lại mật khẩu
+    
+    Cho phép người dùng đặt mật khẩu mới từ link trong email
+    """
+    from django.utils.http import urlsafe_base64_decode
+    from django.contrib.auth.tokens import default_token_generator
+    from django.utils.encoding import force_str
+    
+    if request.user.is_authenticated:
+        return redirect('spa:home')
+    
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+    
+    if user is not None and default_token_generator.check_token(user, token):
+        if request.method == 'POST':
+            new_password = request.POST.get('new_password', '')
+            confirm_password = request.POST.get('confirm_password', '')
+            
+            if not new_password:
+                messages.error(request, 'Vui lòng nhập mật khẩu mới.')
+            elif len(new_password) < 6:
+                messages.error(request, 'Mật khẩu phải có ít nhất 6 ký tự.')
+            elif new_password != confirm_password:
+                messages.error(request, 'Mật khẩu xác nhận không khớp.')
+            else:
+                user.set_password(new_password)
+                user.save()
+                messages.success(request, 'Đặt lại mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới.')
+                return redirect('spa:login')
+        
+        return render(request, 'spa/pages/password_reset_confirm.html', {
+            'uidb64': uidb64,
+            'token': token
+        })
+    else:
+        messages.error(request, 'Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.')
+        return redirect('spa:password_reset')
+
+
+# =====================================================
 # VIEWS - Customer Account
 # =====================================================
 
@@ -1699,12 +1827,16 @@ def api_appointment_status(request, appointment_code):
 @staff_api
 def api_appointment_delete(request, appointment_code):
     """
-    API: Xóa lịch hẹn (soft delete - chuyển sang cancelled)
-    
-    ĐÃ BỔ SUNG:
+    API: Xóa lịch hẹn (HARD DELETE - xóa vĩnh viễn khỏi database)
+
+    Thay đổi từ soft delete sang hard delete:
+    - Xóa thật bản ghi khỏi database
+    - Không chỉ chuyển status sang cancelled
+    - Không thể khôi phục sau khi xóa
+
+    Security:
     - CSRF protection qua @staff_api decorator
-    - Error handling chi tiết
-    - Soft delete thay vì xóa thật
+    - Chỉ staff/superuser mới được xóa
     """
     # Lấy appointment hoặc trả về 404
     appointment, error = get_or_404(Appointment, appointment_code=appointment_code)
@@ -1712,17 +1844,29 @@ def api_appointment_delete(request, appointment_code):
         return error
 
     try:
-        # Thay vì xóa thật, chuyển sang cancelled
-        appointment.status = 'cancelled'
-        appointment.save()
-        
+        # Lưu thông tin để log trước khi xóa
+        appointment_id = appointment.id
+
+        # Lấy tên khách hàng từ ForeignKey
+        customer_name = "Khách hàng"
+        if appointment.customer and appointment.customer.user:
+            customer_name = appointment.customer.user.get_full_name() or appointment.customer.user.username
+
+        # HARD DELETE - xóa thật khỏi database
+        appointment.delete()
+
         return JsonResponse({
             'success': True,
-            'message': f'Đã hủy lịch hẹn {appointment_code}'
+            'message': f'Đã xóa vĩnh viễn lịch hẹn {appointment_code}',
+            'deleted_id': appointment_id,
+            'customer_name': customer_name
         })
-        
+
     except Exception as e:
-        return JsonResponse({'success': False, 'error': f'Lỗi: {str(e)}'}, status=400)
+        return JsonResponse({
+            'success': False,
+            'error': f'Không thể xóa lịch hẹn: {str(e)}'
+        }, status=400)
 
 
 @require_http_methods(["GET"])

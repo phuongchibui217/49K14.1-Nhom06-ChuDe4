@@ -198,9 +198,7 @@
                     <i class="fas fa-plus" style="color: #d4a853; margin-right: 0.5rem;"></i>
                     Thêm dịch vụ mới
                 </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal">
-                    <i class="fas fa-times"></i>
-                </button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <form id="addServiceForm" method="post" action="{% url 'spa:api_service_create' %}" enctype="multipart/form-data" onsubmit="return submitServiceForm(event)">
@@ -293,6 +291,36 @@
                 <button type="submit" class="btn btn-primary" form="addServiceForm">
                     <i class="fas fa-plus me-2"></i>
                     Thêm dịch vụ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal xác nhận xóa dịch vụ -->
+<div class="modal fade" id="deleteServiceModal" tabindex="-1" aria-labelledby="deleteServiceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px; border: none; overflow: hidden;">
+            <div class="modal-header bg-danger text-white border-0 py-3">
+                <h5 class="modal-title">
+                    <i class="fas fa-trash-alt me-2"></i>
+                    Xác nhận xóa dịch vụ
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="mb-3">
+                    <i class="fas fa-exclamation-circle fa-4x text-danger mb-3"></i>
+                </div>
+                <p class="mb-2 fs-5 fw-semibold">Bạn có chắc chắn muốn xóa dịch vụ này?</p>
+                <p class="text-muted mb-0">Dữ liệu sẽ bị xóa vĩnh viễn và không thể khôi phục.</p>
+            </div>
+            <div class="modal-footer border-0 pt-0 pb-4">
+                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Hủy
+                </button>
+                <button type="button" class="btn btn-danger px-4" id="confirmDeleteServiceBtn">
+                    <i class="fas fa-trash-alt me-2"></i>Xóa dịch vụ
                 </button>
             </div>
         </div>

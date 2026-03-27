@@ -476,39 +476,42 @@ form.addEventListener("submit", async (e)=>{
 
 btnDelete.addEventListener("click", async ()=>{
   const id = apptId.value.trim();
-  
+
   // ===== NGĂN XÓA LẶP =====
   if (isSubmitting) {
     console.log('Đang xử lý, bỏ qua click lặp');
     return;
   }
-  
-  // ===== CONFIRM RÕ RÀNG =====
+
+  // ===== CONFIRM RÕ RÀNG VỀ XÓA VĨNH VIỄN =====
   const customerNameVal = customerName.value.trim();
-  const confirmMessage = `Bạn có chắc muốn XÓA lịch hẹn này?\n\n` +
-    `Mã lịch hẹn: ${id}\n` +
-    `Khách hàng: ${customerNameVal}\n\n` +
-    `Hành động này không thể hoàn tác!`;
-  
+  const confirmMessage = `Bạn có chắc muốn xóa lịch hẹn này?\n\n` +
+    `⚠️ THAO TÁC NÀY SẼ XÓA VĨNH VIỄN DỮ LIỆU KHỎI HỆ THỐNG\n\n` +
+    `📋 Mã lịch hẹn: ${id}\n` +
+    `👤 Khách hàng: ${customerNameVal}\n\n` +
+    `❗ Sau khi xóa, lịch hẹn sẽ KHÔNG THỂ khôi phục lại.\n` +
+    `❗ Tiếp tục xóa?`;
+
   if(!id || !confirm(confirmMessage)) return;
-  
+
   // ===== BẬT LOADING STATE =====
   isSubmitting = true;
-  setButtonLoading(btnDelete, 'Đang xóa...');
-  
+  setButtonLoading(btnDelete, 'Đang xóa vĩnh viễn...');
+
   try {
     const result = await apiPost(`${API_BASE}/appointments/${id}/delete/`, {});
     if (result.success) {
       if (modal) modal.hide();
       await refreshData();
-      showToast("success","Đã xóa",`Đã hủy lịch hẹn ${id}`);
+      await renderWebRequests();  // Refresh lại tab Yêu cầu đặt lịch
+      showToast("success","Đã xóa vĩnh viễn", `Đã xóa hoàn toàn lịch hẹn ${id} khỏi hệ thống`);
     } else {
       showToast("error","Lỗi", result.error || "Không thể xóa lịch hẹn");
     }
   } catch (err) {
     showToast("error","Lỗi", "Không thể xóa lịch hẹn. Vui lòng thử lại sau");
   } finally {
-    // ===== TẮT LOADING STATE =====
+    // ===== TẬT LOADING STATE =====
     isSubmitting = false;
     resetButton(btnDelete);
   }

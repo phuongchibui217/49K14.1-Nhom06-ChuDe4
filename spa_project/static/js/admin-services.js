@@ -535,48 +535,67 @@ function deleteService(serviceId) {
         console.log('Đang xử lý, bỏ qua click lặp');
         return;
     }
-    
-    // ===== CONFIRM RÕ RÀNG =====
-    const confirmMessage = `⚠️ CẢNH BÁO: Xóa dịch vụ\n\n` +
-        `Bạn có chắc muốn XÓA dịch vụ này?\n` +
-        `Mã dịch vụ: ${serviceId}\n\n` +
-        `⚠️ Hành động này KHÔNG THỂ hoàn tác!\n` +
-        `Tất cả lịch hẹn liên quan có thể bị ảnh hưởng.`;
-    
-    if (!confirm(confirmMessage)) return;
-    
-    // ===== BẬT LOADING STATE =====
-    isSubmitting = true;
-    showToast('warning', 'Đang xóa dịch vụ...');
 
-    // Submit delete via API
-    const csrfToken = getCookie('csrftoken');
-    
-    fetch(`/api/services/${serviceId}/delete/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': csrfToken,
-            'X-Requested-With': 'XMLHttpRequest'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast('success', data.message);
-            // Reload page after success
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } else {
-            showToast('error', data.error || 'Có lỗi xảy ra khi xóa!');
-            isSubmitting = false; // Reset khi lỗi
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('error', 'Có lỗi xảy ra khi xóa dịch vụ!');
-        isSubmitting = false; // Reset khi lỗi
-    });
+    // ===== MỞ MODAL XÁC NHẬN =====
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteServiceModal'));
+    const confirmDeleteBtn = document.getElementById('confirmDeleteServiceBtn');
+
+    // Lưu serviceId vào dataset của modal để sử dụng sau
+    document.getElementById('deleteServiceModal').dataset.serviceId = serviceId;
+
+    // Xử lý nút Xóa trong modal
+    if (confirmDeleteBtn) {
+        // Xóa event listener cũ (nếu có) để tránh trùng lặp
+        const newBtn = confirmDeleteBtn.cloneNode(true);
+        confirmDeleteBtn.parentNode.replaceChild(newBtn, confirmDeleteBtn);
+
+        // Thêm event listener mới
+        newBtn.addEventListener('click', function() {
+            const modalServiceId = document.getElementById('deleteServiceModal').dataset.serviceId;
+
+            // Đóng modal
+            deleteModal.hide();
+
+            // ===== BẬT LOADING STATE =====
+            isSubmitting = true;
+            showToast('warning', 'Đang xóa dịch vụ...');
+
+            // Submit delete via API
+            const csrfToken = getCookie('csrftoken');
+
+            fetch(`/api/services/${modalServiceId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('success', data.message);
+                    // Reload page after success
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    showToast('error', data.error || 'Có lỗi xảy ra khi xóa!');
+                    isSubmitting = false; // Reset khi lỗi
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('error', 'Có lỗi xảy ra khi xóa dịch vụ!');
+                isSubmitting = false; // Reset khi lỗi
+            });
+        });
+
+        // Cập nhật reference
+        document.getElementById('confirmDeleteServiceBtn').id = 'confirmDeleteServiceBtn';
+    }
+
+    // Mở modal
+    deleteModal.show();
 }
 
 // Show Toast

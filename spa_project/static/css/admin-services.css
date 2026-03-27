@@ -259,13 +259,38 @@
 }
 
 .btn-sm {
-    padding: 0.35rem 0.65rem;
+    padding: 0.35rem 0.75rem;
     border-radius: 6px;
     font-size: 0.85rem;
 }
 
 .btn-sm i {
-    font-size: 0.85rem;
+    font-size: 0.95rem;
+}
+
+/* Làm icon nút xóa to hơn và nổi bật hơn */
+.btn-sm.btn-outline-danger i {
+    font-size: 1rem;
+    color: #dc3545;
+}
+
+.btn-sm.btn-outline-danger:hover i {
+    color: white;
+}
+
+/* Hiệu ứng hover tốt hơn cho nút xóa */
+.btn-sm.btn-outline-danger:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.btn-sm.btn-outline-primary i {
+    font-size: 1rem;
+    color: #d4a853;
+}
+
+.btn-sm.btn-outline-primary:hover i {
+    color: white;
 }
 
 /* Modal Styles */
@@ -300,30 +325,6 @@
 .modal-title i {
     color: #d4a853;
     font-size: 1.25rem;
-}
-
-.modal-header .btn-close {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    font-size: 1.25rem;
-    cursor: pointer;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-    opacity: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.modal-header .btn-close:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.modal-header .btn-close i {
-    color: white;
-    font-size: 1rem;
 }
 
 .modal-body {

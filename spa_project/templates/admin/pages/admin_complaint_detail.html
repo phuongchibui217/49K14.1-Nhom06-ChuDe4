@@ -97,6 +97,35 @@
     padding-bottom: 8px;
     border-bottom: 2px solid #e91e63;
 }
+
+/* Custom checkbox lớn hơn */
+.form-check-input[type="checkbox"] {
+    width: 1.4em;
+    height: 1.4em;
+    margin-top: 0.15em;
+    cursor: pointer;
+}
+
+.form-check-input[type="checkbox"]:checked {
+    background-color: #ffc107;
+    border-color: #ffc107;
+}
+
+.form-check-label {
+    font-size: 15px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.form-check {
+    padding-left: 0;
+    margin-bottom: 1rem !important;
+}
+
+.form-check .form-check-input {
+    margin-left: 0;
+    margin-right: 0.6rem;
+}
 </style>
 {% endblock %}
 
@@ -366,7 +395,7 @@
                 {% csrf_token %}
                 <div class="modal-header">
                     <h5 class="modal-title">Phân công người phụ trách</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
@@ -398,17 +427,16 @@
                 {% csrf_token %}
                 <div class="modal-header">
                     <h5 class="modal-title">Cập nhật trạng thái</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Trạng thái mới</label>
                         <select name="status" class="form-select" required>
-                            {% for value, label in status_form.fields.status.choices %}
-                            <option value="{{ value }}" {% if complaint.status == value %}selected{% endif %}>
-                                {{ label }}
-                            </option>
-                            {% endfor %}
+                            <option value="pending" {% if complaint.status == 'pending' %}selected{% endif %}>Chờ xử lý</option>
+                            <option value="processing" {% if complaint.status == 'processing' %}selected{% endif %}>Đang xử lý</option>
+                            <option value="resolved" {% if complaint.status == 'resolved' %}selected{% endif %}>Đã xử lý</option>
+                            <option value="closed" {% if complaint.status == 'closed' %}selected{% endif %}>Đã hủy</option>
                         </select>
                     </div>
                 </div>
@@ -429,7 +457,7 @@
                 {% csrf_token %}
                 <div class="modal-header">
                     <h5 class="modal-title">Đánh dấu hoàn thành</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
