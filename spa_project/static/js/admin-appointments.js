@@ -483,38 +483,59 @@ btnDelete.addEventListener("click", async ()=>{
     return;
   }
 
-  // ===== CONFIRM RÕ RÀNG VỀ XÓA VĨNH VIỄN =====
+  if(!id) return;
+
+  // ===== MỞ MODAL XÁC NHẬN =====
   const customerNameVal = customerName.value.trim();
-  const confirmMessage = `Bạn có chắc muốn xóa lịch hẹn này?\n\n` +
-    `⚠️ THAO TÁC NÀY SẼ XÓA VĨNH VIỄN DỮ LIỆU KHỎI HỆ THỐNG\n\n` +
-    `📋 Mã lịch hẹn: ${id}\n` +
-    `👤 Khách hàng: ${customerNameVal}\n\n` +
-    `❗ Sau khi xóa, lịch hẹn sẽ KHÔNG THỂ khôi phục lại.\n` +
-    `❗ Tiếp tục xóa?`;
 
-  if(!id || !confirm(confirmMessage)) return;
+  // Hiển thị thông tin lịch hẹn trong modal
+  document.getElementById('deleteAppointmentCode').textContent = id;
 
-  // ===== BẬT LOADING STATE =====
-  isSubmitting = true;
-  setButtonLoading(btnDelete, 'Đang xóa vĩnh viễn...');
+  const deleteModal = new bootstrap.Modal(document.getElementById('deleteAppointmentModal'));
+  const confirmDeleteBtn = document.getElementById('confirmDeleteAppointmentBtn');
 
-  try {
-    const result = await apiPost(`${API_BASE}/appointments/${id}/delete/`, {});
-    if (result.success) {
-      if (modal) modal.hide();
-      await refreshData();
-      await renderWebRequests();  // Refresh lại tab Yêu cầu đặt lịch
-      showToast("success","Đã xóa vĩnh viễn", `Đã xóa hoàn toàn lịch hẹn ${id} khỏi hệ thống`);
-    } else {
-      showToast("error","Lỗi", result.error || "Không thể xóa lịch hẹn");
-    }
-  } catch (err) {
-    showToast("error","Lỗi", "Không thể xóa lịch hẹn. Vui lòng thử lại sau");
-  } finally {
-    // ===== TẬT LOADING STATE =====
-    isSubmitting = false;
-    resetButton(btnDelete);
+  // Xử lý nút Xóa trong modal
+  if (confirmDeleteBtn) {
+    // Xóa event listener cũ (nếu có) để tránh trùng lặp
+    const newBtn = confirmDeleteBtn.cloneNode(true);
+    confirmDeleteBtn.parentNode.replaceChild(newBtn, confirmDeleteBtn);
+
+    // Thêm event listener mới
+    newBtn.addEventListener('click', async () => {
+      // Đóng modal
+      deleteModal.hide();
+
+      // ===== BẬT LOADING STATE =====
+      isSubmitting = true;
+      showToast("warning", "Đang xử lý...", "Đang xóa lịch hẹn...");
+
+      try {
+        const result = await apiPost(`${API_BASE}/appointments/${id}/delete/`, {});
+        if (result.success) {
+          if (modal) modal.hide();
+          await refreshData();
+          await renderWebRequests();  // Refresh lại tab Yêu cầu đặt lịch
+          showToast("success","Đã xóa thành công", `Đã xóa hoàn toàn lịch hẹn ${id} khỏi hệ thống`);
+        } else {
+          showToast("error","Lỗi", result.error || "Không thể xóa lịch hẹn");
+          isSubmitting = false; // Reset khi lỗi
+        }
+      } catch (err) {
+        console.error('Error:', err);
+        showToast("error","Lỗi", "Không thể xóa lịch hẹn. Vui lòng thử lại sau");
+        isSubmitting = false; // Reset khi lỗi
+      } finally {
+        // ===== TẬT LOADING STATE =====
+        isSubmitting = false;
+      }
+    });
+
+    // Cập nhật reference
+    document.getElementById('confirmDeleteAppointmentBtn').id = 'confirmDeleteAppointmentBtn';
   }
+
+  // Mở modal
+  deleteModal.show();
 });
 
 // ===== DATE NAV =====
@@ -535,22 +556,28 @@ if(searchInput){ searchInput.addEventListener("input", function(){ renderGrid();
 document.addEventListener("DOMContentLoaded", async ()=>{
   if (modalEl) modal = new bootstrap.Modal(modalEl);
   if (toastEl) toast = new bootstrap.Toast(toastEl);
-  
+
+  // Initialize delete modal
+  const deleteModalEl = document.getElementById('deleteAppointmentModal');
+  if (deleteModalEl) {
+    window.deleteAppointmentModal = new bootstrap.Modal(deleteModalEl);
+  }
+
   if(sidebarToggle) sidebarToggle.addEventListener("click", ()=> sidebar.classList.toggle("show"));
-  
+
   await loadRooms();
   await loadServices();
   fillRoomsSelect();
-  
+
   dayPicker.value = todayISO();
   renderHeader();
   await refreshData();
   await renderWebRequests();
-  
+
   if(btnToday) btnToday.addEventListener("click", ()=> setDay(todayISO()));
   if(btnPrev) btnPrev.addEventListener("click", ()=> shiftDay(-1));
   if(btnNext) btnNext.addEventListener("click", ()=> shiftDay(1));
   if(dayPicker) dayPicker.addEventListener("change", ()=> refreshData());
-  
+
   window.openEditModal = openEditModal;
 });

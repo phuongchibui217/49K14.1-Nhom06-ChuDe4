@@ -255,6 +255,40 @@
   </div>
 </div>
 
+<!-- Modal xác nhận xóa lịch hẹn -->
+<div class="modal fade" id="deleteAppointmentModal" tabindex="-1" aria-labelledby="deleteAppointmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 16px; border: none; overflow: hidden;">
+            <div class="modal-header bg-danger text-white border-0 py-3">
+                <h5 class="modal-title">
+                    <i class="fas fa-trash-alt me-2"></i>
+                    Xác nhận xóa lịch hẹn
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 text-center">
+                <div class="mb-3">
+                    <i class="fas fa-exclamation-circle fa-4x text-danger mb-3"></i>
+                </div>
+                <p class="mb-2 fs-5 fw-semibold">Bạn có chắc chắn muốn xóa lịch hẹn này?</p>
+                <p class="text-muted mb-0">Dữ liệu sẽ bị xóa vĩnh viễn và không thể khôi phục.</p>
+                <div class="mt-3 p-3 bg-light rounded">
+                    <p class="mb-1 text-muted small">Mã lịch hẹn:</p>
+                    <p class="mb-0 fw-bold" id="deleteAppointmentCode">-</p>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0 pb-4">
+                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Hủy
+                </button>
+                <button type="button" class="btn btn-danger px-4" id="confirmDeleteAppointmentBtn">
+                    <i class="fas fa-trash-alt me-2"></i>Xóa lịch hẹn
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Toast -->
 <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
   <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
