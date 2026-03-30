@@ -28,7 +28,8 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8000/manage/login/)",
       "Bash(python -c \"from django.urls import reverse; print\\(reverse\\(''admin_panel:admin_login''\\)\\)\")",
       "Bash(mkdir -p templates/admin_panel)",
-      "Bash(cp templates/admin/pages/profile.html templates/admin_panel/admin_profile.html)"
+      "Bash(cp templates/admin/pages/profile.html templates/admin_panel/admin_profile.html)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8000/)"
     ]
   }
 }

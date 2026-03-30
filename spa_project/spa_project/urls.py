@@ -26,8 +26,6 @@ urlpatterns = [
     path('', include('staff.urls')),
     # Phase 8.8: Live Chat (admin live chat)
     path('', include('chat.urls')),
-    # Original spa app (keeping for now - will be deprecated)
-    path('', include('spa.urls')),
 ]
 
 # Serve media files in development

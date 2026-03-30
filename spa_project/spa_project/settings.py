@@ -38,8 +38,6 @@ INSTALLED_APPS = [
     'staff',
     'chat',
     'profiles',  # Reserved for future use
-    # Original app (keeping for now - will be removed in later phases)
-    'spa',
 ]
 
 MIDDLEWARE = [
