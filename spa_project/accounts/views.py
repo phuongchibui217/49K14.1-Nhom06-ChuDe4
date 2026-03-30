@@ -21,7 +21,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 
 # Tạm import từ spa.models (CHƯA chuyển model trong phase này)
-from spa.models import CustomerProfile
+from .models import CustomerProfile
 
 # Forms (sẽ tạo trong accounts/forms.py)
 from .forms import (
