@@ -134,7 +134,7 @@
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'spa:admin_complaints' %}">Quản lý khiếu nại</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'complaints:admin_complaints' %}">Quản lý khiếu nại</a></li>
             <li class="breadcrumb-item active">{{ complaint.code }}</li>
         </ol>
     </nav>
@@ -245,7 +245,7 @@
             <div class="complaint-detail-card">
                 <div class="complaint-body">
                     <h5 class="section-title"><i class="fas fa-reply"></i> Gửi phản hồi</h5>
-                    <form method="post" action="{% url 'spa:admin_complaint_reply' complaint.id %}">
+                    <form method="post" action="{% url 'complaints:admin_complaint_reply' complaint.id %}">
                         {% csrf_token %}
                         <div class="mb-3">
                             <textarea name="message" class="form-control" rows="4" placeholder="Nhập nội dung phản hồi..." required></textarea>
@@ -314,7 +314,7 @@
                     
                     {% if not complaint.assigned_to %}
                     <!-- Take Ownership -->
-                    <form method="post" action="{% url 'spa:admin_complaint_take' complaint.id %}" class="d-inline">
+                    <form method="post" action="{% url 'complaints:admin_complaint_take' complaint.id %}" class="d-inline">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-success action-btn">
                             <i class="fas fa-hand-paper"></i> Nhận xử lý
@@ -391,7 +391,7 @@
 <div class="modal fade" id="assignModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form method="post" action="{% url 'spa:admin_complaint_assign' complaint.id %}">
+            <form method="post" action="{% url 'complaints:admin_complaint_assign' complaint.id %}">
                 {% csrf_token %}
                 <div class="modal-header">
                     <h5 class="modal-title">Phân công người phụ trách</h5>
@@ -423,7 +423,7 @@
 <div class="modal fade" id="statusModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form method="post" action="{% url 'spa:admin_complaint_status' complaint.id %}">
+            <form method="post" action="{% url 'complaints:admin_complaint_status' complaint.id %}">
                 {% csrf_token %}
                 <div class="modal-header">
                     <h5 class="modal-title">Cập nhật trạng thái</h5>
@@ -453,7 +453,7 @@
 <div class="modal fade" id="completeModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form method="post" action="{% url 'spa:admin_complaint_complete' complaint.id %}">
+            <form method="post" action="{% url 'complaints:admin_complaint_complete' complaint.id %}">
                 {% csrf_token %}
                 <div class="modal-header">
                     <h5 class="modal-title">Đánh dấu hoàn thành</h5>

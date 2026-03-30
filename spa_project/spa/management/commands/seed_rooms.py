@@ -1,6 +1,6 @@
 """Seed rooms data"""
 from django.core.management.base import BaseCommand
-from spa.models import Room
+from appointments.models import Room
 
 
 class Command(BaseCommand):

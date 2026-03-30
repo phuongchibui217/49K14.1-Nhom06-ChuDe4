@@ -8,13 +8,13 @@
     
     <ul class="nav flex-column sidebar-nav">
         <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.url_name == 'admin_appointments' %}active{% endif %}" href="{% url 'spa:admin_appointments' %}">
+            <a class="nav-link {% if request.resolver_match.url_name == 'admin_appointments' %}active{% endif %}" href="{% url 'appointments:admin_appointments' %}">
                 <i class="fas fa-calendar-check"></i>
                 Quản lý lịch hẹn
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.url_name == 'admin_services' %}active{% endif %}" href="{% url 'spa:admin_services' %}">
+            <a class="nav-link {% if request.resolver_match.url_name == 'admin_services' %}active{% endif %}" href="{% url 'spa_services:admin_services' %}">
                 <i class="fas fa-spa"></i>
                 Quản lý dịch vụ
             </a>
@@ -26,7 +26,7 @@
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.url_name == 'admin_complaints' %}active{% endif %}" href="{% url 'spa:admin_complaints' %}">
+            <a class="nav-link {% if request.resolver_match.url_name == 'admin_complaints' %}active{% endif %}" href="{% url 'complaints:admin_complaints' %}">
                 <i class="fas fa-exclamation-triangle"></i>
                 Quản lý khiếu nại
             </a>

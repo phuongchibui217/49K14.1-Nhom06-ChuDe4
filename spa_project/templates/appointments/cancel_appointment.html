@@ -1,0 +1,125 @@
+{% extends 'spa/base.html' %}
+
+{% block title %}Xác nhận hủy lịch - Spa ANA{% endblock %}
+
+{% block extra_css %}
+<style>
+    .cancel-section {
+        padding: 4rem 0;
+    }
+
+    .confirm-card {
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 10px 40px rgba(30, 58, 95, 0.15);
+        padding: 3rem;
+        border: 1px solid #e2e8f0;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .appointment-summary {
+        background: #f7fafc;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+    }
+
+    .warning-icon {
+        width: 80px;
+        height: 80px;
+        background: #fff3cd;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+    }
+
+    .warning-icon i {
+        font-size: 2.5rem;
+        color: #856404;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="cancel-section">
+    <div class="container">
+        <div class="confirm-card text-center">
+            <div class="warning-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+
+            <h2 class="mb-3">Xác Nhận Hủy Lịch Hẹn</h2>
+            <p class="text-muted mb-4">
+                Bạn có chắc chắn muốn hủy lịch hẹn này? Hành động này không thể hoàn tác.
+            </p>
+
+            <div class="appointment-summary text-start">
+                <h5 class="mb-3">{{ appointment.service.name }}</h5>
+
+                <div class="row mb-2">
+                    <div class="col-6">
+                        <strong>Mã lịch hẹn:</strong>
+                    </div>
+                    <div class="col-6">
+                        {{ appointment.appointment_code }}
+                    </div>
+                </div>
+
+                <div class="row mb-2">
+                    <div class="col-6">
+                        <strong>Ngày hẹn:</strong>
+                    </div>
+                    <div class="col-6">
+                        {{ appointment.appointment_date|date:"d/m/Y" }}
+                    </div>
+                </div>
+
+                <div class="row mb-2">
+                    <div class="col-6">
+                        <strong>Giờ hẹn:</strong>
+                    </div>
+                    <div class="col-6">
+                        {{ appointment.appointment_time|time:"H:i" }}
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-6">
+                        <strong>Trạng thái:</strong>
+                    </div>
+                    <div class="col-6">
+                        <span class="status-badge status-{{ appointment.status }}">
+                            {{ appointment.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="d-flex gap-3 justify-content-center">
+                    <a href="{% url 'my_appointments' %}" class="btn btn-outline-secondary btn-lg px-4">
+                        <i class="fas fa-arrow-left me-2"></i>Quay lại
+                    </a>
+
+                    <button type="submit" class="btn btn-danger btn-lg px-4">
+                        <i class="fas fa-times me-2"></i>Xác nhận hủy
+                    </button>
+                </div>
+            </form>
+
+            <div class="alert alert-info mt-4 mb-0">
+                <i class="fas fa-info-circle me-2"></i>
+                <small>
+                    Sau khi hủy, bạn có thể đặt lại lịch bất kỳ lúc nào.
+                    Nếu cần hỗ trợ, vui lòng liên hệ qua trang Góp ý/Khiếu nại.
+                </small>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

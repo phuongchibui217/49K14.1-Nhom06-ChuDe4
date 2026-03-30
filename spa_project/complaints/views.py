@@ -1,0 +1,383 @@
+"""
+Views cho Complaint Management
+
+File này chứa các views cho:
+- Khách hàng tạo, xem danh sách, chi tiết, phản hồi khiếu nại
+- Admin quản lý, phân công, phản hồi, đổi trạng thái, hoàn thành khiếu nại
+
+Author: Spa ANA Team
+"""
+
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.utils import timezone
+
+# TẠM IMPORT từ spa.models (CHƯA chuyển model trong phase này)
+from spa.models import (
+    Complaint, ComplaintReply, ComplaintHistory,
+    CustomerProfile, Service
+)
+
+# Forms từ complaints/forms
+from .forms import (
+    CustomerComplaintForm,
+    GuestComplaintForm,
+    ComplaintReplyForm,
+    ComplaintStatusForm,
+    ComplaintAssignForm,
+)
+
+
+# =====================================================
+# CUSTOMER COMPLAINT VIEWS
+# =====================================================
+
+@login_required
+def customer_complaint_create(request):
+    """Khách hàng gửi khiếu nại"""
+    # Lấy hoặc tạo CustomerProfile cho user
+    customer_profile, created = CustomerProfile.objects.get_or_create(
+        user=request.user,
+        defaults={
+            'full_name': request.user.get_full_name() or request.user.username,
+            'phone': request.user.username,
+        }
+    )
+
+    if request.method == 'POST':
+        form = CustomerComplaintForm(request.POST)
+
+        if form.is_valid():
+            complaint = form.save(commit=False)
+            complaint.customer = customer_profile
+            complaint.full_name = customer_profile.full_name
+            complaint.phone = customer_profile.phone
+            complaint.save()
+
+            # Log history (bọc trong try để không ảnh hưởng luồng chính)
+            try:
+                ComplaintHistory.log(
+                    complaint=complaint,
+                    action='created',
+                    note='Khách hàng tạo khiếu nại',
+                    performed_by=request.user
+                )
+            except Exception as e:
+                print(f"Warning: Could not log complaint history: {e}")
+
+            messages.success(request, f'Đã gửi khiếu nại thành công! Mã khiếu nại: {complaint.code}')
+            return redirect('complaints:customer_complaint_list')
+    else:
+        # GET request - luôn dùng CustomerComplaintForm
+        form = CustomerComplaintForm()
+
+    return render(request, 'complaints/customer_complaint_create.html', {
+        'form': form,
+        'customer_profile': customer_profile,
+    })
+
+
+@login_required
+def customer_complaint_list(request):
+    """Danh sách khiếu nại của khách hàng"""
+    # Dùng cùng logic với create để đảm bảo nhất quán
+    customer_profile, created = CustomerProfile.objects.get_or_create(
+        user=request.user,
+        defaults={
+            'full_name': request.user.get_full_name() or request.user.username,
+            'phone': request.user.username,
+        }
+    )
+    complaints = customer_profile.complaints.all().order_by('-created_at')
+
+    return render(request, 'complaints/customer_complaint_list.html', {
+        'complaints': complaints,
+        'customer_profile': customer_profile,
+    })
+
+
+@login_required
+def customer_complaint_detail(request, complaint_id):
+    """Chi tiết khiếu nại của khách hàng"""
+    complaint = get_object_or_404(Complaint, id=complaint_id)
+
+    # Kiểm tra quyền: chỉ chủ khiếu nại mới xem được
+    if complaint.customer and complaint.customer.user != request.user:
+        messages.error(request, 'Bạn không có quyền xem khiếu nại này.')
+        return redirect('complaints:customer_complaint_list')
+
+    replies = complaint.replies.filter(is_internal=False).order_by('created_at')
+    history = complaint.history.all()[:20]
+
+    reply_form = ComplaintReplyForm()
+
+    context = {
+        'complaint': complaint,
+        'replies': replies,
+        'history': history,
+        'reply_form': reply_form,
+    }
+    return render(request, 'complaints/customer_complaint_detail.html', context)
+
+
+@login_required
+def customer_complaint_reply(request, complaint_id):
+    """Khách hàng phản hồi khiếu nại"""
+    complaint = get_object_or_404(Complaint, id=complaint_id)
+
+    if complaint.customer and complaint.customer.user != request.user:
+        messages.error(request, 'Bạn không có quyền phản hồi khiếu nại này.')
+        return redirect('complaints:customer_complaint_list')
+
+    if request.method == 'POST':
+        form = ComplaintReplyForm(request.POST)
+        if form.is_valid():
+            reply = form.save(commit=False)
+            reply.complaint = complaint
+            reply.sender = request.user
+            reply.sender_role = 'customer'
+            reply.sender_name = complaint.full_name
+            reply.is_internal = False
+            reply.save()
+
+            # Cập nhật trạng thái nếu đang chờ khách phản hồi
+            if complaint.status == 'waiting_customer':
+                complaint.status = 'processing'
+                complaint.save()
+
+            ComplaintHistory.log(
+                complaint=complaint,
+                action='replied',
+                note='Khách hàng phản hồi bổ sung',
+                performed_by=request.user
+            )
+            messages.success(request, 'Đã gửi phản hồi.')
+
+    return redirect('complaints:customer_complaint_detail', complaint_id=complaint_id)
+
+
+# =====================================================
+# ADMIN COMPLAINT MANAGEMENT VIEWS
+# =====================================================
+
+@login_required(login_url='/manage/login/')
+def admin_complaints(request):
+    """Quản lý khiếu nại - Danh sách"""
+    if not (request.user.is_staff or request.user.is_superuser):
+        messages.error(request, 'Bạn không có quyền truy cập trang này.')
+        return redirect('pages:home')
+
+    complaints_list = Complaint.objects.all().order_by('-created_at')
+
+    # Search
+    search = request.GET.get('search', '')
+    if search:
+        complaints_list = complaints_list.filter(
+            Q(code__icontains=search) |
+            Q(full_name__icontains=search) |
+            Q(email__icontains=search) |
+            Q(phone__icontains=search) |
+            Q(title__icontains=search)
+        )
+
+    # Filter by status
+    status = request.GET.get('status', '')
+    if status:
+        complaints_list = complaints_list.filter(status=status)
+
+    # Filter by type
+    complaint_type = request.GET.get('type', '')
+    if complaint_type:
+        complaints_list = complaints_list.filter(complaint_type=complaint_type)
+
+    # Pagination
+    paginator = Paginator(complaints_list, 10)
+    page = request.GET.get('page', 1)
+    complaints = paginator.get_page(page)
+
+    context = {
+        'complaints': complaints,
+        'search': search,
+        'status_filter': status,
+        'type_filter': complaint_type,
+    }
+    return render(request, 'admin/pages/admin_complaints.html', context)
+
+
+@login_required(login_url='/manage/login/')
+def admin_complaint_detail(request, complaint_id):
+    """Chi tiết khiếu nại"""
+    if not (request.user.is_staff or request.user.is_superuser):
+        messages.error(request, 'Bạn không có quyền truy cập trang này.')
+        return redirect('pages:home')
+
+    complaint = get_object_or_404(Complaint, id=complaint_id)
+    replies = complaint.replies.filter(is_internal=False).order_by('created_at')
+    all_replies = complaint.replies.all().order_by('created_at')
+    history = complaint.history.all()[:50]
+
+    reply_form = ComplaintReplyForm()
+    status_form = ComplaintStatusForm(instance=complaint)
+    assign_form = ComplaintAssignForm(instance=complaint)
+
+    context = {
+        'complaint': complaint,
+        'replies': replies,
+        'all_replies': all_replies,
+        'history': history,
+        'reply_form': reply_form,
+        'status_form': status_form,
+        'assign_form': assign_form,
+    }
+    return render(request, 'admin/pages/admin_complaint_detail.html', context)
+
+
+@login_required(login_url='/manage/login/')
+def admin_complaint_take(request, complaint_id):
+    """Nhận xử lý khiếu nại"""
+    if not (request.user.is_staff or request.user.is_superuser):
+        messages.error(request, 'Bạn không có quyền truy cập trang này.')
+        return redirect('pages:home')
+
+    complaint = get_object_or_404(Complaint, id=complaint_id)
+
+    if complaint.assigned_to:
+        messages.warning(request, 'Khiếu nại này đã được phân công.')
+    else:
+        complaint.assigned_to = request.user
+        complaint.status = 'assigned'
+        complaint.save()
+
+        ComplaintHistory.log(
+            complaint=complaint,
+            action='took_ownership',
+            new_value=request.user.get_full_name() or request.user.username,
+            note='Nhân viên tự nhận xử lý',
+            performed_by=request.user
+        )
+        messages.success(request, 'Bạn đã nhận xử lý khiếu nại này.')
+
+    return redirect('complaints:admin_complaint_detail', complaint_id=complaint_id)
+
+
+@login_required(login_url='/manage/login/')
+def admin_complaint_assign(request, complaint_id):
+    """Phân công người phụ trách"""
+    if not (request.user.is_staff or request.user.is_superuser):
+        messages.error(request, 'Bạn không có quyền truy cập trang này.')
+        return redirect('pages:home')
+
+    complaint = get_object_or_404(Complaint, id=complaint_id)
+
+    if request.method == 'POST':
+        form = ComplaintAssignForm(request.POST, instance=complaint)
+        if form.is_valid():
+            old_assignee = complaint.assigned_to
+            complaint = form.save(commit=False)
+            complaint.status = 'assigned'
+            complaint.save()
+
+            ComplaintHistory.log(
+                complaint=complaint,
+                action='assigned',
+                old_value=old_assignee.get_full_name() if old_assignee else '',
+                new_value=complaint.assigned_to.get_full_name() or complaint.assigned_to.username,
+                performed_by=request.user
+            )
+            messages.success(request, f'Đã phân công cho {complaint.assigned_to.get_full_name() or complaint.assigned_to.username}.')
+    return redirect('complaints:admin_complaint_detail', complaint_id=complaint_id)
+
+
+@login_required(login_url='/manage/login/')
+def admin_complaint_reply(request, complaint_id):
+    """Phản hồi khiếu nại"""
+    if not (request.user.is_staff or request.user.is_superuser):
+        messages.error(request, 'Bạn không có quyền truy cập trang này.')
+        return redirect('pages:home')
+
+    complaint = get_object_or_404(Complaint, id=complaint_id)
+
+    if request.method == 'POST':
+        form = ComplaintReplyForm(request.POST)
+        if form.is_valid():
+            reply = form.save(commit=False)
+            reply.complaint = complaint
+            reply.sender = request.user
+            reply.sender_role = 'manager' if request.user.is_superuser else 'staff'
+            reply.sender_name = request.user.get_full_name() or request.user.username
+            reply.save()
+
+            ComplaintHistory.log(
+                complaint=complaint,
+                action='replied',
+                note=f'Phản hồi bởi {reply.sender_name}',
+                performed_by=request.user
+            )
+            messages.success(request, 'Đã gửi phản hồi.')
+
+    return redirect('complaints:admin_complaint_detail', complaint_id=complaint_id)
+
+
+@login_required(login_url='/manage/login/')
+def admin_complaint_status(request, complaint_id):
+    """Cập nhật trạng thái khiếu nại"""
+    if not (request.user.is_staff or request.user.is_superuser):
+        messages.error(request, 'Bạn không có quyền truy cập trang này.')
+        return redirect('pages:home')
+
+    complaint = get_object_or_404(Complaint, id=complaint_id)
+
+    if request.method == 'POST':
+        old_status = complaint.get_status_display()
+        new_status_code = request.POST.get('status')
+
+        if new_status_code in dict(Complaint.STATUS_CHOICES):
+            complaint.status = new_status_code
+            complaint.save()
+
+            ComplaintHistory.log(
+                complaint=complaint,
+                action='status_changed',
+                old_value=old_status,
+                new_value=complaint.get_status_display(),
+                performed_by=request.user
+            )
+            messages.success(request, f'Đã cập nhật trạng thái: {complaint.get_status_display()}')
+
+    return redirect('complaints:admin_complaint_detail', complaint_id=complaint_id)
+
+
+@login_required(login_url='/manage/login/')
+def admin_complaint_complete(request, complaint_id):
+    """Đánh dấu hoàn thành"""
+    if not (request.user.is_staff or request.user.is_superuser):
+        messages.error(request, 'Bạn không có quyền truy cập trang này.')
+        return redirect('pages:home')
+
+    complaint = get_object_or_404(Complaint, id=complaint_id)
+
+    if request.method == 'POST':
+        resolution = request.POST.get('resolution', '').strip()
+
+        if not resolution:
+            messages.error(request, 'Vui lòng nhập kết quả xử lý.')
+        elif not complaint.assigned_to:
+            messages.error(request, 'Khiếu nại chưa được phân công.')
+        else:
+            complaint.resolution = resolution
+            complaint.status = 'resolved'
+            complaint.resolved_at = timezone.now()
+            complaint.save()
+
+            ComplaintHistory.log(
+                complaint=complaint,
+                action='resolved',
+                note=resolution,
+                performed_by=request.user
+            )
+            messages.success(request, 'Đã đánh dấu hoàn thành khiếu nại.')
+
+    return redirect('complaints:admin_complaint_detail', complaint_id=complaint_id)

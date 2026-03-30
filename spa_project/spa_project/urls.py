@@ -8,6 +8,17 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # Phase 3: Pages app (static pages: home, about)
+    path('', include('pages.urls')),
+    # Phase 4: Accounts app (authentication, customer profile)
+    path('', include('accounts.urls')),
+    # Phase 5: Spa Services app (dịch vụ spa) có API
+    path('', include('spa_services.urls')),
+    # Phase 6: Appointments app (đặt lịch)  có API
+    path('', include('appointments.urls')),
+    # Phase 7: Complaints app (quản lý khiếu nại)
+    path('', include('complaints.urls')),
+    # Original spa app (keeping for now - will be deprecated)
     path('', include('spa.urls')),
 ]
 

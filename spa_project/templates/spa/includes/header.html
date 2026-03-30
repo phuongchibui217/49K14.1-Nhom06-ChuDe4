@@ -3,7 +3,7 @@
 <header class="header-fixed">
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'spa:home' %}">
+            <a class="navbar-brand" href="{% url 'pages:home' %}">
                 <i class="fas fa-spa text-warning me-2"></i>
                 <span class="brand-text">Spa ANA</span>
             </a>
@@ -13,16 +13,16 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'spa:home' %}">Trang chủ</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'pages:home' %}">Trang chủ</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}" href="{% url 'spa:about' %}">Về Spa ANA</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}" href="{% url 'pages:about' %}">Về Spa ANA</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'service_list' %}active{% endif %}" href="{% url 'spa:service_list' %}">Dịch vụ</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'service_list' %}active{% endif %}" href="{% url 'spa_services:service_list' %}">Dịch vụ</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'booking' %}active{% endif %}" href="{% url 'spa:booking' %}">Đặt lịch</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'booking' %}active{% endif %}" href="{% url 'appointments:booking' %}">Đặt lịch</a>
                     </li>
                 </ul>
                 <!-- Right side: User menu -->
@@ -49,26 +49,26 @@
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end avatar-menu" aria-labelledby="avatarDropdown">
                                 <li>
-                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'my_appointments' %}active{% endif %}" href="{% url 'spa:my_appointments' %}">
+                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'my_appointments' %}active{% endif %}" href="{% url 'appointments:my_appointments' %}">
                                         <i class="fas fa-calendar-check"></i>
                                         <span>Lịch hẹn của tôi</span>
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'customer_complaint_list' %}active{% endif %}" href="{% url 'spa:customer_complaint_list' %}">
+                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'customer_complaint_list' %}active{% endif %}" href="{% url 'complaints:customer_complaint_list' %}">
                                         <i class="fas fa-clipboard-list"></i>
                                         <span>Khiếu nại của tôi</span>
                                     </a>
                                 </li>
                                 <li>
-                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'customer_profile' %}active{% endif %}" href="{% url 'spa:customer_profile' %}">
+                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'customer_profile' %}active{% endif %}" href="{% url 'accounts:customer_profile' %}">
                                         <i class="fas fa-user-cog"></i>
                                         <span>Tài khoản cá nhân</span>
                                     </a>
                                 </li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li>
-                                    <a class="dropdown-item text-danger logout-link" href="{% url 'spa:logout' %}">
+                                    <a class="dropdown-item text-danger logout-link" href="{% url 'accounts:logout' %}">
                                         <i class="fas fa-sign-out-alt"></i>
                                         <span>Đăng xuất</span>
                                     </a>
@@ -77,8 +77,8 @@
                         </div>
                     {% else %}
                         <!-- Login/Register buttons -->
-                        <a class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %} me-2" href="{% url 'spa:login' %}">Đăng nhập</a>
-                        <a class="btn btn-warning text-white px-3" href="{% url 'spa:register' %}">Đăng ký</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %} me-2" href="{% url 'accounts:login' %}">Đăng nhập</a>
+                        <a class="btn btn-warning text-white px-3" href="{% url 'accounts:register' %}">Đăng ký</a>
                     {% endif %}
                 </div>
             </div>

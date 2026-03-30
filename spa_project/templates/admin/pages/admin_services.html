@@ -20,7 +20,7 @@
 <!-- Search & Filter -->
 <div class="card">
     <div class="card-body">
-        <form method="get" action="{% url 'spa:admin_services' %}">
+        <form method="get" action="{% url 'spa_services:admin_services' %}">
             <div class="row">
                 <div class="col-md-4">
                     <div class="input-group">
@@ -201,7 +201,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="addServiceForm" method="post" action="{% url 'spa:api_service_create' %}" enctype="multipart/form-data" onsubmit="return submitServiceForm(event)">
+                <form id="addServiceForm" method="post" action="{% url 'spa_services:api_service_create' %}" enctype="multipart/form-data" onsubmit="return submitServiceForm(event)">
                     {% csrf_token %}
 
                     <div class="row">

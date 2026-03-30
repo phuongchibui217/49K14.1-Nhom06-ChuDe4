@@ -12,7 +12,18 @@
       "Bash(python create_services.py)",
       "Bash(python manage.py makemigrations spa --empty --name populate_service_codes)",
       "Bash(python manage.py runserver 0.0.0.0:8000)",
-      "Bash(where python:*)"
+      "Bash(where python:*)",
+      "Bash(curl -s http://localhost:8000/booking/)",
+      "Bash(cp spa/pages/home.html pages/)",
+      "Bash(cp spa/pages/about.html pages/)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8000/)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8000/login/)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8000/services/)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8000/service/1/)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8000/register/)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8000/about/)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8000/quen-mat-khau/)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8000/booking/)"
     ]
   }
 }

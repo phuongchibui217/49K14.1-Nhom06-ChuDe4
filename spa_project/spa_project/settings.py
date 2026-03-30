@@ -25,6 +25,15 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_extensions',
+    # Phase 1: New empty apps (scaffolding only, no code moved yet)
+    'core', 
+    'accounts',  
+    'spa_services',
+    'appointments',
+    'complaints',
+    'admin_panel', 
+    'pages',  # about & Home
+    # Original app (keeping for now - will be removed in later phases)
     'spa',
 ]
 
@@ -94,6 +103,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Login/Logout settings
 LOGIN_URL = 'spa:login'
+LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'spa:home'
 LOGOUT_REDIRECT_URL = 'spa:home'
 
