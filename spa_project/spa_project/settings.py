@@ -26,13 +26,18 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_extensions',
     # Phase 1: New empty apps (scaffolding only, no code moved yet)
-    'core', 
-    'accounts',  
+    'core',
+    'accounts',
     'spa_services',
     'appointments',
     'complaints',
-    'admin_panel', 
+    'admin_panel',
     'pages',  # about & Home
+    # Phase 8.6+: Admin management apps
+    'customers',
+    'staff',
+    'chat',
+    'profiles',  # Reserved for future use
     # Original app (keeping for now - will be removed in later phases)
     'spa',
 ]

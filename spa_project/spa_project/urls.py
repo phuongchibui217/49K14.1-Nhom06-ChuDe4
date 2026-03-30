@@ -18,6 +18,14 @@ urlpatterns = [
     path('', include('appointments.urls')),
     # Phase 7: Complaints app (quản lý khiếu nại)
     path('', include('complaints.urls')),
+    # Phase 8.5: Admin Panel (login, logout, profile)
+    path('', include('admin_panel.urls')),
+    # Phase 8.6: Customer Management (admin manage customers)
+    path('', include('customers.urls')),
+    # Phase 8.7: Staff Management (admin manage staff)
+    path('', include('staff.urls')),
+    # Phase 8.8: Live Chat (admin live chat)
+    path('', include('chat.urls')),
     # Original spa app (keeping for now - will be deprecated)
     path('', include('spa.urls')),
 ]
