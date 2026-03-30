@@ -5,15 +5,63 @@ File này chứa các forms cho:
 - Đăng ký khách hàng mới
 - Cập nhật thông tin profile
 - Đổi mật khẩu
+- Đăng nhập Admin
 
 Author: Spa ANA Team
 """
 
 from django import forms
 from django.contrib.auth.models import User
+from django.contrib.auth.forms import AuthenticationForm
 
 # Tạm import từ spa.models (CHƯA chuyển model trong phase này)
 from .models import CustomerProfile
+
+
+# =====================================================
+# ADMIN AUTHENTICATION FORMS
+# =====================================================
+
+class AdminLoginForm(AuthenticationForm):
+    """
+    Form đăng nhập Admin
+
+    Kế thừa từ Django's AuthenticationForm để:
+    - Tự động validate username/password
+    - Hỗ trợ CSRF protection
+    - Tương thích với Django auth system
+    """
+    username = forms.CharField(
+        label='Tên đăng nhập',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Nhập tên đăng nhập',
+            'autocapitalize': 'none',
+            'autocomplete': 'username'
+        })
+    )
+
+    password = forms.CharField(
+        label='Mật khẩu',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Nhập mật khẩu',
+            'autocomplete': 'current-password'
+        })
+    )
+
+    remember_me = forms.BooleanField(
+        label='Ghi nhớ đăng nhập',
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input'
+        })
+    )
+
+    error_messages = {
+        'invalid_login': 'Tên đăng nhập hoặc mật khẩu không chính xác.',
+        'inactive': 'Tài khoản này đã bị vô hiệu hóa.',
+    }
 
 
 # =====================================================

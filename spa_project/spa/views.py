@@ -10,29 +10,28 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 import json
-from .models import (
-    Service, Appointment, CustomerProfile,
-    Complaint, ComplaintReply, ComplaintHistory, Room
-)
-from .forms import (
-    CustomerRegistrationForm, AppointmentForm,
-    AdminLoginForm, ServiceForm,
-    CustomerComplaintForm, GuestComplaintForm, ComplaintReplyForm,
-    ComplaintStatusForm, ComplaintAssignForm,
-    CustomerProfileForm, ChangePasswordForm
-)
-from .services import (
+from spa_services.models import Service
+from appointments.models import Appointment, Room
+from accounts.models import CustomerProfile
+from complaints.models import Complaint, ComplaintReply, ComplaintHistory
+from accounts.forms import CustomerRegistrationForm, CustomerProfileForm, ChangePasswordForm
+from appointments.forms import AppointmentForm
+from spa_services.forms import ServiceForm
+from complaints.forms import CustomerComplaintForm, GuestComplaintForm, ComplaintReplyForm, ComplaintStatusForm, ComplaintAssignForm
+from accounts.forms import AdminLoginForm
+
+from appointments.services import (
     validate_appointment_create,
     check_room_availability,
     get_min_booking_date
 )
-from .service_services import (
+from spa_services.service_services import (
     validate_service_data,
     create_service as create_service_from_data,
     update_service as update_service_from_data,
     serialize_service,
 )
-from .appointment_services import (
+from appointments.appointment_services import (
     parse_appointment_data,
     validate_appointment_data,
     create_appointment as create_appointment_from_data,
