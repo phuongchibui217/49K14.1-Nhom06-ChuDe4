@@ -16,10 +16,9 @@ from django.db.models import Q
 from django.utils import timezone
 
 # TẠM IMPORT từ spa.models (CHƯA chuyển model trong phase này)
-from spa.models import (
-    Complaint, ComplaintReply, ComplaintHistory,
-    CustomerProfile, Service
-)
+from .models import Complaint, ComplaintReply, ComplaintHistory
+from accounts.models import CustomerProfile
+from spa_services.models import Service
 
 # Forms từ complaints/forms
 from .forms import (
