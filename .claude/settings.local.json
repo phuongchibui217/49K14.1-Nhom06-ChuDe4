@@ -26,7 +26,9 @@
       "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8000/booking/)",
       "Bash(python -c \"import sqlite3; conn = sqlite3.connect\\(''db.sqlite3''\\); cursor = conn.cursor\\(\\); cursor.execute\\(''SELECT COUNT\\(*\\) FROM appointments_room''\\); print\\(f''Rooms: {cursor.fetchone\\(\\)[0]}''\\); cursor.execute\\(''SELECT COUNT\\(*\\) FROM spa_services_service''\\); print\\(f''Services: {cursor.fetchone\\(\\)[0]}''\\); cursor.execute\\(''SELECT COUNT\\(*\\) FROM accounts_customerprofile''\\); print\\(f''Customers: {cursor.fetchone\\(\\)[0]}''\\)\")",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8000/manage/login/)",
-      "Bash(python -c \"from django.urls import reverse; print\\(reverse\\(''admin_panel:admin_login''\\)\\)\")"
+      "Bash(python -c \"from django.urls import reverse; print\\(reverse\\(''admin_panel:admin_login''\\)\\)\")",
+      "Bash(mkdir -p templates/admin_panel)",
+      "Bash(cp templates/admin/pages/profile.html templates/admin_panel/admin_profile.html)"
     ]
   }
 }

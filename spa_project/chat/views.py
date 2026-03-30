@@ -22,4 +22,4 @@ def admin_live_chat(request):
     if not (request.user.is_staff or request.user.is_superuser):
         messages.error(request, 'Bạn không có quyền truy cập trang này.')
         return redirect('pages:home')
-    return render(request, 'admin/pages/live_chat_admin.html')
+    return render(request, 'chat/admin_live_chat.html')

@@ -22,4 +22,4 @@ def admin_customers(request):
     if not (request.user.is_staff or request.user.is_superuser):
         messages.error(request, 'Bạn không có quyền truy cập trang này.')
         return redirect('pages:home')
-    return render(request, 'admin/pages/admin_customers.html')
+    return render(request, 'customers/admin_customers.html')

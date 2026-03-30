@@ -1,0 +1,644 @@
+{% extends 'admin/base.html' %}
+{% load static %}
+
+{% block title %}Tài khoản cá nhân - Spa ANA{% endblock %}
+
+{% block page_title %}Tài khoản cá nhân{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Profile Header Card */
+    .profile-header-card {
+        background: linear-gradient(135deg, rgba(30, 58, 95, 0.95), rgba(44, 82, 130, 0.95)),
+                    url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920') center/cover;
+        border-radius: 16px;
+        padding: 2.5rem 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 24px rgba(30, 58, 95, 0.15);
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .profile-header-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(212, 168, 53, 0.1), rgba(212, 168, 53, 0.05));
+        pointer-events: none;
+    }
+
+    .profile-header-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .profile-main {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        color: #1e3a5f;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        flex-shrink: 0;
+    }
+
+    .profile-info h2 {
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        font-size: 1.75rem;
+    }
+
+    .role-badge {
+        display: inline-block;
+        background: linear-gradient(135deg, #d4a835, #f1c40f);
+        color: white;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.875rem;
+        box-shadow: 0 4px 12px rgba(212, 168, 53, 0.3);
+    }
+
+    .profile-stats {
+        display: flex;
+        gap: 3rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #d4a835;
+        margin-bottom: 0.25rem;
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+        opacity: 0.9;
+        font-weight: 500;
+    }
+
+    /* Section Cards */
+    .section-card {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+    }
+
+    .section-card-header {
+        background: linear-gradient(135deg, rgba(30, 58, 95, 0.03), rgba(212, 168, 53, 0.03));
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .section-card-title {
+        color: #1e3a5f;
+        font-weight: 600;
+        font-size: 1.1rem;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.625rem;
+    }
+
+    .section-card-title i {
+        color: #d4a835;
+    }
+
+    .section-card-body {
+        padding: 2rem;
+    }
+
+    /* Info Display (Read-only mode) */
+    .info-display-row {
+        display: flex;
+        align-items: center;
+        padding: 0.875rem 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .info-display-row:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        min-width: 180px;
+        font-weight: 600;
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+
+    .info-value {
+        color: #1e3a5f;
+        font-weight: 500;
+        flex: 1;
+    }
+
+    .info-value .badge {
+        font-weight: 500;
+    }
+
+    /* Edit Mode */
+    .info-edit-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.25rem;
+    }
+
+    .info-edit-label {
+        min-width: 180px;
+        font-weight: 600;
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+
+    .info-edit-input {
+        flex: 1;
+    }
+
+    /* Buttons */
+    .btn-edit {
+        background: linear-gradient(135deg, #d4a835, #f1c40f);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 0.625rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(212, 168, 53, 0.3);
+    }
+
+    .btn-edit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(212, 168, 53, 0.4);
+        color: white;
+    }
+
+    .btn-cancel {
+        background: #64748b;
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 0.625rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-cancel:hover {
+        background: #475569;
+        color: white;
+    }
+
+    .btn-save {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 0.625rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+        color: white;
+    }
+
+    /* Form Controls */
+    .form-control:disabled {
+        background: #f8fafc;
+        color: #64748b;
+        cursor: not-allowed;
+    }
+
+    /* Password Section */
+    .password-form .form-control {
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        padding: 0.75rem 1rem;
+    }
+
+    .password-form .form-control:focus {
+        border-color: #d4a835;
+        box-shadow: 0 0 0 3px rgba(212, 168, 53, 0.1);
+    }
+
+    /* Error Messages */
+    .error-message {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.5rem;
+        display: none;
+    }
+
+    .error-message.show {
+        display: block;
+    }
+
+    /* Responsive */
+    @media (max-width: 992px) {
+        .profile-main {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .profile-stats {
+            justify-content: center;
+        }
+
+        .info-display-row,
+        .info-edit-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+        }
+
+        .info-label,
+        .info-edit-label {
+            min-width: auto;
+        }
+
+        .info-edit-input {
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .profile-header-card {
+            padding: 2rem 1.5rem;
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            font-size: 2.5rem;
+        }
+
+        .profile-info h2 {
+            font-size: 1.5rem;
+        }
+
+        .profile-stats {
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .section-card-body {
+            padding: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Profile Header Card -->
+<div class="profile-header-card">
+    <div class="profile-header-content">
+        <div class="profile-main">
+            <div class="profile-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="profile-info">
+                <h2>{{ user.get_full_name|default:user.username }}</h2>
+                <span class="role-badge">
+                    {% if user.is_superuser %}
+                        Super Admin
+                    {% else %}
+                        Quản trị viên
+                    {% endif %}
+                </span>
+            </div>
+        </div>
+
+        <div class="profile-stats">
+            <div class="stat-item">
+                <div class="stat-number">{{ user.appointments_created.count|default:0 }}</div>
+                <div class="stat-label">Lịch hẹn đã tạo</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{{ user.date_joined|date:"d.m.Y" }}</div>
+                <div class="stat-label">Ngày tham gia</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">{% now "j" %}</div>
+                <div class="stat-label">Ngày trong tháng</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Account Information Card -->
+<div class="section-card">
+    <div class="section-card-header">
+        <h5 class="section-card-title">
+            <i class="fas fa-user-circle"></i>
+            Thông tin tài khoản
+        </h5>
+        <button class="btn-edit" id="btnEditProfile" onclick="toggleEditMode()">
+            <i class="fas fa-edit me-2"></i>Chỉnh sửa
+        </button>
+    </div>
+    <div class="section-card-body">
+        <!-- View Mode (Default) -->
+        <div id="viewMode">
+            <div class="info-display-row">
+                <span class="info-label">Tên đăng nhập:</span>
+                <span class="info-value">{{ user.username }}</span>
+            </div>
+            <div class="info-display-row">
+                <span class="info-label">Họ tên:</span>
+                <span class="info-value">{{ user.get_full_name|default:"Chưa cập nhật" }}</span>
+            </div>
+            <div class="info-display-row">
+                <span class="info-label">Email:</span>
+                <span class="info-value">{{ user.email|default:"Chưa cập nhật" }}</span>
+            </div>
+            <div class="info-display-row">
+                <span class="info-label">Vai trò:</span>
+                <span class="info-value">
+                    {% if user.is_superuser %}
+                        <span class="badge bg-primary">Super Administrator</span>
+                    {% elif user.is_staff %}
+                        <span class="badge bg-info">Quản trị viên</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Nhân viên</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-display-row">
+                <span class="info-label">Trạng thái:</span>
+                <span class="info-value">
+                    {% if user.is_active %}
+                        <span class="badge bg-success">Hoạt động</span>
+                    {% else %}
+                        <span class="badge bg-danger">Khóa</span>
+                    {% endif %}
+                </span>
+            </div>
+            <div class="info-display-row">
+                <span class="info-label">Ngày tham gia:</span>
+                <span class="info-value">{{ user.date_joined|date:"d/m/Y H:i" }}</span>
+            </div>
+            <div class="info-display-row">
+                <span class="info-label">Lần đăng nhập gần nhất:</span>
+                <span class="info-value">{{ user.last_login|date:"d/m/Y H:i"|default:"Chưa đăng nhập" }}</span>
+            </div>
+        </div>
+
+        <!-- Edit Mode (Hidden by default) -->
+        <form id="editMode" style="display: none;">
+            <div class="info-edit-row">
+                <label class="info-edit-label">Tên đăng nhập:</label>
+                <div class="info-edit-input">
+                    <input type="text" class="form-control" value="{{ user.username }}" disabled>
+                    <small class="text-muted">Không thể thay đổi tên đăng nhập</small>
+                </div>
+            </div>
+            <div class="info-edit-row">
+                <label class="info-edit-label">Họ tên <span class="text-danger">*</span>:</label>
+                <div class="info-edit-input">
+                    <input type="text" class="form-control" id="editFullName" value="{{ user.get_full_name }}" required>
+                    <div class="error-message" id="fullNameError">Vui lòng nhập họ tên</div>
+                </div>
+            </div>
+            <div class="info-edit-row">
+                <label class="info-edit-label">Email <span class="text-danger">*</span>:</label>
+                <div class="info-edit-input">
+                    <input type="email" class="form-control" id="editEmail" value="{{ user.email }}" required>
+                    <div class="error-message" id="emailError">Vui lòng nhập email hợp lệ</div>
+                </div>
+            </div>
+            <div class="info-edit-row">
+                <div class="d-flex gap-2 ms-auto" style="margin-left: 180px;">
+                    <button type="button" class="btn btn-cancel" onclick="cancelEdit()">
+                        <i class="fas fa-times me-2"></i>Hủy
+                    </button>
+                    <button type="submit" class="btn btn-save" onclick="saveProfile(event)">
+                        <i class="fas fa-save me-2"></i>Cập nhật
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Change Password Card -->
+<div class="section-card">
+    <div class="section-card-header">
+        <h5 class="section-card-title">
+            <i class="fas fa-lock"></i>
+            Đổi mật khẩu
+        </h5>
+    </div>
+    <div class="section-card-body">
+        <form class="password-form" id="changePasswordForm" onsubmit="changePassword(event)">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Mật khẩu hiện tại <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control" id="currentPassword" required>
+                        <div class="error-message" id="currentPasswordError">Mật khẩu hiện tại không đúng</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Mật khẩu mới <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control" id="newPassword" required>
+                        <div class="error-message" id="newPasswordError">Mật khẩu phải có ít nhất 6 ký tự</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label">Xác nhận mật khẩu mới <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control" id="confirmPassword" required>
+                        <div class="error-message" id="confirmPasswordError">Mật khẩu xác nhận không khớp</div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary" style="background: linear-gradient(135deg, #d4a835, #f1c40f); border: none; padding: 0.625rem 2rem;">
+                    <i class="fas fa-key me-2"></i>Đổi mật khẩu
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Store original values
+let originalData = {
+    fullName: '{{ user.get_full_name|escapejs }}',
+    email: '{{ user.email|escapejs }}'
+};
+
+// Toggle edit mode
+function toggleEditMode() {
+    const viewMode = document.getElementById('viewMode');
+    const editMode = document.getElementById('editMode');
+    const btnEdit = document.getElementById('btnEditProfile');
+
+    viewMode.style.display = 'none';
+    editMode.style.display = 'block';
+    btnEdit.style.display = 'none';
+}
+
+// Cancel edit
+function cancelEdit() {
+    const viewMode = document.getElementById('viewMode');
+    const editMode = document.getElementById('editMode');
+    const btnEdit = document.getElementById('btnEditProfile');
+
+    // Reset values
+    document.getElementById('editFullName').value = originalData.fullName;
+    document.getElementById('editEmail').value = originalData.email;
+
+    // Hide errors
+    hideAllErrors();
+
+    // Show view mode
+    viewMode.style.display = 'block';
+    editMode.style.display = 'none';
+    btnEdit.style.display = 'inline-block';
+}
+
+// Save profile
+function saveProfile(event) {
+    event.preventDefault();
+
+    const fullName = document.getElementById('editFullName').value.trim();
+    const email = document.getElementById('editEmail').value.trim();
+
+    // Validate
+    let isValid = true;
+
+    if (!fullName) {
+        showError('fullNameError', 'Vui lòng nhập họ tên');
+        isValid = false;
+    } else {
+        hideError('fullNameError');
+    }
+
+    if (!email || !isValidEmail(email)) {
+        showError('emailError', 'Vui lòng nhập email hợp lệ');
+        isValid = false;
+    } else {
+        hideError('emailError');
+    }
+
+    if (!isValid) return;
+
+    // TODO: Submit to backend
+    // For now, just show success message
+    alert('Cập nhật thông tin thành công!');
+
+    // Update original data
+    originalData.fullName = fullName;
+    originalData.email = email;
+
+    // Switch back to view mode
+    cancelEdit();
+}
+
+// Change password
+function changePassword(event) {
+    event.preventDefault();
+
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    let isValid = true;
+
+    // Validate current password
+    if (!currentPassword) {
+        showError('currentPasswordError', 'Vui lòng nhập mật khẩu hiện tại');
+        isValid = false;
+    } else {
+        hideError('currentPasswordError');
+    }
+
+    // Validate new password
+    if (!newPassword || newPassword.length < 6) {
+        showError('newPasswordError', 'Mật khẩu phải có ít nhất 6 ký tự');
+        isValid = false;
+    } else {
+        hideError('newPasswordError');
+    }
+
+    // Validate confirm password
+    if (newPassword !== confirmPassword) {
+        showError('confirmPasswordError', 'Mật khẩu xác nhận không khớp');
+        isValid = false;
+    } else {
+        hideError('confirmPasswordError');
+    }
+
+    if (!isValid) return;
+
+    // TODO: Submit to backend
+    alert('Đổi mật khẩu thành công!');
+
+    // Reset form
+    document.getElementById('changePasswordForm').reset();
+    hideAllErrors();
+}
+
+// Helper functions
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+function showError(elementId, message) {
+    const errorElement = document.getElementById(elementId);
+    errorElement.textContent = message;
+    errorElement.classList.add('show');
+}
+
+function hideError(elementId) {
+    const errorElement = document.getElementById(elementId);
+    errorElement.classList.remove('show');
+}
+
+function hideAllErrors() {
+    const errors = document.querySelectorAll('.error-message');
+    errors.forEach(error => error.classList.remove('show'));
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Profile page loaded');
+});
+</script>
+{% endblock %}

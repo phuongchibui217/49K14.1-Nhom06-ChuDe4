@@ -74,4 +74,4 @@ def admin_profile(request):
     if not (request.user.is_staff or request.user.is_superuser):
         messages.error(request, 'Bạn không có quyền truy cập trang này.')
         return redirect('pages:home')
-    return render(request, 'admin/pages/profile.html')
+    return render(request, 'admin_panel/admin_profile.html')

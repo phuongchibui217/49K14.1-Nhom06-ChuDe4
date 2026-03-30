@@ -22,4 +22,4 @@ def admin_staff(request):
     if not request.user.is_superuser:
         messages.error(request, 'Bạn không có quyền truy cập trang này. Chỉ Superuser mới được quản lý nhân viên.')
         return redirect('appointments:admin_appointments_list')
-    return render(request, 'admin/pages/admin_staff.html')
+    return render(request, 'staff/admin_staff.html')
