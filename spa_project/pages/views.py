@@ -9,7 +9,7 @@ Author: Spa ANA Team
 """
 
 from django.shortcuts import render
-from spa.models import Service  # Tạm import từ spa.models (sẽ refactor ở phase sau)
+from spa_services.models import Service
 
 
 def home(request):

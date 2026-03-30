@@ -14,7 +14,8 @@ from django import forms
 from django.contrib.auth.models import User
 
 # Tạm import từ spa.models (CHƯA chuyển model trong phase này)
-from spa.models import Complaint, Service, ComplaintReply
+from spa.models import Complaint, ComplaintReply
+from spa_services.models import Service
 
 
 # =====================================================

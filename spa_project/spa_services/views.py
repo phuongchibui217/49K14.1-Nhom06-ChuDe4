@@ -20,7 +20,7 @@ from django.http import JsonResponse
 import json
 
 # TẠM IMPORT từ spa.models (CHƯA chuyển model trong phase này)
-from spa.models import Service
+from .models import Service
 
 # Forms (sẽ tạo trong spa_services/forms.py)
 from .forms import ServiceForm

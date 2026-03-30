@@ -43,7 +43,7 @@ def validate_service_name(name, exclude_id=None):
     Raises:
         ValidationError: Nếu không hợp lệ
     """
-    from spa.models import Service
+    from spa_services.models import Service
 
     # Chuẩn hóa: strip và collapse spaces
     name = ' '.join(name.strip().split()) if name else ''

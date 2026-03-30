@@ -10,7 +10,8 @@ Author: Spa ANA Team
 from django import forms
 
 # Tạm import từ spa.models (CHƯA chuyển model trong phase này)
-from spa.models import Appointment, Service
+from spa.models import Appointment
+from spa_services.models import Service
 
 # Import validation services từ appointments/services
 from .services import validate_appointment_date, validate_appointment_time

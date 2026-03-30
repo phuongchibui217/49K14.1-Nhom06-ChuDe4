@@ -18,7 +18,8 @@ from datetime import datetime
 from django.utils import timezone
 
 # Tạm import từ spa.models (CHƯA chuyển model trong phase này)
-from spa.models import Appointment, CustomerProfile, Service
+from spa.models import Appointment, CustomerProfile
+from spa_services.models import Service
 # Batch 1: Room bridge - import from appointments.models (managed=False)
 from .models import Room
 

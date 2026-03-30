@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.utils.text import slugify
-from spa.models import Service
+from spa_services.models import Service
 import sys
 
 

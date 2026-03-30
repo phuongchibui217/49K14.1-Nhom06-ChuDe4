@@ -18,7 +18,7 @@ from django.core.exceptions import ValidationError
 from django.utils.text import slugify
 
 # Tạm import từ spa.models (CHƯA chuyển model trong phase này)
-from spa.models import Service
+from .models import Service
 
 
 # =====================================================
