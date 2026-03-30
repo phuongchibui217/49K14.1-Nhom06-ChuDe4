@@ -16,9 +16,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Q
 
 # Tạm import từ spa.models (CHƯA chuyển model trong phase này)
-from spa.models import Appointment
-# Batch 1: Room bridge - import from appointments.models (managed=False)
-from .models import Room
+from .models import Appointment, Room
 
 
 # =====================================================
