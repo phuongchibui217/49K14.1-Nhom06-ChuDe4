@@ -6,6 +6,7 @@
     </a>
     <button class="floating-btn chat" onclick="toggleChat()" title="Chat tư vấn trực tuyến" aria-label="Mở chat tư vấn">
         <i class="fas fa-comments"></i>
+        <span class="chat-floating-badge d-none" id="chatFloatingBadge"></span>
     </button>
     <a href="https://web.facebook.com/AnspaDaNang" target="_blank" class="floating-btn facebook" title="Facebook">
         <i class="fa-brands fa-facebook-f"></i>
@@ -16,7 +17,6 @@
 </div>
 
 <style>
-/* Floating Button Styles */
 .floating-button {
     position: fixed;
     bottom: 2rem;
@@ -41,6 +41,7 @@
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    position: relative;
 }
 
 .floating-btn.zalo {
