@@ -3,6 +3,7 @@ import time
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import close_old_connections
 from django.http import StreamingHttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
@@ -193,12 +194,14 @@ def api_customer_chat_stream(request, chat_code):
         idle_loops = 0
 
         try:
+            close_old_connections()
             yield build_sse_payload(
                 "ready",
                 {"chatCode": session.chat_code, "lastMessageId": last_message_id},
             )
 
             while True:
+                close_old_connections()
                 new_messages = list(
                     ChatMessage.objects.select_related("session", "sender")
                     .filter(session=session, id__gt=last_message_id)
@@ -222,8 +225,10 @@ def api_customer_chat_stream(request, chat_code):
                         yield build_sse_payload("ping", {"timestamp": time.time()})
                         idle_loops = 0
 
+                close_old_connections()
                 time.sleep(2)
         except GeneratorExit:
+            close_old_connections()
             return
 
     return _streaming_response(event_stream())
@@ -332,6 +337,7 @@ def api_admin_chat_sessions_stream(request):
 
         try:
             while True:
+                close_old_connections()
                 sessions = list(get_chat_sessions_queryset(search=search, status=status)[:200])
                 signature = tuple(
                     (
@@ -360,8 +366,10 @@ def api_admin_chat_sessions_stream(request):
                         yield build_sse_payload("ping", {"timestamp": time.time()})
                         idle_loops = 0
 
+                close_old_connections()
                 time.sleep(2)
         except GeneratorExit:
+            close_old_connections()
             return
 
     return _streaming_response(event_stream())
@@ -385,12 +393,14 @@ def api_admin_chat_stream(request, chat_code):
         idle_loops = 0
 
         try:
+            close_old_connections()
             yield build_sse_payload(
                 "ready",
                 {"chatCode": session.chat_code, "lastMessageId": last_message_id},
             )
 
             while True:
+                close_old_connections()
                 new_messages = list(
                     ChatMessage.objects.select_related("session", "sender")
                     .filter(session=session, id__gt=last_message_id)
@@ -414,8 +424,10 @@ def api_admin_chat_stream(request, chat_code):
                         yield build_sse_payload("ping", {"timestamp": time.time()})
                         idle_loops = 0
 
+                close_old_connections()
                 time.sleep(2)
         except GeneratorExit:
+            close_old_connections()
             return
 
     return _streaming_response(event_stream())

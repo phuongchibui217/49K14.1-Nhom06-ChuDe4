@@ -75,6 +75,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': 20,
+        },
     }
 }
 
@@ -109,6 +112,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'spa:home'
 LOGOUT_REDIRECT_URL = 'spa:home'
+
+# Tránh ghi session vào SQLite để giảm lỗi "database is locked" khi chạy local.
+SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 
 # Email settings (for password reset)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

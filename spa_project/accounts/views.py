@@ -106,8 +106,6 @@ def login_view(request):
                     request.session.set_expiry(0)  # Session cookie
 
                 # FORCE SAVE SESSION để đảm bảo is_staff được lưu
-                request.session.save()
-
                 # Debug: Before redirect
                 print(f"DEBUG: About to redirect to /manage/appointments/")
                 result = _redirect_by_role(request, user, show_welcome=True)
