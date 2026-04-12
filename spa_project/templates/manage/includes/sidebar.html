@@ -20,9 +20,10 @@
             </a>
         </li>
         <li class="nav-item">
-            <a class="nav-link {% if request.resolver_match.url_name == 'admin_live_chat' %}active{% endif %}" href="{% url 'chat:admin_live_chat' %}">
+            <a class="nav-link sidebar-chat-link {% if request.resolver_match.url_name == 'admin_live_chat' %}active{% endif %}" href="{% url 'chat:admin_live_chat' %}">
                 <i class="fas fa-comments"></i>
-                Chat trực tuyến
+                <span class="sidebar-link-label">Chat trực tuyến</span>
+                <span class="sidebar-chat-badge d-none" id="adminSidebarChatBadge" aria-live="polite" aria-label="Số tin nhắn chat chưa đọc">0</span>
             </a>
         </li>
         <li class="nav-item">

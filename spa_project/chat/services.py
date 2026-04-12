@@ -4,7 +4,7 @@ import secrets
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import F, Q
+from django.db.models import F, Q, Sum
 from django.utils import timezone
 
 from accounts.models import CustomerProfile
@@ -290,6 +290,18 @@ def get_chat_sessions_queryset(search="", status=""):
         )
 
     return sessions.order_by("-last_message_at", "-created_at")
+
+
+def get_admin_chat_sessions_data(search="", status="", limit=200):
+    """
+    Trả về danh sách phiên chat cho admin cùng tổng unread phía admin.
+
+    unreadTotal được tính trên toàn bộ queryset đã filter,
+    không chỉ phần sessions đang hiển thị.
+    """
+    sessions_qs = get_chat_sessions_queryset(search=search, status=status)
+    unread_total = sessions_qs.order_by().aggregate(total=Sum("admin_unread_count"))["total"] or 0
+    return list(sessions_qs[:limit]), unread_total
 
 
 def serialize_chat_message(message):

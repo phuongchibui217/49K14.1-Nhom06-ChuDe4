@@ -15,8 +15,8 @@ from .services import (
     build_sse_payload,
     can_customer_access_session,
     create_chat_message,
+    get_admin_chat_sessions_data,
     get_attachment_accept_string,
-    get_chat_sessions_queryset,
     get_customer_sender_name,
     get_or_create_customer_chat_session,
     mark_session_read_by_admin,
@@ -245,12 +245,12 @@ def api_admin_chat_sessions(request):
     """Danh sách phiên chat cho admin."""
     search = (request.GET.get("search") or "").strip()
     status = (request.GET.get("status") or "").strip()
-    sessions = list(get_chat_sessions_queryset(search=search, status=status)[:200])
+    sessions, unread_total = get_admin_chat_sessions_data(search=search, status=status)
 
     return ApiResponse.success(
         data={
             "sessions": [serialize_chat_session(session) for session in sessions],
-            "unreadTotal": sum(session.admin_unread_count for session in sessions),
+            "unreadTotal": unread_total,
         }
     )
 
@@ -338,16 +338,19 @@ def api_admin_chat_sessions_stream(request):
         try:
             while True:
                 close_old_connections()
-                sessions = list(get_chat_sessions_queryset(search=search, status=status)[:200])
-                signature = tuple(
-                    (
-                        session.id,
-                        session.updated_at.isoformat(),
-                        session.admin_unread_count,
-                        session.customer_unread_count,
-                        session.last_message_preview,
-                    )
-                    for session in sessions
+                sessions, unread_total = get_admin_chat_sessions_data(search=search, status=status)
+                signature = (
+                    unread_total,
+                    tuple(
+                        (
+                            session.id,
+                            session.updated_at.isoformat(),
+                            session.admin_unread_count,
+                            session.customer_unread_count,
+                            session.last_message_preview,
+                        )
+                        for session in sessions
+                    ),
                 )
 
                 if signature != last_signature:
@@ -355,7 +358,7 @@ def api_admin_chat_sessions_stream(request):
                         "sessions",
                         {
                             "sessions": [serialize_chat_session(session) for session in sessions],
-                            "unreadTotal": sum(session.admin_unread_count for session in sessions),
+                            "unreadTotal": unread_total,
                         },
                     )
                     last_signature = signature

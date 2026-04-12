@@ -135,6 +135,39 @@
     color: #FFFFFF !important;
 }
 
+.sidebar-nav .sidebar-chat-link {
+    gap: 0;
+}
+
+.sidebar-nav .sidebar-link-label {
+    flex: 1;
+    min-width: 0;
+}
+
+.sidebar-chat-badge {
+    margin-left: auto;
+    min-width: 1.6rem;
+    height: 1.6rem;
+    padding: 0 0.45rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #f7cf4c;
+    color: #163B6D;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1;
+    border: 1px solid rgba(22, 59, 109, 0.15);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+}
+
+.sidebar-nav .nav-link.active .sidebar-chat-badge {
+    background: #ffd95e;
+    color: #163B6D;
+}
+
 .sidebar-nav .logout-link {
     margin-top: 2rem;
     background: rgba(255, 255, 255, 0.08) !important;

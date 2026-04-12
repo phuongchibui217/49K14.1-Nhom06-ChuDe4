@@ -354,6 +354,18 @@ class AdminChatApiTests(BaseChatTestCase):
         self.assertEqual(len(payload["sessions"]), 1)
         self.assertEqual(payload["sessions"][0]["chatCode"], self.guest_session.chat_code)
 
+    def test_admin_sidebar_includes_realtime_chat_badge(self):
+        client = Client()
+        client.force_login(self.admin_user)
+
+        response = client.get(reverse("appointments:admin_appointments"))
+
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+        self.assertIn('id="adminSidebarChatBadge"', content)
+        self.assertIn(reverse("chat:api_admin_chat_sessions"), content)
+        self.assertIn(reverse("chat:api_admin_chat_sessions_stream"), content)
+
     def test_non_staff_user_cannot_access_admin_chat_api(self):
         client = Client()
         client.force_login(self.customer_user)
