@@ -16,11 +16,14 @@ Author: Spa ANA Team
 
 import json
 from datetime import datetime
+import time
 
-from django.http import JsonResponse
+from django.http import JsonResponse, StreamingHttpResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.db.models import Q, Count
+from django.db import transaction
+from django.template.loader import render_to_string
 
 from .models import Appointment, Room
 from accounts.models import CustomerProfile
@@ -213,21 +216,50 @@ def api_appointment_create(request):
             customer_name=cleaned['customer_name']
         )
 
-        # Bước 3: Tạo lịch hẹn
-        appointment = Appointment.objects.create(
-            customer=customer,
-            service=cleaned['service'],
-            room=cleaned.get('room'),
-            appointment_date=cleaned['appointment_date'],
-            appointment_time=cleaned['appointment_time'],
-            duration_minutes=cleaned['duration_minutes'],
-            guests=cleaned['guests'],
-            notes=cleaned['notes'],
-            status=cleaned['status'],
-            payment_status=cleaned['payment_status'],
-            source='admin',
-            created_by=request.user,
-        )
+        # Bước 3: Tạo lịch hẹn với TRANSACTION LOCK để tránh race condition
+        with transaction.atomic():
+            # Lock các appointments trùng thời gian/phòng để tránh race condition
+            room_code = cleaned['room'].code if cleaned.get('room') else None
+
+            if room_code:
+                # Lock conflicting appointments trong cùng phòng/ngày
+                Appointment.objects.select_for_update().filter(
+                    room__code=room_code,
+                    appointment_date=cleaned['appointment_date'],
+                    status__in=['pending', 'not_arrived', 'arrived', 'completed']
+                ).exists()
+
+                # Double-check availability trong transaction
+                check_result = validate_appointment_create(
+                    appointment_date=cleaned['appointment_date'],
+                    appointment_time=cleaned['appointment_time'],
+                    duration_minutes=cleaned['duration_minutes'],
+                    room_code=room_code,
+                    exclude_appointment_code=None,
+                    guests=cleaned['guests']
+                )
+
+                if not check_result['valid']:
+                    return JsonResponse({
+                        'success': False,
+                        'error': check_result['errors'][0]
+                    }, status=400)
+
+            # Tạo appointment
+            appointment = Appointment.objects.create(
+                customer=customer,
+                service=cleaned['service'],
+                room=cleaned.get('room'),
+                appointment_date=cleaned['appointment_date'],
+                appointment_time=cleaned['appointment_time'],
+                duration_minutes=cleaned['duration_minutes'],
+                guests=cleaned['guests'],
+                notes=cleaned['notes'],
+                status=cleaned['status'],
+                payment_status=cleaned['payment_status'],
+                source='admin',
+                created_by=request.user,
+            )
 
         return JsonResponse({
             'success': True,
@@ -256,9 +288,10 @@ def api_appointment_update(request, appointment_code):
 
     Luồng:
     1. Tìm lịch hẹn theo mã
-    2. Cập nhật từng field nếu có trong request
-    3. Validate ngày/giờ/phòng mới
-    4. Lưu và trả kết quả
+    2. Validate dữ liệu mới TRƯỚC khi update object
+    3. Cập nhật từng field nếu có trong request
+    4. Lưu với transaction.atomic() để tránh race condition
+    5. Trả kết quả
     """
     appointment, error = get_or_404(Appointment, appointment_code=appointment_code)
     if error:
@@ -267,80 +300,147 @@ def api_appointment_update(request, appointment_code):
     try:
         raw_data = json.loads(request.body)
 
-        # Cập nhật tên khách hàng
-        customer_name = raw_data.get('customerName', '').strip()
-        if customer_name:
-            appointment.customer.full_name = customer_name
-            appointment.customer.save()
+        # ===== BƯỚC 1: Thu thập data MỚI (KHÔNG modify appointment object) =====
+        new_customer_name = raw_data.get('customerName', '').strip()
+        new_phone = raw_data.get('phone', '').strip()
+        new_service_id = raw_data.get('serviceId') or raw_data.get('service')
+        new_room_id = raw_data.get('roomId') or raw_data.get('room')
 
-        # Cập nhật SĐT
-        phone = raw_data.get('phone', '').strip()
-        if phone:
-            phone_digits = ''.join(filter(str.isdigit, phone))
-            if phone_digits:
-                appointment.customer.phone = phone_digits
-                appointment.customer.save()
+        # Thu thập ngày/giờ/thời lượng mới
+        new_date_str = raw_data.get('date', '')
+        new_time_str = raw_data.get('time') or raw_data.get('start', '')
+        new_duration = raw_data.get('duration') or raw_data.get('durationMin')
+        new_guests = raw_data.get('guests')
+        new_notes = raw_data.get('note', '')
+        new_status = raw_data.get('apptStatus')
+        new_pay_status = raw_data.get('payStatus')
 
-        # Cập nhật dịch vụ
-        service_id = raw_data.get('serviceId') or raw_data.get('service')
-        if service_id:
-            try:
-                appointment.service = Service.objects.get(id=service_id)
-            except Service.DoesNotExist:
-                pass
-
-        # Cập nhật phòng
-        if 'roomId' in raw_data or 'room' in raw_data:
-            room_id = raw_data.get('roomId') or raw_data.get('room')
-            if room_id:
-                try:
-                    appointment.room = Room.objects.get(code=room_id)
-                except Room.DoesNotExist:
-                    appointment.room = None
-            else:
-                appointment.room = None
-
-        # Cập nhật ngày/giờ/thời lượng (cần validate)
+        # ===== BƯỚC 2: Validate ngày/giờ/phòng TRƯỚC khi update =====
         needs_validation = False
-        check_date = appointment.appointment_date
-        check_time = appointment.appointment_time
-        check_duration = appointment.duration_minutes or appointment.service.duration_minutes
-        check_room = appointment.room.code if appointment.room else None
+        validation_data = {
+            'appointment_date': appointment.appointment_date,
+            'appointment_time': appointment.appointment_time,
+            'duration_minutes': appointment.duration_minutes or (appointment.service.duration_minutes if appointment.service else 60),
+            'room_code': appointment.room.code if appointment.room else None,
+            'guests': appointment.guests or 1
+        }
 
-        date_str = raw_data.get('date', '')
-        if date_str:
-            check_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-            appointment.appointment_date = check_date
+        # Parse new date/time/duration nếu có
+        if new_date_str:
+            try:
+                validation_data['appointment_date'] = datetime.strptime(new_date_str, '%Y-%m-%d').date()
+                needs_validation = True
+            except ValueError:
+                return JsonResponse({'success': False, 'error': 'Định dạng ngày không hợp lệ (YYYY-MM-DD)'}, status=400)
+
+        if new_time_str:
+            try:
+                validation_data['appointment_time'] = datetime.strptime(new_time_str, '%H:%M').time()
+                needs_validation = True
+            except ValueError:
+                return JsonResponse({'success': False, 'error': 'Định dạng giờ không hợp lệ (HH:MM)'}, status=400)
+
+        if new_duration:
+            try:
+                validation_data['duration_minutes'] = int(new_duration)
+                needs_validation = True
+            except (ValueError, TypeError):
+                return JsonResponse({'success': False, 'error': 'Thời lượng phải là số nguyên'}, status=400)
+
+        if new_room_id is not None:
+            validation_data['room_code'] = new_room_id if new_room_id else None
             needs_validation = True
 
-        time_str = raw_data.get('time') or raw_data.get('start', '')
-        if time_str:
-            check_time = datetime.strptime(time_str, '%H:%M').time()
-            appointment.appointment_time = check_time
-            needs_validation = True
-
-        duration = raw_data.get('duration') or raw_data.get('durationMin')
-        if duration:
-            check_duration = int(duration)
-            appointment.duration_minutes = check_duration
-            needs_validation = True
-
-        if 'roomId' in raw_data or 'room' in raw_data:
-            check_room = (raw_data.get('roomId') or raw_data.get('room')) or None
-            needs_validation = True
+        if new_guests is not None:
+            try:
+                validation_data['guests'] = int(new_guests)
+                needs_validation = True
+            except (ValueError, TypeError):
+                return JsonResponse({'success': False, 'error': 'Số khách phải là số nguyên'}, status=400)
 
         # Validate nếu có thay đổi ngày/giờ/phòng
         if needs_validation:
             result = validate_appointment_create(
-                appointment_date=check_date,
-                appointment_time=check_time,
-                duration_minutes=check_duration,
-                room_code=check_room,
+                appointment_date=validation_data['appointment_date'],
+                appointment_time=validation_data['appointment_time'],
+                duration_minutes=validation_data['duration_minutes'],
+                room_code=validation_data['room_code'],
                 exclude_appointment_code=appointment_code,
-                guests=appointment.guests or 1
+                guests=validation_data['guests']
             )
             if not result['valid']:
                 return JsonResponse({'success': False, 'error': result['errors'][0]}, status=400)
+
+        # ===== BƯỚC 3: UPDATE với transaction.atomic() để tránh race condition =====
+        with transaction.atomic():
+            # Lock appointment để tránh concurrent updates
+            locked_appointment = Appointment.objects.select_for_update().get(
+                appointment_code=appointment_code
+            )
+
+            # Cập nhật khách hàng
+            if new_customer_name:
+                locked_appointment.customer.full_name = new_customer_name
+                locked_appointment.customer.save()
+
+            if new_phone:
+                phone_digits = ''.join(filter(str.isdigit, new_phone))
+                if phone_digits:
+                    locked_appointment.customer.phone = phone_digits
+                    locked_appointment.customer.save()
+
+            # Cập nhật dịch vụ
+            if new_service_id:
+                try:
+                    locked_appointment.service = Service.objects.get(id=new_service_id)
+                except Service.DoesNotExist:
+                    return JsonResponse({'success': False, 'error': 'Dịch vụ không tồn tại'}, status=404)
+
+            # Cập nhật phòng
+            if new_room_id is not None:
+                if new_room_id:
+                    try:
+                        locked_appointment.room = Room.objects.get(code=new_room_id)
+                    except Room.DoesNotExist:
+                        locked_appointment.room = None
+                else:
+                    locked_appointment.room = None
+
+            # Cập nhật ngày/giờ/thời lượng
+            if new_date_str:
+                locked_appointment.appointment_date = validation_data['appointment_date']
+            if new_time_str:
+                locked_appointment.appointment_time = validation_data['appointment_time']
+            if new_duration:
+                locked_appointment.duration_minutes = validation_data['duration_minutes']
+            if new_guests is not None:
+                locked_appointment.guests = validation_data['guests']
+
+            # Cập nhật các field khác
+            if new_notes:
+                locked_appointment.notes = new_notes
+            if new_status:
+                locked_appointment.status = new_status
+            if new_pay_status:
+                locked_appointment.payment_status = new_pay_status
+
+            # Save appointment
+            locked_appointment.save()
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Cập nhật lịch hẹn {appointment_code} thành công',
+            'appointment': serialize_appointment(locked_appointment)
+        })
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Dữ liệu JSON không hợp lệ'}, status=400)
+    except Appointment.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Không tìm thấy lịch hẹn'}, status=404)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'error': f'Lỗi: {str(e)}'}, status=500)
 
         # Cập nhật các field còn lại
         guests = raw_data.get('guests')
@@ -493,7 +593,8 @@ def api_booking_requests(request):
             Q(service__name__icontains=search)
         )
 
-    appointments = appointments.order_by('-appointment_date', '-appointment_time')
+    # Sắp xếp theo mã lịch hẹn (mới nhất lên đầu)
+    appointments = appointments.order_by('-created_at')
     data = [serialize_appointment(appt) for appt in appointments]
 
     return JsonResponse({'success': True, 'appointments': data})
@@ -569,13 +670,17 @@ def _validate_appointment_data(data):
 
     # Validate phòng (optional)
     room_id = data.get('room_id')
+    room_code = None  # Initialize room_code for later use
     if room_id:
         try:
             cleaned_data['room'] = Room.objects.get(code=room_id)
+            room_code = room_id  # Store room_code for validation
         except Room.DoesNotExist:
             cleaned_data['room'] = None
+            room_code = None
     else:
         cleaned_data['room'] = None
+        room_code = None
 
     # Validate số khách
     guests = data.get('guests', 1)
@@ -602,8 +707,9 @@ def _validate_appointment_data(data):
             appointment_date=cleaned_data['appointment_date'],
             appointment_time=cleaned_data['appointment_time'],
             duration_minutes=cleaned_data['duration_minutes'],
-            room_code=room_id if room_id else None,
-            exclude_appointment_code=None
+            room_code=room_code,
+            exclude_appointment_code=None,
+            guests=cleaned_data.get('guests', 1)
         )
         if not validation_result['valid']:
             errors.extend(validation_result['errors'])
@@ -648,3 +754,116 @@ def _get_or_create_customer(phone, customer_name):
         customer.save()
 
     return customer
+
+
+# =====================================================
+# API: NOTIFICATION BADGE - PENDING BOOKING COUNT
+# =====================================================
+
+@require_http_methods(["GET"])
+def api_booking_pending_count(request):
+    """
+    API: Lấy số lượng yêu cầu đặt lịch đang chờ (pending)
+
+    FE gọi: GET /api/booking/pending-count/
+
+    Trả về:
+    {
+        "success": true,
+        "count": 5,  // Số lượng booking pending
+        "timestamp": "2026-04-12T10:30:00"
+    }
+
+    Dùng cho notification badge trong sidebar/navbar
+    """
+    if not _is_staff(request.user):
+        return _deny()
+
+    try:
+        # Đếm số lượng booking pending (chưa xác nhận)
+        pending_count = Appointment.objects.filter(
+            Q(source='web') | Q(source__isnull=True),  # Web bookings
+            status='pending'  # Chờ xác nhận
+        ).count()
+
+        return JsonResponse({
+            'success': True,
+            'count': pending_count,
+            'timestamp': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Không thể lấy số lượng: {str(e)}',
+            'count': 0
+        }, status=500)
+
+
+def _booking_count_stream_generator():
+    """
+    SSE Stream generator để推送 số lượng booking pending real-time
+
+    Yield: data: {JSON}\n\n
+    """
+    while True:
+        try:
+            # Đếm số lượng booking pending
+            pending_count = Appointment.objects.filter(
+                Q(source='web') | Q(source__isnull=True),
+                status='pending'
+            ).count()
+
+            # Format SSE response
+            data = {
+                'count': pending_count,
+                'timestamp': datetime.now().isoformat()
+            }
+
+            yield f"data: {json.dumps(data)}\n\n"
+
+            # Sleep 10 giây trước khi推送 tiếp
+            time.sleep(10)
+
+        except Exception as e:
+            # Nếu có lỗi, log và tiếp tục
+            error_data = {
+                'count': 0,
+                'timestamp': datetime.now().isoformat(),
+                'error': str(e)
+            }
+            yield f"data: {json.dumps(error_data)}\n\n"
+            time.sleep(10)
+
+
+@require_http_methods(["GET"])
+def api_booking_pending_count_stream(request):
+    """
+    API: SSE Stream để推送 số lượng booking pending real-time
+
+    FE gọi: GET /api/booking/pending-count/stream/
+
+    Server-Sent Events (SSE) stream:
+    data: {"count": 5, "timestamp": "2026-04-12T10:30:00"}
+
+    Dùng cho notification badge auto-update
+    """
+    if not _is_staff(request.user):
+        return _deny()
+
+    try:
+        response = StreamingHttpResponse(
+            _booking_count_stream_generator(),
+            content_type='text/event-stream'
+        )
+
+        # Cấu hình SSE headers (KHÔNG set Connection header - WSGI tự handle)
+        response['Cache-Control'] = 'no-cache'
+        response['X-Accel-Buffering'] = 'no'  # Disable Nginx buffering
+
+        return response
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Stream error: {str(e)}'
+        }, status=500)

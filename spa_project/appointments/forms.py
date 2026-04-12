@@ -72,6 +72,12 @@ class AppointmentForm(forms.ModelForm):
         self.fields['service'].empty_label = "-- Chọn dịch vụ --"
         self.fields['service'].required = True
 
+        # Custom label choices - chỉ hiển thị tên dịch vụ (không có mã)
+        service_choices = [('', self.fields['service'].empty_label)]
+        for service in self.fields['service'].queryset:
+            service_choices.append((service.id, service.name))
+        self.fields['service'].choices = service_choices
+
     def clean_appointment_date(self):
         """
         Validate ngày hẹn - sử dụng timezone
@@ -92,8 +98,8 @@ class AppointmentForm(forms.ModelForm):
         """
         Validate giờ hẹn
 
-        - Nếu đặt hôm nay: phải trước ít nhất 30 phút
-        - Giờ làm việc: 8:00 - 20:00
+        - Giờ làm việc: 9:00 - 21:00 (khách đặt từ 9h đến 20h)
+        - Có thể đặt lịch cùng ngày, không cần trước 30 phút
         """
         appointment_time = self.cleaned_data.get('appointment_time')
         appointment_date = self.cleaned_data.get('appointment_date')

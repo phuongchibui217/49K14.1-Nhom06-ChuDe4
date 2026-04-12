@@ -34,4 +34,10 @@ urlpatterns = [
     path('api/appointments/<str:appointment_code>/status/', api.api_appointment_status, name='api_appointment_status'),
     path('api/appointments/<str:appointment_code>/delete/', api.api_appointment_delete, name='api_appointment_delete'),
     path('api/booking-requests/', api.api_booking_requests, name='api_booking_requests'),
+
+    # ============================================================
+    # NOTIFICATION BADGE APIs
+    # ============================================================
+    path('api/booking/pending-count/', api.api_booking_pending_count, name='api_booking_pending_count'),
+    path('api/booking/pending-count/stream/', api.api_booking_pending_count_stream, name='api_booking_pending_count_stream'),
 ]

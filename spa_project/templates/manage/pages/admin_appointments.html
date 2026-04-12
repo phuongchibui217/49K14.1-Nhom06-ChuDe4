@@ -86,28 +86,37 @@
           <div class="fw-bold">
             <i class="fas fa-inbox me-2"></i>Danh sách yêu cầu đặt lịch trực tuyến
           </div>
+          <!-- Bộ lọc trạng thái -->
+          <div class="d-flex gap-2 align-items-center">
+            <select class="form-select form-select-sm" id="webStatusFilter" style="width:auto;min-width:160px;">
+              <option value="">Tất cả trạng thái</option>
+              <option value="pending">Chờ xác nhận</option>
+              <option value="not_arrived">Chưa đến</option>
+              <option value="arrived">Đã đến</option>
+              <option value="completed">Hoàn thành</option>
+              <option value="cancelled">Đã hủy</option>
+            </select>
+          </div>
         </div>
 
-        <div class="table-responsive">
-          <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th>Mã</th>
-                <th>Khách</th>
-                <th>SĐT</th>
-                <th>Dịch vụ</th>
-                <th>Ngày</th>
-                <th>Giờ</th>
-                <th>Thời lượng</th>
-                <th>Trạng thái</th>
-                <th class="text-end">Hành động</th>
-              </tr>
-            </thead>
-            <tbody id="webTbody">
-              <!-- render bằng JS/ bảng này là do JS sẽ tạo ra = cách lấy dữ liệu qua API -->
-            </tbody>
-          </table>
-        </div>
+        <table class="table table-striped table-hover">
+          <thead>
+            <tr>
+              <th>Mã</th>
+              <th>Khách</th>
+              <th>SĐT</th>
+              <th>Dịch vụ</th>
+              <th>Ngày</th>
+              <th>Giờ</th>
+              <th>Thời lượng</th>
+              <th>Trạng thái</th>
+              <th class="text-end">Hành động</th>
+            </tr>
+          </thead>
+          <tbody id="webTbody">
+            <!-- render bằng JS/ bảng này là do JS sẽ tạo ra = cách lấy dữ liệu qua API -->
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -138,7 +147,7 @@
               <label class="form-label fw-semibold">
                 Họ tên khách hàng <span class="text-danger">*</span>
               </label>
-              <input class="form-control" id="customerName" required />
+              <input class="form-control" id="customerName" required placeholder="Nhập họ tên khách hàng" />
               <div class="invalid-feedback">Vui lòng nhập họ tên khách hàng</div>
             </div>
 
@@ -146,14 +155,14 @@
               <label class="form-label fw-semibold">
                 Số điện thoại <span class="text-danger">*</span>
               </label>
-              <input class="form-control" id="phone" required placeholder="" inputmode="numeric" />
+              <input class="form-control" id="phone" required placeholder="Nhập số điện thoại" inputmode="numeric" />
               <div class="invalid-feedback">Số điện thoại không hợp lệ</div>
             </div>
 
             <!-- email (đã sửa trong UC4 nhưng BE API chưa làm) -->
             <div class="col-md-6">
               <label class="form-label fw-semibold">Email</label>
-              <input class="form-control" id="email" placeholder="" />
+              <input class="form-control" id="email" placeholder="Nhập email (nếu có)" />
             </div>
 
             <div class="col-md-6">
@@ -295,4 +304,101 @@
 
 {% block extra_js %}
 <script src="{% static 'js/admin-appointments.js' %}?v={{ 'now'|date:'His' }}"></script>
+
+<script>
+// ========================================
+// BADGE DEBUG SYSTEM - CLEAN VERSION
+// ========================================
+
+console.log('🔧 LOADING BADGE DEBUG SYSTEM...');
+
+// ===== DEBUG FUNCTION: Check DOM Elements =====
+window.debugBadgeElements = function() {
+  console.log('=== DOM ELEMENTS CHECK ===');
+
+  const webCount = document.getElementById("webCount");
+  console.log('1. Tab Header Badge (#webCount):', webCount ? '✅ FOUND' : '❌ NOT FOUND');
+  if (webCount) {
+    console.log('   - Current text:', webCount.textContent);
+    console.log('   - Display:', window.getComputedStyle(webCount).display);
+    console.log('   - Classes:', webCount.className);
+  }
+
+  const sidebarBadge = document.getElementById("adminSidebarBookingBadge");
+  console.log('2. Sidebar Badge (#adminSidebarBookingBadge):', sidebarBadge ? '✅ FOUND' : '❌ NOT FOUND');
+  if (sidebarBadge) {
+    console.log('   - Current text:', sidebarBadge.textContent);
+    console.log('   - Display:', window.getComputedStyle(sidebarBadge).display);
+    console.log('   - Classes:', sidebarBadge.className);
+  }
+
+  console.log('=== END DOM CHECK ===\n');
+};
+
+// ===== DEBUG FUNCTION: Manual Badge Update =====
+window.debugUpdateBadge = function(count) {
+  console.log('=== MANUAL BADGE UPDATE ===', count, '===');
+
+  // Update tab header badge
+  const webCount = document.getElementById("webCount");
+  if (webCount) {
+    webCount.textContent = String(count);
+    webCount.classList.remove('badge-update');
+    void webCount.offsetWidth; // Trigger reflow
+    webCount.classList.add('badge-update');
+    setTimeout(() => webCount.classList.remove('badge-update'), 500);
+    console.log('✅ Tab header badge updated →', count);
+  } else {
+    console.log('❌ Tab header badge NOT FOUND');
+  }
+
+  console.log('=== END MANUAL UPDATE ===\n');
+};
+
+// ===== DEBUG FUNCTION: Test API =====
+window.debugBadgeAPI = async function() {
+  console.log('=== API TEST ===');
+
+  try {
+    const response = await fetch('/api/booking/pending-count/');
+    const data = await response.json();
+
+    console.log('Pending Count API Response:', data);
+    console.log('Success:', data.success);
+    console.log('Count:', data.count);
+
+    if (data.success) {
+      console.log('✅ Real pending count:', data.count);
+    } else {
+      console.log('❌ API Error:', data.error);
+    }
+
+  } catch (error) {
+    console.error('API Test Failed:', error);
+  }
+
+  console.log('=== END API TEST ===\n');
+};
+
+// Auto-run debug on page load
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('📄 Page loaded');
+
+  setTimeout(() => {
+    console.log('\n🔍 CHECKING BADGE ELEMENTS...');
+    debugBadgeElements();
+  }, 1500);
+
+  setTimeout(() => {
+    console.log('\n🎯 CHECKING API...');
+    debugBadgeAPI();
+  }, 3000);
+});
+
+console.log('✅ Badge Debug System Loaded!');
+console.log('Available commands:');
+console.log('  - debugBadgeElements()  : Check DOM elements');
+console.log('  - debugUpdateBadge(5)   : Manual badge update');
+console.log('  - debugBadgeAPI()       : Test API');
+</script>
 {% endblock %}

@@ -24,20 +24,25 @@ def serialize_appointment(appointment):
     Returns:
         dict: Dữ liệu để gửi về frontend qua JSON
     """
+    # Get customer email safely
+    customer_email = ''
+    if appointment.customer:
+        customer_email = appointment.customer.email or appointment.customer.user.email or ''
+
     return {
         'id': appointment.appointment_code,           # Mã lịch hẹn (VD: APT001)
-        'customerName': appointment.customer.full_name, # Tên khách
-        'phone': appointment.customer.phone,            # Số điện thoại
-        'email': getattr(appointment.customer.user, 'email', '') if appointment.customer.user else '',
-        'service': appointment.service.name,            # Tên dịch vụ
-        'serviceId': appointment.service.id,            # ID dịch vụ
+        'customerName': appointment.customer.full_name if appointment.customer else '',  # Tên khách
+        'phone': appointment.customer.phone if appointment.customer else '',            # Số điện thoại
+        'email': customer_email,                       # Email
+        'service': appointment.service.name if appointment.service else '',            # Tên dịch vụ
+        'serviceId': appointment.service.id if appointment.service else None,          # ID dịch vụ
         'roomId': appointment.room.code if appointment.room else '',  # Mã phòng
         'roomName': appointment.room.name if appointment.room else '', # Tên phòng
-        'guests': appointment.guests,                   # Số khách
-        'date': appointment.appointment_date.strftime('%Y-%m-%d'),  # Ngày (YYYY-MM-DD)
-        'start': appointment.appointment_time.strftime('%H:%M'),    # Giờ bắt đầu
+        'guests': appointment.guests or 1,             # Số khách
+        'date': appointment.appointment_date.strftime('%Y-%m-%d') if appointment.appointment_date else '',  # Ngày (YYYY-MM-DD)
+        'start': appointment.appointment_time.strftime('%H:%M') if appointment.appointment_time else '',    # Giờ bắt đầu
         'end': appointment.get_end_time_display(),      # Giờ kết thúc
-        'durationMin': appointment.duration_minutes or appointment.service.duration_minutes,
+        'durationMin': appointment.duration_minutes or (appointment.service.duration_minutes if appointment.service else 60),
         'note': appointment.notes or '',                # Ghi chú
         'apptStatus': appointment.status,               # Trạng thái lịch hẹn
         'payStatus': appointment.payment_status,        # Trạng thái thanh toán

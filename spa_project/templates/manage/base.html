@@ -76,6 +76,14 @@
         };
     </script>
     <script src="{% static 'js/admin-sidebar-chat-badge.js' %}"></script>
+
+    <script>
+        window.adminSidebarBookingBadgeConfig = {
+            countUrl: "{% url 'appointments:api_booking_pending_count' %}",
+            countStreamUrl: "{% url 'appointments:api_booking_pending_count_stream' %}"
+        };
+    </script>
+    <script src="{% static 'js/admin-sidebar-booking-badge.js' %}?v={% now 'His' %}"></script>
     {% endif %}
     {% endif %}
 

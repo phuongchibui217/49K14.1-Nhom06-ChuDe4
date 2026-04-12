@@ -48,6 +48,7 @@ def booking(request):
             user=request.user,
             phone=request.user.username,
             full_name=request.user.get_full_name() or request.user.username,
+            email=request.user.email or '',
         )
         messages.info(request, 'Hồ sơ của bạn đã được tạo. Vui lòng cập nhật thông tin đầy đủ.')
 

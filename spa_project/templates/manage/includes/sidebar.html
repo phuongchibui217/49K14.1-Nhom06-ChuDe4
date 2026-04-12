@@ -10,7 +10,8 @@
         <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.url_name == 'admin_appointments' %}active{% endif %}" href="{% url 'appointments:admin_appointments' %}">
                 <i class="fas fa-calendar-check"></i>
-                Quản lý lịch hẹn
+                <span class="sidebar-link-label">Quản lý lịch hẹn</span>
+                <span class="sidebar-booking-badge d-none" id="adminSidebarBookingBadge" aria-live="polite" aria-label="Số yêu cầu đặt lịch chờ xác nhận">0</span>
             </a>
         </li>
         <li class="nav-item">

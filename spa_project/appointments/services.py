@@ -51,13 +51,13 @@ def validate_appointment_date(appointment_date): # hàm kiểm tra ngày hợp l
         )
 
 
-def validate_appointment_time(appointment_time, appointment_date):# kiểm tra giờ hẹn 
+def validate_appointment_time(appointment_time, appointment_date):
     """
     Kiểm tra giờ hẹn có hợp lệ không
 
     Quy tắc:
-    - Nếu là hôm nay: giờ phải sau giờ hiện tại (ít nhất 30 phút)
-    - Giờ làm việc: 8:00 - 20:00 (có thể tùy chỉnh)
+    - Giờ làm việc: 9:00 - 21:00 (đặt từ 9h sáng đến trước 21h)
+    - Khách có thể đặt lịch cùng ngày, không cần trước 30 phút
 
     Args:
         appointment_time: time object - giờ cần kiểm tra
@@ -69,22 +69,7 @@ def validate_appointment_time(appointment_time, appointment_date):# kiểm tra g
     Raises:
         ValidationError: Nếu giờ không hợp lệ
     """
-    today = timezone.now().date()
-    current_time = timezone.now().time()
-
-    # Nếu đặt cho hôm nay, phải trước giờ hiện tại ít nhất 30 phút
-    if appointment_date == today:
-        # Tính thời gian cách đây 30 phút
-        min_time = (datetime.combine(today, current_time) + timedelta(minutes=30)).time()
-
-        if appointment_time < min_time:
-            raise ValidationError(
-                f'Đặt lịch cho hôm nay phải trước ít nhất 30 phút. '
-                f'Giờ hiện tại: {current_time.strftime("%H:%M")}, '
-                f'giờ sớm nhất có thể đặt: {min_time.strftime("%H:%M")}.'
-            )
-
-    # Kiểm tra giờ làm việc (9:00 - 21:00)
+    # Giờ làm việc: 9:00 - 21:00 (khách đặt từ 9h đến 20h, lịch kết thúc trước 21h)
     opening_time = time_type(9, 0)
     closing_time = time_type(21, 0)
 

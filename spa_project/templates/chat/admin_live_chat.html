@@ -4,7 +4,7 @@
 {% block title %}Chat trực tuyến - Spa ANA{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/admin-chat.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin-chat.css' %}?v={{ 'now'|date:'YmdHi' }}">
 {% endblock %}
 
 {% block content %}

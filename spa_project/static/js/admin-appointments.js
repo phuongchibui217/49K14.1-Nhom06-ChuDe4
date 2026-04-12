@@ -23,6 +23,7 @@ const btnToday = document.getElementById("btnToday");
 const searchInput = document.getElementById("searchInput");
 const webTbody = document.getElementById("webTbody");
 const webCount = document.getElementById("webCount");
+const webStatusFilter = document.getElementById("webStatusFilter");
 const modalEl = document.getElementById("apptModal");
 let modal = null;
 const modalTitle = document.getElementById("modalTitle");
@@ -52,6 +53,38 @@ const toastBody = document.getElementById("toastBody");
 function getCSRFToken() {
   const cookieValue = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
   return cookieValue ? cookieValue.split('=')[1] : '';
+}
+
+// ===== BOOKING BADGES UPDATE =====
+/**
+ * Cập nhật tất cả booking badges (tab header + sidebar)
+ * @param {number} count - Số lượng bookings pending/tổng
+ */
+function updateBookingBadges(count) {
+  // Update tab header badge (#webCount)
+  if (webCount) {
+    const oldCount = webCount.textContent;
+    webCount.textContent = String(count);
+    webCount.setAttribute('data-count', String(count));
+
+    // Animation khi count thay đổi
+    if (oldCount !== String(count)) {
+      webCount.classList.add('badge-update');
+      setTimeout(() => {
+        webCount.classList.remove('badge-update');
+      }, 500);
+    }
+
+    console.log(`✅ Tab header badge updated: ${oldCount} → ${count}`);
+  }
+
+  // Update sidebar badge (#adminSidebarBookingBadge) - nếu có
+  const sidebarBadge = document.getElementById('adminSidebarBookingBadge');
+  if (sidebarBadge) {
+    // Sidebar badge tự update qua SSE stream
+    // Nhưng chúng ta có thể trigger manual update nếu cần
+    console.log(`✅ Sidebar badge exists (auto-updated via SSE)`);
+  }
 }
 
 // ===== LOADING STATE HELPER =====
@@ -158,19 +191,52 @@ async function loadServices() {
 async function loadAppointments(date = '') {
   let url = `${API_BASE}/appointments/`;
   if (date) url += `?date=${date}`;
+  console.log('📅 Loading appointments for date:', date);
+  console.log('📅 API URL:', url);
+
   const result = await apiGet(url);
+  console.log('📅 API Result:', result);
+
   if (result.success && result.appointments) {
     APPOINTMENTS = result.appointments;
+    console.log('✅ Loaded', APPOINTMENTS.length, 'appointments');
+    if (APPOINTMENTS.length > 0) {
+      console.log('Sample appointment:', APPOINTMENTS[0]);
+    }
   } else {
     APPOINTMENTS = [];
+    console.log('❌ No appointments loaded');
   }
 }
 
-async function loadBookingRequests() {
+async function loadBookingRequests(statusFilter = '') {
   console.log('Loading booking requests from:', `${API_BASE}/booking-requests/`);
-  const result = await apiGet(`${API_BASE}/booking-requests/`);
-  console.log('Booking requests result:', result);
-  return result.success && result.appointments ? result.appointments : [];
+  console.log('Status filter parameter:', statusFilter || '(none)');
+
+  // Build URL với status filter parameter
+  let url = `${API_BASE}/booking-requests/`;
+  const queryParams = [];
+  if (statusFilter) {
+    queryParams.push(`status=${statusFilter}`);
+  }
+
+  if (queryParams.length > 0) {
+    url += '?' + queryParams.join('&');
+  }
+
+  console.log('Final API URL:', url);
+
+  const result = await apiGet(url);
+  console.log('API Response:', result);
+
+  // Check response structure
+  if (result && result.success) {
+    console.log('Appointments count:', result.appointments ? result.appointments.length : 0);
+    return result.appointments || [];
+  } else {
+    console.error('API Error:', result);
+    return [];
+  }
 }
 
 // ===== HELPERS =====
@@ -293,13 +359,20 @@ function allocateRoomLanes(roomId, day, appts){
 
 // ===== RENDER VẼ LƯỚI LỊCH =====
 function renderGrid(){
+  console.log('=== renderGrid START ===');
+  console.log('Total APPOINTMENTS:', APPOINTMENTS.length);
+  console.log('Selected day:', dayPicker.value);
+  console.log('ROOMS:', ROOMS);
+
   grid.innerHTML = "";
   const day = dayPicker.value;
   const searchTerm = searchInput.value.toLowerCase().trim();
+
   ROOMS.forEach((r)=>{
-    
     // Lọc lịch theo phòng
     let appts = APPOINTMENTS.filter(a => a.date===day && a.roomId===r.id);
+    console.log(`Room ${r.name} (${r.id}): ${appts.length} appointments for ${day}`);
+
     // Tìm kiếm theo tên khách hàng, số điện thoại, tên dịch vụ
     if(searchTerm) appts = appts.filter(a => a.customerName.toLowerCase().includes(searchTerm) || a.phone.includes(searchTerm) || a.service.toLowerCase().includes(searchTerm) || a.id.toLowerCase().includes(searchTerm));
    
@@ -343,20 +416,47 @@ function renderGrid(){
       grid.appendChild(laneRow);
     }
   });
+  console.log('=== renderGrid END ===');
 }
 
-// vẽ bảng yêu cầu đặt lịch online 
+// vẽ bảng yêu cầu đặt lịch online
 async function renderWebRequests(){
+  console.log('=== renderWebRequests START ===');
+
   const searchTerm = searchInput.value.toLowerCase().trim();
-  let rows = await loadBookingRequests();
-  console.log('Rendering web requests, rows:', rows);
+  console.log('Search term:', searchTerm || '(none)');
+
+  // Lọc theo trạng thái (từ bộ lọc dropdown)
+  const filterEl = document.getElementById("webStatusFilter");
+  const statusFilter = filterEl ? filterEl.value : '';
+  console.log('🔍 Status filter element:', filterEl);
+  console.log('🔍 Status filter value:', statusFilter);
+  console.log('🔍 Status filter value type:', typeof statusFilter);
+
+  // Load bookings with status filter (backend filtering - faster)
+  console.log('Calling loadBookingRequests with:', statusFilter || '(empty)');
+  let rows = await loadBookingRequests(statusFilter);
+  console.log('Received rows from API:', rows.length);
 
   // Debug: log chi tiết từng row
-  rows.forEach(r => console.log('  -', r.id, r.customerName, 'roomId:', r.roomId, 'status:', r.apptStatus));
+  if (rows.length > 0) {
+    console.log('Sample row:', rows[0]);
+    rows.forEach(r => console.log('  -', r.id, r.customerName, 'apptStatus:', r.apptStatus));
+  }
 
-  if(searchTerm) rows = rows.filter(a => a.customerName.toLowerCase().includes(searchTerm) || a.phone.includes(searchTerm) || a.service.toLowerCase().includes(searchTerm) || a.id.toLowerCase().includes(searchTerm));
-  rows = rows.sort((a,b)=> (a.date+a.start).localeCompare(b.date+b.start));
-  webCount.textContent = String(rows.length);
+  // Client-side search filter (nếu có searchTerm)
+  if(searchTerm) {
+    console.log('Applying search filter:', searchTerm);
+    rows = rows.filter(a => a.customerName.toLowerCase().includes(searchTerm) || a.phone.includes(searchTerm) || a.service.toLowerCase().includes(searchTerm) || a.id.toLowerCase().includes(searchTerm));
+    console.log('After search filter:', rows.length, 'rows');
+  }
+
+  // ✅ Sắp xếp theo created_at (mới nhất lên đầu) - ĐÃ SẮP XẾP Ở BACKEND
+  // rows = rows.sort((a,b)=> (a.date+a.start).localeCompare(b.date+b.start)); // ❌ OLD: Sort theo date+time
+
+  // ===== UPDATE CẢC 2 BADGES =====
+  updateBookingBadges(rows.length);
+
   if(rows.length === 0){ webTbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">Không có yêu cầu đặt lịch trực tuyến</td></tr>`; return; }
   webTbody.innerHTML = rows.map(a => `<tr>
     <td class="fw-semibold">${a.id}</td><td>${a.customerName}</td><td>${a.phone}</td><td>${a.service}</td>
@@ -364,6 +464,8 @@ async function renderWebRequests(){
     <td><span class="badge ${a.apptStatus==='pending'?'bg-warning':(a.apptStatus==='cancelled'?'bg-danger':'bg-success')} text-white">${statusLabel(a.apptStatus)}</span></td>
     <td class="text-end">${a.apptStatus==="pending"?`<div class="btn-group btn-group-sm"><button class="btn btn-warning px-2" data-id="${a.id}" onclick="approveWeb('${a.id}')"><i class="fas fa-check"></i><span class="d-none d-md-inline ms-1">Xác nhận</span></button><button class="btn btn-outline-danger px-2" data-id="${a.id}" onclick="rejectWeb('${a.id}')"><i class="fas fa-xmark"></i><span class="d-none d-md-inline ms-1">Từ chối</span></button></div>`:`<button class="btn btn-sm btn-outline-secondary" data-id="${a.id}" onclick="openEditModal('${a.id}')"><i class="fas fa-pen me-1"></i>Xem/Sửa</button>`}</td>
   </tr>`).join("");
+
+  console.log('=== renderWebRequests END ===');
 }
 
 window.approveWeb = async function(id){
@@ -605,6 +707,8 @@ if(searchInput){ searchInput.addEventListener("input", function(){ renderGrid();
 
 // ===== INIT =====
 document.addEventListener("DOMContentLoaded", async ()=>{
+  console.log('🚀 Page loaded - Initializing scheduler...');
+
   if (modalEl) modal = new bootstrap.Modal(modalEl);
   if (toastEl) toast = new bootstrap.Toast(toastEl);
 
@@ -616,19 +720,70 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 
   if(sidebarToggle) sidebarToggle.addEventListener("click", ()=> sidebar.classList.toggle("show"));
 
+  console.log('📦 Loading rooms...');
   await loadRooms();
+  console.log('✅ Rooms loaded:', ROOMS.length, 'rooms');
+
+  console.log('📦 Loading services...');
   await loadServices();
+  console.log('✅ Services loaded:', SERVICES.length, 'services');
+
   fillRoomsSelect();
 
   dayPicker.value = todayISO();
+  console.log('📅 Today:', dayPicker.value);
+
   renderHeader();
+  console.log('📊 Header rendered');
+
   await refreshData();
   await renderWebRequests();
+
+  // ===== SSE: REAL-TIME BOOKING COUNT UPDATE =====
+  if(window.EventSource){
+    try{
+      const eventSource = new EventSource('/api/booking/pending-count/stream/');
+      let previousCount = null;
+
+      eventSource.addEventListener("message", async function(event){
+        try{
+          const data = JSON.parse(event.data);
+          const currentCount = data.count;
+
+          console.log('🔔 SSE - Booking count updated:', currentCount);
+
+          // Update badges
+          updateBookingBadges(currentCount);
+
+          // Auto-refresh bảng nếu count thay đổi (có booking mới hoặc bị hủy)
+          if(previousCount !== null && currentCount !== previousCount){
+            console.log('🔄 Count changed from', previousCount, 'to', currentCount, '- refreshing web requests table');
+            await renderWebRequests();
+          }
+
+          previousCount = currentCount;
+        }catch(err){
+          console.error('SSE parse error:', err);
+        }
+      });
+      eventSource.onerror = function(error){
+        console.error('SSE connection error:', error);
+      };
+      console.log('✅ SSE connected for real-time badge updates');
+    }catch(err){
+      console.error('SSE init error:', err);
+    }
+  }else{
+    console.warn('EventSource not supported, badges will only update on reload');
+  }
 
   if(btnToday) btnToday.addEventListener("click", ()=> setDay(todayISO()));
   if(btnPrev) btnPrev.addEventListener("click", ()=> shiftDay(-1));
   if(btnNext) btnNext.addEventListener("click", ()=> shiftDay(1));
   if(dayPicker) dayPicker.addEventListener("change", ()=> refreshData());
+
+  // Khi đổi bộ lọc trạng thái → render lại bảng yêu cầu đặt lịch (AUTO-FILTER)
+  if(webStatusFilter) webStatusFilter.addEventListener("change", ()=> renderWebRequests());
 
   // Auto-fill duration khi chọn service (duration là hidden input, tự động lấy từ dịch vụ)
   if(service) {
@@ -645,4 +800,5 @@ document.addEventListener("DOMContentLoaded", async ()=>{
   }
 
   window.openEditModal = openEditModal;
+  window.renderWebRequests = renderWebRequests;
 });
