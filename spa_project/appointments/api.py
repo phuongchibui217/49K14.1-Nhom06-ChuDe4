@@ -1,0 +1,650 @@
+"""
+API Endpoints - Các đường dẫn API cho lịch hẹn
+
+File này chứa TẤT CẢ các hàm API (trả về JSON) cho frontend gọi.
+
+Cấu trúc mỗi API:
+1. Kiểm tra quyền truy cập (user đã đăng nhập + là staff không?)
+2. Lấy dữ liệu từ request (query params hoặc JSON body)
+3. Gọi service layer để xử lý logic
+4. Trả về JSON response
+
+LUỒNG: FE (JavaScript) → Gọi API → File này → Service/Model → Trả JSON → FE render
+
+Author: Spa ANA Team
+"""
+
+import json
+from datetime import datetime
+
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+
+from .models import Appointment, Room
+from accounts.models import CustomerProfile
+from spa_services.models import Service
+
+# Import serializer (chuyển model → dict)
+from .serializers import serialize_appointment
+
+# Import validation (kiểm tra dữ liệu hợp lệ)
+from .services import validate_appointment_create
+
+# Import helper từ core
+from core.api_response import staff_api, get_or_404
+
+
+# =====================================================
+# HELPER: Kiểm tra quyền truy cập
+# =====================================================
+
+def _is_staff(user):
+    """Kiểm tra user có phải staff/admin không"""
+    return user.is_authenticated and (user.is_staff or user.is_superuser)
+
+
+def _deny():
+    """Trả về lỗi 403 (Không có quyền)"""
+    return JsonResponse({'success': False, 'error': 'Không có quyền truy cập'}, status=403)
+
+
+# =====================================================
+# API: PHÒNG (ROOMS)
+# =====================================================
+
+@require_http_methods(["GET"])
+def api_rooms_list(request):
+    """
+    API: Lấy danh sách phòng
+
+    FE gọi: GET /api/rooms/
+    Trả về: { success: true, rooms: [...] }
+    """
+    if not _is_staff(request.user):
+        return _deny()
+
+    rooms = Room.objects.filter(is_active=True).order_by('code')
+    rooms_data = [
+        {
+            'id': room.code,
+            'name': room.name,
+            'capacity': room.capacity,
+        }
+        for room in rooms
+    ]
+
+    return JsonResponse({'success': True, 'rooms': rooms_data})
+
+
+# =====================================================
+# API: DANH SÁCH LỊCH HẸN
+# =====================================================
+
+@require_http_methods(["GET"])
+def api_appointments_list(request):
+    """
+    API: Lấy danh sách lịch hẹn (có filter)
+
+    FE gọi: GET /api/appointments/?date=2026-04-12&status=pending&q=nguyen
+
+    Query params (tất cả optional):
+    - date: lọc theo ngày (YYYY-MM-DD)
+    - status: lọc theo trạng thái
+    - source: lọc theo nguồn (web/admin)
+    - room: lọc theo mã phòng
+    - q: tìm kiếm (tên, SĐT, dịch vụ, mã lịch hẹn)
+    """
+    if not _is_staff(request.user):
+        return _deny()
+
+    appointments = Appointment.objects.all()
+
+    # Lọc theo ngày
+    date_filter = request.GET.get('date', '')
+    if date_filter:
+        appointments = appointments.filter(appointment_date=date_filter)
+
+    # Lọc theo trạng thái
+    status_filter = request.GET.get('status', '')
+    if status_filter:
+        appointments = appointments.filter(status=status_filter)
+
+    # Lọc theo nguồn
+    source_filter = request.GET.get('source', '')
+    if source_filter:
+        appointments = appointments.filter(source=source_filter)
+
+    # Lọc theo phòng
+    room_filter = request.GET.get('room', '')
+    if room_filter:
+        appointments = appointments.filter(room__code=room_filter)
+
+    # Tìm kiếm
+    search = request.GET.get('q', '').strip()
+    if search:
+        appointments = appointments.filter(
+            Q(appointment_code__icontains=search) |
+            Q(customer__full_name__icontains=search) |
+            Q(customer__phone__icontains=search) |
+            Q(service__name__icontains=search)
+        )
+
+    appointments = appointments.order_by('appointment_date', 'appointment_time')
+
+    # Serialize (chuyển model → dict)
+    data = [serialize_appointment(appt) for appt in appointments]
+
+    return JsonResponse({'success': True, 'appointments': data})
+
+
+# =====================================================
+# API: CHI TIẾT 1 LỊCH HẸN
+# =====================================================
+
+@require_http_methods(["GET"])
+def api_appointment_detail(request, appointment_code):
+    """
+    API: Lấy chi tiết 1 lịch hẹn
+
+    FE gọi: GET /api/appointments/APT001/
+    Trả về: { success: true, appointment: {...} }
+    """
+    if not _is_staff(request.user):
+        return _deny()
+
+    try:
+        appt = Appointment.objects.get(appointment_code=appointment_code)
+    except Appointment.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Không tìm thấy lịch hẹn'}, status=404)
+
+    return JsonResponse({'success': True, 'appointment': serialize_appointment(appt)})
+
+
+# =====================================================
+# API: TẠO LỊCH HẸN MỚI
+# =====================================================
+
+@require_http_methods(["POST"])
+@staff_api
+def api_appointment_create(request):
+    """
+    API: Tạo lịch hẹn mới (từ admin scheduler)
+
+    FE gọi: POST /api/appointments/create/
+    Body: { customerName, phone, serviceId, roomId, date, time, duration, guests, ... }
+
+    Luồng xử lý:
+    1. Parse JSON từ request body
+    2. Validate dữ liệu (kiểm tra ngày, giờ, phòng trống)
+    3. Tìm hoặc tạo khách hàng
+    4. Tạo appointment trong database
+    5. Trả về kết quả
+    """
+    try:
+        raw_data = json.loads(request.body)
+
+        # Chuẩn bị data để validate
+        data = {
+            'customer_name': raw_data.get('customerName', '').strip(),
+            'phone': raw_data.get('phone', '').strip(),
+            'service_id': raw_data.get('serviceId') or raw_data.get('service'),
+            'room_id': raw_data.get('roomId') or raw_data.get('room'),
+            'date_str': raw_data.get('date', ''),
+            'time_str': raw_data.get('time') or raw_data.get('start', ''),
+            'duration': raw_data.get('duration') or raw_data.get('durationMin', 60),
+            'guests': raw_data.get('guests', 1),
+            'notes': raw_data.get('note', ''),
+            'status': raw_data.get('apptStatus', 'not_arrived'),
+            'pay_status': raw_data.get('payStatus', 'unpaid'),
+        }
+
+        # Bước 1: Validate dữ liệu
+        validation = _validate_appointment_data(data)
+        if not validation['valid']:
+            return JsonResponse({'success': False, 'error': validation['errors'][0]}, status=400)
+
+        cleaned = validation['cleaned_data']
+
+        # Bước 2: Tìm hoặc tạo khách hàng
+        customer = _get_or_create_customer(
+            phone=cleaned['phone'],
+            customer_name=cleaned['customer_name']
+        )
+
+        # Bước 3: Tạo lịch hẹn
+        appointment = Appointment.objects.create(
+            customer=customer,
+            service=cleaned['service'],
+            room=cleaned.get('room'),
+            appointment_date=cleaned['appointment_date'],
+            appointment_time=cleaned['appointment_time'],
+            duration_minutes=cleaned['duration_minutes'],
+            guests=cleaned['guests'],
+            notes=cleaned['notes'],
+            status=cleaned['status'],
+            payment_status=cleaned['payment_status'],
+            source='admin',
+            created_by=request.user,
+        )
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Tạo lịch hẹn thành công! Mã: {appointment.appointment_code}',
+            'appointment': serialize_appointment(appointment)
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'error': f'Lỗi: {str(e)}'}, status=400)
+
+
+# =====================================================
+# API: CẬP NHẬT LỊCH HẸN
+# =====================================================
+
+@require_http_methods(["POST", "PUT"])
+@staff_api
+def api_appointment_update(request, appointment_code):
+    """
+    API: Cập nhật lịch hẹn
+
+    FE gọi: POST /api/appointments/APT001/update/
+    Body: { customerName, phone, serviceId, roomId, date, time, ... }
+
+    Luồng:
+    1. Tìm lịch hẹn theo mã
+    2. Cập nhật từng field nếu có trong request
+    3. Validate ngày/giờ/phòng mới
+    4. Lưu và trả kết quả
+    """
+    appointment, error = get_or_404(Appointment, appointment_code=appointment_code)
+    if error:
+        return error
+
+    try:
+        raw_data = json.loads(request.body)
+
+        # Cập nhật tên khách hàng
+        customer_name = raw_data.get('customerName', '').strip()
+        if customer_name:
+            appointment.customer.full_name = customer_name
+            appointment.customer.save()
+
+        # Cập nhật SĐT
+        phone = raw_data.get('phone', '').strip()
+        if phone:
+            phone_digits = ''.join(filter(str.isdigit, phone))
+            if phone_digits:
+                appointment.customer.phone = phone_digits
+                appointment.customer.save()
+
+        # Cập nhật dịch vụ
+        service_id = raw_data.get('serviceId') or raw_data.get('service')
+        if service_id:
+            try:
+                appointment.service = Service.objects.get(id=service_id)
+            except Service.DoesNotExist:
+                pass
+
+        # Cập nhật phòng
+        if 'roomId' in raw_data or 'room' in raw_data:
+            room_id = raw_data.get('roomId') or raw_data.get('room')
+            if room_id:
+                try:
+                    appointment.room = Room.objects.get(code=room_id)
+                except Room.DoesNotExist:
+                    appointment.room = None
+            else:
+                appointment.room = None
+
+        # Cập nhật ngày/giờ/thời lượng (cần validate)
+        needs_validation = False
+        check_date = appointment.appointment_date
+        check_time = appointment.appointment_time
+        check_duration = appointment.duration_minutes or appointment.service.duration_minutes
+        check_room = appointment.room.code if appointment.room else None
+
+        date_str = raw_data.get('date', '')
+        if date_str:
+            check_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            appointment.appointment_date = check_date
+            needs_validation = True
+
+        time_str = raw_data.get('time') or raw_data.get('start', '')
+        if time_str:
+            check_time = datetime.strptime(time_str, '%H:%M').time()
+            appointment.appointment_time = check_time
+            needs_validation = True
+
+        duration = raw_data.get('duration') or raw_data.get('durationMin')
+        if duration:
+            check_duration = int(duration)
+            appointment.duration_minutes = check_duration
+            needs_validation = True
+
+        if 'roomId' in raw_data or 'room' in raw_data:
+            check_room = (raw_data.get('roomId') or raw_data.get('room')) or None
+            needs_validation = True
+
+        # Validate nếu có thay đổi ngày/giờ/phòng
+        if needs_validation:
+            result = validate_appointment_create(
+                appointment_date=check_date,
+                appointment_time=check_time,
+                duration_minutes=check_duration,
+                room_code=check_room,
+                exclude_appointment_code=appointment_code,
+                guests=appointment.guests or 1
+            )
+            if not result['valid']:
+                return JsonResponse({'success': False, 'error': result['errors'][0]}, status=400)
+
+        # Cập nhật các field còn lại
+        guests = raw_data.get('guests')
+        if guests:
+            appointment.guests = int(guests)
+
+        notes = raw_data.get('note', '')
+        if notes:
+            appointment.notes = notes
+
+        status = raw_data.get('apptStatus', '')
+        if status:
+            appointment.status = status
+
+        pay_status = raw_data.get('payStatus', '')
+        if pay_status:
+            appointment.payment_status = pay_status
+
+        appointment.save()
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Cập nhật lịch hẹn {appointment_code} thành công'
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'error': f'Lỗi: {str(e)}'}, status=400)
+
+
+# =====================================================
+# API: ĐỔI TRẠNG THÁI LỊCH HẸN
+# =====================================================
+
+@require_http_methods(["POST"])
+@staff_api
+def api_appointment_status(request, appointment_code):
+    """
+    API: Đổi trạng thái lịch hẹn
+
+    FE gọi: POST /api/appointments/APT001/status/
+    Body: { status: "completed" }
+
+    Các trạng thái hợp lệ: pending, not_arrived, arrived, completed, cancelled
+    """
+    appointment, error = get_or_404(Appointment, appointment_code=appointment_code)
+    if error:
+        return error
+
+    try:
+        data = json.loads(request.body)
+        new_status = data.get('status', '')
+
+        # Kiểm tra status hợp lệ
+        valid_statuses = ['pending', 'not_arrived', 'arrived', 'completed', 'cancelled']
+        if new_status not in valid_statuses:
+            return JsonResponse({'success': False, 'error': 'Trạng thái không hợp lệ'}, status=400)
+
+        appointment.status = new_status
+        appointment.save()
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Đã cập nhật trạng thái: {appointment.get_status_display()}'
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Lỗi: {str(e)}'}, status=400)
+
+
+# =====================================================
+# API: XÓA LỊCH HẸN
+# =====================================================
+
+@require_http_methods(["POST", "DELETE"])
+@staff_api
+def api_appointment_delete(request, appointment_code):
+    """
+    API: Xóa lịch hẹn (HARD DELETE - xóa vĩnh viễn khỏi database)
+
+    FE gọi: POST /api/appointments/APT001/delete/
+
+    ⚠️ Lưu ý: Xóa thật, không thể khôi phục!
+    """
+    appointment, error = get_or_404(Appointment, appointment_code=appointment_code)
+    if error:
+        return error
+
+    try:
+        # Lưu thông tin trước khi xóa để trả về
+        customer_name = "Khách hàng"
+        if appointment.customer and appointment.customer.user:
+            customer_name = appointment.customer.user.get_full_name() or appointment.customer.user.username
+
+        appointment_id = appointment.id
+
+        # HARD DELETE
+        appointment.delete()
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Đã xóa vĩnh viễn lịch hẹn {appointment_code}',
+            'deleted_id': appointment_id,
+            'customer_name': customer_name
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Không thể xóa: {str(e)}'}, status=400)
+
+
+# =====================================================
+# API: YÊU CẦU ĐẶT LỊCH TỪ WEB
+# =====================================================
+
+@require_http_methods(["GET"])
+def api_booking_requests(request):
+    """
+    API: Lấy danh sách yêu cầu đặt lịch từ web
+
+    FE gọi: GET /api/booking-requests/?date=2026-04-12&status=pending
+
+    Khác với api_appointments_list:
+    - Chỉ lấy lịch có source='web' hoặc source=NULL (dữ liệu cũ)
+    - Dùng cho tab "Yêu cầu đặt lịch" trong admin
+    """
+    if not _is_staff(request.user):
+        return _deny()
+
+    # Lấy lịch web + lịch cũ (source=NULL)
+    appointments = Appointment.objects.filter(Q(source='web') | Q(source__isnull=True))
+
+    # Lọc theo ngày
+    date_filter = request.GET.get('date', '')
+    if date_filter:
+        appointments = appointments.filter(appointment_date=date_filter)
+
+    # Lọc theo trạng thái
+    status_filter = request.GET.get('status', '')
+    if status_filter:
+        appointments = appointments.filter(status=status_filter)
+
+    # Tìm kiếm
+    search = request.GET.get('q', '').strip()
+    if search:
+        appointments = appointments.filter(
+            Q(appointment_code__icontains=search) |
+            Q(customer__full_name__icontains=search) |
+            Q(customer__phone__icontains=search) |
+            Q(service__name__icontains=search)
+        )
+
+    appointments = appointments.order_by('-appointment_date', '-appointment_time')
+    data = [serialize_appointment(appt) for appt in appointments]
+
+    return JsonResponse({'success': True, 'appointments': data})
+
+
+# =====================================================
+# HELPER FUNCTIONS (dùng nội bộ trong file này)
+# =====================================================
+
+def _validate_appointment_data(data):
+    """
+    Validate dữ liệu lịch hẹn (dùng nội bộ)
+
+    Kiểm tra: tên, SĐT, dịch vụ, ngày, giờ, phòng
+    Returns: { 'valid': bool, 'errors': list, 'cleaned_data': dict }
+    """
+    errors = []
+    cleaned_data = {}
+
+    # Validate tên khách hàng
+    customer_name = data.get('customer_name', '').strip()
+    if not customer_name:
+        errors.append('Vui lòng nhập tên khách hàng')
+    else:
+        cleaned_data['customer_name'] = customer_name
+
+    # Validate SĐT
+    phone = ''.join(filter(str.isdigit, data.get('phone', '')))
+    if not phone:
+        errors.append('Vui lòng nhập số điện thoại')
+    elif len(phone) < 10:
+        errors.append('Số điện thoại không hợp lệ')
+    else:
+        cleaned_data['phone'] = phone
+
+    # Validate dịch vụ
+    service_id = data.get('service_id')
+    if not service_id:
+        errors.append('Vui lòng chọn dịch vụ')
+    else:
+        try:
+            service = Service.objects.get(id=service_id)
+            cleaned_data['service'] = service
+        except Service.DoesNotExist:
+            errors.append('Dịch vụ không tồn tại')
+
+    # Validate ngày
+    date_str = data.get('date_str', '')
+    if not date_str:
+        errors.append('Vui lòng chọn ngày hẹn')
+    else:
+        try:
+            cleaned_data['appointment_date'] = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            errors.append('Định dạng ngày không hợp lệ')
+
+    # Validate giờ
+    time_str = data.get('time_str', '')
+    if not time_str:
+        errors.append('Vui lòng chọn giờ hẹn')
+    else:
+        try:
+            cleaned_data['appointment_time'] = datetime.strptime(time_str, '%H:%M').time()
+        except ValueError:
+            errors.append('Định dạng giờ không hợp lệ')
+
+    # Validate thời lượng
+    duration = data.get('duration', 60)
+    try:
+        cleaned_data['duration_minutes'] = int(duration)
+    except (ValueError, TypeError):
+        cleaned_data['duration_minutes'] = cleaned_data['service'].duration_minutes if 'service' in cleaned_data else 60
+
+    # Validate phòng (optional)
+    room_id = data.get('room_id')
+    if room_id:
+        try:
+            cleaned_data['room'] = Room.objects.get(code=room_id)
+        except Room.DoesNotExist:
+            cleaned_data['room'] = None
+    else:
+        cleaned_data['room'] = None
+
+    # Validate số khách
+    guests = data.get('guests', 1)
+    try:
+        guests = int(guests)
+        if guests < 1:
+            guests = 1
+        cleaned_data['guests'] = guests
+    except (ValueError, TypeError):
+        cleaned_data['guests'] = 1
+
+    # Ghi chú & trạng thái
+    cleaned_data['notes'] = data.get('notes', '')
+    cleaned_data['status'] = data.get('status', 'not_arrived')
+    cleaned_data['payment_status'] = data.get('pay_status', 'unpaid')
+
+    # Nếu có lỗi cơ bản → return luôn
+    if errors:
+        return {'valid': False, 'errors': errors, 'cleaned_data': cleaned_data}
+
+    # Validate nâng cao: ngày giờ + phòng trống
+    if 'appointment_date' in cleaned_data and 'appointment_time' in cleaned_data:
+        validation_result = validate_appointment_create(
+            appointment_date=cleaned_data['appointment_date'],
+            appointment_time=cleaned_data['appointment_time'],
+            duration_minutes=cleaned_data['duration_minutes'],
+            room_code=room_id if room_id else None,
+            exclude_appointment_code=None
+        )
+        if not validation_result['valid']:
+            errors.extend(validation_result['errors'])
+
+    return {
+        'valid': len(errors) == 0,
+        'errors': errors,
+        'cleaned_data': cleaned_data
+    }
+
+
+def _get_or_create_customer(phone, customer_name):
+    """
+    Tìm khách hàng theo SĐT, hoặc tạo mới nếu chưa có
+
+    Returns: CustomerProfile object
+    """
+    from django.contrib.auth.models import User
+    import secrets
+
+    # Bước 1: Tìm hoặc tạo User
+    try:
+        user = User.objects.get(username=phone)
+    except User.DoesNotExist:
+        user = User.objects.create_user(
+            username=phone,
+            email=f"{phone}@spa.com",
+            password=secrets.token_hex(16),
+            first_name=customer_name.split()[0] if customer_name else '',
+            last_name=' '.join(customer_name.split()[1:]) if customer_name and len(customer_name.split()) > 1 else ''
+        )
+
+    # Bước 2: Tìm hoặc tạo CustomerProfile
+    customer, created = CustomerProfile.objects.get_or_create(
+        phone=phone,
+        defaults={'full_name': customer_name, 'user': user}
+    )
+
+    # Cập nhật tên nếu khác
+    if not created and customer.full_name != customer_name:
+        customer.full_name = customer_name
+        customer.save()
+
+    return customer

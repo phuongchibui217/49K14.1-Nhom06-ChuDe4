@@ -16,7 +16,7 @@ from django.contrib import messages
 # ADMIN CUSTOMER MANAGEMENT VIEWS
 # =====================================================
 
-@login_required(login_url='admin_panel:admin_login')
+@login_required(login_url='accounts:login')
 def admin_customers(request):
     """Quản lý khách hàng"""
     if not (request.user.is_staff or request.user.is_superuser):

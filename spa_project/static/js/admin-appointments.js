@@ -1,17 +1,17 @@
-// ===== SETTINGS =====
-const START_HOUR = 9;
-const END_HOUR = 22;
-const SLOT_MIN = 30;
+// ===== 1. SETTINGS - cấu hình =====
+const START_HOUR = 9;  // Giờ mở cửa (9:00 sáng)
+const END_HOUR = 21;   // Giờ đóng cửa (21:00 tối)
+const SLOT_MIN = 30; // 1 ô lịch = 30 phút
 
-// ===== API BASE URL =====
+// ===== API BASE URL- đường dẫn API để gọi BE =====
 const API_BASE = '/api';
 
-// ===== DATA (loaded from API) =====
-let ROOMS = [];
-let SERVICES = [];
-let APPOINTMENTS = [];
+// ===== Dữ liệu ( lấy từ API) ==> lưu dữ liệu load từ DB để render giao diện, validate form, tính toán trùng lịch =====
+let ROOMS = []; // danh sách phòng
+let SERVICES = []; //dánh sách dịch vụ
+let APPOINTMENTS = []; // danh sách lịch hẹn
 
-// ===== DOM =====
+// ===== 2. DOM =====
 const sidebar = document.getElementById("sidebar");
 const sidebarToggle = document.getElementById("sidebarToggle");
 const timeHeader = document.getElementById("timeHeader");
@@ -48,7 +48,7 @@ let toast = null;
 const toastTitle = document.getElementById("toastTitle");
 const toastBody = document.getElementById("toastBody");
 
-// ===== CSRF HELPER =====
+// ===== CSRF HELPER ======
 function getCSRFToken() {
   const cookieValue = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
   return cookieValue ? cookieValue.split('=')[1] : '';
@@ -136,12 +136,13 @@ async function loadRooms() {
   if (result.success && result.rooms) {
     ROOMS = result.rooms;
   } else {
+    // Fallback data - CẬN NHẬP: Phải khớp với database!
     ROOMS = [
-      { id: "P01", name: "1", capacity: 3 },
+      { id: "P01", name: "1", capacity: 1 },
       { id: "P02", name: "2", capacity: 2 },
-      { id: "P03", name: "3", capacity: 4 },
-      { id: "P04", name: "4", capacity: 2 },
-      { id: "P05", name: "5", capacity: 3 },
+      { id: "P03", name: "3", capacity: 3 },
+      { id: "P04", name: "4", capacity: 4 },
+      { id: "P05", name: "5", capacity: 5 },
     ];
   }
 }
@@ -224,14 +225,39 @@ function getSlotWidth(){ return parseFloat(getComputedStyle(document.documentEle
 function capacityOK({roomId, day, start, end, guestsCount, ignoreId}){
   const roomInfo = ROOMS.find(r=>r.id===roomId);
   if(!roomInfo) return false;
+
   const newS = minutesFromStart(start), newE = minutesFromStart(end);
   let sum = 0;
-  APPOINTMENTS.filter(a => a.roomId===roomId && a.date===day && a.apptStatus!=="cancelled" && a.id!==ignoreId)
-    .forEach(a=>{ const s=minutesFromStart(a.start), e=minutesFromStart(a.end); if(overlaps(newS,newE,s,e)) sum += Number(a.guests)||0; });
+
+  // ===== DEBUG LOG =====
+  console.log('=== CAPACITY CHECK DEBUG ===');
+  console.log(`Room: ${roomInfo.name}, Capacity: ${roomInfo.capacity}`);
+  console.log(`New booking: ${start}-${end}, Guests: ${guestsCount}`);
+
+  const overlappingAppts = APPOINTMENTS.filter(
+    a => a.roomId===roomId && a.date===day && a.apptStatus!=="cancelled" && a.id!==ignoreId
+  );
+
+  console.log(`Found ${overlappingAppts.length} overlapping appointments:`);
+
+  overlappingAppts.forEach(a => {
+    const s = minutesFromStart(a.start);
+    const e = minutesFromStart(a.end);
+    if(overlaps(newS, newE, s, e)) {
+      console.log(`  - ${a.appointment_code}: ${a.start}-${a.end}, ${a.guests} khách → TRÙNG`);
+      sum += Number(a.guests) || 0;
+    }
+  });
+
+  console.log(`Total overlapping guests: ${sum}`);
+  console.log(`New booking guests: ${guestsCount}`);
+  console.log(`Total: ${sum + guestsCount} <= ${roomInfo.capacity} ? '✅ OK' : '❌ FULL'}`);
+  console.log('========================');
+
   return (sum + guestsCount) <= roomInfo.capacity;
 }
 
-// ===== RENDER =====
+// ===== RENDER NHÓM VẼ GIAO DIỆN RENDER-UI =====
 function renderHeader(){
   const totalSlots = ((END_HOUR-START_HOUR)*60)/SLOT_MIN;
   document.documentElement.style.setProperty("--totalSlots", totalSlots);
@@ -265,21 +291,31 @@ function allocateRoomLanes(roomId, day, appts){
   return { cap, placements };
 }
 
+// ===== RENDER VẼ LƯỚI LỊCH =====
 function renderGrid(){
   grid.innerHTML = "";
   const day = dayPicker.value;
   const searchTerm = searchInput.value.toLowerCase().trim();
   ROOMS.forEach((r)=>{
+    
+    // Lọc lịch theo phòng
     let appts = APPOINTMENTS.filter(a => a.date===day && a.roomId===r.id);
+    // Tìm kiếm theo tên khách hàng, số điện thoại, tên dịch vụ
     if(searchTerm) appts = appts.filter(a => a.customerName.toLowerCase().includes(searchTerm) || a.phone.includes(searchTerm) || a.service.toLowerCase().includes(searchTerm) || a.id.toLowerCase().includes(searchTerm));
+   
+    // Phân bổ Lane (dòng) cho từng khách
     const { cap, placements } = allocateRoomLanes(r.id, day, appts);
     for(let lane=0; lane<cap; lane++){
       const laneRow = document.createElement("div");
       laneRow.className = "lane-row";
       laneRow.dataset.roomId = r.id;
       laneRow.dataset.lane = lane;
+      
+      // tên phòng
       laneRow.innerHTML = `${lane===0?`<div class="roomcell"><span class="dot"></span>${r.name}</div>`:`<div class="roomcell muted"><span class="dot"></span>${r.name}</div>`}<div class="slots" data-room="${r.id}" data-lane="${lane}"></div>`;
       const slotsEl = laneRow.querySelector(".slots");
+      
+      // click vào ô trống  ==> tạo lịch
       slotsEl.addEventListener("click", (e)=>{
         const rect = slotsEl.getBoundingClientRect();
         const x = e.clientX - rect.left + slotsEl.scrollLeft;
@@ -288,6 +324,8 @@ function renderGrid(){
         const clickedTime = `${pad2(START_HOUR + Math.floor(minutes/60))}:${pad2(minutes%60)}`;
         openCreateModal({ roomId: r.id, day, time: clickedTime });
       });
+
+      // vẽ block lịch hẹn
       placements.filter(p => p.laneIndex === lane).forEach(p=>{
         const a = p.appt;
         const block = document.createElement("div");
@@ -297,6 +335,8 @@ function renderGrid(){
         block.style.left = `${(leftMin/SLOT_MIN) * getSlotWidth()}px`;
         block.style.width = `${Math.max(36, (durMin/SLOT_MIN) * getSlotWidth())}px`;
         block.innerHTML = `<div class="t1">${a.customerName} • ${a.service}</div><div class="t2">${a.start}-${a.end} • ${a.guests} khách</div>`;
+      
+        // click vào lịch ==> sửa dùng addEventListener 
         block.addEventListener("click", (ev)=>{ ev.stopPropagation(); openEditModal(a.id); });
         slotsEl.appendChild(block);
       });
@@ -305,6 +345,7 @@ function renderGrid(){
   });
 }
 
+// vẽ bảng yêu cầu đặt lịch online 
 async function renderWebRequests(){
   const searchTerm = searchInput.value.toLowerCase().trim();
   let rows = await loadBookingRequests();
@@ -316,11 +357,10 @@ async function renderWebRequests(){
   if(searchTerm) rows = rows.filter(a => a.customerName.toLowerCase().includes(searchTerm) || a.phone.includes(searchTerm) || a.service.toLowerCase().includes(searchTerm) || a.id.toLowerCase().includes(searchTerm));
   rows = rows.sort((a,b)=> (a.date+a.start).localeCompare(b.date+b.start));
   webCount.textContent = String(rows.length);
-  if(rows.length === 0){ webTbody.innerHTML = `<tr><td colspan="11" class="text-center text-muted py-4">Không có yêu cầu đặt lịch trực tuyến</td></tr>`; return; }
+  if(rows.length === 0){ webTbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">Không có yêu cầu đặt lịch trực tuyến</td></tr>`; return; }
   webTbody.innerHTML = rows.map(a => `<tr>
-    <td class="fw-semibold">${a.id}</td><td>${a.customerName}</td><td>${a.phone}</td><td>${a.email||""}</td><td>${a.service}</td>
+    <td class="fw-semibold">${a.id}</td><td>${a.customerName}</td><td>${a.phone}</td><td>${a.service}</td>
     <td>${a.date}</td><td>${a.start} - ${a.end}</td><td>${a.durationMin||""} phút</td>
-    <td class="text-truncate" style="max-width:220px;" title="${(a.note||"").replaceAll('"','&quot;')}">${a.note||""}</td>
     <td><span class="badge ${a.apptStatus==='pending'?'bg-warning':(a.apptStatus==='cancelled'?'bg-danger':'bg-success')} text-white">${statusLabel(a.apptStatus)}</span></td>
     <td class="text-end">${a.apptStatus==="pending"?`<div class="btn-group btn-group-sm"><button class="btn btn-warning px-2" data-id="${a.id}" onclick="approveWeb('${a.id}')"><i class="fas fa-check"></i><span class="d-none d-md-inline ms-1">Xác nhận</span></button><button class="btn btn-outline-danger px-2" data-id="${a.id}" onclick="rejectWeb('${a.id}')"><i class="fas fa-xmark"></i><span class="d-none d-md-inline ms-1">Từ chối</span></button></div>`:`<button class="btn btn-sm btn-outline-secondary" data-id="${a.id}" onclick="openEditModal('${a.id}')"><i class="fas fa-pen me-1"></i>Xem/Sửa</button>`}</td>
   </tr>`).join("");
@@ -339,7 +379,7 @@ window.rejectWeb = async function(id){
   else showToast("error","Lỗi", result.error || "Không thể từ chối yêu cầu");
 }
 
-// ===== MODAL =====
+// ===== MODAL  =====
 function fillRoomsSelect(){ room.innerHTML = ROOMS.map(r=>`<option value="${r.id}">${r.name}</option>`).join(""); }
 function fillServicesSelect(){ service.innerHTML = `<option value="">-- Chọn dịch vụ --</option>` + SERVICES.map(s=>`<option value="${s.id}">${s.name} (${s.duration} phút)</option>`).join(""); }
 
@@ -385,11 +425,16 @@ function openEditModalWithData(a){
   payStatus.value = a.payStatus || "unpaid";
   note.value = a.note || "";
   form.classList.remove("was-validated");
+
+  // KHÔNG dispatch change event khi edit - duration đã được set đúng từ data
+  // Change event chỉ nên trigger khi USER tự đổi service (không phải khi load data)
+
   if (modal) modal.show();
 }
 
 btnSave.addEventListener("click", ()=> form.requestSubmit());
 
+// Validate Form
 form.addEventListener("submit", async (e)=>{
   e.preventDefault();
   
@@ -401,6 +446,8 @@ form.addEventListener("submit", async (e)=>{
   
   resetModalError();
   form.classList.add("was-validated");
+
+  // Lấy giá trị từ form
   const id = apptId.value.trim();
   const nameVal = customerName.value.trim();
   const phoneVal = phone.value.trim();
@@ -411,6 +458,7 @@ form.addEventListener("submit", async (e)=>{
   const startVal = time.value;
   const durationVal = Number(duration.value);
 
+  // ===== BƯỚC 1: VALIDATE =====
   customerName.setCustomValidity(nameVal ? "" : "invalid");
   phone.setCustomValidity((phoneVal && isValidPhone(phoneVal)) ? "" : "invalid");
   service.setCustomValidity(serviceVal ? "" : "invalid");
@@ -430,6 +478,7 @@ form.addEventListener("submit", async (e)=>{
     return;
   }
 
+  // ===== BƯỚC 2: KIỂM TRA GIỜ HẸN =====
   const endVal = addMinutesToTime(startVal, durationVal);
   if(minutesFromStart(startVal) < 0 || minutesFromStart(endVal) > (END_HOUR-START_HOUR)*60){
     modalError.textContent = "Giờ hẹn không hợp lệ (ngoài giờ làm việc)";
@@ -437,12 +486,13 @@ form.addEventListener("submit", async (e)=>{
     return;
   }
 
+  // ===== BƯỚC 3: KIỂM TRA TRÙNG LỊCH =====
   if(!capacityOK({roomId: roomVal, day: dayVal, start: startVal, end: endVal, guestsCount: guestsVal, ignoreId: id || null})){
     modalError.textContent = "Phòng đã đủ chỗ ở khung giờ này";
     modalError.classList.remove("d-none");
     return;
   }
-
+  // ===== BƯỚC 4: GỌI API =====
   const payload = { customerName: nameVal, phone: phoneVal.replace(/\D/g,""), email: email.value.trim(), serviceId: serviceVal, roomId: roomVal, guests: guestsVal, date: dayVal, time: startVal, duration: durationVal, note: note.value.trim(), apptStatus: apptStatus.value, payStatus: payStatus.value };
 
   // ===== BẬT LOADING STATE =====
@@ -459,6 +509,7 @@ form.addEventListener("submit", async (e)=>{
       if (modal) modal.hide();
       if(dayPicker.value !== dayVal) dayPicker.value = dayVal;
       await refreshData();
+      await renderWebRequests(); // Refresh bảng yêu cầu đặt lịch luôn
       showToast("success","Thành công", result.message || (id ? "Cập nhật lịch hẹn thành công" : "Tạo lịch hẹn thành công"));
     } else {
       modalError.textContent = result.error || "Không thể lưu lịch hẹn";
@@ -578,6 +629,20 @@ document.addEventListener("DOMContentLoaded", async ()=>{
   if(btnPrev) btnPrev.addEventListener("click", ()=> shiftDay(-1));
   if(btnNext) btnNext.addEventListener("click", ()=> shiftDay(1));
   if(dayPicker) dayPicker.addEventListener("change", ()=> refreshData());
+
+  // Auto-fill duration khi chọn service (duration là hidden input, tự động lấy từ dịch vụ)
+  if(service) {
+    service.addEventListener("change", function() {
+      const serviceId = parseInt(this.value);
+      const selectedService = SERVICES.find(s => s.id === serviceId);
+
+      if (selectedService && selectedService.duration) {
+        duration.value = selectedService.duration;
+      } else {
+        duration.value = 60; // default
+      }
+    });
+  }
 
   window.openEditModal = openEditModal;
 });

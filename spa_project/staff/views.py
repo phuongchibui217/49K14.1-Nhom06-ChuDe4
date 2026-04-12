@@ -16,10 +16,10 @@ from django.contrib import messages
 # ADMIN STAFF MANAGEMENT VIEWS
 # =====================================================
 
-@login_required(login_url='admin_panel:admin_login')
+@login_required(login_url='accounts:login')
 def admin_staff(request):
     """Quản lý nhân viên - Chỉ dành cho Superuser"""
     if not request.user.is_superuser:
         messages.error(request, 'Bạn không có quyền truy cập trang này. Chỉ Superuser mới được quản lý nhân viên.')
-        return redirect('appointments:admin_appointments_list')
+        return redirect('appointments:admin_appointments')
     return render(request, 'staff/admin_staff.html')

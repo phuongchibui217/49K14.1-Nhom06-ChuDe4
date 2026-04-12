@@ -5,7 +5,7 @@ File này chứa các decorator để:
 - Kiểm tra quyền truy cập
 - Giảm lặp code
 - Dễ bảo trì
-
+@receptionist_required
 Author: Spa ANA Team
 """
 
@@ -31,23 +31,23 @@ def staff_required(login_url=None, redirect_on_fail='spa:home'):
     - Đã đăng nhập nhưng không phải staff → Message lỗi + redirect
 
     Args:
-        login_url: URL trang login (optional, mặc định dùng spa:admin_login)
+        login_url: URL trang login (optional, mặc định dùng accounts:login)
         redirect_on_fail: URL redirect khi không có quyền (mặc định: spa:home)
 
     Usage:
         @staff_required()
         def admin_appointments(request):
             # View code here
-            return render(request, 'admin/pages/admin_appointments.html')
+            return render(request, 'manage/pages/admin_appointments.html')
 
         # Hoặc chỉ định login_url riêng
-        @staff_required(login_url='spa:admin_login')
+        @staff_required(login_url='accounts:login')
         def admin_services(request):
-            return render(request, 'admin/pages/admin_services.html')
+            return render(request, 'manage/pages/admin_services.html')
     """
     def decorator(view_func):
         @wraps(view_func)
-        @login_required(login_url=login_url or 'spa:admin_login')
+        @login_required(login_url=login_url or 'accounts:login')
         def _wrapped_view(request, *args, **kwargs):
             # Kiểm tra quyền staff hoặc superuser
             if request.user.is_staff or request.user.is_superuser:
@@ -126,15 +126,15 @@ def admin_view(login_url=None):
     Shortcut decorator cho admin page views
 
     Tương đương với:
-        @login_required(login_url='spa:admin_login')
+        @login_required(login_url='accounts:login')
         + check is_staff/is_superuser
 
     Usage:
         @admin_view()
         def admin_dashboard(request):
-            return render(request, 'admin/pages/dashboard.html')
+            return render(request, 'manage/pages/dashboard.html')
     """
-    return staff_required(login_url=login_url or 'spa:admin_login')
+    return staff_required(login_url=login_url or 'accounts:login')
 
 
 def admin_api():
@@ -155,7 +155,7 @@ def admin_api():
 # CUSTOMER REQUIRED DECORATOR
 # =====================================================
 
-def customer_required(login_url='spa:login', redirect_on_fail='spa:home'):
+def customer_required(login_url='accounts:login', redirect_on_fail='spa:home'):
     """
     Decorator kiểm tra user đã đăng nhập và có CustomerProfile
 
@@ -238,3 +238,77 @@ def is_customer_user(user):
 
     from accounts.models import CustomerProfile
     return CustomerProfile.objects.filter(user=user).exists()
+
+
+# =====================================================
+# GROUP-BASED DECORATORS (MỚI)
+# =====================================================
+
+def group_required(*group_names):
+    """
+    Decorator: Check user belongs to specific groups
+
+    Usage:
+        @group_required('Lễ tân', 'Chủ Spa')
+        def my_view(request):
+            pass
+    """
+    def decorator(view_func):
+        @wraps(view_func)
+        @login_required(login_url='accounts:login')
+        def wrapper(request, *args, **kwargs):
+            # Check if user belongs to any of the required groups
+            user_groups = request.user.groups.values_list('name', flat=True)
+            if not any(group in user_groups for group in group_names):
+                messages.error(
+                    request,
+                    f"Bạn cần thuộc về một trong các nhóm: {', '.join(group_names)}"
+                )
+                return redirect('pages:home')
+
+            return view_func(request, *args, **kwargs)
+        return wrapper
+    return decorator
+
+
+def superuser_required(view_func):
+    """
+    Decorator: Chỉ cho phép Superuser (Chủ Spa)
+
+    Usage:
+        @superuser_required
+        def my_view(request):
+            pass
+    """
+    @wraps(view_func)
+    @login_required(login_url='accounts:login')
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_superuser:
+            messages.error(request, "Chỉ Quản trị viên mới có quyền truy cập.")
+            return redirect('pages:home')
+
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+
+def permission_or_403(perm, login_url=None):
+    """
+    Custom version của permission_required decorator
+    Raise 403 thay vì redirect nếu không có quyền
+
+    Usage:
+        @permission_or_403('appointments.view_all_appointments')
+        def my_view(request):
+            pass
+    """
+    def decorator(view_func):
+        @wraps(view_func)
+        @login_required(login_url=login_url or 'accounts:login')
+        def wrapper(request, *args, **kwargs):
+            if not request.user.has_perm(perm):
+                from django.core.exceptions import PermissionDenied
+                raise PermissionDenied(f"Bạn cần quyền '{perm}' để truy cập.")
+            return view_func(request, *args, **kwargs)
+        return wrapper
+    return decorator
+

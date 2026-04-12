@@ -1,4 +1,4 @@
-{% extends "admin/base.html" %}
+{% extends "manage/base.html" %}
 
 {% load static %}
 
@@ -13,14 +13,18 @@
 {% block content %}
 <div class="scheduler-card">
 
-  <!-- Tabs -->
+  <!-- Tabs  có 2 tab: Lịch theo phòng, Yêu cầu đặt lịch-->
   <div class="tabs-bar">
     <ul class="nav nav-pills" id="mainTabs" role="tablist">
+
+      <!-- Tên Tabs Lịch theo phòng-->
       <li class="nav-item" role="presentation">
         <button class="nav-link active" id="tab-room" data-bs-toggle="pill" data-bs-target="#pane-room" type="button" role="tab">
           <i class="fas fa-border-all me-2"></i>Lịch theo phòng
         </button>
       </li>
+
+       <!-- Tên Tabs Yêu cầu đặt lịch-->
       <li class="nav-item" role="presentation">
         <button class="nav-link" id="tab-web" data-bs-toggle="pill" data-bs-target="#pane-web" type="button" role="tab">
           <i class="fas fa-globe me-2"></i>Yêu cầu đặt lịch
@@ -32,7 +36,7 @@
 
   <div class="tab-content">
 
-    <!-- TAB: Lịch theo phòng -->
+    <!-- TAB-Header: Lịch theo phòng -->
     <div class="tab-pane fade show active" id="pane-room" role="tabpanel">
 
       <!-- Combined Topbar with Search and Date Controls -->
@@ -45,11 +49,11 @@
               type="text"
               class="form-control"
               id="searchInput"
-              placeholder="Tìm kiếm theo tên, SĐT, dịch vụ hoặc mã lịch hẹn..."
+              placeholder="Tìm kiếm theo tên, SĐT, dịch vụ ..."
             />
           </div>
 
-          <!-- Date Controls -->
+          <!-- Điều khiển ngày xem Lịch -->
           <div class="pill">
             <i class="fas fa-calendar-day"></i>
             <button class="btn btn-sm btn-outline-secondary" id="btnPrev" title="Ngày trước">
@@ -68,14 +72,14 @@
           Click ô trống để tạo lịch • Click lịch để sửa
         </div>
       </div>
-
+              <!-- HTML chỉ là container rỗng -->
       <div class="scheduler-wrap" id="schedulerWrap">
         <div class="time-header" id="timeHeader"></div>
         <div class="grid" id="grid"></div>
       </div>
     </div>
 
-    <!-- TAB: Yêu cầu đặt lịch -->
+    <!-- TAB- Header: Yêu cầu đặt lịch -->
     <div class="tab-pane fade" id="pane-web" role="tabpanel">
       <div class="p-3" style="background:#fff;">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
@@ -91,37 +95,35 @@
                 <th>Mã</th>
                 <th>Khách</th>
                 <th>SĐT</th>
-                <th>Email</th>
                 <th>Dịch vụ</th>
                 <th>Ngày</th>
                 <th>Giờ</th>
                 <th>Thời lượng</th>
-                <th>Ghi chú</th>
                 <th>Trạng thái</th>
                 <th class="text-end">Hành động</th>
               </tr>
             </thead>
             <tbody id="webTbody">
-              <!-- render bằng JS -->
+              <!-- render bằng JS/ bảng này là do JS sẽ tạo ra = cách lấy dữ liệu qua API -->
             </tbody>
           </table>
         </div>
       </div>
     </div>
 
-  </div><!-- /tab-content -->
+  </div>
 </div>
 
-<!-- Appointment Modal (Create/Edit) -->
+<!-- Appointment Modal (Create/Edit) -  Tạo và sửa lịch bằng cách click vào Ô-->
 <div class="modal fade" id="apptModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header" style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;">
+      <div class="modal-header" style="background:linear-gradient(135deg,#1f3a5f 0%,#1f3a5f 100%);color:#fff;">
         <h5 class="modal-title">
           <i class="fas fa-calendar-plus me-2"></i>
           <span id="modalTitle">Tạo lịch hẹn</span>
         </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button> <!-- dấu X để hủy tạo lịch--> 
       </div>
 
       <div class="modal-body" style="max-height:70vh;overflow:auto;">
@@ -131,6 +133,7 @@
           <input type="hidden" id="apptId" />
 
           <div class="row g-3">
+
             <div class="col-md-6">
               <label class="form-label fw-semibold">
                 Họ tên khách hàng <span class="text-danger">*</span>
@@ -143,14 +146,14 @@
               <label class="form-label fw-semibold">
                 Số điện thoại <span class="text-danger">*</span>
               </label>
-              <input class="form-control" id="phone" required placeholder="VD: 0901234567" inputmode="numeric" />
+              <input class="form-control" id="phone" required placeholder="" inputmode="numeric" />
               <div class="invalid-feedback">Số điện thoại không hợp lệ</div>
             </div>
 
-            <!-- email (để support UC4) -->
+            <!-- email (đã sửa trong UC4 nhưng BE API chưa làm) -->
             <div class="col-md-6">
               <label class="form-label fw-semibold">Email</label>
-              <input class="form-control" id="email" placeholder="VD: abc@gmail.com" />
+              <input class="form-control" id="email" placeholder="" />
             </div>
 
             <div class="col-md-6">
@@ -159,11 +162,9 @@
               </label>
               <select class="form-select" id="service" required>
                 <option value="">-- Chọn dịch vụ --</option>
-                <option>Chăm sóc da</option>
-                <option>Massage</option>
-                <option>Phun thêu môi</option>
-                <option>Triệt lông</option>
-              </select>
+                <!--<option>Chăm sóc da</option>-->
+                <!-- Cách option sẽ được load lên từ DB(tự động load khi mở trang) -->
+              </select> <!--Nếu không chọn DV sẽ thông báo lỗi - invalid-feedback -->
               <div class="invalid-feedback">Vui lòng chọn dịch vụ</div>
             </div>
 
@@ -175,7 +176,7 @@
               <div class="invalid-feedback">Vui lòng chọn phòng</div>
             </div>
 
-            <div class="col-md-4">
+            <div class="col-md-6">
               <label class="form-label fw-semibold">
                 Số khách <span class="text-danger">*</span>
               </label>
@@ -195,37 +196,25 @@
               <label class="form-label fw-semibold">
                 Giờ hẹn <span class="text-danger">*</span>
               </label>
-              <input type="time" class="form-control" id="time" required min="09:00" max="22:00" />
+              <input type="time" class="form-control" id="time" required min="09:00" max="21:00" />
               <div class="invalid-feedback">Giờ hẹn không hợp lệ</div>
             </div>
 
-            <!-- THÊM THỜI LƯỢNG -->
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">
-                Thời lượng <span class="text-danger">*</span>
-              </label>
-              <select class="form-select" id="duration" required>
-                <option value="">-- Chọn thời lượng --</option>
-                <option value="30">30 phút</option>
-                <option value="60">60 phút</option>
-                <option value="90">90 phút</option>
-                <option value="120">120 phút</option>
-              </select>
-              <div class="invalid-feedback">Vui lòng chọn thời lượng</div>
-            </div>
+            <!-- THỜI LƯỢNG - Tự động lấy từ dịch vụ (hidden input) -->
+            <input type="hidden" id="duration" value="60" />
 
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label class="form-label fw-semibold">Trạng thái lịch hẹn</label>
               <select class="form-select" id="apptStatus">
                 <option value="pending">Chờ xác nhận</option>
                 <option value="not_arrived">Chưa đến</option>
-                <option value="arrived">Đã đến</option>
+                <option value="arrived">Đã đến</option> <!-- cân nhắc nên bỏ không-->
                 <option value="completed">Hoàn thành</option>
                 <option value="cancelled">Đã hủy</option>
               </select>
             </div>
 
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label class="form-label fw-semibold">Trạng thái thanh toán</label>
               <select class="form-select" id="payStatus">
                 <option value="unpaid">Chưa thanh toán</option>
@@ -246,7 +235,9 @@
         <button type="button" class="btn btn-outline-danger d-none" id="btnDelete">
           <i class="fas fa-trash me-2"></i>Xóa
         </button>
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+          <i class="fas fa-times me-2"></i>Hủy
+        </button>
         <button type="button" class="btn btn-warning" id="btnSave">
           <i class="fas fa-save me-2"></i>Lưu lịch hẹn
         </button>
@@ -255,7 +246,7 @@
   </div>
 </div>
 
-<!-- Modal xác nhận xóa lịch hẹn -->
+<!-- Appointment Modal  xác nhận Xóa lịch hẹn -->
 <div class="modal fade" id="deleteAppointmentModal" tabindex="-1" aria-labelledby="deleteAppointmentModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius: 16px; border: none; overflow: hidden;">
@@ -303,5 +294,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/admin-appointments.js' %}"></script>
+<script src="{% static 'js/admin-appointments.js' %}?v={{ 'now'|date:'His' }}"></script>
 {% endblock %}

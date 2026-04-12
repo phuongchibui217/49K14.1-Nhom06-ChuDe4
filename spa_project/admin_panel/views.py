@@ -30,9 +30,12 @@ def admin_login(request):
     - Validate username/password
     - Tự động xử lý remember_me
     - Kiểm tra user.is_staff
+
+    NOTE: Route này đã bị xóa, function chỉ giữ lại để tránh lỗi.
+    Tất cả login giờ redirect qua accounts:login
     """
     if request.user.is_authenticated and request.user.is_staff:
-        return redirect('appointments:admin_appointments_list')
+        return redirect('appointments:admin_appointments')
 
     if request.method == 'POST':
         form = AdminLoginForm(request, data=request.POST)
@@ -53,22 +56,22 @@ def admin_login(request):
                     request.session.set_expiry(0)  # Session cookie
 
                 messages.success(request, f'Chào mừng {user.username}!')
-                return redirect('appointments:admin_appointments_list')
+                return redirect('appointments:admin_appointments')
             else:
                 messages.error(request, 'Tài khoản này không có quyền truy cập trang Admin.')
     else:
         form = AdminLoginForm(request)
 
-    return render(request, 'admin/pages/admin_login.html', {'form': form})
+    return render(request, 'manage/pages/admin_login.html', {'form': form})
 
 
 def admin_logout(request):
     """Đăng xuất Admin"""
     logout(request)
-    return render(request, 'admin/pages/admin_clear-login.html')
+    return render(request, 'manage/pages/admin_clear-login.html')
 
 
-@login_required(login_url='admin_panel:admin_login')
+@login_required(login_url='accounts:login')
 def admin_profile(request):
     """Tài khoản cá nhân"""
     if not (request.user.is_staff or request.user.is_superuser):

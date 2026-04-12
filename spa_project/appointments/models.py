@@ -77,14 +77,14 @@ class Appointment(models.Model):
         ('admin', 'Lễ tân tạo'),
     ]
 
-    # Mã lịch hẹn - dạng: APP + YYYYMMDD + 4 digits (ví dụ: APP202403150001)
+    # Mã lịch hẹn - dạng: APP + 4 digits (ví dụ: APP0001, APP0002, ...)
     appointment_code = models.CharField(
         max_length=20,
         unique=True,
         editable=False,
         blank=True,
         verbose_name='Mã lịch hẹn',
-        help_text='Mã tự sinh: APP + ngày + số thứ tự'
+        help_text='Mã tự sinh: APP + số thứ tự'
     )
     customer = models.ForeignKey(
         'accounts.CustomerProfile',
@@ -241,25 +241,21 @@ class Appointment(models.Model):
     @classmethod
     def generate_appointment_code(cls):
         """
-        Sinh mã lịch hẹn tự động: APP + YYYYMMDD + 4 chữ số
-        Ví dụ: APP202403150001, APP202403150002, ...
+        Sinh mã lịch hẹn tự động: APP + 4 chữ số
+        Ví dụ: APP0001, APP0002, ...
 
         RACE CONDITION FIX:
         - Dùng transaction.atomic() + select_for_update()
         - Check trùng và tăng số cho đến khi tìm được mã trống
         """
-        from django.utils import timezone
-
         prefix = 'APP'
-        today = timezone.now().strftime('%Y%m%d')
-        full_prefix = f'{prefix}{today}'
         max_attempts = 100
 
         for attempt in range(max_attempts):
             with transaction.atomic():
-                # Lấy lịch hẹn cuối cùng của ngày hôm nay và LOCK
+                # Lấy lịch hẹn cuối cùng (mã lớn nhất) và LOCK
                 last_appointment = cls.objects.select_for_update().filter(
-                    appointment_code__startswith=full_prefix
+                    appointment_code__startswith=prefix
                 ).order_by('-appointment_code').first()
 
                 if last_appointment:
@@ -271,7 +267,7 @@ class Appointment(models.Model):
                 else:
                     new_number = 1 + attempt
 
-                new_code = f'{full_prefix}{new_number:04d}'
+                new_code = f'{prefix}{new_number:04d}'
 
                 # Kiểm tra trùng
                 if not cls.objects.filter(appointment_code=new_code).exists():
@@ -279,4 +275,4 @@ class Appointment(models.Model):
 
         # Fallback: Dùng timestamp
         import time
-        return f'{full_prefix}{int(time.time()) % 10000:04d}'
+        return f'{prefix}{int(time.time()) % 10000:04d}'

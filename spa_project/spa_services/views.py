@@ -68,7 +68,7 @@ def service_detail(request, service_id):
 # ADMIN SERVICE MANAGEMENT
 # =====================================================
 
-@login_required(login_url='/manage/login/')
+@login_required(login_url='accounts:login')
 def admin_services(request):
     """
     Quản lý dịch vụ
@@ -123,7 +123,7 @@ def admin_services(request):
             'category_filter': category_filter,
             'status_filter': status_filter,
         }
-        return render(request, 'admin/pages/admin_services.html', context)
+        return render(request, 'manage/pages/admin_services.html', context)
 
     # POST request - xử lý thêm dịch vụ mới
     elif request.method == 'POST':
@@ -157,7 +157,7 @@ def admin_services(request):
         return redirect('spa_services:admin_services')
 
 
-@login_required(login_url='/manage/login/')
+@login_required(login_url='accounts:login')
 def admin_service_edit(request, service_id):
     """
     Sửa dịch vụ
@@ -196,7 +196,7 @@ def admin_service_edit(request, service_id):
     return redirect('spa_services:admin_services')
 
 
-@login_required(login_url='/manage/login/')
+@login_required(login_url='accounts:login')
 def admin_service_delete(request, service_id):
     """
     Xóa dịch vụ

@@ -10,12 +10,10 @@ Tách ra khỏi views.py để:
 Author: Spa ANA Team
 """
 
-from datetime import datetime, timedelta, date, time as time_type
-from django.utils import timezone
+from datetime import datetime, timedelta, date, time as time_type # xử lí thời gian datetime đầy đủ,  timedelta là khoảng thời gian
+from django.utils import timezone 
 from django.core.exceptions import ValidationError
-from django.db.models import Q
-
-# Tạm import từ spa.models (CHƯA chuyển model trong phase này)
+from django.db.models import Q # các câu truy vấn phức tạp (Ỏ, NOT, AND phức tạp)
 from .models import Appointment, Room
 
 
@@ -23,7 +21,7 @@ from .models import Appointment, Room
 # APPOINTMENT VALIDATION SERVICES
 # =====================================================
 
-def validate_appointment_date(appointment_date):
+def validate_appointment_date(appointment_date): # hàm kiểm tra ngày hợp lệ
     """
     Kiểm tra ngày hẹn có hợp lệ không
 
@@ -53,7 +51,7 @@ def validate_appointment_date(appointment_date):
         )
 
 
-def validate_appointment_time(appointment_time, appointment_date):
+def validate_appointment_time(appointment_time, appointment_date):# kiểm tra giờ hẹn 
     """
     Kiểm tra giờ hẹn có hợp lệ không
 
@@ -86,22 +84,22 @@ def validate_appointment_time(appointment_time, appointment_date):
                 f'giờ sớm nhất có thể đặt: {min_time.strftime("%H:%M")}.'
             )
 
-    # Kiểm tra giờ làm việc (8:00 - 20:00)
-    opening_time = time_type(8, 0)
-    closing_time = time_type(20, 0)
+    # Kiểm tra giờ làm việc (9:00 - 21:00)
+    opening_time = time_type(9, 0)
+    closing_time = time_type(21, 0)
 
     if appointment_time < opening_time:
         raise ValidationError(
-            f'Giờ làm việc bắt đầu từ 08:00. Vui lòng chọn giờ từ 08:00 đến 20:00.'
+            f'Giờ làm việc bắt đầu từ 09:00. Vui lòng chọn giờ từ 09:00 đến 21:00.'
         )
 
     if appointment_time >= closing_time:
         raise ValidationError(
-            f'Giờ làm việc kết thúc lúc 20:00. Vui lòng chọn giờ trước 20:00.'
+            f'Giờ làm việc kết thúc lúc 21:00. Vui lòng chọn giờ trước 21:00.'
         )
 
 
-def calculate_end_time(start_time, duration_minutes):
+def calculate_end_time(start_time, duration_minutes): # Tính giờ kết thúc từ giờ bắt đầu và thời lượng
     """
     Tính giờ kết thúc từ giờ bắt đầu và thời lượng
 
@@ -119,12 +117,13 @@ def calculate_end_time(start_time, duration_minutes):
     return end_datetime.time()
 
 
-def check_room_availability(
+def check_room_availability(  
     room_code,
     appointment_date,
     start_time,
     duration_minutes,
-    exclude_appointment_code=None
+    exclude_appointment_code=None,
+    new_guests=1
 ):
     """
     Kiểm tra phòng có trống trong khung giờ đã chọn không
@@ -172,25 +171,48 @@ def check_room_availability(
     if exclude_appointment_code:
         queryset = queryset.exclude(appointment_code=exclude_appointment_code)
 
-    # Kiểm tra giao nhau về thời gian
-    # Hai khoảng thời gian giao nhau khi:
-    # start_time < existing_end AND end_time > existing_start
+    # Kiểm tra sức chứa phòng (capacity-based)
+    # Phòng có N giường → cho phép N khách cùng lúc (tổng số khách trùng giờ <= capacity)
+    total_overlapping_guests = 0
+    conflicts = []
+
     for existing in queryset:
         existing_end = existing.end_time or calculate_end_time(
             existing.appointment_time,
             existing.duration_minutes or existing.service.duration_minutes
         )
 
-        # Kiểm tra giao nhau
+        # Kiểm tra giao nhau về thời gian
         if start_time < existing_end and end_time > existing.appointment_time:
+            existing_guests = existing.guests or 1
+            total_overlapping_guests += existing_guests
+            conflicts.append({
+                'appointment': existing,
+                'end_time': existing_end,
+                'guests': existing_guests
+            })
+
+    # So sánh tổng số khách trùng giờ với sức chứa phòng
+    if total_overlapping_guests + new_guests > room.capacity:
+        # Thực sự hết chỗ - báo lỗi
+        conflict_info = conflicts[0] if conflicts else None
+        if conflict_info:
+            appt = conflict_info['appointment']
+            et = conflict_info['end_time']
             return (
                 False,
-                existing,
-                f'Phòng {room.name} đã có lịch từ '
-                f'{existing.appointment_time.strftime("%H:%M")} đến '
-                f'{existing_end.strftime("%H:%M")} ngày '
-                f'{appointment_date.strftime("%d/%m/%Y")}.'
+                appt,
+                f'Phòng {room.name} đã đủ {total_overlapping_guests}/{room.capacity} giường '
+                f'trong khung giờ {start_time.strftime("%H:%M")}-{end_time.strftime("%H:%M")} '
+                f'ngày {appointment_date.strftime("%d/%m/%Y")}.'
             )
+        return (
+            False,
+            None,
+            f'Phòng {room.name} đã đủ chỗ trong khung giờ '
+            f'{start_time.strftime("%H:%M")}-{end_time.strftime("%H:%M")} '
+            f'ngày {appointment_date.strftime("%d/%m/%Y")}.'
+        )
 
     return (True, None, '')
 
@@ -200,7 +222,8 @@ def validate_appointment_create(
     appointment_time,
     duration_minutes,
     room_code=None,
-    exclude_appointment_code=None
+    exclude_appointment_code=None,
+    guests=1
 ):
     """
     Validate toàn bộ trước khi tạo/sửa lịch hẹn
@@ -210,7 +233,7 @@ def validate_appointment_create(
     - Dùng lại được ở nhiều nơi (form, API, admin)
     - Tránh sót check
 
-    Args:
+    tham số:
         appointment_date: date - ngày hẹn
         appointment_time: time - giờ hẹn
         duration_minutes: int - thời lượng
@@ -234,14 +257,15 @@ def validate_appointment_create(
     except ValidationError as e:
         errors.append(str(e.message))
 
-    # 3. Validate phòng trống
+    # 3. Validate phòng trống (dựa trên sức chứa)
     if room_code:
         is_available, conflict, message = check_room_availability(
             room_code=room_code,
             appointment_date=appointment_date,
             start_time=appointment_time,
             duration_minutes=duration_minutes,
-            exclude_appointment_code=exclude_appointment_code
+            exclude_appointment_code=exclude_appointment_code,
+            new_guests=guests
         )
         if not is_available:
             errors.append(message)

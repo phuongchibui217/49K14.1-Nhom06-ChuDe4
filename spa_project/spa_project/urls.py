@@ -7,6 +7,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    # Django Admin mặc định (tách biệt với Admin Panel custom)
     path('admin/', admin.site.urls),
     # Phase 3: Pages app (static pages: home, about)
     path('', include('pages.urls')),

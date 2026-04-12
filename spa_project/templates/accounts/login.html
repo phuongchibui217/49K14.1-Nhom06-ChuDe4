@@ -17,6 +17,37 @@
         border-color: #dc3545 !important;
     }
 
+    /* Role Toggle Buttons */
+    .role-toggle .btn-group {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .role-toggle .btn {
+        border: 2px solid #e1b84f;
+        color: #1f3b5c;
+        font-weight: 600;
+        padding: 12px 20px;
+        transition: all 0.3s;
+    }
+    .role-toggle .btn:hover {
+        background: #f8f9fa;
+    }
+    .role-toggle .btn.active {
+        background: linear-gradient(135deg, #e1b84f, #c9a63a);
+        color: white;
+        border-color: #e1b84f;
+    }
+    .role-toggle .btn:focus {
+        box-shadow: 0 0 0 3px rgba(225, 184, 79, 0.25);
+    }
+    .form-section {
+        animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
     /* Modal Styles */
     .modal-overlay {
         position: fixed;
@@ -245,7 +276,7 @@
                         <div class="text-center mb-4">
                             <i class="fas fa-spa text-warning fa-3x mb-3"></i>
                             <h3 class="fw-bold">Đăng nhập</h3>
-                            <p class="text-muted">Đăng nhập bằng số điện thoại</p>
+                            <p class="text-muted">Chọn loại tài khoản để đăng nhập</p>
                         </div>
 
                         {% if form.non_field_errors %}
@@ -256,77 +287,120 @@
                         </div>
                         {% endif %}
 
-<form method="post" action="" id="loginForm" novalidate>
+                        <!-- ROLE TOGGLE BUTTONS -->
+                        <div class="role-toggle mb-4">
+                            <div class="btn-group w-100" role="group">
+                                <button type="button" class="btn btn-outline-warning flex-fill"
+                                        id="btnCustomer" onclick="switchRole('customer')">
+                                    <i class="fas fa-user me-2"></i>Khách hàng
+                                </button>
+                                <button type="button" class="btn btn-outline-warning flex-fill"
+                                        id="btnStaff" onclick="switchRole('staff')">
+                                    <i class="fas fa-user-tie me-2"></i>Nhân viên
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- CUSTOMER LOGIN FORM -->
+                        <form method="post" action="" id="customerForm" novalidate>
                             {% csrf_token %}
+                            <input type="hidden" name="role" value="customer">
 
                             <div class="mb-3">
-                                <label for="id_username" class="form-label">
+                                <label for="customer_phone" class="form-label">
                                     Số điện thoại <span class="text-danger">*</span>
                                 </label>
                                 <input type="text"
-                                       class="form-control {% if form.username.errors %}is-invalid{% endif %}"
-                                       id="id_username"
+                                       class="form-control"
+                                       id="customer_phone"
                                        name="username"
-                                       placeholder="Nhập số điện thoại"
-                                       required
-                                       value="{{ form.username.value|default:'' }}">
-                                {% if form.username.errors %}
-                                {% for error in form.username.errors %}
-                                <div class="field-error">
-                                    <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
-                                </div>
-                                {% endfor %}
-                                {% endif %}
-                                <small class="text-muted">Số điện thoại dùng để đăng ký</small>
+                                       placeholder="Nhập số điện thoại (10-11 số)"
+                                       pattern="[0-9]{10,11}"
+                                       required>
+                                <small class="text-muted">Ví dụ: 0912345678</small>
                             </div>
 
                             <div class="mb-3">
-                                <label for="id_password" class="form-label">
+                                <label for="customer_password" class="form-label">
                                     Mật khẩu <span class="text-danger">*</span>
                                 </label>
                                 <input type="password"
-                                       class="form-control {% if form.password.errors %}is-invalid{% endif %}"
-                                       id="id_password"
+                                       class="form-control"
+                                       id="customer_password"
                                        name="password"
                                        placeholder="Nhập mật khẩu"
                                        required>
-                                {% if form.password.errors %}
-                                {% for error in form.password.errors %}
-                                <div class="field-error">
-                                    <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
-                                </div>
-                                {% endfor %}
-                                {% endif %}
                             </div>
 
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <div class="form-check">
-                                    <input type="checkbox" class="form-check-input" id="id_remember" name="remember">
-                                    <label class="form-check-label" for="id_remember">Ghi nhớ đăng nhập</label>
+                                    <input type="checkbox" class="form-check-input" id="customer_remember" name="remember">
+                                    <label class="form-check-label" for="customer_remember">Ghi nhớ đăng nhập</label>
                                 </div>
                                 <a href="#" id="forgotPasswordLink" class="text-warning text-decoration-none">
                                     <i class="fas fa-key me-1"></i>Quên mật khẩu?
                                 </a>
                             </div>
 
-                            {% if form.errors %}
-                            <div class="alert alert-danger">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                Số điện thoại hoặc mật khẩu không đúng!
+                            <button type="submit" class="btn btn-warning w-100 btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i>Đăng nhập
+                            </button>
+
+                            <div class="text-center mt-3">
+                                <p class="text-muted mb-0">
+                                    Chưa có tài khoản?
+                                    <a href="{% url 'accounts:register' %}" class="text-warning fw-bold">Đăng ký ngay</a>
+                                </p>
                             </div>
-                            {% endif %}
+                        </form>
+
+                        <!-- STAFF LOGIN FORM (Hidden by default) -->
+                        <form method="post" action="" id="staffForm" novalidate style="display: none;">
+                            {% csrf_token %}
+                            <input type="hidden" name="role" value="staff">
+
+                            <div class="mb-3">
+                                <label for="staff_username" class="form-label">
+                                    Tên đăng nhập <span class="text-danger">*</span>
+                                </label>
+                                <input type="text"
+                                       class="form-control"
+                                       id="staff_username"
+                                       name="username"
+                                       placeholder="Nhập tên đăng nhập"
+                                       required>
+                                <small class="text-muted">Ví dụ: admin, letan01</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="staff_password" class="form-label">
+                                    Mật khẩu <span class="text-danger">*</span>
+                                </label>
+                                <input type="password"
+                                       class="form-control"
+                                       id="staff_password"
+                                       name="password"
+                                       placeholder="Nhập mật khẩu"
+                                       required>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="staff_remember" name="remember">
+                                    <label class="form-check-label" for="staff_remember">Ghi nhớ đăng nhập</label>
+                                </div>
+                            </div>
 
                             <button type="submit" class="btn btn-warning w-100 btn-lg">
                                 <i class="fas fa-sign-in-alt me-2"></i>Đăng nhập
                             </button>
-                        </form>
 
-                        <div class="text-center mt-4">
-                            <p class="text-muted mb-0">
-                                Chưa có tài khoản?
-<a href="{% url 'accounts:register' %}" class="text-warning fw-bold">Đăng ký ngay</a>
-                            </p>
-                        </div>
+                            <div class="text-center mt-3">
+                                <p class="text-muted small">
+                                    Dành cho Lễ tân và Quản trị viên
+                                </p>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -377,6 +451,39 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // =====================================================
+    // ROLE TOGGLE FUNCTIONALITY
+    // =====================================================
+
+    // Function to switch between Customer and Staff forms
+    window.switchRole = function(role) {
+        const btnCustomer = document.getElementById('btnCustomer');
+        const btnStaff = document.getElementById('btnStaff');
+        const customerForm = document.getElementById('customerForm');
+        const staffForm = document.getElementById('staffForm');
+
+        if (role === 'customer') {
+            // Show customer form
+            btnCustomer.classList.add('active');
+            btnStaff.classList.remove('active');
+            customerForm.style.display = 'block';
+            staffForm.style.display = 'none';
+        } else {
+            // Show staff form
+            btnStaff.classList.add('active');
+            btnCustomer.classList.remove('active');
+            staffForm.style.display = 'block';
+            customerForm.style.display = 'none';
+        }
+    };
+
+    // Initialize: Show customer form by default
+    switchRole('customer');
+
+    // =====================================================
+    // FORGOT PASSWORD MODAL
+    // =====================================================
+
     // DOM Elements
     const forgotPasswordLink = document.getElementById('forgotPasswordLink');
     const forgotPasswordModal = document.getElementById('forgotPasswordModal');
@@ -407,11 +514,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Open Forgot Password Modal
-    forgotPasswordLink.addEventListener('click', function(e) {
-        e.preventDefault();
-        forgotPasswordModal.classList.add('show');
-        resetEmailInput.focus();
-    });
+    if (forgotPasswordLink) {
+        forgotPasswordLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            forgotPasswordModal.classList.add('show');
+            resetEmailInput.focus();
+        });
+    }
 
     // Close Modal Functions
     function closeModal() {
@@ -422,8 +531,12 @@ document.addEventListener('DOMContentLoaded', function() {
         submitResetBtn.disabled = false;
     }
 
-    closeModalBtn.addEventListener('click', closeModal);
-    cancelResetBtn.addEventListener('click', closeModal);
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', closeModal);
+    }
+    if (cancelResetBtn) {
+        cancelResetBtn.addEventListener('click', closeModal);
+    }
 
     // Close modal when clicking outside
     forgotPasswordModal.addEventListener('click', function(e) {
@@ -433,74 +546,76 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Handle Forgot Password Form Submit
-    forgotPasswordForm.addEventListener('submit', function(e) {
-        e.preventDefault();
+    if (forgotPasswordForm) {
+        forgotPasswordForm.addEventListener('submit', function(e) {
+            e.preventDefault();
 
-        const email = resetEmailInput.value.trim();
+            const email = resetEmailInput.value.trim();
 
-        // Hide previous alert
-        hideAlert(modalAlert);
+            // Hide previous alert
+            hideAlert(modalAlert);
 
-        // Validate email
-        if (!email) {
-            showAlert(modalAlert, 'Vui lòng nhập email!', 'error');
-            return;
-        }
+            // Validate email
+            if (!email) {
+                showAlert(modalAlert, 'Vui lòng nhập email!', 'error');
+                return;
+            }
 
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            showAlert(modalAlert, 'Email không hợp lệ!', 'error');
-            return;
-        }
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showAlert(modalAlert, 'Email không hợp lệ!', 'error');
+                return;
+            }
 
-        // Show loading state
-        submitResetBtn.classList.add('loading');
-        submitResetBtn.disabled = true;
+            // Show loading state
+            submitResetBtn.classList.add('loading');
+            submitResetBtn.disabled = true;
 
-        // Submit form to Django backend
-        const formData = new FormData();
-        formData.append('email', email);
-        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+            // Submit form to Django backend
+            const formData = new FormData();
+            formData.append('email', email);
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
 
-        fetch('{% url "accounts:password_reset" %}', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
+            fetch('{% url "accounts:password_reset" %}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(
+                        modalAlert,
+                        'Nếu email tồn tại, link đặt lại mật khẩu sẽ được gửi đến email của bạn.',
+                        'success'
+                    );
+
+                    // Close modal after 3 seconds
+                    setTimeout(() => {
+                        closeModal();
+                    }, 3000);
+                } else {
+                    showAlert(modalAlert, data.error || 'Có lỗi xảy ra!', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                // Fallback - show success message anyway (don't reveal if email exists)
                 showAlert(
                     modalAlert,
                     'Nếu email tồn tại, link đặt lại mật khẩu sẽ được gửi đến email của bạn.',
                     'success'
                 );
 
-                // Close modal after 3 seconds
                 setTimeout(() => {
                     closeModal();
                 }, 3000);
-            } else {
-                showAlert(modalAlert, data.error || 'Có lỗi xảy ra!', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            // Fallback - show success message anyway (don't reveal if email exists)
-            showAlert(
-                modalAlert,
-                'Nếu email tồn tại, link đặt lại mật khẩu sẽ được gửi đến email của bạn.',
-                'success'
-            );
-
-            setTimeout(() => {
-                closeModal();
-            }, 3000);
-        })
-        .finally(() => {
-            submitResetBtn.classList.remove('loading');
-            submitResetBtn.disabled = false;
+            })
+            .finally(() => {
+                submitResetBtn.classList.remove('loading');
+                submitResetBtn.disabled = false;
+            });
         });
-    });
+    }
 
     // Handle Escape key to close modal
     document.addEventListener('keydown', function(e) {

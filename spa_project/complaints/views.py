@@ -162,7 +162,7 @@ def customer_complaint_reply(request, complaint_id):
 # ADMIN COMPLAINT MANAGEMENT VIEWS
 # =====================================================
 
-@login_required(login_url='/manage/login/')
+@login_required(login_url='accounts:login')
 def admin_complaints(request):
     """Quản lý khiếu nại - Danh sách"""
     if not (request.user.is_staff or request.user.is_superuser):
@@ -203,10 +203,10 @@ def admin_complaints(request):
         'status_filter': status,
         'type_filter': complaint_type,
     }
-    return render(request, 'admin/pages/admin_complaints.html', context)
+    return render(request, 'manage/pages/admin_complaints.html', context)
 
 
-@login_required(login_url='/manage/login/')
+@login_required(login_url='accounts:login')
 def admin_complaint_detail(request, complaint_id):
     """Chi tiết khiếu nại"""
     if not (request.user.is_staff or request.user.is_superuser):
@@ -231,10 +231,10 @@ def admin_complaint_detail(request, complaint_id):
         'status_form': status_form,
         'assign_form': assign_form,
     }
-    return render(request, 'admin/pages/admin_complaint_detail.html', context)
+    return render(request, 'manage/pages/admin_complaint_detail.html', context)
 
 
-@login_required(login_url='/manage/login/')
+@login_required(login_url='accounts:login')
 def admin_complaint_take(request, complaint_id):
     """Nhận xử lý khiếu nại"""
     if not (request.user.is_staff or request.user.is_superuser):
@@ -262,7 +262,7 @@ def admin_complaint_take(request, complaint_id):
     return redirect('complaints:admin_complaint_detail', complaint_id=complaint_id)
 
 
-@login_required(login_url='/manage/login/')
+@login_required(login_url='accounts:login')
 def admin_complaint_assign(request, complaint_id):
     """Phân công người phụ trách"""
     if not (request.user.is_staff or request.user.is_superuser):
@@ -290,7 +290,7 @@ def admin_complaint_assign(request, complaint_id):
     return redirect('complaints:admin_complaint_detail', complaint_id=complaint_id)
 
 
-@login_required(login_url='/manage/login/')
+@login_required(login_url='accounts:login')
 def admin_complaint_reply(request, complaint_id):
     """Phản hồi khiếu nại"""
     if not (request.user.is_staff or request.user.is_superuser):
@@ -320,7 +320,7 @@ def admin_complaint_reply(request, complaint_id):
     return redirect('complaints:admin_complaint_detail', complaint_id=complaint_id)
 
 
-@login_required(login_url='/manage/login/')
+@login_required(login_url='accounts:login')
 def admin_complaint_status(request, complaint_id):
     """Cập nhật trạng thái khiếu nại"""
     if not (request.user.is_staff or request.user.is_superuser):
@@ -349,7 +349,7 @@ def admin_complaint_status(request, complaint_id):
     return redirect('complaints:admin_complaint_detail', complaint_id=complaint_id)
 
 
-@login_required(login_url='/manage/login/')
+@login_required(login_url='accounts:login')
 def admin_complaint_complete(request, complaint_id):
     """Đánh dấu hoàn thành"""
     if not (request.user.is_staff or request.user.is_superuser):

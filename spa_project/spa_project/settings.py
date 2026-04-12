@@ -105,7 +105,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Login/Logout settings
-LOGIN_URL = 'spa:login'
+# LOGIN_URL đã được cleanup - chỉ dùng accounts:login
 LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'spa:home'
 LOGOUT_REDIRECT_URL = 'spa:home'

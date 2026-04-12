@@ -359,7 +359,7 @@
                             {% endif %}
                             <small class="text-muted d-block mt-1">
                                 <i class="far fa-clock me-1"></i>
-                                Giờ làm việc: 9:00 - 17:00
+                                Giờ làm việc: 9:00 - 21:00
                             </small>
                         </div>
                     </div>
@@ -462,7 +462,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const timeInput = document.getElementById('{{ form.appointment_time.id_for_label }}');
     if (timeInput) {
         timeInput.setAttribute('min', '09:00');
-        timeInput.setAttribute('max', '17:00');
+        timeInput.setAttribute('max', '21:00');
     }
 });
 </script>
