@@ -54,7 +54,25 @@
             </a>
         </li>
     </ul>
-    
+
+    <!-- ========================================
+    AVATAR USER - Hiển thị ai đang đăng nhập
+    ======================================== -->
+    <div class="sidebar-user-info">
+        <div class="user-avatar-section">
+            <div class="user-avatar">
+                <i class="fas fa-user-circle"></i>
+            </div>
+            <div class="user-name">
+                {% if request.user.customerprofile.full_name %}
+                    {{ request.user.customerprofile.full_name }}
+                {% else %}
+                    {{ request.user.username }}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
     <div class="sidebar-footer">
         <a href="{% url 'admin_panel:admin_logout' %}" class="btn btn-logout logout-link">
             <i class="fas fa-sign-out-alt"></i>

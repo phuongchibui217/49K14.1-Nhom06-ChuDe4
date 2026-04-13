@@ -41,9 +41,9 @@ Hoặc tạo bằng tay:
 # Tạo Superuser (Admin/Chủ Spa)
 python manage.py createsuperuser
 
-Username: admin
+Username: Chu  
 Email: admin@spasana.vn
-Password: admin123
+Password: chu123
 ```
 
 ### Bước 2: Chạy server
@@ -59,20 +59,11 @@ Mở browser: `http://localhost:8000/login/`
 #### Test Khách hàng:
 1. Click button **[Khách hàng]**
 2. Nhập:
-   - Số điện thoại: `0912345678`
-   - Mật khẩu: `customer123`
+   - Số điện thoại: `0382434901'
+   - Mật khẩu: `123456'
 3. Click **Đăng nhập**
 4. ✅ Should redirect về trang chủ
-
-#### Test Nhân viên:
-1. Click button **[Nhân viên]**
-2. Nhập:
-   - Tên đăng nhập: `admin`
-   - Mật khẩu: `admin123`
-3. Click **Đăng nhập**
-4. ✅ Should redirect về `/manage/appointments/`
-
----
+--
 
 ## 📋 THÔNG TIN ĐĂNG NHẬP TEST
 
@@ -140,13 +131,3 @@ CustomerProfile.objects.create(user=user, phone='0912345678', full_name='Nguyễ
 # Tạo nhân viên
 staff = User.objects.create_user(username='nhanvien01', password='pass123', is_staff=True)
 ```
-
----
-
-## 📞 HỖ TRỢ
-
-Đọc tài liệu đầy đủ: [login_system_design.md](./login_system_design.md)
-
----
-
-**Last updated:** 2026-04-09

@@ -90,7 +90,7 @@
           <div class="d-flex gap-2 align-items-center">
             <select class="form-select form-select-sm" id="webStatusFilter" style="width:auto;min-width:160px;">
               <option value="">Tất cả trạng thái</option>
-              <option value="pending">Chờ xác nhận</option>
+              <option value="pending" selected>Chờ xác nhận</option>
               <option value="not_arrived">Chưa đến</option>
               <option value="arrived">Đã đến</option>
               <option value="completed">Hoàn thành</option>
@@ -303,6 +303,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Original JavaScript (temporarily reverted) -->
 <script src="{% static 'js/admin-appointments.js' %}?v={{ 'now'|date:'His' }}"></script>
 
 <script>

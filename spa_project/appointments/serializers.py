@@ -26,8 +26,8 @@ def serialize_appointment(appointment):
     """
     # Get customer email safely
     customer_email = ''
-    if appointment.customer:
-        customer_email = appointment.customer.email or appointment.customer.user.email or ''
+    if appointment.customer and appointment.customer.user:
+        customer_email = appointment.customer.user.email or ''
 
     return {
         'id': appointment.appointment_code,           # Mã lịch hẹn (VD: APT001)

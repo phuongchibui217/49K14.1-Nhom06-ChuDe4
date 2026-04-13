@@ -36,8 +36,8 @@ urlpatterns = [
     path('api/booking-requests/', api.api_booking_requests, name='api_booking_requests'),
 
     # ============================================================
-    # NOTIFICATION BADGE APIs
+    # NOTIFICATION BADGE APIs (api.py)
     # ============================================================
-    path('api/booking/pending-count/', api.api_booking_pending_count, name='api_booking_pending_count'),
-    path('api/booking/pending-count/stream/', api.api_booking_pending_count_stream, name='api_booking_pending_count_stream'),
+    path('api/booking/pending-count/', api.api_booking_pending_count, name='api_booking_pending_count'), #Lấy số lượng booking pending (chờ xác nhận) tại thời điểm gọi
+    path('api/booking/pending-count/stream/', api.api_booking_pending_count_stream, name='api_booking_pending_count_stream'), #- Kết nối liên tục, server tự động đẩy data mỗi 10 giây,Không cần frontend gọi lại liên tục,Auto-update badge real-time
 ]

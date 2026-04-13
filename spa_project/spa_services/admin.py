@@ -7,12 +7,12 @@ class ServiceAdmin(admin.ModelAdmin):
     """Admin cho dịch vụ"""
     list_display = ['name', 'category', 'price', 'duration_minutes', 'is_active', 'created_at']
     list_filter = ['category', 'is_active', 'created_at']
-    search_fields = ['name', 'slug', 'description']
+    search_fields = ['name', 'description']
     list_editable = ['is_active', 'price']
-    readonly_fields = ['slug', 'created_at', 'updated_at']
+    readonly_fields = ['created_at', 'updated_at']
     fieldsets = (
         ('Thông tin cơ bản', {
-            'fields': ('name', 'slug', 'category')
+            'fields': ('name', 'category')
         }),
         ('Mô tả', {
             'fields': ('short_description', 'description', 'image')
@@ -25,4 +25,3 @@ class ServiceAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
-    prepopulated_fields = {'slug': ('name',)}

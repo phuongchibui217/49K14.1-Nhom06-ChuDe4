@@ -17,7 +17,7 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}?v={% now 'His' %}">
 
     {% block extra_css %}{% endblock %}
 </head>
