@@ -337,7 +337,7 @@
                                     <input type="checkbox" class="form-check-input" id="customer_remember" name="remember">
                                     <label class="form-check-label" for="customer_remember">Ghi nhớ đăng nhập</label>
                                 </div>
-                                <a href="#" id="forgotPasswordLink" class="text-warning text-decoration-none">
+                                <a href="{% url 'accounts:password_reset' %}" class="text-warning text-decoration-none">
                                     <i class="fas fa-key me-1"></i>Quên mật khẩu?
                                 </a>
                             </div>
@@ -408,44 +408,6 @@
     </div>
 </section>
 
-<!-- Forgot Password Modal -->
-<div class="modal-overlay" id="forgotPasswordModal">
-    <div class="modal-content">
-        <button class="close-modal" id="closeModal">&times;</button>
-
-        <div class="modal-header">
-            <h3>Quên mật khẩu?</h3>
-            <p>Nhập email để nhận link đặt lại mật khẩu</p>
-        </div>
-
-        <!-- Alert Message -->
-        <div id="modalAlert" class="alert-message"></div>
-
-        <form id="forgotPasswordForm">
-            <div class="modal-form-group">
-                <label>Email đăng ký</label>
-                <div class="modal-input-wrapper">
-                    <i class="fa-solid fa-envelope"></i>
-                    <input
-                        type="email"
-                        id="resetEmail"
-                        placeholder="Nhập email của bạn"
-                        required
-                    />
-                </div>
-            </div>
-
-            <button type="submit" class="btn-submit" id="submitReset">
-                <span class="btn-text">Gửi link đặt lại</span>
-                <div class="spinner"></div>
-            </button>
-
-            <button type="button" class="btn-submit btn-secondary" id="cancelReset">
-                Hủy bỏ
-            </button>
-        </form>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}

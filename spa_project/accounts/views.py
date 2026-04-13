@@ -19,7 +19,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.conf import settings
-
+from django.urls import reverse
 from .models import CustomerProfile
 from .forms import (
     CustomerRegistrationForm,
@@ -221,30 +221,39 @@ def password_reset_request(request):
             messages.error(request, 'Vui lòng nhập email.')
             return render(request, 'accounts/password_reset.html')
 
-        # Tìm user theo email
-        try:
-            user = User.objects.get(email=email)
+        profile = CustomerProfile.objects.filter(email__iexact=email).select_related('user').first()
 
-            # Tạo token đặt lại mật khẩu
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
-            token = default_token_generator.make_token(user)
-
-            # Tạo link đặt lại mật khẩu
-            reset_url = request.build_absolute_uri(
-                '/reset-mat-khau/{0}/{1}/'.format(uid, token)
+        if profile is None:
+            messages.success(
+                request,
+                'Vui lòng kiểm tra email để đặt lại mật khẩu.'
             )
+            return render(request, 'accounts/password_reset_sent.html', {
+                'email': email,
+            })
 
-            # Gửi email
-            subject = 'Đặt lại mật khẩu - Spa ANA'
-            message = f'''
-Xin chào {user.get_full_name() or user.username},
+        user = profile.user
+
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+
+        reset_url = request.build_absolute_uri(
+            reverse('accounts:password_reset_confirm', kwargs={
+                'uidb64': uid,
+                'token': token,
+            })
+        )
+
+        print(reset_url)
+
+        subject = 'Đặt lại mật khẩu - Spa ANA'
+        message = f'''
+Xin chào {profile.full_name or user.username},
 
 Bạn đã yêu cầu đặt lại mật khẩu tại Spa ANA.
 
 Vui lòng click vào link dưới để đặt lại mật khẩu mới:
 {reset_url}
-
-Link này sẽ hết hạn sau 24 giờ.
 
 Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.
 
@@ -252,28 +261,24 @@ Trân trọng,
 Đội ngũ Spa ANA
 '''
 
-            send_mail(
-                subject,
-                message,
-                settings.DEFAULT_FROM_EMAIL,
-                [email],
-                fail_silently=False,
-            )
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [profile.email],
+            fail_silently=False,
+        )
 
-            messages.success(request, f'Link đặt lại mật khẩu đã được gửi đến {email}. Vui lòng kiểm tra email của bạn.')
-            return render(request, 'accounts/password_reset_sent.html', {
-                'email': email,
-            })
-
-        except User.DoesNotExist:
-            # Không tiết lộ user có tồn tại hay không
-            messages.success(request, 'Nếu email tồn tại trong hệ thống, bạn sẽ nhận được link đặt lại mật khẩu.')
-            return render(request, 'accounts/password_reset_sent.html', {
-                'email': email,
-            })
+        messages.success(
+            request,
+            f'Link đặt lại mật khẩu đã được gửi đến {profile.email}.'
+        )
+        return render(request, 'accounts/password_reset_sent.html', {
+            'email': profile.email,
+            'reset_url': reset_url
+        })
 
     return render(request, 'accounts/password_reset.html')
-
 
 def password_reset_confirm(request, uidb64, token):
     """Xác nhận đặt lại mật khẩu"""

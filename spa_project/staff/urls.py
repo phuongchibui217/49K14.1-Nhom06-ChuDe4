@@ -10,6 +10,6 @@ from . import views
 app_name = 'staff'
 
 urlpatterns = [
-    # Admin Staff Management
+    # Trang quản lý
     path('manage/staff/', views.admin_staff, name='admin_staff'),
 ]
