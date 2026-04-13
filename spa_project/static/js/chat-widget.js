@@ -155,7 +155,7 @@
 
     function autoResizeInput() {
         dom.input.style.height = "52px";
-        dom.input.style.height = `${Math.min(dom.input.scrollHeight, 160)}px`;
+        dom.input.style.height = `${Math.min(dom.input.scrollHeight, 132)}px`;
     }
 
     function updateSendButtonState() {
@@ -244,6 +244,15 @@
             ? "Bạn"
             : message.senderName || "Spa ANA";
 
+        const headerHtml = senderClass === "system"
+            ? ""
+            : `
+                <div class="chat-message-header">
+                    <span class="chat-message-name">${escapeHtml(displayName)}</span>
+                    <span class="chat-message-time">${escapeHtml(message.timeLabel || formatTime(message.createdAt))}</span>
+                </div>
+            `;
+
         let deliveryHtml = "";
         if (message.senderType === "customer" && deliveryState) {
             deliveryHtml = `<div class="chat-message-status">${escapeHtml(deliveryState)}</div>`;
@@ -251,11 +260,8 @@
 
         return `
             <div class="chat-message ${senderClass}" data-message-id="${message.id}">
-                <div class="chat-message-header">
-                    <span class="chat-message-name">${escapeHtml(displayName)}</span>
-                    <span class="chat-message-time">${escapeHtml(message.timeLabel || formatTime(message.createdAt))}</span>
-                </div>
-                ${message.content ? `<div>${escapeHtml(message.content)}</div>` : ""}
+                ${headerHtml}
+                ${message.content ? `<div class="chat-message-body">${escapeHtml(message.content)}</div>` : ""}
                 ${buildAttachmentHtml(message)}
                 ${deliveryHtml}
             </div>
