@@ -11,19 +11,19 @@
 /**
 // ============================================================
 admin-appointments.js (950 dòng)
-├──  PHẦN 1: CẤU HÌNH 
-├──  PHẦN 2: BIẾN TOÀN CỤC 
-├──  PHẦN 3: DOM ELEMENTS 
-├──  PHẦN 4: HELPER FUNCTIONS 
+├──  PHẦN 1: CẤU HÌNH (đơn giản rồi)
+├──  PHẦN 2: BIẾN TOÀN CỤC (đơn giản rồi)
+├──  PHẦN 3: DOM ELEMENTS (đơn giản rồi)
+├──  PHẦN 4: HELPER FUNCTIONS (ĐÃ LÀM xong!)
 ├──  PHẦN 5: API CALLS (2 hàm apiGet, apiPost)
 ├──  PHẦN 6: DATA LOADING (4 hàm load...)
 ├──  PHẦN 7: UI HELPERS (2 hàm)
-├──  PHẦN 8: RENDER SCHEDULER GRID (3 hàm )
+├──  PHẦN 8: RENDER SCHEDULER GRID (3 hàm phức tạp)
 ├──  PHẦN 9: RENDER BOOKING REQUESTS TABLE (2 hàm + window functions)
 ├──  PHẦN 10: MODAL & FORM HANDLERS (3 hàm + event listeners)
 ├──  PHẦN 11: DATE NAVIGATION (4 hàm)
 ├──  PHẦN 12: SEARCH & FILTER (đơn giản rồi)
-└──  PHẦN 13: INITIALIZATION (DOMContentLoaded - logic)
+└──  PHẦN 13: INITIALIZATION (DOMContentLoaded - logic phức tạp)
 // ============================================================
 **/
 // ============================================================
@@ -1473,258 +1473,118 @@ if (searchInput) {
 // PHẦN 13: INITIALIZATION - KHỞI TẠO ỨNG DỤNG
 // ============================================================
 
-/**
- * BƯỚC 1: Khởi tạo các components của Bootstrap (Modal, Toast)
- */
-function initBootstrapComponents() {
-  console.log(' Bước 1: Khởi tạo Bootstrap components...');
+document.addEventListener("DOMContentLoaded", async () => {
+  console.log('🚀 BẮT ĐẦU KHỞI TẠO SCHEDULER...');
 
-  // BƯỚC 1.1: Khởi tạo Modal chính (tạo/sửa lịch)
-  var modalEl = document.getElementById('apptModal');
-  if (modalEl) {
-    modal = new bootstrap.Modal(modalEl);
-    console.log('    Modal chính đã sẵn sàng');
-  }
+  // Khởi tạo Bootstrap components
+  if (modalEl) modal = new bootstrap.Modal(modalEl);
+  if (toastEl) toast = new bootstrap.Toast(toastEl);
 
-  // BƯỚC 1.2: Khởi tạo Toast (thông báo)
-  var toastEl = document.getElementById('toast');
-  if (toastEl) {
-    toast = new bootstrap.Toast(toastEl);
-    console.log('    Toast đã sẵn sàng');
-  }
-
-  // BƯỚC 1.3: Khởi tạo Modal xác nhận xóa
-  var deleteModalEl = document.getElementById('deleteAppointmentModal');
+  // Khởi tạo delete modal
+  const deleteModalEl = document.getElementById('deleteAppointmentModal');
   if (deleteModalEl) {
     window.deleteAppointmentModal = new bootstrap.Modal(deleteModalEl);
-    console.log('    Modal xóa đã sẵn sàng');
   }
-}
 
-/**
- * BƯỚC 2: Load toàn bộ dữ liệu cần thiết từ Backend
- */
-async function loadInitialData() {
-  console.log(' Bước 2: Load dữ liệu từ Backend...');
+  // Sidebar toggle (mobile)
+  if (sidebarToggle) {
+    sidebarToggle.addEventListener("click", () => sidebar.classList.toggle("show"));
+  }
 
-  // BƯỚC 2.1: Load danh sách phòng
-  console.log('    Đang tải danh sách phòng...');
+  // Load dữ liệu
+  console.log('📦 Đang tải phòng...');
   await loadRooms();
-  console.log('    Đã tải ' + ROOMS.length + ' phòng');
 
-  // BƯỚC 2.2: Load danh sách dịch vụ
-  console.log('    Đang tải danh sách dịch vụ...');
+  console.log('📦 Đang tải dịch vụ...');
   await loadServices();
-  console.log('    Đã tải ' + SERVICES.length + ' dịch vụ');
 
-  // BƯỚC 2.3: Điền danh sách phòng vào dropdown
   fillRoomsSelect();
-  console.log('    Đã điền dropdown phòng');
-}
 
-/**
- * BƯỚC 3: Thiết lập giao diện ban đầu
- */
-async function setupInitialUI() {
-  console.log(' Bước 3: Thiết lập giao diện ban đầu...');
+  // Set ngày hôm nay
+  dayPicker.value = todayISO();
+  console.log('📅 Hôm nay:', dayPicker.value);
 
-  // BƯỚC 3.1: Đặt ngày hôm nay vào ô chọn ngày
-  var today = todayISO();
-  if (dayPicker) {
-    dayPicker.value = today;
-    console.log('    Đã set ngày hôm nay: ' + today);
-  }
-
-  // BƯỚC 3.2: Vẽ header timeline (9:00, 9:30, 10:00, ...)
+  // Vẽ header timeline
   renderHeader();
-  console.log('    Đã vẽ header timeline');
 
-  // BƯỚC 3.3: Load và vẽ lịch hẹn
+  // Load lịch hẹn
   await refreshData();
-  console.log('    Đã vẽ lưới lịch hẹn');
-
-  // BƯỚC 3.4: Vẽ bảng yêu cầu đặt lịch
   await renderWebRequests();
-  console.log('    Đã vẽ bảng booking requests');
-}
 
-/**
- * BƯỚC 4: Kết nối SSE (Server-Sent Events) để cập nhật real-time
- */
-function setupSSEConnection() {
-  console.log(' Bước 4: Kết nối Real-time updates (SSE)...');
+  // === SSE: REAL-TIME UPDATE ===
+  if (window.EventSource) {
+    try {
+      const eventSource = new EventSource('/api/booking/pending-count/stream/');
+      let previousPendingCount = null;
 
-  // BƯỚC 4.1: Kiểm tra browser có hỗ trợ EventSource không
-  if (!window.EventSource) {
-    console.warn('    Browser không hỗ trợ EventSource');
-    return;
-  }
+      eventSource.addEventListener("message", async function(event) {
+        try {
+          const data = JSON.parse(event.data);
+          const currentPendingCount = data.count;
 
-  try {
-    // BƯỚC 4.2: Tạo kết nối SSE
-    var eventSource = new EventSource('/api/booking/pending-count/stream/');
-    var previousPendingCount = null;
+          console.log('🔔 SSE - Pending count:', currentPendingCount);
 
-    // BƯỚC 4.3: Khi nhận được message từ server
-    eventSource.addEventListener("message", async function(event) {
-      try {
-        // Parse dữ liệu JSON
-        var data = JSON.parse(event.data);
-        var currentPendingCount = data.count;
+          // Update sidebar badge
+          const sidebarBadge = document.getElementById('adminSidebarBookingBadge');
+          if (sidebarBadge) {
+            sidebarBadge.textContent = String(currentPendingCount);
+            sidebarBadge.setAttribute('data-count', String(currentPendingCount));
+          }
 
-        console.log('    SSE - Pending count: ' + currentPendingCount);
+          // Auto-refresh nếu có thay đổi
+          if (previousPendingCount !== null && currentPendingCount !== previousPendingCount) {
+            console.log('🔄 Pending count thay đổi - refreshing...');
+            await renderWebRequests();
+          }
 
-        // Update badge trên sidebar
-        var sidebarBadge = document.getElementById('adminSidebarBookingBadge');
-        if (sidebarBadge) {
-          sidebarBadge.textContent = String(currentPendingCount);
-          sidebarBadge.setAttribute('data-count', String(currentPendingCount));
+          previousPendingCount = currentPendingCount;
+        } catch (err) {
+          console.error('SSE parse error:', err);
         }
+      });
 
-        // Auto-refresh bảng booking nếu có thay đổi
-        if (previousPendingCount !== null && currentPendingCount !== previousPendingCount) {
-          console.log('    Pending count thay đổi → refreshing...');
-          await renderWebRequests();
-        }
+      eventSource.onerror = function(error) {
+        console.error('SSE connection error:', error);
+      };
 
-        // Lưu lại giá trị hiện tại để so sánh lần sau
-        previousPendingCount = currentPendingCount;
-
-      } catch (err) {
-        console.error('    Lỗi khi parse SSE data:', err);
-      }
-    });
-
-    // BƯỚC 4.4: Xử lý lỗi kết nối
-    eventSource.onerror = function(error) {
-      console.error('    Lỗi kết nối SSE:', error);
-    };
-
-    console.log('    Đã kết nối SSE thành công');
-
-  } catch (err) {
-    console.error('    Lỗi khi khởi tạo SSE:', err);
-  }
-}
-
-/**
- * BƯỚC 5: Gắn các sự kiện (Event Listeners) cho buttons
- */
-function setupEventListeners() {
-  console.log(' Bước 5: Gắn sự kiện cho các controls...');
-
-  // BƯỚC 5.1: Nút "Hôm nay" - set ngày hôm nay
-  if (btnToday) {
-    btnToday.addEventListener("click", function() {
-      setDay(todayISO());
-    });
-    console.log('    Đã gắn nút "Hôm nay"');
+      console.log('✅ SSE connected');
+    } catch (err) {
+      console.error('SSE init error:', err);
+    }
+  } else {
+    console.warn('EventSource not supported');
   }
 
-  // BƯỚC 5.2: Nút "Ngày trước" - lùi 1 ngày
-  if (btnPrev) {
-    btnPrev.addEventListener("click", function() {
-      shiftDay(-1);
-    });
-    console.log('    Đã gắn nút "Ngày trước"');
-  }
+  // Event listeners cho điều khiển ngày
+  if (btnToday) btnToday.addEventListener("click", () => setDay(todayISO()));
+  if (btnPrev) btnPrev.addEventListener("click", () => shiftDay(-1));
+  if (btnNext) btnNext.addEventListener("click", () => shiftDay(1));
+  if (dayPicker) dayPicker.addEventListener("change", () => refreshData());
 
-  // BƯỚC 5.3: Nút "Ngày sau" - tiến 1 ngày
-  if (btnNext) {
-    btnNext.addEventListener("click", function() {
-      shiftDay(1);
-    });
-    console.log('    Đã gắn nút "Ngày sau"');
-  }
-
-  // BƯỚC 5.4: Ô chọn ngày - refresh data khi đổi ngày
-  if (dayPicker) {
-    dayPicker.addEventListener("change", function() {
-      refreshData();
-    });
-    console.log('    Đã gắn sự kiện "change ngày"');
-  }
-
-  // BƯỚC 5.5: Bộ lọc trạng thái - refresh bảng khi đổi filter
+  // Bộ lọc trạng thái
   if (webStatusFilter) {
-    webStatusFilter.addEventListener("change", function() {
-      renderWebRequests();
-    });
-    console.log('    Đã gắn bộ lọc trạng thái');
+    webStatusFilter.addEventListener("change", () => renderWebRequests());
   }
 
-  // BƯỚC 5.6: Dropdown dịch vụ - auto-fill thời lượng khi chọn dịch vụ
+  // Auto-fill duration khi chọn service
   if (service) {
     service.addEventListener("change", function() {
-      // Lấy ID dịch vụ đang chọn
-      var serviceId = parseInt(this.value, 10);
+      const serviceId = parseInt(this.value);
+      const selectedService = SERVICES.find(s => s.id === serviceId);
 
-      // Tìm dịch vụ trong mảng SERVICES
-      var selectedService = null;
-      var i;
-      for (i = 0; i < SERVICES.length; i = i + 1) {
-        if (SERVICES[i].id === serviceId) {
-          selectedService = SERVICES[i];
-          break;
-        }
-      }
-
-      // Điền thời lượng vào ô duration
       if (selectedService && selectedService.duration) {
         duration.value = selectedService.duration;
       } else {
-        duration.value = 60; // Mặc định 60 phút
+        duration.value = 60;
       }
     });
-    console.log('    Đã gắn auto-fill thời lượng');
   }
 
-  // BƯỚC 5.7: Nút toggle sidebar trên mobile
-  if (sidebarToggle) {
-    sidebarToggle.addEventListener("click", function() {
-      sidebar.classList.toggle("show");
-    });
-    console.log('    Đã gắn nút toggle sidebar');
-  }
-}
-
-/**
- * BƯỚC 6: Export các functions ra window để HTML gọi được
- */
-function exportGlobalFunctions() {
-  console.log(' Bước 6: Export functions ra window...');
-
-  // Export để HTML có thể gọi qua onclick
+  // Export functions để dùng từ HTML
   window.openEditModal = openEditModal;
   window.renderWebRequests = renderWebRequests;
 
-  console.log('    Đã export openEditModal, renderWebRequests');
-}
-
-/**
- * =============================================
- * HÀM CHÍNH: KHỞI TẠO TOÀN BỘ ỨNG DỤNG
- * =============================================
- * Chạy khi trang web đã tải xong toàn bộ HTML
- */
-document.addEventListener("DOMContentLoaded", async function() {
-  console.log('');
-  console.log('========================================');
-  console.log('🚀 BẮT ĐẦU KHỞI TẠO SCHEDULER...');
-  console.log('========================================');
-
-  // Chạy 6 bước khởi tạo theo thứ tự
-  initBootstrapComponents();      // B1: Khởi tạo Modal/Toast
-  await loadInitialData();         // B2: Load dữ liệu từ Backend
-  await setupInitialUI();          // B3: Vẽ giao diện ban đầu
-  setupSSEConnection();            // B4: Kết nối real-time
-  setupEventListeners();           // B5: Gắn sự kiện cho buttons
-  exportGlobalFunctions();         // B6: Export functions ra window
-
-  console.log('========================================');
-  console.log('✅ KHỞI TẠO HOÀN TẤT! SẴN SÀNG SỬ DỤNG!');
-  console.log('========================================');
-  console.log('');
+  console.log('✅ KHỞI TẠO HOÀN TẤT!');
 });
 
 /**
