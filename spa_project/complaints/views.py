@@ -18,8 +18,6 @@ from django.utils import timezone
 # TẠM IMPORT từ spa.models (CHƯA chuyển model trong phase này)
 from .models import Complaint, ComplaintReply, ComplaintHistory
 from accounts.models import CustomerProfile
-from spa_services.models import Service
-
 # Forms từ complaints/forms
 from .forms import (
     CustomerComplaintForm,
@@ -187,10 +185,7 @@ def admin_complaints(request):
     if status:
         complaints_list = complaints_list.filter(status=status)
 
-    # Filter by type
     complaint_type = request.GET.get('type', '')
-    if complaint_type:
-        complaints_list = complaints_list.filter(complaint_type=complaint_type)
 
     # Pagination
     paginator = Paginator(complaints_list, 10)
@@ -307,6 +302,7 @@ def admin_complaint_reply(request, complaint_id):
             reply.sender = request.user
             reply.sender_role = 'manager' if request.user.is_superuser else 'staff'
             reply.sender_name = request.user.get_full_name() or request.user.username
+            reply.is_internal = request.POST.get('is_internal') == 'on'
             reply.save()
 
             ComplaintHistory.log(

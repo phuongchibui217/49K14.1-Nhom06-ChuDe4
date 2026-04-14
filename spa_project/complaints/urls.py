@@ -10,6 +10,7 @@ Author: Spa ANA Team
 
 from django.urls import path
 from . import views
+from . import api
 
 app_name = 'complaints'
 
@@ -32,4 +33,17 @@ urlpatterns = [
     path('manage/complaints/<int:complaint_id>/reply/', views.admin_complaint_reply, name='admin_complaint_reply'),
     path('manage/complaints/<int:complaint_id>/status/', views.admin_complaint_status, name='admin_complaint_status'),
     path('manage/complaints/<int:complaint_id>/complete/', views.admin_complaint_complete, name='admin_complaint_complete'),
+
+    # =====================================================
+    # REST API ENDPOINTS (api.py) - Trả về JSON
+    # =====================================================
+    path('api/complaints/', api.api_complaints_list, name='api_complaints_list'),
+    path('api/complaints/stats/', api.api_complaints_stats, name='api_complaints_stats'),
+    path('api/complaints/create/', api.api_complaint_create, name='api_complaint_create'),
+    path('api/complaints/<int:complaint_id>/', api.api_complaint_detail, name='api_complaint_detail'),
+    path('api/complaints/<int:complaint_id>/reply/', api.api_complaint_reply, name='api_complaint_reply'),
+    path('api/complaints/<int:complaint_id>/status/', api.api_complaint_status, name='api_complaint_status'),
+    path('api/complaints/<int:complaint_id>/assign/', api.api_complaint_assign, name='api_complaint_assign'),
+    path('api/complaints/<int:complaint_id>/take/', api.api_complaint_take, name='api_complaint_take'),
+    path('api/complaints/<int:complaint_id>/complete/', api.api_complaint_complete, name='api_complaint_complete'),
 ]
