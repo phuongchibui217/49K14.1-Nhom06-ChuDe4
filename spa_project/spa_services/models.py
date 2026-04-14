@@ -104,6 +104,16 @@ class Service(models.Model):
     def __str__(self):
         return f"{self.code} - {self.name}"
 
+    def get_category_name(self):
+        """Trả về tên danh mục"""
+        return self.category.name if self.category else ''
+
+    def get_image_url(self):
+        """Trả về URL ảnh hoặc ảnh mặc định"""
+        if self.image:
+            return f"/media/{self.image}"
+        return "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400"
+
     @classmethod
     def _generate_code(cls):
         prefix = 'DV'

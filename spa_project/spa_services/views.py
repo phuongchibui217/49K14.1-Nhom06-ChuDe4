@@ -351,7 +351,15 @@ def api_service_create(request):
         try:
             category_obj = ServiceCategory.objects.get(code=cat_code)
         except ServiceCategory.DoesNotExist:
-            category_obj = None
+            # Fallback: lấy category đầu tiên trong DB
+            category_obj = ServiceCategory.objects.filter(status='ACTIVE').first()
+            if not category_obj:
+                return JsonResponse({'error': 'Không tìm thấy danh mục dịch vụ. Vui lòng tạo danh mục trước.'}, status=400)
+
+        # Normalize status về uppercase
+        status = status.upper() if status else 'ACTIVE'
+        if status not in ('ACTIVE', 'INACTIVE'):
+            status = 'ACTIVE'
 
         # Create service
         service = Service.objects.create(
@@ -362,7 +370,7 @@ def api_service_create(request):
             price=price,
             duration_minutes=duration,
             status=status,
-            is_active=status == 'ACTIVE',
+            is_active=(status == 'ACTIVE'),
             image='',
             created_by=request.user,
         )
@@ -477,6 +485,11 @@ def api_service_update(request, service_id):
             except ServiceCategory.DoesNotExist:
                 pass  # keep existing category
 
+        # Normalize status về uppercase
+        status = status.upper() if status else 'ACTIVE'
+        if status not in ('ACTIVE', 'INACTIVE'):
+            status = 'ACTIVE'
+
         # Update service
         service.name = name
         service.short_description = description[:300] if len(description) > 300 else description
@@ -484,7 +497,7 @@ def api_service_update(request, service_id):
         service.price = price
         service.duration_minutes = duration
         service.status = status
-        service.is_active = status == 'ACTIVE'
+        service.is_active = (status == 'ACTIVE')
 
         # Handle image upload
         if image_file:

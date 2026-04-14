@@ -12,9 +12,9 @@ def serialize_complaint(complaint):
     return {
         'id': complaint.id,
         'code': complaint.code,
-        'full_name': complaint.customer_name_snapshot,
-        'phone': complaint.customer_phone_snapshot,
-        'email': complaint.customer_email_snapshot,
+        'full_name': complaint.customer_name_snapshot or complaint.full_name,
+        'phone': complaint.customer_phone_snapshot or complaint.phone,
+        'email': complaint.customer_email_snapshot or complaint.email or '',
         'title': complaint.title,
         'content': complaint.content,
         'incident_date': complaint.incident_date.strftime('%Y-%m-%d') if complaint.incident_date else None,
@@ -33,7 +33,7 @@ def serialize_complaint(complaint):
         'resolution': complaint.resolution,
         'resolved_at': complaint.resolved_at.strftime('%Y-%m-%d %H:%M') if complaint.resolved_at else None,
         'created_at': complaint.created_at.strftime('%Y-%m-%d %H:%M'),
-        'updated_at': complaint.updated_at.strftime('%Y-%m-%d %H:%M'),
+        'updated_at': complaint.updated_at.strftime('%Y-%m-%d %H:%M') if complaint.updated_at else None,
     }
 
 

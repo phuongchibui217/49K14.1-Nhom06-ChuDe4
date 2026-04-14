@@ -99,7 +99,7 @@
 <section class="page-header">
     <div class="container">
         <h1>{{ service.name }}</h1>
-        <p class="lead mb-0">{{ service.category_name|default:'Dịch vụ chăm sóc sắc đẹp' }}</p>
+        <p class="lead mb-0">{{ service.category.name|default:'Dịch vụ chăm sóc sắc đẹp' }}</p>
     </div>
 </section>
 
@@ -111,11 +111,7 @@
             <div class="col-lg-8">
                 <!-- Service Image -->
                 <div class="service-image">
-                    {% if service.image %}
-                    <img src="{{ service.image.url }}" alt="{{ service.name }}">
-                    {% else %}
-                    <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=1920" alt="{{ service.name }}">
-                    {% endif %}
+                    <img src="{{ service.get_image_url }}" alt="{{ service.name }}">
                 </div>
 
                 <!-- Service Description -->
@@ -133,7 +129,7 @@
                                 <i class="fas fa-clock feature-icon me-3"></i>
                                 <div>
                                     <h6 class="mb-1">Thời gian</h6>
-                                    <p class="text-muted mb-0">{{ service.duration|default:'90' }} phút</p>
+                                    <p class="text-muted mb-0">{{ service.duration_minutes|default:'90' }} phút</p>
                                 </div>
                             </div>
                         </div>
@@ -193,11 +189,7 @@
             <div class="col-md-6 col-lg-3 mb-4">
                 <div class="related-service">
                     <div class="related-image">
-                        {% if related.image %}
-                        <img src="{{ related.image.url }}" alt="{{ related.name }}">
-                        {% else %}
-                        <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400" alt="{{ related.name }}">
-                        {% endif %}
+                        <img src="{{ related.get_image_url }}" alt="{{ related.name }}">
                     </div>
                     <div class="p-3">
                         <h6 class="mb-2">{{ related.name }}</h6>

@@ -74,10 +74,7 @@ def login_view(request):
 
 def _redirect_by_role(request, user, show_welcome=False):
     """Helper function redirect theo role"""
-    print(f"DEBUG _redirect_by_role: User={user.username}, is_staff={user.is_staff}, is_superuser={user.is_superuser}")
-
     if user.is_staff or user.is_superuser:
-        print(f"DEBUG: User is staff/superuser, redirecting to /manage/appointments/")
         if show_welcome:
             full_name = user.get_full_name() or user.username
             role = "Quản trị viên" if user.is_superuser else "Nhân viên"
@@ -86,7 +83,6 @@ def _redirect_by_role(request, user, show_welcome=False):
 
     try:
         profile = user.customer_profile
-        print(f"DEBUG: User has CustomerProfile, redirecting to my_appointments")
         if show_welcome:
             full_name = profile.full_name or user.username
             messages.success(request, f'Chào mừng {full_name}!')
@@ -175,8 +171,6 @@ def password_reset_request(request):
                 'token': token,
             })
         )
-
-        print(reset_url)
 
         display_name = (profile.full_name if profile else None) or user.username
         subject = 'Đặt lại mật khẩu - Spa ANA'

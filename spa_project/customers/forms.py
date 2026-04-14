@@ -130,6 +130,15 @@ class CustomerRegistrationForm(forms.ModelForm):
             'autocomplete': 'username',
         })
     )
+    email = forms.EmailField(
+        label='Email',
+        required=False,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Email (dùng để khôi phục mật khẩu)',
+            'autocomplete': 'email',
+        })
+    )
     password1 = forms.CharField(
         label='Mật khẩu',
         widget=forms.PasswordInput(attrs={
@@ -198,7 +207,8 @@ class CustomerRegistrationForm(forms.ModelForm):
     def save(self, commit=True):
         user = User.objects.create_user(
             username=self.cleaned_data['username'],
-            password=self.cleaned_data['password1']
+            password=self.cleaned_data['password1'],
+            email=self.cleaned_data.get('email', '') or '',
         )
         profile = super().save(commit=False)
         profile.user = user

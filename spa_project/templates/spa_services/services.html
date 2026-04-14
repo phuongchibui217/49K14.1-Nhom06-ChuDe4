@@ -99,11 +99,11 @@
         <div class="row mb-5">
             <div class="col-12">
                 <div class="d-flex flex-wrap justify-content-center gap-2">
-                    <button class="btn btn-warning active" onclick="filterServices('all')">Tất cả</button>
-                    <button class="btn btn-outline-warning" onclick="filterServices('skincare')">Chăm sóc da</button>
-                    <button class="btn btn-outline-warning" onclick="filterServices('massage')">Massage</button>
-                    <button class="btn btn-outline-warning" onclick="filterServices('tattoo')">Phun thêu</button>
-                    <button class="btn btn-outline-warning" onclick="filterServices('hair')">Triệt lông</button>
+                    <button class="btn btn-warning active" onclick="filterServices('all', this)">Tất cả</button>
+                    <button class="btn btn-outline-warning" onclick="filterServices('CAT01', this)">Chăm sóc da</button>
+                    <button class="btn btn-outline-warning" onclick="filterServices('CAT02', this)">Massage</button>
+                    <button class="btn btn-outline-warning" onclick="filterServices('CAT03', this)">Phun thêu</button>
+                    <button class="btn btn-outline-warning" onclick="filterServices('CAT04', this)">Triệt lông</button>
                 </div>
             </div>
         </div>
@@ -114,14 +114,10 @@
             <div class="col-md-6 col-lg-4 mb-4 service-item" data-category="{{ service.category.code|default:'skincare' }}">
                 <div class="service-card">
                     <div class="service-image">
-                        <span class="category-badge">{{ service.category_name|default:'Chăm sóc da' }}</span>
-                        {% if service.image %}
-                        <img src="{{ service.image.url }}" alt="{{ service.name }}">
-                        {% else %}
-                        <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400" alt="{{ service.name }}">
-                        {% endif %}
+                        <span class="category-badge">{{ service.category.name|default:'Chăm sóc da' }}</span>
+                        <img src="{{ service.get_image_url }}" alt="{{ service.name }}">
                         <div class="service-overlay">
-                            <span class="badge bg-warning">{{ service.duration|default:'90' }} phút</span>
+                            <span class="badge bg-warning">{{ service.duration_minutes|default:'90' }} phút</span>
                         </div>
                     </div>
                     <div class="service-info">
@@ -148,31 +144,21 @@
 
 {% block extra_js %}
 <script>
-function filterServices(category) {
+function filterServices(category, btn) {
     const items = document.querySelectorAll('.service-item');
     const buttons = document.querySelectorAll('[onclick^="filterServices"]');
 
     // Update active button
-    buttons.forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.textContent.trim().toLowerCase().includes(
-            category === 'all' ? 'tất cả' :
-            category === 'skincare' ? 'chăm sóc da' :
-            category === 'massage' ? 'massage' :
-            category === 'tattoo' ? 'phun thêu' :
-            category === 'hair' ? 'triệt lông' : ''
-        )) {
-            btn.classList.add('active');
-        }
+    buttons.forEach(b => {
+        b.classList.remove('active', 'btn-warning');
+        b.classList.add('btn-outline-warning');
     });
+    btn.classList.remove('btn-outline-warning');
+    btn.classList.add('btn-warning', 'active');
 
     // Filter items
     items.forEach(item => {
-        if (category === 'all' || item.dataset.category === category) {
-            item.style.display = 'block';
-        } else {
-            item.style.display = 'none';
-        }
+        item.style.display = (category === 'all' || item.dataset.category === category) ? 'block' : 'none';
     });
 }
 </script>

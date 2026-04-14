@@ -15,13 +15,10 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils import timezone
 
-# TẠM IMPORT từ spa.models (CHƯA chuyển model trong phase này)
 from .models import Complaint, ComplaintReply, ComplaintHistory
 from customers.models import CustomerProfile
-# Forms từ complaints/forms
 from .forms import (
     CustomerComplaintForm,
-    GuestComplaintForm,
     ComplaintReplyForm,
     ComplaintStatusForm,
     ComplaintAssignForm,
@@ -52,10 +49,10 @@ def customer_complaint_create(request):
             complaint.customer = customer_profile
             complaint.full_name = customer_profile.full_name
             complaint.phone = customer_profile.phone
-            complaint.email = None
+            complaint.email = request.user.email or None
             complaint.customer_name_snapshot = customer_profile.full_name
             complaint.customer_phone_snapshot = customer_profile.phone
-            complaint.customer_email_snapshot = None or ''
+            complaint.customer_email_snapshot = request.user.email or ''
             complaint.save()
 
             # Log history (bọc trong try để không ảnh hưởng luồng chính)
@@ -139,15 +136,10 @@ def customer_complaint_reply(request, complaint_id):
             reply = form.save(commit=False)
             reply.complaint = complaint
             reply.sender = request.user
-            reply.sender_role = 'customer'
-            reply.sender_name = complaint.customer_name_snapshot
+            reply.sender_role = 'CUSTOMER'
+            reply.sender_name = complaint.customer_name_snapshot or complaint.full_name
             reply.is_internal = False
             reply.save()
-
-            # Cập nhật trạng thái nếu đang chờ khách phản hồi
-            if complaint.status == 'IN_PROGRESS':
-                complaint.status = 'IN_PROGRESS'
-                complaint.save()
 
             ComplaintHistory.log(
                 complaint=complaint,
@@ -189,8 +181,6 @@ def admin_complaints(request):
     if status:
         complaints_list = complaints_list.filter(status=status)
 
-    complaint_type = request.GET.get('type', '')
-
     # Pagination
     paginator = Paginator(complaints_list, 10)
     page = request.GET.get('page', 1)
@@ -200,7 +190,6 @@ def admin_complaints(request):
         'complaints': complaints,
         'search': search,
         'status_filter': status,
-        'type_filter': complaint_type,
     }
     return render(request, 'manage/pages/admin_complaints.html', context)
 
@@ -304,7 +293,7 @@ def admin_complaint_reply(request, complaint_id):
             reply = form.save(commit=False)
             reply.complaint = complaint
             reply.sender = request.user
-            reply.sender_role = 'admin' if request.user.is_superuser else 'staff'
+            reply.sender_role = 'ADMIN' if request.user.is_superuser else 'STAFF'
             reply.sender_name = request.user.get_full_name() or request.user.username
             reply.is_internal = request.POST.get('is_internal') == 'on'
             reply.save()

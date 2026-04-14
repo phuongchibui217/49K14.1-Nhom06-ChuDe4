@@ -10,7 +10,6 @@ Author: Spa ANA Team
 
 import json
 
-from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.db.models import Q
 from django.utils import timezone
@@ -59,9 +58,9 @@ def api_complaints_list(request):
     if search:
         complaints = complaints.filter(
             Q(code__icontains=search) |
-            Q(customer_name_snapshot__icontains=search) |
-            Q(customer_phone_snapshot__icontains=search) |
-            Q(customer_email_snapshot__icontains=search) |
+            Q(full_name__icontains=search) |
+            Q(phone__icontains=search) |
+            Q(email__icontains=search) |
             Q(title__icontains=search)
         )
 
@@ -183,7 +182,7 @@ def api_complaint_create(request):
         complaint.customer = customer_profile
         complaint.full_name = customer_profile.full_name
         complaint.phone = customer_profile.phone
-        complaint.email = None
+        complaint.email = request.user.email or None
         complaint.customer_name_snapshot = customer_profile.full_name
         complaint.customer_phone_snapshot = customer_profile.phone
         complaint.customer_email_snapshot = request.user.email or ''
@@ -223,13 +222,14 @@ def api_complaint_create(request):
 
     complaint.save()
 
-    # Log history
-    ComplaintHistory.log(
-        complaint=complaint,
-        action='CREATE',
-        note='Tạo qua API',
-        performed_by=request.user if request.user.is_authenticated else None
-    )
+    # Log history - chỉ log khi có user (performed_by không cho phép NULL)
+    if request.user.is_authenticated:
+        ComplaintHistory.log(
+            complaint=complaint,
+            action='CREATE',
+            note='Tạo qua API',
+            performed_by=request.user
+        )
 
     return ApiResponse.created(
         data={'complaint': serialize_complaint(complaint)},
@@ -274,8 +274,6 @@ def api_complaint_reply(request, complaint_id):
     if not is_staff:
         if not complaint.customer or complaint.customer.user != request.user:
             return ApiResponse.forbidden()
-        if complaint.status in ('resolved', 'closed'):
-            return ApiResponse.bad_request('Khiếu nại đã đóng, không thể phản hồi')
 
     reply = ComplaintReply(
         complaint=complaint,
@@ -284,17 +282,15 @@ def api_complaint_reply(request, complaint_id):
     )
 
     if is_staff:
-        reply.sender_role = 'admin' if request.user.is_superuser else 'staff'
+        reply.sender_role = 'ADMIN' if request.user.is_superuser else 'STAFF'
         reply.sender_name = request.user.get_full_name() or request.user.username
         reply.is_internal = data.get('is_internal', False)
     else:
-        reply.sender_role = 'customer'
+        if complaint.status == 'RESOLVED':
+            return ApiResponse.bad_request('Khiếu nại đã hoàn thành, không thể phản hồi')
+        reply.sender_role = 'CUSTOMER'
         reply.sender_name = complaint.customer_name_snapshot or complaint.full_name
         reply.is_internal = False
-
-        # Cập nhật trạng thái nếu đang chờ khách phản hồi
-        if complaint.status == 'IN_PROGRESS':
-            pass  # already in progress
 
     reply.save()
 
