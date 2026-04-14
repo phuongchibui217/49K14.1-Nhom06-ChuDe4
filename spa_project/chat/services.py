@@ -105,7 +105,7 @@ def get_or_create_customer_chat_session(request, guest_key=None, source_page="")
         session = ChatSession.objects.filter(
             customer=customer,
             customer_type="authenticated",
-            status="open",
+            status__iexact="open",
         ).order_by("-last_message_at", "-created_at").first()
 
         if session:
@@ -125,7 +125,7 @@ def get_or_create_customer_chat_session(request, guest_key=None, source_page="")
         session = ChatSession.objects.filter(
             customer_type="guest",
             guest_session_key=guest_key,
-            status="open",
+            status__iexact="open",
         ).first()
         if session:
             if source_page and not session.source_page:
@@ -276,7 +276,7 @@ def get_chat_sessions_queryset(search="", status=""):
     sessions = ChatSession.objects.select_related("customer", "customer__user")
 
     if status:
-        sessions = sessions.filter(status=status)
+        sessions = sessions.filter(status__iexact=status)
 
     search = (search or "").strip()
     if search:

@@ -98,6 +98,11 @@
         return `${Math.ceil(value / 1024)} KB`;
     }
 
+    function getSessionStatusLabel(status) {
+        const normalized = String(status || "").trim().toUpperCase();
+        return normalized === "CLOSED" ? "Đã đóng" : "Đang mở";
+    }
+
     function debounce(fn, delay) {
         let timeoutId = null;
         return function (...args) {
@@ -345,7 +350,7 @@
         dom.sessionName.textContent = session.customerName || "Khách hàng";
         dom.sessionCode.textContent = session.chatCode || "";
         dom.sessionContact.textContent = session.customerPhone || (session.isGuest ? "Khách vãng lai" : "");
-        dom.sessionStatus.textContent = session.status === "closed" ? "Đã đóng" : "Đang mở";
+        dom.sessionStatus.textContent = getSessionStatusLabel(session.status);
         updateSendButtonState();
         renderSessions();
     }
@@ -367,7 +372,7 @@
             if (refreshed) {
                 state.selectedSession = refreshed;
                 dom.sessionContact.textContent = refreshed.customerPhone || (refreshed.isGuest ? "Khách vãng lai" : "");
-                dom.sessionStatus.textContent = refreshed.status === "closed" ? "Đã đóng" : "Đang mở";
+                dom.sessionStatus.textContent = getSessionStatusLabel(refreshed.status);
             }
         }
     }
@@ -412,7 +417,7 @@
                 if (refreshed) {
                     state.selectedSession = refreshed;
                     dom.sessionContact.textContent = refreshed.customerPhone || (refreshed.isGuest ? "Khách vãng lai" : "");
-                    dom.sessionStatus.textContent = refreshed.status === "closed" ? "Đã đóng" : "Đang mở";
+                    dom.sessionStatus.textContent = getSessionStatusLabel(refreshed.status);
                 }
             }
         });

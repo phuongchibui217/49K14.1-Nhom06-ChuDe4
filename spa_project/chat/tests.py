@@ -177,6 +177,45 @@ class CustomerChatApiTests(BaseChatTestCase):
         self.assertTrue(new_bootstrap["isNewSession"])
         self.assertFalse(new_bootstrap["historyPreserved"])
 
+    def test_guest_history_is_restored_when_guest_key_is_reused(self):
+        client = Client()
+        first_bootstrap = self.bootstrap_guest(client, source="/")
+        csrf_token = self.prime_csrf(client, reverse("pages:index"))
+
+        self.post_json(
+            client,
+            reverse("chat:api_customer_chat_send", args=[first_bootstrap["session"]["chatCode"]]),
+            {
+                "content": "Giữ lại lịch sử chat guest",
+                "guestKey": first_bootstrap["guestKey"],
+                "clientMessageId": "guest-msg-reuse",
+            },
+            csrf_token,
+        )
+
+        second_bootstrap_response = client.get(
+            reverse("chat:api_customer_chat_bootstrap"),
+            {
+                "source": "/",
+                "guestKey": first_bootstrap["guestKey"],
+            },
+        )
+
+        self.assertEqual(second_bootstrap_response.status_code, 200)
+        second_bootstrap = second_bootstrap_response.json()
+        self.assertTrue(second_bootstrap["success"])
+        self.assertEqual(
+            second_bootstrap["session"]["chatCode"],
+            first_bootstrap["session"]["chatCode"],
+        )
+        self.assertEqual(second_bootstrap["guestKey"], first_bootstrap["guestKey"])
+        self.assertFalse(second_bootstrap["isNewSession"])
+        self.assertEqual(len(second_bootstrap["messages"]), 1)
+        self.assertEqual(
+            second_bootstrap["messages"][0]["content"],
+            "Giữ lại lịch sử chat guest",
+        )
+
     def test_authenticated_customer_history_is_preserved_between_logins(self):
         first_client = Client()
         first_client.force_login(self.customer_user)
