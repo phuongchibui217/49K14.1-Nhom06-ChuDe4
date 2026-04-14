@@ -16,7 +16,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
 from .models import Appointment
-from accounts.models import CustomerProfile
+from customers.models import CustomerProfile
 from spa_services.models import Service
 from .forms import AppointmentForm
 
@@ -48,7 +48,6 @@ def booking(request):
             user=request.user,
             phone=request.user.username,
             full_name=request.user.get_full_name() or request.user.username,
-            email=request.user.email or '',
         )
         messages.info(request, 'Hồ sơ của bạn đã được tạo. Vui lòng cập nhật thông tin đầy đủ.')
 
@@ -68,15 +67,13 @@ def booking(request):
                 customer_profile.full_name = customer_name
             if customer_phone:
                 customer_profile.phone = customer_phone
-            if customer_email:
-                customer_profile.email = customer_email
             customer_profile.save()
 
             # Tạo lịch hẹn
             appointment = form.save(commit=False)
             appointment.customer = customer_profile
-            appointment.source = 'web'
-            appointment.status = 'pending'
+            appointment.source = 'ONLINE'
+            appointment.status = 'NOT_ARRIVED'
             appointment.save()
 
             messages.success(
@@ -160,12 +157,12 @@ def cancel_appointment(request, appointment_id):
         return redirect('appointments:my_appointments')
 
     # Kiểm tra trạng thái
-    if appointment.status not in ['pending', 'confirmed']:
-        messages.warning(
-            request,
-            f'Không thể hủy lịch hẹn này. Trạng thái hiện tại: {appointment.get_status_display()}'
-        )
-        return redirect('appointments:my_appointments')
+        if appointment.status not in ['PENDING', 'NOT_ARRIVED']:
+            messages.warning(
+                request,
+                f'Không thể hủy lịch hẹn này. Trạng thái hiện tại: {appointment.get_status_display()}'
+            )
+            return redirect('appointments:my_appointments')
 
     # GET: Hiển thị trang xác nhận
     if request.method == 'GET':
@@ -175,7 +172,7 @@ def cancel_appointment(request, appointment_id):
 
     # POST: Thực hiện hủy
     if request.method == 'POST':
-        appointment.status = 'cancelled'
+        appointment.status = 'CANCELLED'
         appointment.save()
         messages.success(request, f'Đã hủy lịch hẹn {appointment.appointment_code}.')
         return redirect('appointments:my_appointments')

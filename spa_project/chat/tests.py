@@ -7,7 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from accounts.models import CustomerProfile
+from customers.models import CustomerProfile
 
 from .models import ChatMessage, ChatSession
 from .services import create_chat_message
@@ -39,7 +39,6 @@ class BaseChatTestCase(TestCase):
             user=self.customer_user,
             phone="0912345678",
             full_name="Lan Nguyen",
-            email="lan@example.com",
         )
 
         self.other_customer_user = User.objects.create_user(
@@ -53,7 +52,6 @@ class BaseChatTestCase(TestCase):
             user=self.other_customer_user,
             phone="0988888888",
             full_name="Minh Tran",
-            email="minh@example.com",
         )
 
         self.admin_user = User.objects.create_user(

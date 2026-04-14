@@ -199,15 +199,15 @@ def validate_service_data(data, exclude_id=None):
         else:
             cleaned_data['image'] = image_file
 
-    # Map category
-    category_map = {
-        '1': 'skincare',
-        '2': 'massage',
-        '3': 'tattoo',
-        '4': 'hair',
-    }
+    # Map category number to ServiceCategory object
+    _code_map = {'1': 'CAT01', '2': 'CAT02', '3': 'CAT03', '4': 'CAT04'}
+    from .models import ServiceCategory
     category_input = str(data.get('category', '1'))
-    cleaned_data['category'] = category_map.get(category_input, 'skincare')
+    cat_code = _code_map.get(category_input, 'CAT01')
+    try:
+        cleaned_data['category'] = ServiceCategory.objects.get(code=cat_code)
+    except ServiceCategory.DoesNotExist:
+        cleaned_data['category'] = None
 
     # Description
     description = data.get('description', '').strip()

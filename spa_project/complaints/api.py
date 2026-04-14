@@ -59,9 +59,9 @@ def api_complaints_list(request):
     if search:
         complaints = complaints.filter(
             Q(code__icontains=search) |
-            Q(full_name__icontains=search) |
-            Q(phone__icontains=search) |
-            Q(email__icontains=search) |
+            Q(customer_name_snapshot__icontains=search) |
+            Q(customer_phone_snapshot__icontains=search) |
+            Q(customer_email_snapshot__icontains=search) |
             Q(title__icontains=search)
         )
 
@@ -172,7 +172,7 @@ def api_complaint_create(request):
 
     # Thông tin liên hệ
     if request.user.is_authenticated:
-        from accounts.models import CustomerProfile
+        from customers.models import CustomerProfile
         customer_profile, _ = CustomerProfile.objects.get_or_create(
             user=request.user,
             defaults={
@@ -183,7 +183,10 @@ def api_complaint_create(request):
         complaint.customer = customer_profile
         complaint.full_name = customer_profile.full_name
         complaint.phone = customer_profile.phone
-        complaint.email = request.user.email or ''
+        complaint.email = None
+        complaint.customer_name_snapshot = customer_profile.full_name
+        complaint.customer_phone_snapshot = customer_profile.phone
+        complaint.customer_email_snapshot = request.user.email or ''
     else:
         full_name = data.get('full_name', '').strip()
         phone = data.get('phone', '').strip()
@@ -193,7 +196,10 @@ def api_complaint_create(request):
             return ApiResponse.bad_request('Vui lòng nhập số điện thoại')
         complaint.full_name = full_name
         complaint.phone = phone
-        complaint.email = data.get('email', '').strip()
+        complaint.email = data.get('email', '').strip() or None
+        complaint.customer_name_snapshot = full_name
+        complaint.customer_phone_snapshot = phone
+        complaint.customer_email_snapshot = data.get('email', '').strip() or None
 
     # Thông tin liên quan (optional)
     incident_date = data.get('incident_date')
@@ -220,7 +226,7 @@ def api_complaint_create(request):
     # Log history
     ComplaintHistory.log(
         complaint=complaint,
-        action='created',
+        action='CREATE',
         note='Tạo qua API',
         performed_by=request.user if request.user.is_authenticated else None
     )
@@ -278,24 +284,23 @@ def api_complaint_reply(request, complaint_id):
     )
 
     if is_staff:
-        reply.sender_role = 'manager' if request.user.is_superuser else 'staff'
+        reply.sender_role = 'admin' if request.user.is_superuser else 'staff'
         reply.sender_name = request.user.get_full_name() or request.user.username
         reply.is_internal = data.get('is_internal', False)
     else:
         reply.sender_role = 'customer'
-        reply.sender_name = complaint.full_name
+        reply.sender_name = complaint.customer_name_snapshot or complaint.full_name
         reply.is_internal = False
 
         # Cập nhật trạng thái nếu đang chờ khách phản hồi
-        if complaint.status == 'waiting_customer':
-            complaint.status = 'processing'
-            complaint.save()
+        if complaint.status == 'IN_PROGRESS':
+            pass  # already in progress
 
     reply.save()
 
     ComplaintHistory.log(
         complaint=complaint,
-        action='replied',
+        action='REPLY',
         note=f'Phản hồi bởi {reply.sender_name}',
         performed_by=request.user
     )
@@ -340,7 +345,7 @@ def api_complaint_status(request, complaint_id):
 
     ComplaintHistory.log(
         complaint=complaint,
-        action='status_changed',
+        action='UPDATE',
         old_value=old_status,
         new_value=complaint.get_status_display(),
         performed_by=request.user
@@ -386,12 +391,12 @@ def api_complaint_assign(request, complaint_id):
 
     old_assignee = complaint.assigned_to
     complaint.assigned_to = assignee
-    complaint.status = 'assigned'
+    complaint.status = 'IN_PROGRESS'
     complaint.save()
 
     ComplaintHistory.log(
         complaint=complaint,
-        action='assigned',
+        action='ASSIGN',
         old_value=old_assignee.get_full_name() if old_assignee else '',
         new_value=assignee.get_full_name() or assignee.username,
         performed_by=request.user
@@ -423,12 +428,12 @@ def api_complaint_take(request, complaint_id):
         return ApiResponse.bad_request('Khiếu nại này đã được phân công')
 
     complaint.assigned_to = request.user
-    complaint.status = 'assigned'
+    complaint.status = 'IN_PROGRESS'
     complaint.save()
 
     ComplaintHistory.log(
         complaint=complaint,
-        action='took_ownership',
+        action='ASSIGN',
         new_value=request.user.get_full_name() or request.user.username,
         note='Nhân viên tự nhận xử lý',
         performed_by=request.user
@@ -470,13 +475,13 @@ def api_complaint_complete(request, complaint_id):
         return ApiResponse.bad_request('Khiếu nại chưa được phân công')
 
     complaint.resolution = resolution
-    complaint.status = 'resolved'
+    complaint.status = 'RESOLVED'
     complaint.resolved_at = timezone.now()
     complaint.save()
 
     ComplaintHistory.log(
         complaint=complaint,
-        action='resolved',
+        action='RESOLVE',
         note=resolution,
         performed_by=request.user
     )

@@ -386,7 +386,7 @@
                         </div>
                         {% endif %}
 
-                        <form method="post" action="{% url 'accounts:customer_profile' %}">
+                        <form method="post" action="{% url 'customers:customer_profile' %}">
                             {% csrf_token %}
                             <input type="hidden" name="action" value="update_profile">
 
@@ -462,7 +462,7 @@
                         </div>
                         {% endif %}
 
-                        <form method="post" action="{% url 'accounts:customer_profile' %}">
+                        <form method="post" action="{% url 'customers:customer_profile' %}">
                             {% csrf_token %}
                             <input type="hidden" name="action" value="change_password">
 

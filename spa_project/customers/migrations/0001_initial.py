@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='StaffProfile',
+            name='CustomerProfile',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('phone', models.CharField(max_length=15, unique=True, verbose_name='Số điện thoại')),
@@ -24,19 +24,21 @@ class Migration(migrations.Migration):
                 ('dob', models.DateField(blank=True, null=True, verbose_name='Ngày sinh')),
                 ('address', models.CharField(blank=True, max_length=255, null=True, verbose_name='Địa chỉ')),
                 ('notes', models.CharField(blank=True, max_length=1000, null=True, verbose_name='Ghi chú')),
+                ('contact_channel', models.CharField(blank=True, max_length=20, null=True, verbose_name='Kênh liên hệ')),
                 ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Thời điểm tạo hồ sơ')),
                 ('updated_at', models.DateTimeField(auto_now=True, null=True, verbose_name='Thời điểm cập nhật gần nhất')),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='staff_profile', to=settings.AUTH_USER_MODEL, verbose_name='Tài khoản người dùng')),
+                ('user', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='customer_profile', to=settings.AUTH_USER_MODEL, verbose_name='User')),
             ],
             options={
-                'verbose_name': 'Hồ sơ nhân viên',
-                'verbose_name_plural': 'Hồ sơ nhân viên',
-                'db_table': 'staff_profiles',
+                'verbose_name': 'Khách hàng',
+                'verbose_name_plural': 'Khách hàng',
+                'db_table': 'customer_profiles',
                 'ordering': ['-created_at'],
+                'indexes': [models.Index(fields=['phone'], name='customer_pr_phone_ece207_idx')],
             },
         ),
         migrations.AddConstraint(
-            model_name='staffprofile',
-            constraint=models.CheckConstraint(check=models.Q(('gender__in', ['Nam', 'Nu', 'Khac']), ('gender__isnull', True), _connector='OR'), name='staffprofile_gender_valid'),
+            model_name='customerprofile',
+            constraint=models.CheckConstraint(check=models.Q(('gender__in', ['Nam', 'Nu', 'Khac']), ('gender__isnull', True), _connector='OR'), name='customerprofile_gender_valid'),
         ),
     ]

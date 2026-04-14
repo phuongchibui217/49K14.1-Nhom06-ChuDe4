@@ -11,7 +11,7 @@ django.setup()
 
 from appointments.models import Appointment
 from spa_services.models import Service
-from accounts.models import CustomerProfile
+from customers.models import CustomerProfile
 from datetime import date, time
 
 def create_test_bookings():

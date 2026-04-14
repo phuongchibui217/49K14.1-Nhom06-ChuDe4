@@ -80,20 +80,20 @@ class GuestComplaintForm(forms.ModelForm):
 
     class Meta:
         model = Complaint
-        fields = ['full_name', 'phone', 'email', 'title', 'content',
-                  'incident_date',
+        fields = ['customer_name_snapshot', 'customer_phone_snapshot', 'customer_email_snapshot',
+                  'title', 'content', 'incident_date',
                   'appointment_code', 'related_service', 'expected_solution']
         widgets = {
-            'full_name': forms.TextInput(attrs={
+            'customer_name_snapshot': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Họ và tên của bạn'
             }),
-            'phone': forms.TextInput(attrs={
+            'customer_phone_snapshot': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Số điện thoại',
                 'pattern': '[0-9]{10,11}'
             }),
-            'email': forms.EmailInput(attrs={
+            'customer_email_snapshot': forms.EmailInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Email (không bắt buộc)'
             }),
@@ -140,8 +140,8 @@ class GuestComplaintForm(forms.ModelForm):
             raise forms.ValidationError('Nội dung phải có ít nhất 10 ký tự.')
         return content
 
-    def clean_phone(self):
-        phone = self.cleaned_data.get('phone', '').strip()
+    def clean_customer_phone_snapshot(self):
+        phone = self.cleaned_data.get('customer_phone_snapshot', '').strip()
         if not phone:
             raise forms.ValidationError('Vui lòng nhập số điện thoại.')
         return phone

@@ -28,53 +28,91 @@
                 <!-- Right side: User menu -->
                 <div class="d-flex align-items-center">
                     {% if user.is_authenticated %}
-                        <!-- Avatar Dropdown -->
-                        <div class="avatar-dropdown dropdown">
-                            <button class="avatar-btn" type="button" id="avatarDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                <div class="avatar-circle">
-                                    {% if user.customer_profile.full_name %}
-                                        {{ user.customer_profile.full_name|slice:":1"|upper }}
-                                    {% else %}
-                                        {{ user.username|slice:":1"|upper }}
-                                    {% endif %}
-                                </div>
-                                <span class="avatar-name d-none d-lg-inline">
-                                    {% if user.customer_profile.full_name %}
-                                        {{ user.customer_profile.full_name|truncatechars:15 }}
-                                    {% else %}
-                                        {{ user.username|truncatechars:15 }}
-                                    {% endif %}
-                                </span>
-                                <i class="fas fa-chevron-down ms-1 avatar-chevron"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end avatar-menu" aria-labelledby="avatarDropdown">
-                                <li>
-                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'my_appointments' %}active{% endif %}" href="{% url 'appointments:my_appointments' %}">
-                                        <i class="fas fa-calendar-check"></i>
-                                        <span>Lịch hẹn của tôi</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'customer_complaint_list' %}active{% endif %}" href="{% url 'complaints:customer_complaint_list' %}">
-                                        <i class="fas fa-clipboard-list"></i>
-                                        <span>Khiếu nại của tôi</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item {% if request.resolver_match.url_name == 'customer_profile' %}active{% endif %}" href="{% url 'accounts:customer_profile' %}">
-                                        <i class="fas fa-user-cog"></i>
-                                        <span>Tài khoản cá nhân</span>
-                                    </a>
-                                </li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li>
-                                    <a class="dropdown-item text-danger logout-link" href="{% url 'accounts:logout' %}">
-                                        <i class="fas fa-sign-out-alt"></i>
-                                        <span>Đăng xuất</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
+                        {% if user.is_staff or user.is_superuser %}
+                            {# --- NHÂN VIÊN / ADMIN --- #}
+                            <div class="avatar-dropdown dropdown">
+                                <button class="avatar-btn" type="button" id="avatarDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <div class="avatar-circle">
+                                        {% if user.staff_profile.full_name %}
+                                            {{ user.staff_profile.full_name|slice:":1"|upper }}
+                                        {% else %}
+                                            {{ user.username|slice:":1"|upper }}
+                                        {% endif %}
+                                    </div>
+                                    <span class="avatar-name d-none d-lg-inline">
+                                        {% if user.staff_profile.full_name %}
+                                            {{ user.staff_profile.full_name|truncatechars:15 }}
+                                        {% else %}
+                                            {{ user.username|truncatechars:15 }}
+                                        {% endif %}
+                                    </span>
+                                    <i class="fas fa-chevron-down ms-1 avatar-chevron"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end avatar-menu" aria-labelledby="avatarDropdown">
+                                    <li>
+                                        <a class="dropdown-item" href="/manage/appointments/">
+                                            <i class="fas fa-tachometer-alt"></i>
+                                            <span>Trang quản lý</span>
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item text-danger logout-link" href="{% url 'accounts:logout' %}">
+                                            <i class="fas fa-sign-out-alt"></i>
+                                            <span>Đăng xuất</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        {% else %}
+                            {# --- KHÁCH HÀNG --- #}
+                            <div class="avatar-dropdown dropdown">
+                                <button class="avatar-btn" type="button" id="avatarDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <div class="avatar-circle">
+                                        {% if user.customer_profile.full_name %}
+                                            {{ user.customer_profile.full_name|slice:":1"|upper }}
+                                        {% else %}
+                                            {{ user.username|slice:":1"|upper }}
+                                        {% endif %}
+                                    </div>
+                                    <span class="avatar-name d-none d-lg-inline">
+                                        {% if user.customer_profile.full_name %}
+                                            {{ user.customer_profile.full_name|truncatechars:15 }}
+                                        {% else %}
+                                            {{ user.username|truncatechars:15 }}
+                                        {% endif %}
+                                    </span>
+                                    <i class="fas fa-chevron-down ms-1 avatar-chevron"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end avatar-menu" aria-labelledby="avatarDropdown">
+                                    <li>
+                                        <a class="dropdown-item {% if request.resolver_match.url_name == 'my_appointments' %}active{% endif %}" href="{% url 'appointments:my_appointments' %}">
+                                            <i class="fas fa-calendar-check"></i>
+                                            <span>Lịch hẹn của tôi</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item {% if request.resolver_match.url_name == 'customer_complaint_list' %}active{% endif %}" href="{% url 'complaints:customer_complaint_list' %}">
+                                            <i class="fas fa-clipboard-list"></i>
+                                            <span>Khiếu nại của tôi</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item {% if request.resolver_match.url_name == 'customer_profile' %}active{% endif %}" href="{% url 'customers:customer_profile' %}">
+                                            <i class="fas fa-user-cog"></i>
+                                            <span>Tài khoản cá nhân</span>
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item text-danger logout-link" href="{% url 'accounts:logout' %}">
+                                            <i class="fas fa-sign-out-alt"></i>
+                                            <span>Đăng xuất</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        {% endif %}
                     {% else %}
                         <!-- Login/Register buttons -->
                         <a class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %} me-2" href="{% url 'accounts:login' %}">Đăng nhập</a>

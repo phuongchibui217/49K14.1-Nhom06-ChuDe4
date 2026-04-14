@@ -1,13 +1,6 @@
 """
 Serializers - Chuyển đổi Django Model thành Dictionary (rồi thành JSON)
 
-Nhiệm vụ của file này: Lấy dữ liệu từ Database → Chuyển thành dict → Trả về cho FE
-
-VÍ DỤ:
-    appointment = Appointment.objects.get(...)  # Lấy từ DB
-    data = serialize_appointment(appointment)    # Chuyển thành dict
-    return JsonResponse(data)                    # Trả về JSON cho FE
-
 Author: Spa ANA Team
 """
 
@@ -15,49 +8,46 @@ from .models import Appointment
 
 
 def serialize_appointment(appointment):
-    """
-    Chuyển 1 đối tượng Appointment thành dictionary
+    """Chuyển 1 đối tượng Appointment thành dictionary"""
+    customer_name = (
+        appointment.customer_name_snapshot
+        or (appointment.customer.full_name if appointment.customer else '')
+    )
+    customer_phone = (
+        appointment.customer_phone_snapshot
+        or (appointment.customer.phone if appointment.customer else '')
+    )
+    customer_email = appointment.customer_email_snapshot or ''
 
-    Args:
-        appointment: Appointment object (từ database)
-
-    Returns:
-        dict: Dữ liệu để gửi về frontend qua JSON
-    """
-    # Get customer email safely
-    customer_email = ''
-    if appointment.customer and appointment.customer.user:
-        customer_email = appointment.customer.user.email or ''
+    # Tính end_time display
+    end_str = ''
+    if appointment.end_time:
+        end_str = appointment.end_time.strftime('%H:%M')
+    elif appointment.appointment_time and appointment.duration_minutes:
+        from datetime import datetime, timedelta
+        start_dt = datetime.combine(datetime.today(), appointment.appointment_time)
+        end_str = (start_dt + timedelta(minutes=appointment.duration_minutes)).strftime('%H:%M')
 
     return {
-        'id': appointment.appointment_code,           # Mã lịch hẹn (VD: APT001)
-        'customerName': appointment.customer.full_name if appointment.customer else '',  # Tên khách
-        'phone': appointment.customer.phone if appointment.customer else '',            # Số điện thoại
-        'email': customer_email,                       # Email
-        'service': appointment.service.name if appointment.service else '',            # Tên dịch vụ
-        'serviceId': appointment.service.id if appointment.service else None,          # ID dịch vụ
-        'roomId': appointment.room.code if appointment.room else '',  # Mã phòng
-        'roomName': appointment.room.name if appointment.room else '', # Tên phòng
-        'guests': appointment.guests or 1,             # Số khách
-        'date': appointment.appointment_date.strftime('%Y-%m-%d') if appointment.appointment_date else '',  # Ngày (YYYY-MM-DD)
-        'start': appointment.appointment_time.strftime('%H:%M') if appointment.appointment_time else '',    # Giờ bắt đầu
-        'end': appointment.get_end_time_display(),      # Giờ kết thúc
+        'id': appointment.appointment_code,
+        'customerName': customer_name,
+        'phone': customer_phone,
+        'email': customer_email,
+        'service': appointment.service.name if appointment.service else '',
+        'serviceId': appointment.service.id if appointment.service else None,
+        'roomCode': appointment.room.code if appointment.room else '',
+        'roomName': appointment.room.name if appointment.room else '',
+        'guests': appointment.guests or 1,
+        'date': appointment.appointment_date.strftime('%Y-%m-%d') if appointment.appointment_date else '',
+        'start': appointment.appointment_time.strftime('%H:%M') if appointment.appointment_time else '',
+        'end': end_str,
         'durationMin': appointment.duration_minutes or (appointment.service.duration_minutes if appointment.service else 60),
-        'note': appointment.notes or '',                # Ghi chú
-        'apptStatus': appointment.status,               # Trạng thái lịch hẹn
-        'payStatus': appointment.payment_status,        # Trạng thái thanh toán
-        'source': appointment.source,                   # Nguồn (web/admin)
+        'note': appointment.notes or '',
+        'apptStatus': appointment.status,
+        'payStatus': appointment.payment_status,
+        'source': appointment.source,
     }
 
 
 def serialize_appointments(appointments):
-    """
-    Chuyển danh sách Appointment thành list of dict
-
-    Args:
-        appointments: QuerySet của Appointment
-
-    Returns:
-        list: Danh sách dict
-    """
     return [serialize_appointment(appt) for appt in appointments]

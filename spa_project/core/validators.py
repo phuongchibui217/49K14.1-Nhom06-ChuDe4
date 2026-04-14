@@ -241,7 +241,7 @@ def validate_phone_number(phone, check_exists=False, exclude_phone=None):
     Raises:
         ValidationError: Nếu không hợp lệ
     """
-    from accounts.models import CustomerProfile
+    from customers.models import CustomerProfile
 
     if not phone:
         raise ValidationError('Vui lòng nhập số điện thoại.')

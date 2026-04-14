@@ -12,7 +12,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'spa_project.settings')
 django.setup()
 
 from django.contrib.auth import authenticate
-from accounts.models import CustomerProfile
+from customers.models import CustomerProfile
 
 print('=== DEBUG CUSTOMER LOGIN ===\n')
 
@@ -39,7 +39,6 @@ if user:
         print(f'   ID: {profile.id}')
         print(f'   Full Name: {profile.full_name}')
         print(f'   Phone: {profile.phone}')
-        print(f'   Email: {profile.email}')
         print(f'   Address: {profile.address}')
         print(f'   Gender: {profile.gender}')
     except CustomerProfile.DoesNotExist:

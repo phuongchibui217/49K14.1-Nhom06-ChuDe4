@@ -17,7 +17,7 @@ from django.utils import timezone
 
 # TẠM IMPORT từ spa.models (CHƯA chuyển model trong phase này)
 from .models import Complaint, ComplaintReply, ComplaintHistory
-from accounts.models import CustomerProfile
+from customers.models import CustomerProfile
 # Forms từ complaints/forms
 from .forms import (
     CustomerComplaintForm,
@@ -52,13 +52,17 @@ def customer_complaint_create(request):
             complaint.customer = customer_profile
             complaint.full_name = customer_profile.full_name
             complaint.phone = customer_profile.phone
+            complaint.email = None
+            complaint.customer_name_snapshot = customer_profile.full_name
+            complaint.customer_phone_snapshot = customer_profile.phone
+            complaint.customer_email_snapshot = None or ''
             complaint.save()
 
             # Log history (bọc trong try để không ảnh hưởng luồng chính)
             try:
                 ComplaintHistory.log(
                     complaint=complaint,
-                    action='created',
+                    action='CREATE',
                     note='Khách hàng tạo khiếu nại',
                     performed_by=request.user
                 )
@@ -136,18 +140,18 @@ def customer_complaint_reply(request, complaint_id):
             reply.complaint = complaint
             reply.sender = request.user
             reply.sender_role = 'customer'
-            reply.sender_name = complaint.full_name
+            reply.sender_name = complaint.customer_name_snapshot
             reply.is_internal = False
             reply.save()
 
             # Cập nhật trạng thái nếu đang chờ khách phản hồi
-            if complaint.status == 'waiting_customer':
-                complaint.status = 'processing'
+            if complaint.status == 'IN_PROGRESS':
+                complaint.status = 'IN_PROGRESS'
                 complaint.save()
 
             ComplaintHistory.log(
                 complaint=complaint,
-                action='replied',
+                action='REPLY',
                 note='Khách hàng phản hồi bổ sung',
                 performed_by=request.user
             )
@@ -174,9 +178,9 @@ def admin_complaints(request):
     if search:
         complaints_list = complaints_list.filter(
             Q(code__icontains=search) |
-            Q(full_name__icontains=search) |
-            Q(email__icontains=search) |
-            Q(phone__icontains=search) |
+            Q(customer_name_snapshot__icontains=search) |
+            Q(customer_email_snapshot__icontains=search) |
+            Q(customer_phone_snapshot__icontains=search) |
             Q(title__icontains=search)
         )
 
@@ -242,12 +246,12 @@ def admin_complaint_take(request, complaint_id):
         messages.warning(request, 'Khiếu nại này đã được phân công.')
     else:
         complaint.assigned_to = request.user
-        complaint.status = 'assigned'
+        complaint.status = 'IN_PROGRESS'
         complaint.save()
 
         ComplaintHistory.log(
             complaint=complaint,
-            action='took_ownership',
+            action='ASSIGN',
             new_value=request.user.get_full_name() or request.user.username,
             note='Nhân viên tự nhận xử lý',
             performed_by=request.user
@@ -271,12 +275,12 @@ def admin_complaint_assign(request, complaint_id):
         if form.is_valid():
             old_assignee = complaint.assigned_to
             complaint = form.save(commit=False)
-            complaint.status = 'assigned'
+            complaint.status = 'IN_PROGRESS'
             complaint.save()
 
             ComplaintHistory.log(
                 complaint=complaint,
-                action='assigned',
+                action='ASSIGN',
                 old_value=old_assignee.get_full_name() if old_assignee else '',
                 new_value=complaint.assigned_to.get_full_name() or complaint.assigned_to.username,
                 performed_by=request.user
@@ -300,14 +304,14 @@ def admin_complaint_reply(request, complaint_id):
             reply = form.save(commit=False)
             reply.complaint = complaint
             reply.sender = request.user
-            reply.sender_role = 'manager' if request.user.is_superuser else 'staff'
+            reply.sender_role = 'admin' if request.user.is_superuser else 'staff'
             reply.sender_name = request.user.get_full_name() or request.user.username
             reply.is_internal = request.POST.get('is_internal') == 'on'
             reply.save()
 
             ComplaintHistory.log(
                 complaint=complaint,
-                action='replied',
+                action='REPLY',
                 note=f'Phản hồi bởi {reply.sender_name}',
                 performed_by=request.user
             )
@@ -335,7 +339,7 @@ def admin_complaint_status(request, complaint_id):
 
             ComplaintHistory.log(
                 complaint=complaint,
-                action='status_changed',
+                action='UPDATE',
                 old_value=old_status,
                 new_value=complaint.get_status_display(),
                 performed_by=request.user
@@ -363,13 +367,13 @@ def admin_complaint_complete(request, complaint_id):
             messages.error(request, 'Khiếu nại chưa được phân công.')
         else:
             complaint.resolution = resolution
-            complaint.status = 'resolved'
+            complaint.status = 'RESOLVED'
             complaint.resolved_at = timezone.now()
             complaint.save()
 
             ComplaintHistory.log(
                 complaint=complaint,
-                action='resolved',
+                action='RESOLVE',
                 note=resolution,
                 performed_by=request.user
             )

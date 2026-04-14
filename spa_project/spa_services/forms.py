@@ -96,10 +96,10 @@ class ServiceForm(forms.ModelForm):
     status = forms.ChoiceField(
         label='Trạng thái',
         choices=[
-            ('active', 'Đang hoạt động'),
-            ('inactive', 'Ngừng hoạt động'),
+            ('ACTIVE', 'Đang hoạt động'),
+            ('INACTIVE', 'Ngừng hoạt động'),
         ],
-        initial='active',
+        initial='ACTIVE',
         required=True,
         widget=forms.Select(attrs={
             'class': 'form-select'
@@ -205,27 +205,34 @@ class ServiceForm(forms.ModelForm):
         return image
 
     def clean_category_number(self):
-        """Validate và map category number sang category code"""
+        """Validate và map category number sang ServiceCategory object"""
         category_num = self.cleaned_data.get('category_number')
         if not category_num:
             raise forms.ValidationError('Vui lòng chọn danh mục')
-        return Service.CATEGORY_MAP.get(category_num, 'skincare')
+        _code_map = {'1': 'CAT01', '2': 'CAT02', '3': 'CAT03', '4': 'CAT04'}
+        code = _code_map.get(category_num)
+        if not code:
+            raise forms.ValidationError('Danh mục không hợp lệ')
+        from .models import ServiceCategory
+        try:
+            return ServiceCategory.objects.get(code=code)
+        except ServiceCategory.DoesNotExist:
+            raise forms.ValidationError('Danh mục không tồn tại trong hệ thống')
 
     def save(self, commit=True):
         """Override save để xử lý mapping và sinh mã"""
         service = super().save(commit=False)
 
-        # Map category_number to category
-        category_num = self.cleaned_data.get('category_number')
-        service.category = Service.CATEGORY_MAP.get(category_num, 'skincare')
+        # Map category_number to ServiceCategory object
+        service.category = self.cleaned_data.get('category_number')  # already a ServiceCategory object from clean_category_number
 
         # Map status to is_active
-        service.status = self.cleaned_data.get('status', 'active')
-        service.is_active = (service.status == 'active')
+        service.status = self.cleaned_data.get('status', 'ACTIVE')
+        service.is_active = (service.status == 'ACTIVE')
 
         # Generate code if not exists
         if not service.code:
-            service.code = Service.generate_service_code()
+            service.code = Service._generate_code()
 
         if commit:
             service.save()

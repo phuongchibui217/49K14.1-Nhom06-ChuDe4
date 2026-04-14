@@ -179,7 +179,7 @@ def customer_required(login_url='accounts:login', redirect_on_fail='spa:home'):
         @wraps(view_func)
         @login_required(login_url=login_url)
         def _wrapped_view(request, *args, **kwargs):
-            from accounts.models import CustomerProfile
+            from customers.models import CustomerProfile
 
             # Kiểm tra có CustomerProfile không
             try:
@@ -236,7 +236,7 @@ def is_customer_user(user):
     if not user.is_authenticated:
         return False
 
-    from accounts.models import CustomerProfile
+    from customers.models import CustomerProfile
     return CustomerProfile.objects.filter(user=user).exists()
 
 

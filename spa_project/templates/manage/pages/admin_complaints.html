@@ -172,8 +172,8 @@
                         <td><strong>{{ complaint.code }}</strong></td>
                         <td>{{ complaint.title|truncatechars:30 }}</td>
                         <td>
-                            {{ complaint.full_name }}<br>
-                            <small class="text-muted">{{ complaint.phone }}</small>
+                            {{ complaint.customer_name_snapshot }}<br>
+                            <small class="text-muted">{{ complaint.customer_phone_snapshot }}</small>
                         </td>
                         <td><span class="status-badge status-{{ complaint.status }}">{{ complaint.get_status_display }}</span></td>
                         <td>

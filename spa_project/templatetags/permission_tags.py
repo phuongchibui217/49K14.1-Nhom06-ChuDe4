@@ -54,7 +54,7 @@ def is_customer(user):
         return False
 
     try:
-        from accounts.models import CustomerProfile
+        from customers.models import CustomerProfile
         return hasattr(user, 'customer_profile') and user.customer_profile is not None
     except:
         return False
@@ -188,7 +188,7 @@ def get_user_role(user):
         return "Lễ tân"
     else:
         try:
-            from accounts.models import CustomerProfile
+            from customers.models import CustomerProfile
             if hasattr(user, 'customer_profile'):
                 return "Khách hàng"
         except:
@@ -256,7 +256,7 @@ def show_customer_menu(context):
         return False
 
     try:
-        from accounts.models import CustomerProfile
+        from customers.models import CustomerProfile
         return hasattr(user, 'customer_profile') and user.customer_profile is not None
     except:
         return False

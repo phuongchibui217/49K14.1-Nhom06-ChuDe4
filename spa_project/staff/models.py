@@ -3,11 +3,6 @@ from django.contrib.auth.models import User
 
 
 class StaffProfile(models.Model):
-    """
-    Hồ sơ nhân viên
-    Liên kết 1-1 với tài khoản Django User
-    """
-
     GENDER_CHOICES = [
         ('Nam', 'Nam'),
         ('Nu', 'Nữ'),
@@ -15,75 +10,21 @@ class StaffProfile(models.Model):
     ]
 
     user = models.OneToOneField(
-        User,
-        on_delete=models.CASCADE,
+        User, on_delete=models.CASCADE,
         related_name='staff_profile',
         verbose_name='Tài khoản người dùng'
     )
-
-    phone = models.CharField(
-        max_length=15,
-        unique=True,
-        verbose_name='Số điện thoại'
-    )
-
-    full_name = models.CharField(
-        max_length=100,
-        verbose_name='Họ và tên'
-    )
-
-    gender = models.CharField(
-        max_length=10,
-        choices=GENDER_CHOICES,
-        blank=True,
-        null=True,
-        verbose_name='Giới tính'
-    )
-
-    dob = models.DateField(
-        blank=True,
-        null=True,
-        verbose_name='Ngày sinh'
-    )
-
-    address = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        verbose_name='Địa chỉ'
-    )
-
-    notes = models.TextField(
-        max_length=1000,
-        blank=True,
-        null=True,
-        verbose_name='Ghi chú thêm'
-    )
-
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Thời điểm tạo hồ sơ'
-    )
-
-    updated_at = models.DateTimeField(
-        auto_now=True,
-        verbose_name='Thời điểm cập nhật gần nhất'
-    )
-    ROLE_CHOICES = [
-        ('Admin', 'Admin'),
-        ('CSKH', 'CSKH'),
-        ('Lễ tân', 'Lễ tân'),
-        ('Nhân viên', 'Nhân viên'),
-    ]
-
-    role = models.CharField(
-        max_length=20,
-        choices=ROLE_CHOICES,
-        default='Nhân viên',
-        verbose_name='Vai trò'
-    )
+    phone = models.CharField(max_length=15, unique=True, verbose_name='Số điện thoại')
+    full_name = models.CharField(max_length=100, verbose_name='Họ và tên')
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, null=True, verbose_name='Giới tính')
+    dob = models.DateField(blank=True, null=True, verbose_name='Ngày sinh')
+    address = models.CharField(max_length=255, blank=True, null=True, verbose_name='Địa chỉ')
+    notes = models.CharField(max_length=1000, blank=True, null=True, verbose_name='Ghi chú')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Thời điểm tạo hồ sơ')
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True, verbose_name='Thời điểm cập nhật gần nhất')
 
     class Meta:
+        db_table = 'staff_profiles'
         verbose_name = 'Hồ sơ nhân viên'
         verbose_name_plural = 'Hồ sơ nhân viên'
         ordering = ['-created_at']

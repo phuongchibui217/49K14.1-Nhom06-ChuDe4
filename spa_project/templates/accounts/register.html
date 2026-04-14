@@ -62,6 +62,29 @@
                             {% csrf_token %}
 
                             <div class="mb-3">
+                                <label for="id_username" class="form-label">
+                                    Tên đăng nhập <span class="text-danger">*</span>
+                                </label>
+                                <input type="text"
+                                       class="form-control {% if form.username.errors %}is-invalid{% endif %}"
+                                       id="id_username"
+                                       name="username"
+                                       placeholder="Tên đăng nhập (không dấu, không khoảng trắng)"
+                                       autocomplete="username"
+                                       required
+                                       value="{{ form.username.value|default:'' }}">
+                                {% if form.username.errors %}
+                                {% for error in form.username.errors %}
+                                <div class="field-error">
+                                    <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                </div>
+                                {% endfor %}
+                                {% else %}
+                                <small class="text-muted">Dùng để đăng nhập, ví dụ: nguyenvana</small>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
                                 <label for="id_full_name" class="form-label">
                                     Họ và tên <span class="text-danger">*</span>
                                 </label>
@@ -100,7 +123,7 @@
                                 </div>
                                 {% endfor %}
                                 {% else %}
-                                <small class="text-muted">Số điện thoại sẽ dùng để đăng nhập</small>
+                                <small class="text-muted">Ví dụ: 0912345678</small>
                                 {% endif %}
                             </div>
 
@@ -126,9 +149,9 @@
                                     <label for="id_gender" class="form-label">Giới tính</label>
                                     <select class="form-select" id="id_gender" name="gender">
                                         <option value="">-- Chọn giới tính --</option>
-                                        <option value="M" {% if form.gender.value == 'M' %}selected{% endif %}>Nam</option>
-                                        <option value="F" {% if form.gender.value == 'F' %}selected{% endif %}>Nữ</option>
-                                        <option value="O" {% if form.gender.value == 'O' %}selected{% endif %}>Khác</option>
+                                        <option value="Nam" {% if form.gender.value == 'Nam' %}selected{% endif %}>Nam</option>
+                                        <option value="Nu" {% if form.gender.value == 'Nu' %}selected{% endif %}>Nữ</option>
+                                        <option value="Khac" {% if form.gender.value == 'Khac' %}selected{% endif %}>Khác</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6 mb-3">

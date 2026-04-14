@@ -33,9 +33,9 @@ def admin_staff(request):
             confirm_password = request.POST.get('confirm_password', '')
             phone = request.POST.get('phone', '').strip()
             email = request.POST.get('email', '').strip()
-            role = request.POST.get('role', '').strip()
+            is_superuser = request.POST.get('is_superuser', '') == '1'
 
-            if not all([username, full_name, password, confirm_password, phone, email, role]):
+            if not all([username, full_name, password, confirm_password, phone, email]):
                 messages.error(request, 'Vui lòng nhập đầy đủ thông tin.')
                 return redirect('staff:admin_staff')
 
@@ -61,14 +61,13 @@ def admin_staff(request):
                 password=password
             )
             user.is_staff = True
-            user.is_superuser = (role == 'Admin')
+            user.is_superuser = is_superuser
             user.save()
 
             StaffProfile.objects.create(
                 user=user,
                 full_name=full_name,
                 phone=phone,
-                role=role
             )
 
             messages.success(request, 'Thêm nhân viên thành công!')
@@ -87,10 +86,10 @@ def admin_staff(request):
             full_name = request.POST.get('full_name', '').strip()
             phone = request.POST.get('phone', '').strip()
             email = request.POST.get('email', '').strip()
-            role = request.POST.get('role', '').strip()
+            is_superuser = request.POST.get('is_superuser', '') == '1'
             status = request.POST.get('status', '').strip()
 
-            if not all([full_name, phone, email, role, status]):
+            if not all([full_name, phone, email, status]):
                 messages.error(request, 'Vui lòng nhập đầy đủ thông tin.')
                 return redirect('staff:admin_staff')
 
@@ -104,13 +103,12 @@ def admin_staff(request):
 
             staff.full_name = full_name
             staff.phone = phone
-            staff.role = role
             staff.save()
 
             staff.user.email = email
             staff.user.is_active = (status == 'active')
             staff.user.is_staff = True
-            staff.user.is_superuser = (role == 'Admin')
+            staff.user.is_superuser = is_superuser
             staff.user.save()
 
             messages.success(request, 'Cập nhật nhân viên thành công!')

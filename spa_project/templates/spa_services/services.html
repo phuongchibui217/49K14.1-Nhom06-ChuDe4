@@ -111,7 +111,7 @@
         <!-- Services Grid -->
         <div class="row" id="servicesGrid">
             {% for service in services %}
-            <div class="col-md-6 col-lg-4 mb-4 service-item" data-category="{{ service.category|default:'skincare' }}">
+            <div class="col-md-6 col-lg-4 mb-4 service-item" data-category="{{ service.category.code|default:'skincare' }}">
                 <div class="service-card">
                     <div class="service-image">
                         <span class="category-badge">{{ service.category_name|default:'Chăm sóc da' }}</span>

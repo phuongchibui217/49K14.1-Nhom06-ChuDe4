@@ -1,8 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
-from accounts.models import CustomerProfile
+from .models import CustomerProfile
+from .forms import CustomerProfileForm, ChangePasswordForm
 
 
 @login_required(login_url='accounts:login')
@@ -15,14 +17,11 @@ def admin_customers(request):
     if request.method == 'POST':
         action = request.POST.get('action', '').strip()
 
-        # THÊM KHÁCH HÀNG
         if action == 'create':
             full_name = request.POST.get('full_name', '').strip()
             phone = request.POST.get('phone', '').strip()
             dob = request.POST.get('dob', '').strip()
             channel = request.POST.get('contact_channel', '').strip()
-            allergies = request.POST.get('allergies', '').strip()
-            skin_condition = request.POST.get('skin_condition', '').strip()
             notes = request.POST.get('notes', '').strip()
 
             if not full_name or not phone:
@@ -38,30 +37,22 @@ def admin_customers(request):
                 phone=phone,
                 dob=dob or None,
                 contact_channel=channel or '',
-                allergies=allergies,
-                skin_condition=skin_condition,
                 notes=notes,
             )
-
             messages.success(request, 'Thêm khách hàng thành công!')
             return redirect('customers:admin_customers')
 
-        # CẬP NHẬT KHÁCH HÀNG
         elif action == 'update':
             customer_id = request.POST.get('customer_id', '').strip()
-
             if not customer_id:
                 messages.error(request, 'Không tìm thấy khách hàng cần cập nhật.')
                 return redirect('customers:admin_customers')
 
             customer = get_object_or_404(CustomerProfile, pk=customer_id)
-
             full_name = request.POST.get('full_name', '').strip()
             phone = request.POST.get('phone', '').strip()
             dob = request.POST.get('dob', '').strip()
             channel = request.POST.get('contact_channel', '').strip()
-            allergies = request.POST.get('allergies', '').strip()
-            skin_condition = request.POST.get('skin_condition', '').strip()
             notes = request.POST.get('notes', '').strip()
 
             if not full_name or not phone:
@@ -76,25 +67,18 @@ def admin_customers(request):
             customer.phone = phone
             customer.dob = dob or None
             customer.contact_channel = channel or ''
-            customer.allergies = allergies
-            customer.skin_condition = skin_condition
             customer.notes = notes
             customer.save()
-
             messages.success(request, 'Cập nhật khách hàng thành công!')
             return redirect('customers:admin_customers')
 
-        # XÓA KHÁCH HÀNG
         elif action == 'delete':
             customer_id = request.POST.get('customer_id', '').strip()
-
             if not customer_id:
                 messages.error(request, 'Không tìm thấy khách hàng cần xóa.')
                 return redirect('customers:admin_customers')
-
             customer = get_object_or_404(CustomerProfile, pk=customer_id)
             customer.delete()
-
             messages.success(request, 'Xóa khách hàng thành công!')
             return redirect('customers:admin_customers')
 
@@ -105,7 +89,55 @@ def admin_customers(request):
     customers = CustomerProfile.objects.select_related('user').filter(
         Q(user__isnull=True) | Q(user__is_staff=False, user__is_superuser=False)
     )
+    return render(request, 'customers/admin_customers.html', {'customers': customers})
 
-    return render(request, 'customers/admin_customers.html', {
-        'customers': customers,
+
+@login_required
+def customer_profile(request):
+    """Tài khoản cá nhân của khách hàng"""
+    try:
+        profile = request.user.customer_profile
+    except CustomerProfile.DoesNotExist:
+        profile = CustomerProfile.objects.create(
+            user=request.user,
+            phone=request.user.username,
+            full_name=request.user.get_full_name() or request.user.username,
+        )
+
+    profile_form = CustomerProfileForm(instance=profile)
+    password_form = None
+
+    if request.method == 'POST':
+        action = request.POST.get('action', '')
+
+        if action == 'update_profile':
+            profile_form = CustomerProfileForm(request.POST, instance=profile)
+            if profile_form.is_valid():
+                profile_form.save()
+                messages.success(request, 'Cập nhật thông tin thành công!')
+                return redirect('customers:customer_profile')
+            else:
+                messages.error(request, 'Vui lòng kiểm tra lại thông tin.')
+
+        elif action == 'change_password':
+            password_form = ChangePasswordForm(request.user, request.POST)
+            if password_form.is_valid():
+                password_form.save()
+                messages.success(request, 'Đổi mật khẩu thành công! Vui lòng đăng nhập lại.')
+                logout(request)
+                return redirect('accounts:login')
+            else:
+                messages.error(request, 'Đổi mật khẩu thất bại. Vui lòng kiểm tra lại.')
+
+    appointments_count = profile.appointments.count()
+    completed_appointments = profile.appointments.filter(status='COMPLETED').count()
+    pending_appointments = profile.appointments.filter(status='PENDING').count()
+
+    return render(request, 'accounts/customer_profile.html', {
+        'customer_profile': profile,
+        'profile_form': profile_form,
+        'password_form': password_form or ChangePasswordForm(request.user),
+        'appointments_count': appointments_count,
+        'completed_appointments': completed_appointments,
+        'pending_appointments': pending_appointments,
     })

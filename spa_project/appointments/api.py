@@ -26,7 +26,7 @@ from django.db import transaction
 from django.template.loader import render_to_string
 
 from .models import Appointment, Room
-from accounts.models import CustomerProfile
+from customers.models import CustomerProfile
 from spa_services.models import Service
 
 # Import serializer (chuyển model → dict)
@@ -199,8 +199,8 @@ def api_appointment_create(request):
             'duration': raw_data.get('duration') or raw_data.get('durationMin', 60),
             'guests': raw_data.get('guests', 1),
             'notes': raw_data.get('note', ''),
-            'status': raw_data.get('apptStatus', 'not_arrived'),
-            'pay_status': raw_data.get('payStatus', 'unpaid'),
+            'status': raw_data.get('apptStatus', 'NOT_ARRIVED'),
+            'pay_status': raw_data.get('payStatus', 'UNPAID'),
         }
 
         # Bước 1: Validate dữ liệu
@@ -226,7 +226,7 @@ def api_appointment_create(request):
                 Appointment.objects.select_for_update().filter(
                     room__code=room_code,
                     appointment_date=cleaned['appointment_date'],
-                    status__in=['pending', 'not_arrived', 'arrived', 'completed']
+                    status__in=['PENDING', 'NOT_ARRIVED', 'ARRIVED', 'COMPLETED']
                 ).exists()
 
                 # Double-check availability trong transaction
@@ -257,7 +257,7 @@ def api_appointment_create(request):
                 notes=cleaned['notes'],
                 status=cleaned['status'],
                 payment_status=cleaned['payment_status'],
-                source='admin',
+                source='DIRECT',
                 created_by=request.user,
             )
 
@@ -496,7 +496,7 @@ def api_appointment_status(request, appointment_code):
         new_status = data.get('status', '')
 
         # Kiểm tra status hợp lệ
-        valid_statuses = ['pending', 'not_arrived', 'arrived', 'completed', 'cancelled']
+        valid_statuses = ['PENDING', 'NOT_ARRIVED', 'ARRIVED', 'COMPLETED', 'CANCELLED']
         if new_status not in valid_statuses:
             return JsonResponse({'success': False, 'error': 'Trạng thái không hợp lệ'}, status=400)
 
@@ -570,8 +570,8 @@ def api_booking_requests(request):
     if not _is_staff(request.user):
         return _deny()
 
-    # Lấy lịch web + lịch cũ (source=NULL)
-    appointments = Appointment.objects.filter(Q(source='web') | Q(source__isnull=True))
+    # Lấy lịch online + lịch cũ (source=NULL)
+    appointments = Appointment.objects.filter(Q(source='ONLINE') | Q(source__isnull=True))
 
     # Lọc theo ngày
     date_filter = request.GET.get('date', '')
@@ -694,8 +694,8 @@ def _validate_appointment_data(data):
 
     # Ghi chú & trạng thái
     cleaned_data['notes'] = data.get('notes', '')
-    cleaned_data['status'] = data.get('status', 'not_arrived')
-    cleaned_data['payment_status'] = data.get('pay_status', 'unpaid')
+    cleaned_data['status'] = data.get('status', 'NOT_ARRIVED')
+    cleaned_data['payment_status'] = data.get('pay_status', 'UNPAID')
 
     # Nếu có lỗi cơ bản → return luôn
     if errors:
@@ -736,7 +736,6 @@ def _get_or_create_customer(phone, customer_name):
     except User.DoesNotExist:
         user = User.objects.create_user(
             username=phone,
-            email=f"{phone}@spa.com",
             password=secrets.token_hex(16),
             first_name=customer_name.split()[0] if customer_name else '',
             last_name=' '.join(customer_name.split()[1:]) if customer_name and len(customer_name.split()) > 1 else ''
@@ -782,8 +781,8 @@ def api_booking_pending_count(request):
     try:
         # Đếm số lượng booking pending (chưa xác nhận)
         pending_count = Appointment.objects.filter(
-            Q(source='web') | Q(source__isnull=True),  # Web bookings
-            status='pending'  # Chờ xác nhận
+            Q(source='ONLINE') | Q(source__isnull=True),
+            status='PENDING'
         ).count()
 
         return JsonResponse({
@@ -809,8 +808,8 @@ def _booking_count_stream_generator():
         try:
             # Đếm số lượng booking pending
             pending_count = Appointment.objects.filter(
-                Q(source='web') | Q(source__isnull=True),
-                status='pending'
+                Q(source='ONLINE') | Q(source__isnull=True),
+                status='PENDING'
             ).count()
 
             # Format SSE response

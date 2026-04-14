@@ -307,17 +307,16 @@
                             <input type="hidden" name="role" value="customer">
 
                             <div class="mb-3">
-                                <label for="customer_phone" class="form-label">
-                                    Số điện thoại <span class="text-danger">*</span>
+                                <label for="customer_username" class="form-label">
+                                    Tên đăng nhập <span class="text-danger">*</span>
                                 </label>
                                 <input type="text"
                                        class="form-control"
-                                       id="customer_phone"
+                                       id="customer_username"
                                        name="username"
-                                       placeholder="Nhập số điện thoại (10-11 số)"
-                                       pattern="[0-9]{10,11}"
+                                       placeholder="Nhập tên đăng nhập"
+                                       autocomplete="username"
                                        required>
-                                <small class="text-muted">Ví dụ: 0912345678</small>
                             </div>
 
                             <div class="mb-3">

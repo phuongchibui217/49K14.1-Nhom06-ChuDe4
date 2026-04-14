@@ -149,7 +149,7 @@ def check_room_availability(
         room=room,
         appointment_date=appointment_date,
     ).exclude(
-        status='cancelled'  # Bỏ qua lịch đã hủy
+        status='CANCELLED'
     )
 
     # Loại trừ lịch hẹn đang sửa (nếu có)

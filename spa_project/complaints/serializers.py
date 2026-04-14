@@ -12,9 +12,9 @@ def serialize_complaint(complaint):
     return {
         'id': complaint.id,
         'code': complaint.code,
-        'full_name': complaint.full_name,
-        'phone': complaint.phone,
-        'email': complaint.email,
+        'full_name': complaint.customer_name_snapshot,
+        'phone': complaint.customer_phone_snapshot,
+        'email': complaint.customer_email_snapshot,
         'title': complaint.title,
         'content': complaint.content,
         'incident_date': complaint.incident_date.strftime('%Y-%m-%d') if complaint.incident_date else None,
@@ -59,6 +59,6 @@ def serialize_history(item):
         'old_value': item.old_value,
         'new_value': item.new_value,
         'note': item.note,
-        'performed_by': item.performed_by.get_full_name() or item.performed_by.username if item.performed_by else 'Hệ thống',
+        'performed_by': (item.performed_by.get_full_name() or item.performed_by.username) if item.performed_by else 'Hệ thống',
         'performed_at': item.performed_at.strftime('%Y-%m-%d %H:%M'),
     }

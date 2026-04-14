@@ -12,7 +12,7 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'spa_project.settings')
 django.setup()
 
 from django.contrib.auth.models import User
-from accounts.models import CustomerProfile
+from customers.models import CustomerProfile
 
 print('=== USERS IN DATABASE ===')
 users = User.objects.all()

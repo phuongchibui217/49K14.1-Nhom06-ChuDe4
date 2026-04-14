@@ -7,7 +7,7 @@ from django.db import transaction
 from django.db.models import F, Q, Sum
 from django.utils import timezone
 
-from accounts.models import CustomerProfile
+from customers.models import CustomerProfile
 from core.validators import validate_length, validate_required
 
 from .models import ChatMessage, ChatSession
@@ -52,7 +52,6 @@ def ensure_customer_profile(user):
         user=user,
         phone=user.username,
         full_name=user.get_full_name() or user.username,
-        email=user.email or "",
     )
 
 

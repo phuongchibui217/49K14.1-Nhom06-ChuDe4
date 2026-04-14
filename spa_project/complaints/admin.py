@@ -33,7 +33,7 @@ class ComplaintAdmin(admin.ModelAdmin):
             'fields': ('code', 'customer', 'title', 'content')
         }),
         ('Thông tin liên hệ', {
-            'fields': ('full_name', 'phone', 'email')
+            'fields': ('customer_name_snapshot', 'customer_phone_snapshot', 'customer_email_snapshot')
         }),
         ('Thông tin liên quan', {
             'fields': ('incident_date', 'appointment_code', 'related_service', 'expected_solution')

@@ -37,7 +37,6 @@ INSTALLED_APPS = [
     'customers',
     'staff',
     'chat',
-    'profiles',  # Reserved for future use
 ]
 
 MIDDLEWARE = [

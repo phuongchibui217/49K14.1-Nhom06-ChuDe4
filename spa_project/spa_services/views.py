@@ -38,24 +38,39 @@ from .service_services import (
 from core.api_response import staff_api, get_or_404
 
 
+def _save_service_image(image_file):
+    """Lưu file ảnh dịch vụ vào MEDIA_ROOT và trả về relative path."""
+    import os, uuid
+    from django.conf import settings
+    ext = os.path.splitext(image_file.name or '')[1].lower() or '.jpg'
+    filename = f"{uuid.uuid4().hex}{ext}"
+    rel_path = f"services/{filename}"
+    abs_path = os.path.join(settings.MEDIA_ROOT, 'services', filename)
+    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+    with open(abs_path, 'wb') as f:
+        for chunk in image_file.chunks():
+            f.write(chunk)
+    return rel_path
+
+
 # =====================================================
 # PUBLIC SERVICE PAGES
 # =====================================================
 
 def service_list(request):
     """Danh sách dịch vụ - Lọc chỉ active"""
-    services = Service.objects.filter(status='active').order_by('-created_at')
+    services = Service.objects.filter(status='ACTIVE').order_by('-created_at')
     return render(request, 'spa_services/services.html', {'services': services})
 
 
 def service_detail(request, service_id):
     """Chi tiết dịch vụ - Lấy từ database"""
-    service = get_object_or_404(Service, id=service_id, status='active')
+    service = get_object_or_404(Service, id=service_id, status='ACTIVE')
 
     # Lấy các dịch vụ liên quan (cùng category)
     related_services = Service.objects.filter(
         category=service.category,
-        status='active'
+        status='ACTIVE'
     ).exclude(id=service_id)[:4]
 
     return render(request, 'spa_services/service_detail.html', {
@@ -95,15 +110,10 @@ def admin_services(request):
             )
 
         if category_filter:
-            category_map = {
-                '1': 'skincare',
-                '2': 'massage',
-                '3': 'tattoo',
-                '4': 'hair',
-            }
-            category_code = category_map.get(category_filter)
+            _code_map = {'1': 'CAT01', '2': 'CAT02', '3': 'CAT03', '4': 'CAT04'}
+            category_code = _code_map.get(category_filter)
             if category_code:
-                services_list = services_list.filter(category=category_code)
+                services_list = services_list.filter(category__code=category_code)
 
         if status_filter:
             services_list = services_list.filter(status=status_filter)
@@ -114,7 +124,7 @@ def admin_services(request):
         services = paginator.get_page(page_number)
 
         # Get next service code
-        next_code = Service.generate_service_code()
+        next_code = Service._generate_code()
 
         context = {
             'services': services,
@@ -255,14 +265,14 @@ def api_services_list(request):
             'id': service.id,
             'code': service.code or '',
             'name': service.name,
-            'category': service.category,
+            'categoryId': service.category_id,
             'categoryName': service.get_category_name(),
             'description': service.short_description or service.description[:100] if service.description else '',
             'price': float(service.price),
             'duration': service.duration_minutes,
             'duration_minutes': service.duration_minutes,
-            'status': service.status if hasattr(service, 'status') else ('active' if service.is_active else 'inactive'),
-            'image': service.image.url if service.image else 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=100'
+            'status': service.status,
+            'image': service.image if service.image else 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=100'
         })
 
     return JsonResponse({'services': services_data})
@@ -334,54 +344,50 @@ def api_service_create(request):
         except (ValueError, TypeError):
             return JsonResponse({'error': 'Thời gian không hợp lệ!'}, status=400)
 
-        # Map category number to model choice
-        category_reverse_map = {
-            '1': 'skincare',
-            '2': 'massage',
-            '3': 'tattoo',
-            '4': 'hair',
-        }
+        # Map category number to ServiceCategory object
+        _code_map = {'1': 'CAT01', '2': 'CAT02', '3': 'CAT03', '4': 'CAT04'}
+        from .models import ServiceCategory
+        cat_code = _code_map.get(str(category), 'CAT01')
+        try:
+            category_obj = ServiceCategory.objects.get(code=cat_code)
+        except ServiceCategory.DoesNotExist:
+            category_obj = None
 
         # Create service
         service = Service.objects.create(
             name=name,
-            category=category_reverse_map.get(str(category), 'skincare'),
+            category=category_obj,
             short_description=description[:300] if len(description) > 300 else description,
             description=description,
             price=price,
             duration_minutes=duration,
-            is_active=status == 'active'
+            status=status,
+            is_active=status == 'ACTIVE',
+            image='',
+            created_by=request.user,
         )
 
         # Handle image upload
         if image_file:
-            # Validate file size (max 5MB)
             if image_file.size > 5 * 1024 * 1024:
                 service.delete()
                 return JsonResponse({'error': 'Hình ảnh không được quá 5MB!'}, status=400)
-
-            # Validate file type
             allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
             if image_file.content_type not in allowed_types:
                 service.delete()
                 return JsonResponse({'error': 'Chỉ chấp nhận file ảnh (JPG, PNG, GIF, WebP)!'}, status=400)
-
-            service.image = image_file
+            service.image = _save_service_image(image_file)
             service.save()
-
-        # Generate service code
-        service_count = Service.objects.filter(id__lte=service.id).count()
-        service_code = f'DV{str(service_count).zfill(3)}'
 
         return JsonResponse({
             'success': True,
             'message': f'Đã thêm dịch vụ: {service.name}',
             'service': {
                 'id': service.id,
-                'code': service_code,
+                'code': service.code or '',
                 'name': service.name,
                 'categoryName': service.get_category_name(),
-                'image': service.image.url if service.image else 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=100'
+                'image': service.image if service.image else 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=100'
             }
         })
     except Exception as e:
@@ -460,39 +466,34 @@ def api_service_update(request, service_id):
         except (ValueError, TypeError):
             return JsonResponse({'error': 'Thời gian không hợp lệ!'}, status=400)
 
-        # Map category number to model choice
-        category_reverse_map = {
-            '1': 'skincare',
-            '2': 'massage',
-            '3': 'tattoo',
-            '4': 'hair',
-        }
+        # Map category number to ServiceCategory object
+        _code_map = {'1': 'CAT01', '2': 'CAT02', '3': 'CAT03', '4': 'CAT04'}
+        from .models import ServiceCategory
+        cat_code = _code_map.get(str(category), None)
+        if cat_code:
+            try:
+                category_obj = ServiceCategory.objects.get(code=cat_code)
+                service.category = category_obj
+            except ServiceCategory.DoesNotExist:
+                pass  # keep existing category
 
         # Update service
         service.name = name
-        service.category = category_reverse_map.get(str(category), service.category)
         service.short_description = description[:300] if len(description) > 300 else description
         service.description = description
         service.price = price
         service.duration_minutes = duration
-        service.is_active = status == 'active'
+        service.status = status
+        service.is_active = status == 'ACTIVE'
 
         # Handle image upload
         if image_file:
-            # Validate file size (max 5MB)
             if image_file.size > 5 * 1024 * 1024:
                 return JsonResponse({'error': 'Hình ảnh không được quá 5MB!'}, status=400)
-
-            # Validate file type
             allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
             if image_file.content_type not in allowed_types:
                 return JsonResponse({'error': 'Chỉ chấp nhận file ảnh (JPG, PNG, GIF, WebP)!'}, status=400)
-
-            # Delete old image if exists
-            if service.image and service.image.name:
-                service.image.delete(save=False)
-
-            service.image = image_file
+            service.image = _save_service_image(image_file)
 
         service.save()
 

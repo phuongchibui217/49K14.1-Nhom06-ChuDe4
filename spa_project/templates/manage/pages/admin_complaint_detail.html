@@ -189,19 +189,19 @@
                     <div class="row">
                         <div class="col-md-4">
                             <p class="info-label">Họ và tên</p>
-                            <p class="info-value">{{ complaint.full_name }}</p>
+                            <p class="info-value">{{ complaint.customer_name_snapshot }}</p>
                         </div>
                         <div class="col-md-4">
                             <p class="info-label">Số điện thoại</p>
                             <p class="info-value">
-                                <a href="tel:{{ complaint.phone }}">{{ complaint.phone }}</a>
+                                <a href="tel:{{ complaint.customer_phone_snapshot }}">{{ complaint.customer_phone_snapshot }}</a>
                             </p>
                         </div>
                         <div class="col-md-4">
                             <p class="info-label">Email</p>
                             <p class="info-value">
-                                {% if complaint.email %}
-                                <a href="mailto:{{ complaint.email }}">{{ complaint.email }}</a>
+                                {% if complaint.customer_email_snapshot %}
+                                <a href="mailto:{{ complaint.customer_email_snapshot }}">{{ complaint.customer_email_snapshot }}</a>
                                 {% else %}—{% endif %}
                             </p>
                         </div>
