@@ -304,12 +304,32 @@ def get_admin_chat_sessions_data(search="", status="", limit=200):
 
 
 def serialize_chat_message(message):
-    """Serialize tin nhắn cho frontend."""
+    """Serialize tin nhắn cho frontend.
+
+    senderName  → tên hiển thị phía KHÁCH:
+                  - staff/admin → "Nhân viên" (ẩn username nội bộ)
+                  - customer    → tên khách
+                  - system      → ""
+    staffName   → tên thật của staff, chỉ dùng phía ADMIN panel.
+                  Với tin nhắn của khách thì trả về tên khách.
+    """
+    is_staff_msg = message.sender_type in ("STAFF", "admin")
+
+    # Tên hiển thị an toàn cho phía khách
+    if is_staff_msg:
+        safe_sender_name = "Nhân viên"
+    else:
+        safe_sender_name = message.sender_name or ""
+
+    # Tên thật dùng nội bộ cho admin panel
+    staff_name = (message.sender_name or "") if is_staff_msg else ""
+
     return {
         "id": message.id,
         "sessionCode": message.session.chat_code,
         "senderType": message.sender_type,
-        "senderName": message.sender_name or "",
+        "senderName": safe_sender_name,
+        "staffName": staff_name,
         "messageType": message.message_type,
         "content": message.content or "",
         "status": message.status,

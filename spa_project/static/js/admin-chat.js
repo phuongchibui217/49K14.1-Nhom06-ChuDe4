@@ -297,10 +297,15 @@
                 ? "system"
                 : "customer";
 
+        // Phía admin: hiện tên thật staff (staffName) hoặc tên khách (senderName)
+        const displayName = message.senderType === "admin"
+            ? (message.staffName || message.senderName || "Nhân viên")
+            : (message.senderName || "Khách hàng");
+
         return `
             <div class="admin-chat-message ${messageClass}" data-message-id="${message.id}">
                 <div class="admin-chat-message-header">
-                    <span class="admin-chat-message-name">${escapeHtml(message.senderName || "")}</span>
+                    <span class="admin-chat-message-name">${escapeHtml(displayName)}</span>
                     <span class="admin-chat-message-time">${escapeHtml(message.timeLabel || formatDateTime(message.createdAt))}</span>
                 </div>
                 ${message.content ? `<div class="admin-chat-message-content">${escapeHtml(message.content)}</div>` : ""}

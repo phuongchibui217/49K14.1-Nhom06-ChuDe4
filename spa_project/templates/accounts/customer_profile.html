@@ -468,7 +468,12 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Mật khẩu hiện tại <span class="text-danger">*</span></label>
-                                {{ password_form.current_password }}
+                                <div class="input-group">
+                                    {{ password_form.current_password }}
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('{{ password_form.current_password.id_for_label }}', this)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
                                 {% if password_form.current_password.errors %}
                                     {% for error in password_form.current_password.errors %}
                                         <div class="field-error"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
@@ -479,7 +484,12 @@
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Mật khẩu mới <span class="text-danger">*</span></label>
-                                    {{ password_form.new_password }}
+                                    <div class="input-group">
+                                        {{ password_form.new_password }}
+                                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('{{ password_form.new_password.id_for_label }}', this)">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
                                     {% if password_form.new_password.errors %}
                                         {% for error in password_form.new_password.errors %}
                                             <div class="field-error"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
@@ -488,7 +498,12 @@
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label class="form-label">Xác nhận mật khẩu mới <span class="text-danger">*</span></label>
-                                    {{ password_form.confirm_password }}
+                                    <div class="input-group">
+                                        {{ password_form.confirm_password }}
+                                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('{{ password_form.confirm_password.id_for_label }}', this)">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
                                     {% if password_form.confirm_password.errors %}
                                         {% for error in password_form.confirm_password.errors %}
                                             <div class="field-error"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
@@ -509,4 +524,20 @@
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function togglePassword(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+}
+</script>
 {% endblock %}

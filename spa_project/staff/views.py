@@ -55,20 +55,19 @@ def admin_staff(request):
                 messages.error(request, 'Số điện thoại đã tồn tại.')
                 return redirect('staff:admin_staff')
 
-            user = User.objects.create_user(
-                username=username,
-                email=email,
-                password=password
-            )
-            user.is_staff = True
-            user.is_superuser = is_superuser
-            user.save()
-
-            StaffProfile.objects.create(
-                user=user,
-                full_name=full_name,
-                phone=phone,
-            )
+            try:
+                from core.user_service import create_staff_user
+                create_staff_user(
+                    username=username,
+                    password=password,
+                    full_name=full_name,
+                    phone=phone,
+                    email=email,
+                    is_superuser=is_superuser,
+                )
+            except ValueError as e:
+                messages.error(request, str(e))
+                return redirect('staff:admin_staff')
 
             messages.success(request, 'Thêm nhân viên thành công!')
             return redirect('staff:admin_staff')
@@ -134,6 +133,6 @@ def admin_staff(request):
             return redirect('staff:admin_staff')
 
     staffs = StaffProfile.objects.select_related('user').all()
-    return render(request, 'staff/admin_staff.html', {
+    return render(request, 'manage/pages/admin_staff.html', {
         'staffs': staffs,
     })

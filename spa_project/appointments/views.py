@@ -73,7 +73,8 @@ def booking(request):
             appointment = form.save(commit=False)
             appointment.customer = customer_profile
             appointment.source = 'ONLINE'
-            appointment.status = 'NOT_ARRIVED'
+            appointment.status = 'PENDING'
+            appointment.created_by = request.user
             appointment.save()
 
             messages.success(
@@ -111,17 +112,28 @@ def my_appointments(request):
 
         appointments = customer_profile.appointments.all()
 
-        if status_filter != 'all':
-            appointments = appointments.filter(status=status_filter)
+        # Map URL param (lowercase) → DB value (uppercase)
+        STATUS_MAP = {
+            'pending': 'PENDING',
+            'not_arrived': 'NOT_ARRIVED',
+            'arrived': 'ARRIVED',
+            'completed': 'COMPLETED',
+            'cancelled': 'CANCELLED',
+        }
+
+        if status_filter != 'all' and status_filter in STATUS_MAP:
+            appointments = appointments.filter(status=STATUS_MAP[status_filter])
 
         appointments = appointments.order_by('-created_at')
 
-        # Đếm số lượng theo từng trạng thái
-        status_counts = {}
-        for status_choice, _ in Appointment.STATUS_CHOICES:
-            status_counts[status_choice] = customer_profile.appointments.filter(
-                status=status_choice
-            ).count()
+        # Đếm số lượng theo từng trạng thái, key dùng lowercase để khớp template
+        status_counts = {
+            'pending': customer_profile.appointments.filter(status='PENDING').count(),
+            'not_arrived': customer_profile.appointments.filter(status='NOT_ARRIVED').count(),
+            'arrived': customer_profile.appointments.filter(status='ARRIVED').count(),
+            'completed': customer_profile.appointments.filter(status='COMPLETED').count(),
+            'cancelled': customer_profile.appointments.filter(status='CANCELLED').count(),
+        }
         status_counts['all'] = customer_profile.appointments.count()
 
     except CustomerProfile.DoesNotExist:
@@ -157,12 +169,12 @@ def cancel_appointment(request, appointment_id):
         return redirect('appointments:my_appointments')
 
     # Kiểm tra trạng thái
-        if appointment.status not in ['PENDING', 'NOT_ARRIVED']:
-            messages.warning(
-                request,
-                f'Không thể hủy lịch hẹn này. Trạng thái hiện tại: {appointment.get_status_display()}'
-            )
-            return redirect('appointments:my_appointments')
+    if appointment.status not in ['PENDING', 'NOT_ARRIVED']:
+        messages.warning(
+            request,
+            f'Không thể hủy lịch hẹn này. Trạng thái hiện tại: {appointment.get_status_display()}'
+        )
+        return redirect('appointments:my_appointments')
 
     # GET: Hiển thị trang xác nhận
     if request.method == 'GET':

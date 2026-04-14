@@ -106,11 +106,16 @@ def register(request):
     if request.method == 'POST':
         form = CustomerRegistrationForm(request.POST)
         if form.is_valid():
-            profile = form.save()
-            messages.success(
-                request,
-                f'Đăng ký thành công! Chào mừng {profile.full_name}'
-            )
+            try:
+                profile = form.save()
+            except ValueError as e:
+                messages.error(request, str(e))
+                return render(request, 'accounts/register.html', {'form': form})
+            except Exception:
+                messages.error(request, 'Có lỗi hệ thống khi tạo tài khoản. Vui lòng thử lại.')
+                return render(request, 'accounts/register.html', {'form': form})
+
+            messages.success(request, f'Đăng ký thành công! Chào mừng {profile.full_name}')
             user = authenticate(
                 request,
                 username=form.cleaned_data['username'],
@@ -118,7 +123,7 @@ def register(request):
             )
             if user is not None:
                 login(request, user)
-            return redirect('pages:home')
+            return redirect('appointments:my_appointments')
     else:
         form = CustomerRegistrationForm()
 

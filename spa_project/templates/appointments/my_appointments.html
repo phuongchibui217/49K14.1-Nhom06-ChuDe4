@@ -34,8 +34,8 @@
 }
 
 .nav-pills .nav-link.active {
-    background-color: #d4a835;
-    color: white;
+    background-color: #1e3a5f;
+    color: #ffffff;
 }
 
 .nav-pills .nav-link:hover:not(.active) {
@@ -310,10 +310,10 @@
                         </div>
 
                         <div class="status-section">
-                            <span class="status-badge status-{{ appointment.status }}">
+                            <span class="status-badge status-{{ appointment.status|lower }}">
                                 {{ appointment.get_status_display }}
                             </span>
-                            {% if appointment.status == 'pending' or appointment.status == 'not_arrived' %}
+                            {% if appointment.status == 'PENDING' or appointment.status == 'NOT_ARRIVED' %}
                             <form method="post"
                                   action="{% url 'appointments:cancel_appointment' appointment.id %}"
                                   onsubmit="return confirm('Bạn có chắc muốn hủy lịch hẹn này?');">

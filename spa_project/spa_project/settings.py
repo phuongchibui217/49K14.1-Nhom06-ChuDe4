@@ -107,13 +107,12 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Login/Logout settings
-# LOGIN_URL đã được cleanup - chỉ dùng accounts:login
 LOGIN_URL = 'accounts:login'
-LOGIN_REDIRECT_URL = 'spa:home'
-LOGOUT_REDIRECT_URL = 'spa:home'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
 
-# Tránh ghi session vào SQLite để giảm lỗi "database is locked" khi chạy local.
-SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
+# Session - dùng DB thay vì signed_cookies để tránh giới hạn kích thước
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 # Email settings (for password reset)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

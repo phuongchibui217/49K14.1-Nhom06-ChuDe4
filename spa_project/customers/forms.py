@@ -141,17 +141,23 @@ class CustomerRegistrationForm(forms.ModelForm):
     )
     password1 = forms.CharField(
         label='Mật khẩu',
+        error_messages={'required': 'Vui lòng nhập mật khẩu.'},
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Nhập mật khẩu'
+            'placeholder': 'Nhập mật khẩu (ít nhất 6 ký tự)',
         })
     )
     password2 = forms.CharField(
         label='Xác nhận mật khẩu',
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Nhập lại mật khẩu'
+            'placeholder': 'Nhập lại mật khẩu',
         })
+    )
+    agree_terms = forms.BooleanField(
+        label='Đồng ý điều khoản',
+        required=True,
+        error_messages={'required': 'Bạn phải đồng ý với điều khoản dịch vụ để tiếp tục.'},
     )
 
     class Meta:
@@ -160,26 +166,39 @@ class CustomerRegistrationForm(forms.ModelForm):
         widgets = {
             'full_name': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Họ và tên đầy đủ'
+                'placeholder': 'Họ và tên đầy đủ',
             }),
             'phone': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Số điện thoại (dùng đăng nhập)',
-                'pattern': '[0-9]{10,11}'
+                'placeholder': 'Số điện thoại (10-11 chữ số)',
             }),
             'gender': forms.Select(attrs={
-                'class': 'form-select'
+                'class': 'form-select',
             }),
             'dob': forms.DateInput(attrs={
                 'class': 'form-control',
-                'type': 'date'
+                'type': 'date',
             }),
             'address': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Địa chỉ của bạn'
-            })
+                'placeholder': 'Địa chỉ của bạn',
+            }),
         }
+        error_messages = {
+            'full_name': {'required': 'Vui lòng nhập họ và tên.'},
+            'phone': {'required': 'Vui lòng nhập số điện thoại.'},
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # gender bắt buộc theo use case dù DB cho null
+        self.fields['gender'].required = True
+        self.fields['gender'].error_messages = {'required': 'Vui lòng chọn giới tính.'}
+        # dob optional nhưng validate nếu có nhập
+        self.fields['dob'].required = False
+        # address optional
+        self.fields['address'].required = False
 
     def clean_username(self):
         username = self.cleaned_data.get('username', '').strip()
@@ -187,31 +206,74 @@ class CustomerRegistrationForm(forms.ModelForm):
             raise forms.ValidationError('Vui lòng nhập tên đăng nhập.')
         if ' ' in username:
             raise forms.ValidationError('Tên đăng nhập không được chứa khoảng trắng.')
+        if not username.isascii():
+            raise forms.ValidationError('Tên đăng nhập chỉ được dùng ký tự không dấu.')
         if User.objects.filter(username=username).exists():
             raise forms.ValidationError('Tên đăng nhập này đã được sử dụng.')
         return username
 
+    def clean_full_name(self):
+        full_name = self.cleaned_data.get('full_name', '').strip()
+        if not full_name:
+            raise forms.ValidationError('Vui lòng nhập họ và tên.')
+        if len(full_name) < 2:
+            raise forms.ValidationError('Họ và tên phải có ít nhất 2 ký tự.')
+        return full_name
+
     def clean_phone(self):
-        phone = self.cleaned_data.get('phone')
-        if CustomerProfile.objects.filter(phone=phone).exists():
+        phone = self.cleaned_data.get('phone', '').strip()
+        if not phone:
+            raise forms.ValidationError('Vui lòng nhập số điện thoại.')
+        digits = ''.join(filter(str.isdigit, phone))
+        if len(digits) != len(phone.replace(' ', '')):
+            raise forms.ValidationError('Số điện thoại chỉ được chứa chữ số.')
+        if len(digits) < 10 or len(digits) > 11:
+            raise forms.ValidationError('Số điện thoại phải có 10-11 chữ số.')
+        if CustomerProfile.objects.filter(phone=digits).exists():
             raise forms.ValidationError('Số điện thoại này đã được đăng ký.')
-        return phone
+        return digits
+
+    def clean_gender(self):
+        gender = self.cleaned_data.get('gender', '').strip()
+        if not gender:
+            raise forms.ValidationError('Vui lòng chọn giới tính.')
+        return gender
+
+    def clean_dob(self):
+        dob = self.cleaned_data.get('dob')
+        if dob:
+            from django.utils import timezone
+            if dob > timezone.now().date():
+                raise forms.ValidationError('Ngày sinh không được lớn hơn ngày hiện tại.')
+        return dob
+
+    def clean_password1(self):
+        password = self.cleaned_data.get('password1', '')
+        if not password:
+            raise forms.ValidationError('Vui lòng nhập mật khẩu.')
+        if len(password) < 6:
+            raise forms.ValidationError('Mật khẩu phải có ít nhất 6 ký tự.')
+        return password
 
     def clean_password2(self):
         password1 = self.cleaned_data.get('password1')
         password2 = self.cleaned_data.get('password2')
+        if not password2:
+            raise forms.ValidationError('Vui lòng xác nhận mật khẩu.')
         if password1 and password2 and password1 != password2:
-            raise forms.ValidationError('Mật khẩu không khớp nhau.')
+            raise forms.ValidationError('Mật khẩu xác nhận không khớp.')
         return password2
 
     def save(self, commit=True):
-        user = User.objects.create_user(
+        from core.user_service import create_customer_user
+        profile = create_customer_user(
             username=self.cleaned_data['username'],
             password=self.cleaned_data['password1'],
+            full_name=self.cleaned_data['full_name'],
+            phone=self.cleaned_data['phone'],
             email=self.cleaned_data.get('email', '') or '',
+            gender=self.cleaned_data.get('gender') or None,
+            dob=self.cleaned_data.get('dob') or None,
+            address=self.cleaned_data.get('address') or '',
         )
-        profile = super().save(commit=False)
-        profile.user = user
-        if commit:
-            profile.save()
         return profile

@@ -323,12 +323,17 @@
                                 <label for="customer_password" class="form-label">
                                     Mật khẩu <span class="text-danger">*</span>
                                 </label>
-                                <input type="password"
-                                       class="form-control"
-                                       id="customer_password"
-                                       name="password"
-                                       placeholder="Nhập mật khẩu"
-                                       required>
+                                <div class="input-group">
+                                    <input type="password"
+                                           class="form-control"
+                                           id="customer_password"
+                                           name="password"
+                                           placeholder="Nhập mật khẩu"
+                                           required>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('customer_password', this)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
                             </div>
 
                             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -375,12 +380,17 @@
                                 <label for="staff_password" class="form-label">
                                     Mật khẩu <span class="text-danger">*</span>
                                 </label>
-                                <input type="password"
-                                       class="form-control"
-                                       id="staff_password"
-                                       name="password"
-                                       placeholder="Nhập mật khẩu"
-                                       required>
+                                <div class="input-group">
+                                    <input type="password"
+                                           class="form-control"
+                                           id="staff_password"
+                                           name="password"
+                                           placeholder="Nhập mật khẩu"
+                                           required>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('staff_password', this)">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
                             </div>
 
                             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -411,12 +421,19 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // =====================================================
-    // ROLE TOGGLE FUNCTIONALITY
-    // =====================================================
+function togglePassword(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const icon = btn.querySelector('i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+}
 
-    // Function to switch between Customer and Staff forms
+document.addEventListener('DOMContentLoaded', function() {
     window.switchRole = function(role) {
         const btnCustomer = document.getElementById('btnCustomer');
         const btnStaff = document.getElementById('btnStaff');
@@ -424,13 +441,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const staffForm = document.getElementById('staffForm');
 
         if (role === 'customer') {
-            // Show customer form
             btnCustomer.classList.add('active');
             btnStaff.classList.remove('active');
             customerForm.style.display = 'block';
             staffForm.style.display = 'none';
         } else {
-            // Show staff form
             btnStaff.classList.add('active');
             btnCustomer.classList.remove('active');
             staffForm.style.display = 'block';
@@ -438,152 +453,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // Initialize: Show customer form by default
-    switchRole('customer');
-
-    // =====================================================
-    // FORGOT PASSWORD MODAL
-    // =====================================================
-
-    // DOM Elements
-    const forgotPasswordLink = document.getElementById('forgotPasswordLink');
-    const forgotPasswordModal = document.getElementById('forgotPasswordModal');
-    const closeModalBtn = document.getElementById('closeModal');
-    const cancelResetBtn = document.getElementById('cancelReset');
-    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
-    const submitResetBtn = document.getElementById('submitReset');
-    const resetEmailInput = document.getElementById('resetEmail');
-    const modalAlert = document.getElementById('modalAlert');
-
-    // Show Alert Message
-    function showAlert(element, message, type = 'error') {
-        element.className = `alert-message alert-${type} show`;
-        element.innerHTML = `
-            <i class="fa-solid ${type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'}"></i>
-            <span>${message}</span>
-        `;
-
-        // Auto hide after 5 seconds
-        setTimeout(() => {
-            element.classList.remove('show');
-        }, 5000);
-    }
-
-    // Hide Alert Message
-    function hideAlert(element) {
-        element.classList.remove('show');
-    }
-
-    // Open Forgot Password Modal
-    if (forgotPasswordLink) {
-        forgotPasswordLink.addEventListener('click', function(e) {
-            e.preventDefault();
-            forgotPasswordModal.classList.add('show');
-            resetEmailInput.focus();
-        });
-    }
-
-    // Close Modal Functions
-    function closeModal() {
-        forgotPasswordModal.classList.remove('show');
-        hideAlert(modalAlert);
-        forgotPasswordForm.reset();
-        submitResetBtn.classList.remove('loading');
-        submitResetBtn.disabled = false;
-    }
-
-    if (closeModalBtn) {
-        closeModalBtn.addEventListener('click', closeModal);
-    }
-    if (cancelResetBtn) {
-        cancelResetBtn.addEventListener('click', closeModal);
-    }
-
-    // Close modal when clicking outside
-    forgotPasswordModal.addEventListener('click', function(e) {
-        if (e.target === forgotPasswordModal) {
-            closeModal();
-        }
-    });
-
-    // Handle Forgot Password Form Submit
-    if (forgotPasswordForm) {
-        forgotPasswordForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const email = resetEmailInput.value.trim();
-
-            // Hide previous alert
-            hideAlert(modalAlert);
-
-            // Validate email
-            if (!email) {
-                showAlert(modalAlert, 'Vui lòng nhập email!', 'error');
-                return;
-            }
-
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(email)) {
-                showAlert(modalAlert, 'Email không hợp lệ!', 'error');
-                return;
-            }
-
-            // Show loading state
-            submitResetBtn.classList.add('loading');
-            submitResetBtn.disabled = true;
-
-            // Submit form to Django backend
-            const formData = new FormData();
-            formData.append('email', email);
-            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-
-            fetch('{% url "accounts:password_reset" %}', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showAlert(
-                        modalAlert,
-                        'Nếu email tồn tại, link đặt lại mật khẩu sẽ được gửi đến email của bạn.',
-                        'success'
-                    );
-
-                    // Close modal after 3 seconds
-                    setTimeout(() => {
-                        closeModal();
-                    }, 3000);
-                } else {
-                    showAlert(modalAlert, data.error || 'Có lỗi xảy ra!', 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                // Fallback - show success message anyway (don't reveal if email exists)
-                showAlert(
-                    modalAlert,
-                    'Nếu email tồn tại, link đặt lại mật khẩu sẽ được gửi đến email của bạn.',
-                    'success'
-                );
-
-                setTimeout(() => {
-                    closeModal();
-                }, 3000);
-            })
-            .finally(() => {
-                submitResetBtn.classList.remove('loading');
-                submitResetBtn.disabled = false;
-            });
-        });
-    }
-
-    // Handle Escape key to close modal
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && forgotPasswordModal.classList.contains('show')) {
-            closeModal();
-        }
-    });
+    // Khôi phục tab đúng nếu server trả về lỗi
+    const activeRole = '{{ role|default:"customer" }}';
+    switchRole(activeRole);
 });
 </script>
 {% endblock %}

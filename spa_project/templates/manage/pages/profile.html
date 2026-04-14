@@ -465,21 +465,30 @@
                 <div class="col-md-4">
                     <div class="mb-3">
                         <label class="form-label">Mật khẩu hiện tại <span class="text-danger">*</span></label>
-                        <input type="password" class="form-control" id="currentPassword" required>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="currentPassword" required>
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('currentPassword', this)"><i class="fas fa-eye"></i></button>
+                        </div>
                         <div class="error-message" id="currentPasswordError">Mật khẩu hiện tại không đúng</div>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="mb-3">
                         <label class="form-label">Mật khẩu mới <span class="text-danger">*</span></label>
-                        <input type="password" class="form-control" id="newPassword" required>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="newPassword" required>
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('newPassword', this)"><i class="fas fa-eye"></i></button>
+                        </div>
                         <div class="error-message" id="newPasswordError">Mật khẩu phải có ít nhất 6 ký tự</div>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="mb-3">
                         <label class="form-label">Xác nhận mật khẩu mới <span class="text-danger">*</span></label>
-                        <input type="password" class="form-control" id="confirmPassword" required>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="confirmPassword" required>
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('confirmPassword', this)"><i class="fas fa-eye"></i></button>
+                        </div>
                         <div class="error-message" id="confirmPasswordError">Mật khẩu xác nhận không khớp</div>
                     </div>
                 </div>
