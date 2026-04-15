@@ -30,7 +30,8 @@
         <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.url_name == 'admin_complaints' %}active{% endif %}" href="{% url 'complaints:admin_complaints' %}">
                 <i class="fas fa-exclamation-triangle"></i>
-                Quản lý khiếu nại
+                <span class="sidebar-link-label">Quản lý khiếu nại</span>
+                <span class="sidebar-complaints-badge d-none" id="adminSidebarComplaintsBadge" aria-live="polite" aria-label="Số khiếu nại chưa giải quyết">0</span>
             </a>
         </li>
         <li class="nav-item">

@@ -4,8 +4,6 @@ from .models import Room, Appointment
 
 @admin.register(Room)
 class RoomAdmin(admin.ModelAdmin):
-    """Admin cho phòng dịch vụ"""
-    
     search_fields = ['code', 'name']
     list_display = ['code', 'name', 'capacity', 'is_active', 'created_at']
     list_filter = ['is_active', 'created_at']
@@ -15,15 +13,14 @@ class RoomAdmin(admin.ModelAdmin):
 
 @admin.register(Appointment)
 class AppointmentAdmin(admin.ModelAdmin):
-    """Admin cho lịch hẹn"""
-    list_display = ['appointment_code', 'customer', 'service', 'appointment_date', 'appointment_time', 'status']
+    list_display = ['appointment_code', 'customer', 'service', 'service_variant', 'appointment_date', 'appointment_time', 'status']
     list_filter = ['status', 'appointment_date', 'service']
     search_fields = ['appointment_code', 'customer__full_name', 'customer__phone', 'service__name']
     readonly_fields = ['appointment_code', 'created_at', 'updated_at']
     date_hierarchy = 'appointment_date'
     fieldsets = (
         ('Thông tin lịch hẹn', {
-            'fields': ('appointment_code', 'customer', 'service', 'appointment_date', 'appointment_time', 'status')
+            'fields': ('appointment_code', 'customer', 'service', 'service_variant', 'room', 'appointment_date', 'appointment_time', 'duration_minutes', 'end_time', 'status')
         }),
         ('Ghi chú', {
             'fields': ('notes', 'staff_notes')

@@ -35,13 +35,20 @@ def serialize_appointment(appointment):
         'email': customer_email,
         'service': appointment.service.name if appointment.service else '',
         'serviceId': appointment.service.id if appointment.service else None,
+        'variantId': appointment.service_variant.id if appointment.service_variant else None,
+        'variantLabel': appointment.service_variant.label if appointment.service_variant else '',
         'roomCode': appointment.room.code if appointment.room else '',
         'roomName': appointment.room.name if appointment.room else '',
         'guests': appointment.guests or 1,
         'date': appointment.appointment_date.strftime('%Y-%m-%d') if appointment.appointment_date else '',
         'start': appointment.appointment_time.strftime('%H:%M') if appointment.appointment_time else '',
         'end': end_str,
-        'durationMin': appointment.duration_minutes or (appointment.service.duration_minutes if appointment.service else 60),
+        'durationMin': appointment.duration_minutes or (
+            appointment.service_variant.duration_minutes if appointment.service_variant else (
+                appointment.service.variants.filter(is_active=True).order_by('sort_order').first().duration_minutes
+                if appointment.service and appointment.service.variants.filter(is_active=True).exists() else 60
+            )
+        ),
         'note': appointment.notes or '',
         'apptStatus': appointment.status,
         'payStatus': appointment.payment_status,

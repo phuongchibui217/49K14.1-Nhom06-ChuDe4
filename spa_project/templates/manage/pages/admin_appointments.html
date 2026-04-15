@@ -49,7 +49,7 @@
               type="text"
               class="form-control"
               id="searchInput"
-              placeholder="Tìm kiếm theo tên, SĐT, dịch vụ ..."
+              placeholder="Tìm theo tên, SĐT, email, ghi chú..."
             />
           </div>
 
@@ -72,6 +72,48 @@
           Click ô trống để tạo lịch • Click lịch để sửa
         </div>
       </div>
+
+      <!-- Filter Bar — đồng bộ style trang dịch vụ -->
+      <div class="px-3 pt-3 pb-1" style="background:#fff; border-bottom:1px solid #eef1f4;">
+        <div class="row g-2 align-items-center">
+          <div class="col-md-3">
+            <select class="form-select" id="statusFilter">
+              <option value="">Tất cả trạng thái</option>
+              <option value="PENDING">Chờ xác nhận</option>
+              <option value="NOT_ARRIVED">Chưa đến</option>
+              <option value="ARRIVED">Đã đến</option>
+              <option value="COMPLETED">Hoàn thành</option>
+              <option value="CANCELLED">Đã hủy</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="serviceFilter">
+              <option value="">Tất cả dịch vụ</option>
+              <!-- load bằng JS sau khi SERVICES sẵn sàng -->
+            </select>
+          </div>
+          <div class="col-md-3">
+            <select class="form-select" id="sourceFilter">
+              <option value="">Tất cả kênh liên hệ</option>
+              <option value="DIRECT">Trực tiếp</option>
+              <option value="ONLINE">Đặt online</option>
+              <option value="PHONE">Điện thoại</option>
+              <option value="FACEBOOK">Facebook</option>
+              <option value="ZALO">Zalo</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <button type="button" class="btn btn-secondary w-100" id="schedFilterBtn">
+              <i class="fas fa-filter me-2"></i>Lọc
+            </button>
+          </div>
+          <div class="col-md-1">
+            <button type="button" class="btn btn-outline-secondary w-100" id="schedClearBtn" title="Bỏ lọc">
+              <i class="fas fa-rotate-left me-1"></i>Bỏ lọc
+            </button>
+          </div>
+        </div>
+      </div>
               <!-- HTML chỉ là container rỗng -->
       <div class="scheduler-wrap" id="schedulerWrap">
         <div class="time-header" id="timeHeader"></div>
@@ -82,20 +124,48 @@
     <!-- TAB- Header: Yêu cầu đặt lịch -->
     <div class="tab-pane fade" id="pane-web" role="tabpanel">
       <div class="p-3" style="background:#fff;">
-        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
-          <div class="fw-bold">
-            <i class="fas fa-inbox me-2"></i>Danh sách yêu cầu đặt lịch trực tuyến
+
+        <!-- Filter Bar — đồng bộ style trang dịch vụ -->
+        <div class="card mb-3 border-0 shadow-sm">
+          <div class="card-body py-2">
+            <div class="row g-2 align-items-center">
+              <div class="col-md-3">
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0">
+                    <i class="fas fa-search text-muted"></i>
+                  </span>
+                  <input type="text" class="form-control border-start-0"
+                         id="webSearchInput"
+                         placeholder="Tìm tên, SĐT, dịch vụ, mã lịch...">
+                </div>
+              </div>
+              <div class="col-md-3">
+                <select class="form-select" id="webStatusFilter">
+                  <option value="">Tất cả trạng thái</option>
+                  <option value="PENDING">Chờ xác nhận</option>
+                  <option value="NOT_ARRIVED">Chưa đến</option>
+                  <option value="ARRIVED">Đã đến</option>
+                  <option value="COMPLETED">Hoàn thành</option>
+                  <option value="CANCELLED">Đã hủy</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <input type="date" class="form-control" id="webDateFilter"
+                       title="Lọc theo ngày hẹn">
+              </div>
+              <div class="col-md-2">
+                <button type="button" class="btn btn-secondary w-100" id="webFilterBtn">
+                  <i class="fas fa-filter me-2"></i>Lọc
+                </button>
+              </div>
+            </div>
           </div>
-          <!-- Bộ lọc trạng thái -->
-          <div class="d-flex gap-2 align-items-center">
-            <select class="form-select form-select-sm" id="webStatusFilter" style="width:auto;min-width:160px;">
-              <option value="">Tất cả trạng thái</option>
-              <option value="pending" selected>Chờ xác nhận</option>
-              <option value="not_arrived">Chưa đến</option>
-              <option value="arrived">Đã đến</option>
-              <option value="completed">Hoàn thành</option>
-              <option value="cancelled">Đã hủy</option>
-            </select>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <div class="fw-bold text-muted small">
+            <i class="fas fa-inbox me-1"></i>
+            Danh sách yêu cầu đặt lịch trực tuyến
           </div>
         </div>
 
@@ -215,20 +285,20 @@
             <div class="col-md-4">
               <label class="form-label fw-semibold">Trạng thái lịch hẹn</label>
               <select class="form-select" id="apptStatus">
-                <option value="pending">Chờ xác nhận</option>
-                <option value="not_arrived">Chưa đến</option>
-                <option value="arrived">Đã đến</option> <!-- cân nhắc nên bỏ không-->
-                <option value="completed">Hoàn thành</option>
-                <option value="cancelled">Đã hủy</option>
+                <option value="PENDING">Chờ xác nhận</option>
+                <option value="NOT_ARRIVED">Chưa đến</option>
+                <option value="ARRIVED">Đã đến</option>
+                <option value="COMPLETED">Hoàn thành</option>
+                <option value="CANCELLED">Đã hủy</option>
               </select>
             </div>
 
             <div class="col-md-4">
               <label class="form-label fw-semibold">Trạng thái thanh toán</label>
               <select class="form-select" id="payStatus">
-                <option value="unpaid">Chưa thanh toán</option>
-                <option value="partial">Đã thanh toán một phần</option>
-                <option value="paid">Đã thanh toán</option>
+                <option value="UNPAID">Chưa thanh toán</option>
+                <option value="PARTIAL">Đã thanh toán một phần</option>
+                <option value="PAID">Đã thanh toán</option>
               </select>
             </div>
 

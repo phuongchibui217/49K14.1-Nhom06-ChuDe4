@@ -27,7 +27,7 @@ class ChatSession(models.Model):
     updated_at = models.DateTimeField(auto_now=True, null=True, blank=True, verbose_name='Thời điểm cập nhật')
 
     # Extra fields used by services/views (not in schema but needed for functionality)
-    chat_code = models.CharField(max_length=24, unique=True, blank=True, verbose_name='Mã phiên chat')
+    chat_code = models.CharField(max_length=20, unique=True, blank=True, verbose_name='Mã phiên chat')
     customer_type = models.CharField(max_length=20, default='guest', verbose_name='Loại khách')
     guest_session_key = models.CharField(max_length=64, null=True, blank=True, unique=True, verbose_name='Khóa phiên khách')
     source_page = models.CharField(max_length=255, blank=True, verbose_name='Trang bắt đầu chat')
@@ -84,24 +84,23 @@ class ChatSession(models.Model):
     @classmethod
     def _generate_chat_code(cls):
         prefix = 'CHAT'
-        today = timezone.now().strftime('%Y%m%d')
-        full_prefix = f'{prefix}{today}'
         for attempt in range(100):
             with transaction.atomic():
                 last = cls.objects.select_for_update().filter(
-                    chat_code__startswith=full_prefix
-                ).order_by('-chat_code').first()
-                if last:
+                    chat_code__startswith=prefix
+                ).order_by('-id').first()
+                if last and last.chat_code:
                     try:
-                        new_number = int(last.chat_code[-4:]) + 1 + attempt
+                        new_number = int(last.chat_code[len(prefix):]) + 1 + attempt
                     except (TypeError, ValueError, IndexError):
                         new_number = 1 + attempt
                 else:
                     new_number = 1 + attempt
-                new_code = f'{full_prefix}{new_number:04d}'
+                new_code = f'{prefix}{new_number:04d}'
                 if not cls.objects.filter(chat_code=new_code).exists():
                     return new_code
-        return f'{full_prefix}{int(timezone.now().timestamp()) % 10000:04d}'
+        import time
+        return f'{prefix}{int(time.time()) % 10000:04d}'
 
 
 class ChatMessage(models.Model):

@@ -19,37 +19,25 @@ from .models import Appointment
 from customers.models import CustomerProfile
 from spa_services.models import Service
 from .forms import AppointmentForm
+from core.decorators import customer_required
 
 
 # =====================================================
 # TRANG ĐẶT LỊCH (Public)
 # =====================================================
 
+@customer_required()
 def booking(request):
     """
     Trang đặt lịch hẹn (cho khách hàng)
 
     LUỒNG:
     1. Chưa login → Redirect sang trang login
-    2. Đã login + chưa có profile → Tạo profile tự động
-    3. Đã login + có profile → Hiển thị form đặt lịch
+    2. Staff/admin → Redirect về /manage/appointments/
+    3. Đã login + có CustomerProfile → Hiển thị form đặt lịch
     4. POST form → Validate → Tạo Appointment → Redirect sang "Lịch hẹn của tôi"
     """
-    # Chưa đăng nhập → chuyển sang login
-    if not request.user.is_authenticated:
-        messages.warning(request, 'Vui lòng đăng nhập để đặt lịch hên.')
-        return redirect(f'/login/?next=/booking/')
-
-    # Lấy hoặc tạo customer profile
-    try:
-        customer_profile = request.user.customer_profile
-    except CustomerProfile.DoesNotExist:
-        customer_profile = CustomerProfile.objects.create(
-            user=request.user,
-            phone=request.user.username,
-            full_name=request.user.get_full_name() or request.user.username,
-        )
-        messages.info(request, 'Hồ sơ của bạn đã được tạo. Vui lòng cập nhật thông tin đầy đủ.')
+    customer_profile = request.user.customer_profile
 
     # Lấy service được chọn từ URL (nếu có)
     selected_service_id = request.GET.get('service')
@@ -75,6 +63,34 @@ def booking(request):
             appointment.source = 'ONLINE'
             appointment.status = 'PENDING'
             appointment.created_by = request.user
+
+            # Snapshots
+            appointment.customer_name_snapshot = customer_name or customer_profile.full_name or ''
+            appointment.customer_phone_snapshot = customer_phone or customer_profile.phone or ''
+            appointment.customer_email_snapshot = customer_email or customer_profile.email or ''
+
+            # Nếu có variant → gán duration từ variant
+            variant = form.cleaned_data.get('service_variant')
+            if variant:
+                appointment.service_variant = variant
+                appointment.duration_minutes = variant.duration_minutes
+            else:
+                first_variant = appointment.service.variants.filter(is_active=True).order_by('sort_order', 'duration_minutes').first()
+                appointment.duration_minutes = first_variant.duration_minutes if first_variant else 60
+
+            # Tính end_time
+            from datetime import datetime as _dt, timedelta as _td
+            if appointment.appointment_time and appointment.duration_minutes:
+                start_dt = _dt.combine(_dt.today(), appointment.appointment_time)
+                appointment.end_time = (start_dt + _td(minutes=appointment.duration_minutes)).time()
+
+            # Gán phòng mặc định nếu chưa có (required field)
+            if not appointment.room_id:
+                from .models import Room as _Room
+                default_room = _Room.objects.filter(is_active=True).first()
+                if default_room:
+                    appointment.room = default_room
+
             appointment.save()
 
             messages.success(
@@ -86,11 +102,22 @@ def booking(request):
         if selected_service_id:
             form.fields['service'].initial = selected_service_id
 
-    services = Service.objects.filter(is_active=True)
+    services = Service.objects.filter(is_active=True).prefetch_related('variants')
+
+    # Truyền variants data dạng JSON để JS render dropdown động
+    import json as _json
+    services_with_variants = {
+        str(s.id): [
+            {'id': v.id, 'label': v.label, 'duration_minutes': v.duration_minutes, 'price': float(v.price)}
+            for v in s.variants.filter(is_active=True).order_by('sort_order', 'duration_minutes')
+        ]
+        for s in services
+    }
 
     return render(request, 'appointments/booking.html', {
         'form': form,
         'services': services,
+        'services_variants_json': _json.dumps(services_with_variants),
         'customer_profile': customer_profile,
     })
 
@@ -99,7 +126,7 @@ def booking(request):
 # TRANG LỊCH HẸN CỦA TÔI
 # =====================================================
 
-@login_required
+@customer_required()
 def my_appointments(request):
     """
     Trang xem lịch hẹn của khách hàng
@@ -152,7 +179,7 @@ def my_appointments(request):
 # TRANG HỦY LỊCH HẸN
 # =====================================================
 
-@login_required
+@customer_required()
 def cancel_appointment(request, appointment_id):
     """
     Hủy lịch hẹn (cho khách hàng)

@@ -30,13 +30,12 @@ from customers.forms import CustomerRegistrationForm
 
 def login_view(request):
     """
-    Đăng nhập với UI Toggle: Khách hàng hoặc Nhân viên
+    Đăng nhập chung - tự phân luồng theo is_staff sau khi xác thực
     """
     if request.user.is_authenticated:
         return _redirect_by_role(request, request.user)
 
     if request.method == 'POST':
-        role = request.POST.get('role', 'customer')
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '')
 
@@ -45,15 +44,7 @@ def login_view(request):
         if user is not None:
             if not user.is_active:
                 messages.error(request, 'Tài khoản đã bị vô hiệu hóa.')
-                return render(request, 'accounts/login.html', {'role': role})
-
-            if role == 'staff' and not (user.is_staff or user.is_superuser):
-                messages.error(request, 'Tài khoản này không có quyền truy cập hệ thống quản lý.')
-                return render(request, 'accounts/login.html', {'role': role})
-
-            if role == 'customer' and (user.is_staff or user.is_superuser):
-                messages.error(request, 'Vui lòng đăng nhập bằng tab Nhân viên.')
-                return render(request, 'accounts/login.html', {'role': role})
+                return render(request, 'accounts/login.html')
 
             login(request, user)
 
@@ -67,9 +58,7 @@ def login_view(request):
         else:
             messages.error(request, 'Tên đăng nhập hoặc mật khẩu không đúng.')
 
-        return render(request, 'accounts/login.html', {'role': role})
-
-    return render(request, 'accounts/login.html', {'role': 'customer'})
+    return render(request, 'accounts/login.html')
 
 
 def _redirect_by_role(request, user, show_welcome=False):

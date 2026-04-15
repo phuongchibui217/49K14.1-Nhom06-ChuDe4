@@ -35,8 +35,12 @@ urlpatterns = [
     # ============================================================
     path('api/services/', views.api_services_list, name='api_services_list'),
     path('api/services/create/', views.api_service_create, name='api_service_create'),
-    path('api/services/<int:service_id>/update/', views.api_service_update,
-         name='api_service_update'),
-    path('api/services/<int:service_id>/delete/', views.api_service_delete,
-         name='api_service_delete'),
+    path('api/services/<int:service_id>/update/', views.api_service_update, name='api_service_update'),
+    path('api/services/<int:service_id>/delete/', views.api_service_delete, name='api_service_delete'),
+
+    # Variant CRUD
+    path('api/services/<int:service_id>/variants/', views.api_variant_list, name='api_variant_list'),
+    path('api/services/<int:service_id>/variants/create/', views.api_variant_create, name='api_variant_create'),
+    path('api/services/<int:service_id>/variants/<int:variant_id>/update/', views.api_variant_update, name='api_variant_update'),
+    path('api/services/<int:service_id>/variants/<int:variant_id>/delete/', views.api_variant_delete, name='api_variant_delete'),
 ]

@@ -110,28 +110,33 @@ def api_appointments_list(request):
         appointments = appointments.filter(appointment_date=date_filter)
 
     # Lọc theo trạng thái
-    status_filter = request.GET.get('status', '')
+    status_filter = request.GET.get('status', '').strip().upper()
     if status_filter:
         appointments = appointments.filter(status=status_filter)
 
-    # Lọc theo nguồn
+    # Lọc theo dịch vụ
+    service_filter = request.GET.get('service', '')
+    if service_filter:
+        appointments = appointments.filter(service__id=service_filter)
+
+    # Lọc theo kênh liên hệ (source)
     source_filter = request.GET.get('source', '')
     if source_filter:
         appointments = appointments.filter(source=source_filter)
 
-    # Lọc theo phòng
-    room_filter = request.GET.get('room', '')
-    if room_filter:
-        appointments = appointments.filter(room__code=room_filter)
-
-    # Tìm kiếm
+    # Tìm kiếm (OR trên nhiều field, icontains)
     search = request.GET.get('q', '').strip()
     if search:
         appointments = appointments.filter(
-            Q(appointment_code__icontains=search) |
+            Q(customer_name_snapshot__icontains=search) |
+            Q(customer_phone_snapshot__icontains=search) |
+            Q(customer_email_snapshot__icontains=search) |
+            Q(notes__icontains=search) |
+            Q(staff_notes__icontains=search) |
+            Q(service__name__icontains=search) |
             Q(customer__full_name__icontains=search) |
             Q(customer__phone__icontains=search) |
-            Q(service__name__icontains=search)
+            Q(customer__user__email__icontains=search)
         )
 
     appointments = appointments.order_by('appointment_date', 'appointment_time')
@@ -193,10 +198,11 @@ def api_appointment_create(request):
             'customer_name': raw_data.get('customerName', '').strip(),
             'phone': raw_data.get('phone', '').strip(),
             'service_id': raw_data.get('serviceId') or raw_data.get('service'),
+            'variant_id': raw_data.get('variantId') or raw_data.get('variant'),
             'room_id': raw_data.get('roomId') or raw_data.get('room'),
             'date_str': raw_data.get('date', ''),
             'time_str': raw_data.get('time') or raw_data.get('start', ''),
-            'duration': raw_data.get('duration') or raw_data.get('durationMin', 60),
+            'duration': raw_data.get('duration') or raw_data.get('durationMin') or None,
             'guests': raw_data.get('guests', 1),
             'notes': raw_data.get('note', ''),
             'status': raw_data.get('apptStatus', 'NOT_ARRIVED'),
@@ -249,6 +255,7 @@ def api_appointment_create(request):
             appointment = Appointment.objects.create(
                 customer=customer,
                 service=cleaned['service'],
+                service_variant=cleaned.get('service_variant'),
                 room=cleaned.get('room'),
                 appointment_date=cleaned['appointment_date'],
                 appointment_time=cleaned['appointment_time'],
@@ -320,7 +327,12 @@ def api_appointment_update(request, appointment_code):
         validation_data = {
             'appointment_date': appointment.appointment_date,
             'appointment_time': appointment.appointment_time,
-            'duration_minutes': appointment.duration_minutes or (appointment.service.duration_minutes if appointment.service else 60),
+            'duration_minutes': appointment.duration_minutes or (
+                appointment.service_variant.duration_minutes if appointment.service_variant else (
+                    appointment.service.variants.filter(is_active=True).order_by('sort_order').first().duration_minutes
+                    if appointment.service else 60
+                )
+            ),
             'room_code': appointment.room.code if appointment.room else None,
             'guests': appointment.guests or 1
         }
@@ -389,12 +401,34 @@ def api_appointment_update(request, appointment_code):
                     locked_appointment.customer.phone = phone_digits
                     locked_appointment.customer.save()
 
-            # Cập nhật dịch vụ
+            # Cập nhật dịch vụ + variant
+            new_variant_id = raw_data.get('variantId') or raw_data.get('variant')
             if new_service_id:
                 try:
                     locked_appointment.service = Service.objects.get(id=new_service_id)
+                    # Reset variant khi đổi service (tránh variant không thuộc service mới)
+                    locked_appointment.service_variant = None
                 except Service.DoesNotExist:
                     return JsonResponse({'success': False, 'error': 'Dịch vụ không tồn tại'}, status=404)
+
+            if new_variant_id:
+                try:
+                    from spa_services.models import ServiceVariant
+                    variant = ServiceVariant.objects.get(id=new_variant_id)
+                    locked_appointment.service_variant = variant
+                    # Nếu không có duration mới từ FE → lấy từ variant
+                    if not new_duration:
+                        locked_appointment.duration_minutes = variant.duration_minutes
+                        # Tính lại end_time
+                        from datetime import datetime as dt, timedelta
+                        start = locked_appointment.appointment_time
+                        start_dt = dt.combine(dt.today(), start)
+                        locked_appointment.end_time = (start_dt + timedelta(minutes=variant.duration_minutes)).time()
+                except ServiceVariant.DoesNotExist:
+                    return JsonResponse({'success': False, 'error': 'Gói dịch vụ không tồn tại'}, status=404)
+            elif 'variantId' in raw_data and not new_variant_id:
+                # FE gửi variantId=null → xóa variant (dùng fallback service)
+                locked_appointment.service_variant = None
 
             # Cập nhật phòng
             if new_room_id is not None:
@@ -578,8 +612,8 @@ def api_booking_requests(request):
     if date_filter:
         appointments = appointments.filter(appointment_date=date_filter)
 
-    # Lọc theo trạng thái
-    status_filter = request.GET.get('status', '')
+    # Lọc theo trạng thái — chấp nhận cả uppercase lẫn lowercase từ FE
+    status_filter = request.GET.get('status', '').strip().upper()
     if status_filter:
         appointments = appointments.filter(status=status_filter)
 
@@ -630,7 +664,7 @@ def _validate_appointment_data(data):
     else:
         cleaned_data['phone'] = phone
 
-    # Validate dịch vụ
+    # Validate dịch vụ + variant
     service_id = data.get('service_id')
     if not service_id:
         errors.append('Vui lòng chọn dịch vụ')
@@ -638,6 +672,18 @@ def _validate_appointment_data(data):
         try:
             service = Service.objects.get(id=service_id)
             cleaned_data['service'] = service
+        except Service.DoesNotExist:
+            errors.append('Dịch vụ không tồn tại')
+
+    # Validate variant (optional — nếu có thì dùng duration/price của variant)
+    variant_id = data.get('variant_id')
+    if variant_id:
+        try:
+            from spa_services.models import ServiceVariant
+            variant = ServiceVariant.objects.get(id=variant_id)
+            cleaned_data['service_variant'] = variant
+        except (ServiceVariant.DoesNotExist, ValueError, TypeError):
+            errors.append('Gói dịch vụ không tồn tại')
         except Service.DoesNotExist:
             errors.append('Dịch vụ không tồn tại')
 
@@ -661,12 +707,20 @@ def _validate_appointment_data(data):
         except ValueError:
             errors.append('Định dạng giờ không hợp lệ')
 
-    # Validate thời lượng
-    duration = data.get('duration', 60)
-    try:
-        cleaned_data['duration_minutes'] = int(duration)
-    except (ValueError, TypeError):
-        cleaned_data['duration_minutes'] = cleaned_data['service'].duration_minutes if 'service' in cleaned_data else 60
+    # Validate thời lượng — ưu tiên variant, fallback về data, rồi variant đầu tiên của service
+    duration = data.get('duration', None)
+    if duration:
+        try:
+            cleaned_data['duration_minutes'] = int(duration)
+        except (ValueError, TypeError):
+            cleaned_data['duration_minutes'] = 60
+    elif 'service_variant' in cleaned_data:
+        cleaned_data['duration_minutes'] = cleaned_data['service_variant'].duration_minutes
+    elif 'service' in cleaned_data:
+        first_variant = cleaned_data['service'].variants.filter(is_active=True).order_by('sort_order', 'duration_minutes').first()
+        cleaned_data['duration_minutes'] = first_variant.duration_minutes if first_variant else 60
+    else:
+        cleaned_data['duration_minutes'] = 60
 
     # Validate phòng (optional)
     room_id = data.get('room_id')
@@ -779,10 +833,10 @@ def api_booking_pending_count(request):
         return _deny()
 
     try:
-        # Đếm số lượng booking pending (chưa xác nhận)
+        # Đếm số lượng booking online chưa xử lý (PENDING + NOT_ARRIVED)
         pending_count = Appointment.objects.filter(
             Q(source='ONLINE') | Q(source__isnull=True),
-            status='PENDING'
+            status__in=['PENDING', 'NOT_ARRIVED']
         ).count()
 
         return JsonResponse({
@@ -806,10 +860,10 @@ def _booking_count_stream_generator():
     """
     while True:
         try:
-            # Đếm số lượng booking pending
+            # Đếm số lượng booking online chưa xử lý (PENDING + NOT_ARRIVED)
             pending_count = Appointment.objects.filter(
                 Q(source='ONLINE') | Q(source__isnull=True),
-                status='PENDING'
+                status__in=['PENDING', 'NOT_ARRIVED']
             ).count()
 
             # Format SSE response

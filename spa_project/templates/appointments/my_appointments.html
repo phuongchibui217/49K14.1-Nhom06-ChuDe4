@@ -25,37 +25,91 @@
     opacity: 0.9;
 }
 
-/* Filter Tabs */
-.nav-pills .nav-link {
-    border-radius: 50px;
-    padding: 0.5rem 1rem;
-    color: #64748b;
+/* Filter Tabs — Segmented pill control */
+.filter-bar {
+    background: #f1f5f9;
+    border-radius: 14px;
+    padding: 6px;
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 2rem;
+}
+
+.filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.45rem 1rem;
+    border-radius: 10px;
+    font-size: 0.875rem;
     font-weight: 500;
+    color: #475569;
+    background: transparent;
+    border: 1.5px solid transparent;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    white-space: nowrap;
 }
 
-.nav-pills .nav-link.active {
-    background-color: #1e3a5f;
-    color: #ffffff;
+.filter-pill:hover {
+    background: white;
+    color: #1e3a5f;
+    border-color: #cbd5e1;
+    text-decoration: none;
 }
 
-.nav-pills .nav-link:hover:not(.active) {
-    background-color: rgba(212, 168, 53, 0.1);
+.filter-pill.active {
+    background: #1e3a5f;
+    color: white;
+    border-color: #1e3a5f;
+    box-shadow: 0 2px 8px rgba(30, 58, 95, 0.25);
+}
+
+.filter-pill .pill-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 5px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: rgba(255,255,255,0.2);
+    color: inherit;
+}
+
+.filter-pill:not(.active) .pill-count {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+@media (max-width: 576px) {
+    .filter-bar {
+        width: 100%;
+        justify-content: center;
+    }
+    .filter-pill {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.75rem;
+    }
 }
 
 /* Appointment Card */
 .appointment-card {
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-    padding: 1.25rem;
-    margin-bottom: 1.5rem;
-    border-left: 4px solid #d4a835;
-    transition: all 0.3s ease;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+    padding: 18px 20px;
+    margin-bottom: 1rem;
+    border: 1px solid #f1f5f9;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .appointment-card:hover {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
 }
 
 /* Card Header */
@@ -63,131 +117,126 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 1rem;
+    margin-bottom: 14px;
 }
 
 .service-info h5 {
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 600;
     color: #1e3a5f;
-    margin-bottom: 0.25rem;
+    margin-bottom: 4px;
+    line-height: 1.3;
 }
 
 .service-info .code {
-    font-size: 0.85rem;
-    color: #64748b;
+    font-size: 0.8rem;
+    color: #94a3b8;
 }
 
-/* Status Badge */
+/* Status Badge — pill, soft color */
 .status-badge {
-    padding: 0.4rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
 }
 
 .status-pending {
-    background: #fff3cd;
-    color: #5c4c03;
-    border: 1px solid #ffc107;
+    background: #fef9ec;
+    color: #b45309;
 }
 
 .status-not_arrived {
-    background: #d1ecf1;
-    color: #053c47;
-    border: 1px solid #0dcaf0;
+    background: #eff6ff;
+    color: #1d4ed8;
 }
 
 .status-arrived {
-    background: #cfe2ff;
-    color: #052c65;
-    border: 1px solid #0d6efd;
+    background: #eff6ff;
+    color: #1d4ed8;
 }
 
 .status-completed {
-    background: #d4edda;
-    color: #0a3622;
-    border: 1px solid #198754;
+    background: #f0fdf4;
+    color: #15803d;
 }
 
 .status-cancelled {
-    background: #f8d7da;
-    color: #58151c;
-    border: 1px solid #dc3545;
+    background: #fff1f2;
+    color: #be123c;
 }
 
-/* Action Button */
-.btn-cancel {
-    background: #dc3545;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 0.4rem 1rem;
-    font-size: 0.85rem;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    margin-top: 0.5rem;
-}
-
-.btn-cancel:hover {
-    background: #c82333;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(220, 53, 69, 0.3);
-    color: white;
-}
-
-/* Card Details */
+/* Card Body — info row */
 .card-details {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-    padding: 0.75rem 0;
-    border-top: 1px solid #e2e8f0;
-    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    padding: 12px 0;
+    border-top: 1px solid #f1f5f9;
 }
 
 .detail-item {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: #475569;
 }
 
 .detail-item i {
     color: #d4a835;
-    font-size: 1rem;
-}
-
-.detail-item .label {
-    color: #64748b;
-    font-weight: 500;
+    font-size: 13px;
+    width: 14px;
+    text-align: center;
 }
 
 .detail-item .value {
     color: #1e3a5f;
-    font-weight: 600;
+    font-weight: 500;
 }
 
-/* Notes Section */
+/* Notes */
 .card-notes {
-    padding: 0.75rem;
-    background: #f8f9fa;
+    padding: 8px 12px;
+    background: #f8fafc;
     border-radius: 8px;
-    font-size: 0.85rem;
-    margin-top: 0.75rem;
-}
-
-.card-notes i {
+    font-size: 0.82rem;
     color: #64748b;
+    margin-top: 10px;
 }
 
-/* Footer */
-.card-footer {
-    margin-top: 0.75rem;
-    font-size: 0.8rem;
-    color: #94a3b8;
+/* Card Footer — action row */
+.card-action-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 12px;
+    margin-top: 4px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.btn-cancel-appt {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff1f2;
+    color: #be123c;
+    border: 1px solid #fecdd3;
+    border-radius: 10px;
+    padding: 6px 16px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.btn-cancel-appt:hover {
+    background: #ffe4e6;
+    border-color: #fda4af;
+    color: #9f1239;
 }
 
 /* Empty State */
@@ -195,43 +244,25 @@
     text-align: center;
     padding: 3rem 2rem;
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+    border: 1px solid #f1f5f9;
 }
 
-.empty-state i {
-    color: #cbd5e1;
-}
+.empty-state i { color: #cbd5e1; }
 
 .empty-state h3 {
     color: #1e3a5f;
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     margin-bottom: 0.5rem;
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-    .page-header {
-        padding: 2rem 0 1.5rem;
-    }
-
-    .page-header h1 {
-        font-size: 1.5rem;
-    }
-
-    .card-details {
-        grid-template-columns: 1fr;
-        gap: 0.75rem;
-    }
-
-    .filter-tabs {
-        padding: 0.75rem;
-    }
-
-    .filter-tab {
-        padding: 0.5rem 1rem;
-        font-size: 0.85rem;
-    }
+    .page-header { padding: 2rem 0 1.5rem; }
+    .page-header h1 { font-size: 1.5rem; }
+    .card-details { flex-direction: column; gap: 8px; }
+    .filter-bar { width: 100%; justify-content: center; }
 }
 </style>
 {% endblock %}
@@ -250,48 +281,30 @@
     <div class="container">
 
         <!-- Filter Tabs -->
-        <ul class="nav nav-pills justify-content-center mb-4">
-            <li class="nav-item">
-                <a class="nav-link {% if status_filter == 'all' %}active{% endif %}" href="?status=all">
+        <div class="d-flex justify-content-center mb-4">
+            <div class="filter-bar">
+                <a href="?status=all" class="filter-pill {% if status_filter == 'all' %}active{% endif %}">
                     Tất cả
-                    {% if status_counts.all > 0 %}
-                    <span class="badge bg-danger rounded-pill ms-2">{{ status_counts.all }}</span>
-                    {% endif %}
+                    {% if status_counts.all > 0 %}<span class="pill-count">{{ status_counts.all }}</span>{% endif %}
                 </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if status_filter == 'pending' %}active{% endif %}" href="?status=pending">
+                <a href="?status=pending" class="filter-pill {% if status_filter == 'pending' %}active{% endif %}">
                     Chờ xác nhận
-                    {% if status_counts.pending > 0 %}
-                    <span class="badge bg-danger rounded-pill ms-2">{{ status_counts.pending }}</span>
-                    {% endif %}
+                    {% if status_counts.pending > 0 %}<span class="pill-count">{{ status_counts.pending }}</span>{% endif %}
                 </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if status_filter == 'not_arrived' %}active{% endif %}" href="?status=not_arrived">
+                <a href="?status=not_arrived" class="filter-pill {% if status_filter == 'not_arrived' %}active{% endif %}">
                     Đã xác nhận
-                    {% if status_counts.not_arrived > 0 %}
-                    <span class="badge bg-danger rounded-pill ms-2">{{ status_counts.not_arrived }}</span>
-                    {% endif %}
+                    {% if status_counts.not_arrived > 0 %}<span class="pill-count">{{ status_counts.not_arrived }}</span>{% endif %}
                 </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if status_filter == 'completed' %}active{% endif %}" href="?status=completed">
+                <a href="?status=completed" class="filter-pill {% if status_filter == 'completed' %}active{% endif %}">
                     Hoàn thành
-                    {% if status_counts.completed > 0 %}
-                    <span class="badge bg-danger rounded-pill ms-2">{{ status_counts.completed }}</span>
-                    {% endif %}
+                    {% if status_counts.completed > 0 %}<span class="pill-count">{{ status_counts.completed }}</span>{% endif %}
                 </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if status_filter == 'cancelled' %}active{% endif %}" href="?status=cancelled">
+                <a href="?status=cancelled" class="filter-pill {% if status_filter == 'cancelled' %}active{% endif %}">
                     Đã hủy
-                    {% if status_counts.cancelled > 0 %}
-                    <span class="badge bg-danger rounded-pill ms-2">{{ status_counts.cancelled }}</span>
-                    {% endif %}
+                    {% if status_counts.cancelled > 0 %}<span class="pill-count">{{ status_counts.cancelled }}</span>{% endif %}
                 </a>
-            </li>
-        </ul>
+            </div>
+        </div>
 
         <!-- Appointments List -->
         {% if appointments %}
@@ -300,7 +313,7 @@
             <div class="col-12">
                 <div class="appointment-card">
 
-                    <!-- Card Header: Service Info + Status -->
+                    <!-- Header: tên dịch vụ + mã | status -->
                     <div class="card-header-section">
                         <div class="service-info">
                             <h5>{{ appointment.service.name }}</h5>
@@ -308,48 +321,48 @@
                                 <i class="fas fa-hashtag me-1"></i>{{ appointment.appointment_code }}
                             </div>
                         </div>
-
-                        <div class="status-section">
-                            <span class="status-badge status-{{ appointment.status|lower }}">
-                                {{ appointment.get_status_display }}
-                            </span>
-                            {% if appointment.status == 'PENDING' or appointment.status == 'NOT_ARRIVED' %}
-                            <form method="post"
-                                  action="{% url 'appointments:cancel_appointment' appointment.id %}"
-                                  onsubmit="return confirm('Bạn có chắc muốn hủy lịch hẹn này?');">
-                                {% csrf_token %}
-                                <button type="submit" class="btn-cancel">
-                                    <i class="fas fa-times me-1"></i>Hủy lịch
-                                </button>
-                            </form>
-                            {% endif %}
-                        </div>
+                        <span class="status-badge status-{{ appointment.status|lower }}">
+                            {{ appointment.get_status_display }}
+                        </span>
                     </div>
 
-                    <!-- Card Details: Date + Time -->
+                    <!-- Body: ngày / giờ / đặt lúc -->
                     <div class="card-details">
                         <div class="detail-item">
                             <i class="far fa-calendar"></i>
-                            <span class="label">Hẹn ngày:</span>
+                            <span>Ngày hẹn:</span>
                             <span class="value">{{ appointment.appointment_date|date:"d/m/Y" }}</span>
                         </div>
                         <div class="detail-item">
                             <i class="far fa-clock"></i>
-                            <span class="label">Giờ:</span>
+                            <span>Giờ:</span>
                             <span class="value">{{ appointment.appointment_time|time:"H:i" }}</span>
                         </div>
                         <div class="detail-item">
                             <i class="fas fa-history"></i>
-                            <span class="label">Đặt lúc:</span>
+                            <span>Đặt lúc:</span>
                             <span class="value">{{ appointment.created_at|date:"d/m/Y" }}</span>
                         </div>
                     </div>
 
-                    <!-- Notes (if any) -->
+                    <!-- Notes -->
                     {% if appointment.notes %}
                     <div class="card-notes">
-                        <i class="far fa-sticky-note me-1"></i>
-                        <span>{{ appointment.notes }}</span>
+                        <i class="far fa-sticky-note me-1"></i>{{ appointment.notes }}
+                    </div>
+                    {% endif %}
+
+                    <!-- Footer: nút hủy (chỉ khi chưa hủy) -->
+                    {% if appointment.status == 'PENDING' or appointment.status == 'NOT_ARRIVED' or appointment.status == 'pending' or appointment.status == 'not_arrived' %}
+                    <div class="card-action-footer">
+                        <form method="post"
+                              action="{% url 'appointments:cancel_appointment' appointment.id %}"
+                              onsubmit="return confirm('Bạn có chắc muốn hủy lịch hẹn này?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-cancel-appt">
+                                <i class="fas fa-times"></i>Hủy lịch
+                            </button>
+                        </form>
                     </div>
                     {% endif %}
 

@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.db.models import Q
 from .models import CustomerProfile
 from .forms import CustomerProfileForm, ChangePasswordForm
+from core.decorators import customer_required
 
 
 @login_required(login_url='accounts:login')
@@ -92,17 +93,10 @@ def admin_customers(request):
     return render(request, 'customers/admin_customers.html', {'customers': customers})
 
 
-@login_required
+@customer_required()
 def customer_profile(request):
     """Tài khoản cá nhân của khách hàng"""
-    try:
-        profile = request.user.customer_profile
-    except CustomerProfile.DoesNotExist:
-        profile = CustomerProfile.objects.create(
-            user=request.user,
-            phone=request.user.username,
-            full_name=request.user.get_full_name() or request.user.username,
-        )
+    profile = request.user.customer_profile
 
     profile_form = CustomerProfileForm(instance=profile)
     password_form = None

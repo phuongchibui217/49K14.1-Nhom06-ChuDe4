@@ -1,4 +1,5 @@
 {% extends 'spa/base.html' %}
+{% load spa_filters %}
 
 {% block title %}Dịch vụ - Spa ANA{% endblock %}
 
@@ -24,6 +25,8 @@
         transition: all 0.3s ease;
         height: 100%;
         border: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
     }
 
     .service-card:hover {
@@ -61,6 +64,19 @@
 
     .service-info {
         padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+
+    .service-description {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.6;
+        min-height: 4.8em;
+        flex: 1;
     }
 
     .service-price {
@@ -100,10 +116,9 @@
             <div class="col-12">
                 <div class="d-flex flex-wrap justify-content-center gap-2">
                     <button class="btn btn-warning active" onclick="filterServices('all', this)">Tất cả</button>
-                    <button class="btn btn-outline-warning" onclick="filterServices('CAT01', this)">Chăm sóc da</button>
-                    <button class="btn btn-outline-warning" onclick="filterServices('CAT02', this)">Massage</button>
-                    <button class="btn btn-outline-warning" onclick="filterServices('CAT03', this)">Phun thêu</button>
-                    <button class="btn btn-outline-warning" onclick="filterServices('CAT04', this)">Triệt lông</button>
+                    {% for cat in categories %}
+                    <button class="btn btn-outline-warning" onclick="filterServices('{{ cat.code }}', this)">{{ cat.name }}</button>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -111,20 +126,20 @@
         <!-- Services Grid -->
         <div class="row" id="servicesGrid">
             {% for service in services %}
-            <div class="col-md-6 col-lg-4 mb-4 service-item" data-category="{{ service.category.code|default:'skincare' }}">
+            <div class="col-md-6 col-lg-4 mb-4 service-item" data-category="{{ service.category.code }}">
                 <div class="service-card">
                     <div class="service-image">
-                        <span class="category-badge">{{ service.category.name|default:'Chăm sóc da' }}</span>
+                        <span class="category-badge">{{ service.category.name }}</span>
                         <img src="{{ service.get_image_url }}" alt="{{ service.name }}">
                         <div class="service-overlay">
-                            <span class="badge bg-warning">{{ service.duration_minutes|default:'90' }} phút</span>
+                            <span class="badge bg-warning">{% with service.variants.all|first as v %}{{ v.duration_minutes|default:'—' }}{% endwith %} phút</span>
                         </div>
                     </div>
                     <div class="service-info">
                         <h5 class="card-title">{{ service.name }}</h5>
-                        <p class="card-text text-muted small">{{ service.description|truncatewords:15 }}</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="service-price">{{ service.price }} VNĐ</span>
+                        <p class="card-text text-muted small service-description">{{ service.description }}</p>
+                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                            <span class="service-price">{% with service.variants.all|first as v %}{% if v %}{{ v.price|vnd }}{% else %}Liên hệ{% endif %}{% endwith %}</span>
                             <a href="{% url 'appointments:booking' %}?service_id={{ service.id }}" class="btn btn-outline-warning btn-sm">
                                 Đặt lịch ngay
                             </a>

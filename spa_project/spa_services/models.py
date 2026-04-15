@@ -10,7 +10,7 @@ class ServiceCategory(models.Model):
         ('INACTIVE', 'Ngừng hoạt động'),
     ]
 
-    code = models.CharField(max_length=30, unique=True, verbose_name='Mã danh mục')
+    code = models.CharField(max_length=10, unique=True, verbose_name='Mã danh mục')
     name = models.CharField(max_length=100, unique=True, verbose_name='Tên danh mục')
     slug = models.SlugField(max_length=120, unique=True, blank=True, null=True, verbose_name='Slug')
     description = models.CharField(max_length=255, blank=True, null=True, verbose_name='Mô tả')
@@ -54,17 +54,11 @@ class Service(models.Model):
         ServiceCategory, on_delete=models.PROTECT,
         related_name='services', verbose_name='Danh mục'
     )
-    code = models.CharField(max_length=30, unique=True, blank=True, verbose_name='Mã dịch vụ')
+    code = models.CharField(max_length=10, unique=True, blank=True, verbose_name='Mã dịch vụ')
     name = models.CharField(max_length=150, verbose_name='Tên dịch vụ')
     slug = models.SlugField(max_length=150, unique=True, blank=True, null=True, verbose_name='Slug')
     short_description = models.CharField(max_length=255, blank=True, null=True, verbose_name='Mô tả ngắn')
     description = models.TextField(blank=True, null=True, verbose_name='Mô tả chi tiết')
-    price = models.DecimalField(
-        max_digits=18, decimal_places=2,
-        validators=[MinValueValidator(0)],
-        verbose_name='Giá (VNĐ)'
-    )
-    duration_minutes = models.PositiveIntegerField(verbose_name='Thời lượng (phút)')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ACTIVE', verbose_name='Trạng thái')
     image = models.CharField(max_length=500, verbose_name='Đường dẫn hình ảnh')
     is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
@@ -86,8 +80,6 @@ class Service(models.Model):
         verbose_name_plural = 'Dịch vụ'
         ordering = ['-created_at']
         constraints = [
-            models.CheckConstraint(check=models.Q(price__gte=0), name='service_price_non_negative'),
-            models.CheckConstraint(check=models.Q(duration_minutes__gt=0), name='service_duration_positive'),
             models.CheckConstraint(
                 check=models.Q(status__in=['ACTIVE', 'INACTIVE']),
                 name='service_status_valid'
@@ -132,3 +124,49 @@ class Service(models.Model):
                     return new_code
         import time
         return f"{prefix}{int(time.time()) % 100000:05d}"
+
+
+class ServiceVariant(models.Model):
+    """
+    Gói dịch vụ — 1 dịch vụ có thể có nhiều gói khác nhau về thời gian và giá.
+
+    Ví dụ:
+        Massage body
+          ├── 60 phút - 200,000đ
+          ├── 90 phút - 280,000đ
+          └── 120 phút - 350,000đ
+    """
+    service = models.ForeignKey(
+        Service, on_delete=models.CASCADE,
+        related_name='variants', verbose_name='Dịch vụ'
+    )
+    label = models.CharField(max_length=100, verbose_name='Tên gói',
+                             help_text='Ví dụ: 60 phút, 90 phút, Gói cơ bản...')
+    duration_minutes = models.PositiveIntegerField(verbose_name='Thời lượng (phút)')
+    price = models.DecimalField(
+        max_digits=18, decimal_places=2,
+        validators=[MinValueValidator(0)],
+        verbose_name='Giá (VNĐ)'
+    )
+    is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
+    sort_order = models.PositiveIntegerField(default=0, verbose_name='Thứ tự hiển thị')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'service_variants'
+        verbose_name = 'Gói dịch vụ'
+        verbose_name_plural = 'Gói dịch vụ'
+        ordering = ['sort_order', 'duration_minutes']
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(duration_minutes__gt=0),
+                name='variant_duration_positive'
+            ),
+            models.CheckConstraint(
+                check=models.Q(price__gte=0),
+                name='variant_price_non_negative'
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.service.name} — {self.label} ({self.duration_minutes} phút)"

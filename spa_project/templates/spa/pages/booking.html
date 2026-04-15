@@ -310,10 +310,21 @@
                                 {% endfor %}
                                 {% endif %}
 
+                                <!-- Variant dropdown (load động theo service) -->
+                                <label class="form-label mt-2" style="font-size: 0.85rem; font-weight: 600;">
+                                    <i class="fas fa-list me-1"></i>Gói dịch vụ <span class="text-danger">*</span>
+                                </label>
+                                {{ form.service_variant }}
+                                {% if form.service_variant.errors %}
+                                {% for error in form.service_variant.errors %}
+                                <div class="field-error">{{ error }}</div>
+                                {% endfor %}
+                                {% endif %}
+
                                 <div class="service-info-box">
                                     <div class="service-info-item">
                                         <i class="far fa-clock"></i>
-                                        <span>Thời lượng: <span class="value" id="serviceDuration">-</span> phút</span>
+                                        <span>Thời lượng: <span class="value" id="serviceDuration">-</span></span>
                                     </div>
                                     <div class="service-info-item">
                                         <i class="fas fa-tag"></i>
@@ -378,19 +389,8 @@
 
 {% block extra_js %}
 <script>
-// Services data from backend
-const servicesData = {
-    {% for service in services %}
-    {{ service.id }}: {
-        id: {{ service.id }},
-        name: "{{ service.name|escapejs }}",
-        duration: {{ service.duration_minutes }},
-        price: {{ service.price }}
-    }{% if not forloop.last %},{% endif %}
-    {% endfor %}
-};
-
-console.log('Services Data Loaded:', servicesData);
+// Variants data từ backend: { "serviceId": [{id, label, duration_minutes, price}, ...] }
+const servicesVariantsData = {{ services_variants_json|safe }};
 
 document.addEventListener('DOMContentLoaded', function() {
     // Set minimum date to today
@@ -401,63 +401,64 @@ document.addEventListener('DOMContentLoaded', function() {
         dateInput.value = today;
     }
 
-    // Service selection handler
     const serviceSelect = document.getElementById('{{ form.service.id_for_label }}');
+    const variantSelect = document.getElementById('id_service_variant');
     const durationSpan = document.getElementById('serviceDuration');
     const priceSpan = document.getElementById('servicePrice');
 
-    console.log('Service Select Element:', serviceSelect);
-    console.log('Duration Span:', durationSpan);
-    console.log('Price Span:', priceSpan);
+    // Pre-select service từ URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const serviceIdFromUrl = urlParams.get('service_id') || urlParams.get('service');
+    if (serviceIdFromUrl && serviceSelect) {
+        serviceSelect.value = serviceIdFromUrl;
+    }
 
-    if (serviceSelect) {
-        // Check for service_id in URL and pre-select
-        const urlParams = new URLSearchParams(window.location.search);
-        const serviceIdFromUrl = urlParams.get('service_id');
-        if (serviceIdFromUrl) {
-            serviceSelect.value = serviceIdFromUrl;
-            console.log('Pre-selected service from URL:', serviceIdFromUrl);
+    function updateVariants() {
+        if (!serviceSelect || !variantSelect) return;
+        const serviceId = serviceSelect.value;
+        const variants = servicesVariantsData[serviceId] || [];
+
+        // Reset variant dropdown
+        variantSelect.innerHTML = '<option value="">-- Chọn gói dịch vụ --</option>';
+        variants.forEach(function(v) {
+            const opt = document.createElement('option');
+            opt.value = v.id;
+            opt.textContent = v.label + ' - ' + v.price.toLocaleString('vi-VN') + ' VNĐ (' + v.duration_minutes + ' phút)';
+            opt.dataset.duration = v.duration_minutes;
+            opt.dataset.price = v.price;
+            variantSelect.appendChild(opt);
+        });
+
+        // Auto-select nếu chỉ có 1 variant
+        if (variants.length === 1) {
+            variantSelect.value = variants[0].id;
         }
 
-        const updateServiceInfo = function() {
-            console.log('updateServiceInfo called');
-            console.log('Selected value:', serviceSelect.value);
+        updateServiceInfo();
+    }
 
-            const selectedOption = serviceSelect.options[serviceSelect.selectedIndex];
-            console.log('Selected option:', selectedOption);
+    function updateServiceInfo() {
+        if (!variantSelect) return;
+        const selectedOpt = variantSelect.options[variantSelect.selectedIndex];
+        if (selectedOpt && selectedOpt.value) {
+            const duration = selectedOpt.dataset.duration;
+            const price = parseFloat(selectedOpt.dataset.price);
+            if (durationSpan) durationSpan.textContent = duration + ' phút';
+            if (priceSpan) priceSpan.textContent = price.toLocaleString('vi-VN') + ' VNĐ';
+        } else {
+            if (durationSpan) durationSpan.textContent = '-';
+            if (priceSpan) priceSpan.textContent = '-';
+        }
+    }
 
-            if (selectedOption && selectedOption.value) {
-                const serviceId = parseInt(selectedOption.value);
-                console.log('Service ID:', serviceId);
+    if (serviceSelect) {
+        serviceSelect.addEventListener('change', updateVariants);
+        // Trigger initial load
+        setTimeout(updateVariants, 50);
+    }
 
-                const service = servicesData[serviceId];
-                console.log('Service data:', service);
-
-                if (service) {
-                    const formattedPrice = service.price.toLocaleString('vi-VN');
-                    durationSpan.textContent = service.duration + ' phút';
-                    priceSpan.textContent = formattedPrice + ' VNĐ';
-                    console.log('Updated - Duration:', service.duration, 'Price:', formattedPrice);
-                } else {
-                    durationSpan.textContent = '-';
-                    priceSpan.textContent = '-';
-                    console.log('Service not found in data');
-                }
-            } else {
-                durationSpan.textContent = '-';
-                priceSpan.textContent = '-';
-                console.log('No valid selection');
-            }
-        };
-
-        serviceSelect.addEventListener('change', updateServiceInfo);
-
-        // Initial update
-        setTimeout(() => {
-            updateServiceInfo();
-        }, 100);
-    } else {
-        console.error('Service select element not found!');
+    if (variantSelect) {
+        variantSelect.addEventListener('change', updateServiceInfo);
     }
 
     // Set time constraints

@@ -151,24 +151,10 @@ def validate_service_image(image_file):
 
 
 def validate_service_data(data, exclude_id=None):
-    """
-    Validate toàn bộ dữ liệu dịch vụ
-
-    Gom tất cả validation vào một chỗ để:
-    - Dễ quản lý
-    - Dùng lại được ở nhiều nơi (form, API, admin)
-
-    Args:
-        data: dict - Chứa name, price, duration, image (optional)
-        exclude_id: int - ID dịch vụ cần loại trừ (khi update)
-
-    Returns:
-        dict: {'valid': bool, 'errors': list, 'cleaned_data': dict}
-    """
+    """Validate toàn bộ dữ liệu dịch vụ (không còn price/duration — quản lý qua variants)"""
     errors = []
     cleaned_data = {}
 
-    # Validate name
     name = data.get('name', '').strip()
     is_valid, error = validate_service_name(name, exclude_id)
     if not is_valid:
@@ -176,21 +162,6 @@ def validate_service_data(data, exclude_id=None):
     else:
         cleaned_data['name'] = name
 
-    # Validate price
-    is_valid, price, error = validate_service_price(data.get('price', 0))
-    if not is_valid:
-        errors.append(error)
-    else:
-        cleaned_data['price'] = price
-
-    # Validate duration
-    is_valid, duration, error = validate_service_duration(data.get('duration', 60))
-    if not is_valid:
-        errors.append(error)
-    else:
-        cleaned_data['duration_minutes'] = duration
-
-    # Validate image (nếu có)
     image_file = data.get('image')
     if image_file:
         is_valid, error = validate_service_image(image_file)
@@ -199,22 +170,17 @@ def validate_service_data(data, exclude_id=None):
         else:
             cleaned_data['image'] = image_file
 
-    # Map category number to ServiceCategory object
-    _code_map = {'1': 'CAT01', '2': 'CAT02', '3': 'CAT03', '4': 'CAT04'}
     from .models import ServiceCategory
-    category_input = str(data.get('category', '1'))
-    cat_code = _code_map.get(category_input, 'CAT01')
+    category_input = str(data.get('category', 'CAT01'))
     try:
-        cleaned_data['category'] = ServiceCategory.objects.get(code=cat_code)
+        cleaned_data['category'] = ServiceCategory.objects.get(code=category_input)
     except ServiceCategory.DoesNotExist:
-        cleaned_data['category'] = None
+        cleaned_data['category'] = ServiceCategory.objects.filter(status='ACTIVE').first()
 
-    # Description
     description = data.get('description', '').strip()
     cleaned_data['description'] = description
     cleaned_data['short_description'] = description[:300] if len(description) > 300 else description
 
-    # Status
     status = data.get('status', 'active')
     cleaned_data['is_active'] = (status == 'active')
     cleaned_data['status'] = status
@@ -259,8 +225,6 @@ def create_service(data, created_by=None):
             category=cleaned['category'],
             short_description=cleaned['short_description'],
             description=cleaned['description'],
-            price=cleaned['price'],
-            duration_minutes=cleaned['duration_minutes'],
             is_active=cleaned['is_active'],
             created_by=created_by,
             updated_by=created_by,
@@ -302,12 +266,8 @@ def update_service(service, data, updated_by=None):
         service.category = cleaned['category']
         service.short_description = cleaned['short_description']
         service.description = cleaned['description']
-        service.price = cleaned['price']
-        service.duration_minutes = cleaned['duration_minutes']
         service.is_active = cleaned['is_active']
         service.updated_by = updated_by
-
-        # Update slug
         service.slug = slugify(cleaned['name'])
 
         # Update image nếu có
@@ -365,9 +325,10 @@ def serialize_service(service):
         'category': service.category,
         'categoryName': service.get_category_name(),
         'description': service.short_description or (service.description[:100] if service.description else ''),
-        'price': float(service.price),
-        'duration': service.duration_minutes,
-        'duration_minutes': service.duration_minutes,
         'status': service.status if hasattr(service, 'status') else ('active' if service.is_active else 'inactive'),
-        'image': service.image.url if service.image else 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=100'
+        'image': service.image.url if service.image else 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=100',
+        'variants': [
+            {'id': v.id, 'label': v.label, 'duration_minutes': v.duration_minutes, 'price': float(v.price)}
+            for v in service.variants.filter(is_active=True).order_by('sort_order', 'duration_minutes')
+        ] if hasattr(service, 'variants') else [],
     }

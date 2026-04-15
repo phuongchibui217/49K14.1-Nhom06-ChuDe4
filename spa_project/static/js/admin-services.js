@@ -1,11 +1,79 @@
 // Admin Services Page JavaScript
 
-// Category Names mapping
+// ===== VARIANT MANAGEMENT =====
+
+const VARIANT_HEADER_HTML = `
+<div class="variant-header" id="variantHeader">
+    <span>Thời lượng (phút)</span><span>Giá (VNĐ)</span><span></span>
+</div>`;
+
+let variantCounter = 0;
+
+function addVariantRow(data = {}) {
+    const list = document.getElementById('variantList');
+    if (!list) return;
+
+    if (!document.getElementById('variantHeader')) {
+        list.insertAdjacentHTML('beforebegin', VARIANT_HEADER_HTML);
+    }
+
+    const id = ++variantCounter;
+    const row = document.createElement('div');
+    row.className = 'variant-row';
+    row.dataset.variantId = id;
+    row.innerHTML = `
+        <input type="number" class="form-control form-control-sm" placeholder="VD: 60"
+               data-field="duration_minutes" min="1" max="480" value="${data.duration_minutes || ''}" required>
+        <input type="number" class="form-control form-control-sm" placeholder="VD: 200000"
+               data-field="price" min="0" step="1000" value="${data.price || ''}" required>
+        <button type="button" class="btn-remove-variant" onclick="removeVariantRow(this)" title="Xóa gói">
+            <i class="fas fa-times"></i>
+        </button>`;
+    list.appendChild(row);
+}
+
+function removeVariantRow(btn) {
+    const row = btn.closest('.variant-row');
+    if (row) row.remove();
+    // Ẩn header nếu không còn row nào
+    const list = document.getElementById('variantList');
+    const header = document.getElementById('variantHeader');
+    if (header && list && list.children.length === 0) header.remove();
+}
+
+function collectVariants() {
+    const rows = document.querySelectorAll('#variantList .variant-row');
+    const variants = [];
+    let valid = true;
+    rows.forEach((row, i) => {
+        const duration = parseInt(row.querySelector('[data-field="duration_minutes"]').value);
+        const price = parseFloat(row.querySelector('[data-field="price"]').value);
+        if (!duration || duration <= 0) { showToast('error', `Gói ${i+1}: thời lượng phải > 0`); valid = false; return; }
+        if (isNaN(price) || price < 0) { showToast('error', `Gói ${i+1}: giá không hợp lệ`); valid = false; return; }
+        variants.push({ label: `${duration} phút`, duration_minutes: duration, price });
+    });
+    return valid ? variants : null;
+}
+
+function clearVariantRows() {
+    const list = document.getElementById('variantList');
+    if (list) list.innerHTML = '';
+    const header = document.getElementById('variantHeader');
+    if (header) header.remove();
+    variantCounter = 0;
+}
+
+function escapeHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ===== END VARIANT MANAGEMENT =====
+
 const categoryNames = {
-    1: 'Chăm sóc da',
-    2: 'Massage',
-    3: 'Phun thêu',
-    4: 'Triệt lông'
+    'CAT01': 'Chăm sóc da',
+    'CAT02': 'Massage',
+    'CAT05': 'Gội đầu',
+    'CAT06': 'Tẩy tế bào chết',
 };
 
 // Status Names
@@ -97,26 +165,12 @@ function setupFormValidation() {
     if (!form) return;
 
     const nameInput = form.querySelector('[name="name"]');
-    const priceInput = form.querySelector('[name="price"]');
-    const durationInput = form.querySelector('[name="duration_minutes"]');
     const categoryInput = form.querySelector('[name="category_number"]');
     const imageInput = form.querySelector('[name="image"]');
 
     if (nameInput) {
         nameInput.addEventListener('blur', function() {
             validateServiceName(this);
-        });
-    }
-
-    if (priceInput) {
-        priceInput.addEventListener('blur', function() {
-            validatePrice(this);
-        });
-    }
-
-    if (durationInput) {
-        durationInput.addEventListener('blur', function() {
-            validateDuration(this);
         });
     }
 
@@ -325,22 +379,22 @@ function submitServiceForm(event) {
     // Validate all fields
     const nameInput = form.querySelector('[name="name"]');
     const categoryInput = form.querySelector('[name="category_number"]');
-    const priceInput = form.querySelector('[name="price"]');
-    const durationInput = form.querySelector('[name="duration_minutes"]');
     const imageInput = form.querySelector('[name="image"]');
 
     let isValid = true;
 
     isValid = validateServiceName(nameInput) && isValid;
     isValid = validateCategory(categoryInput) && isValid;
-    isValid = validatePrice(priceInput) && isValid;
-    isValid = validateDuration(durationInput) && isValid;
     isValid = validateImage(imageInput) && isValid;
 
     if (!isValid) {
         showToast('error', 'Vui lòng kiểm tra lại các thông tin!');
         return false;
     }
+
+    // Validate variants
+    const variants = collectVariants();
+    if (variants === null) return false;  // lỗi đã hiển thị trong collectVariants
 
     // ===== BẬT LOADING STATE =====
     isSubmitting = true;
@@ -350,6 +404,7 @@ function submitServiceForm(event) {
 
     // Create FormData for AJAX submission
     const formData = new FormData(form);
+    formData.set('variants_json', JSON.stringify(variants));
 
     // Determine URL based on mode
     const url = isEditMode ? `/api/services/${editingServiceId}/update/` : '/api/services/create/';
@@ -454,73 +509,79 @@ function editService(serviceId) {
     editingServiceId = null;
     existingImageUrl = null;
 
-    // Fetch service data
-    fetch(`/api/services/?search=${serviceId}`)
+    // Fetch service data by ID
+    fetch(`/api/services/?id=${serviceId}`)
         .then(response => response.json())
         .then(data => {
-            if (data.services && data.services.length > 0) {
-                const service = data.services[0];
+            const service = (data.services || [])[0];
 
-                // Set edit mode
-                isEditMode = true;
-                editingServiceId = serviceId;
-                existingImageUrl = service.image || null;
-
-                // Fill form
-                const form = document.getElementById('addServiceForm');
-
-                form.querySelector('[name="service_code_preview"]').value = service.code || '';
-                form.querySelector('[name="service_code_preview"]').readOnly = true;
-
-                // Map category code to number
-                const categoryMap = {
-                    'skincare': '1',
-                    'massage': '2',
-                    'tattoo': '3',
-                    'hair': '4',
-                    'nails': '5',
-                    'other': '6'
-                };
-                form.querySelector('[name="category_number"]').value = categoryMap[service.category] || '1';
-
-                form.querySelector('[name="name"]').value = service.name || '';
-                form.querySelector('[name="description"]').value = service.description || '';
-                form.querySelector('[name="price"]').value = service.price || '';
-                form.querySelector('[name="duration_minutes"]').value = service.duration_minutes || service.duration || '';
-                form.querySelector('[name="status"]').value = service.status || 'active';
-
-                // Show existing image preview
-                const previewDiv = document.getElementById('imagePreview');
-                const previewImg = document.getElementById('previewImg');
-                if (existingImageUrl && previewDiv && previewImg) {
-                    previewImg.src = existingImageUrl;
-                    previewDiv.style.display = 'block';
-                } else {
-                    previewDiv.style.display = 'none';
-                }
-
-                // Make image not required in edit mode
-                const imageInput = form.querySelector('[name="image"]');
-                if (imageInput) {
-                    imageInput.removeAttribute('required');
-                }
-
-                // Change modal title and button
-                const modalTitle = document.querySelector('#addServiceModal .modal-title');
-                modalTitle.innerHTML = `<i class="fas fa-edit" style="color: #d4a853; margin-right: 0.5rem;"></i> Chỉnh sửa dịch vụ`;
-
-                const modalFooter = document.querySelector('#addServiceModal .modal-footer .btn-primary');
-                modalFooter.innerHTML = `<i class="fas fa-save me-2"></i> Cập nhật`;
-
-                // Clear all errors
-                clearAllFieldErrors();
-
-                // Show modal
-                const modal = new bootstrap.Modal(document.getElementById('addServiceModal'));
-                modal.show();
-            } else {
+            if (!service) {
                 showToast('error', 'Không tìm thấy dịch vụ!');
+                return;
             }
+
+            // Set edit mode
+            isEditMode = true;
+            editingServiceId = serviceId;
+            existingImageUrl = service.image || null;
+
+            // Fill form
+            const form = document.getElementById('addServiceForm');
+
+            // Mã dịch vụ — editable khi sửa
+            const codeInput = form.querySelector('[name="code"]');
+            if (codeInput) {
+                codeInput.value = service.code || '';
+                codeInput.readOnly = false;
+            }
+
+            // Category — dùng categoryCode trực tiếp
+            const catSelect = form.querySelector('[name="category_number"]');
+            if (catSelect) {
+                catSelect.value = service.categoryCode || '';
+            }
+
+            form.querySelector('[name="name"]').value = service.name || '';
+            form.querySelector('[name="description"]').value = service.description || '';
+            form.querySelector('[name="status"]').value = (service.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE';
+
+            // Show existing image preview
+            const previewDiv = document.getElementById('imagePreview');
+            const previewImg = document.getElementById('previewImg');
+            if (existingImageUrl && previewDiv && previewImg) {
+                previewImg.src = existingImageUrl;
+                previewDiv.style.display = 'block';
+            } else if (previewDiv) {
+                previewDiv.style.display = 'none';
+            }
+
+            // Load variants
+            clearVariantRows();
+            (service.variants || []).forEach(v => addVariantRow({
+                label: v.label,
+                duration_minutes: v.duration_minutes,
+                price: v.price,
+            }));
+
+            // Make image not required in edit mode
+            const imageInput = form.querySelector('[name="image"]');
+            if (imageInput) {
+                imageInput.removeAttribute('required');
+            }
+
+            // Change modal title and button
+            const modalTitle = document.querySelector('#addServiceModal .modal-title');
+            modalTitle.innerHTML = `<i class="fas fa-edit" style="color: #d4a853; margin-right: 0.5rem;"></i> Chỉnh sửa dịch vụ`;
+
+            const modalFooter = document.querySelector('#addServiceModal .modal-footer .btn-primary');
+            modalFooter.innerHTML = `<i class="fas fa-save me-2"></i> Cập nhật`;
+
+            // Clear all errors
+            clearAllFieldErrors();
+
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('addServiceModal'));
+            modal.show();
         })
         .catch(error => {
             console.error('Error loading service:', error);
@@ -722,13 +783,17 @@ function resetFormToAddMode() {
     // Clear image preview
     clearImagePreview();
 
+    // Clear variant rows, then add 1 default row
+    clearVariantRows();
+    addVariantRow();
+
     // Clear all errors
     clearAllFieldErrors();
 
     // Reset readonly fields
-    const codePreview = form.querySelector('[name="service_code_preview"]');
-    if (codePreview) {
-        codePreview.readOnly = false;
+    const codeInput = form.querySelector('[name="code"]');
+    if (codeInput) {
+        codeInput.readOnly = false;
     }
 }
 
@@ -738,6 +803,15 @@ document.addEventListener('DOMContentLoaded', function() {
     if (addServiceModal) {
         addServiceModal.addEventListener('hidden.bs.modal', function() {
             resetFormToAddMode();
+        });
+        // Khi mở modal ở chế độ thêm mới, đảm bảo có sẵn 1 dòng gói
+        addServiceModal.addEventListener('show.bs.modal', function() {
+            if (!isEditMode) {
+                const list = document.getElementById('variantList');
+                if (list && list.children.length === 0) {
+                    addVariantRow();
+                }
+            }
         });
     }
 });

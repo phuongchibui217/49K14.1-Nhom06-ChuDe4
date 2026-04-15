@@ -4,8 +4,8 @@
 
 .admin-chat-shell {
     display: grid;
-    grid-template-columns: 30% 70%;
-    gap: 1.5rem;
+    grid-template-columns: 280px 1fr;
+    gap: 1.25rem;
     height: 100%;
 }
 
@@ -277,23 +277,23 @@
 }
 
 .admin-chat-messages {
-    padding: 1rem 1.5rem;
+    padding: 1.25rem 1.75rem;
     overflow-y: auto;
     background: #f8fafc;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem; /* ✅ Giảm từ 0.85rem → 0.5rem */
+    gap: 0.6rem;
     scroll-behavior: smooth;
     min-height: 0; /* Quan trọng: để flex item có thể shrink */
 }
 
 .admin-chat-message {
     max-width: 68%;
-    padding: 0.6rem 0.85rem; /* ✅ Giảm từ 0.75rem 1rem → 0.6rem 0.85rem */
+    padding: 0.75rem 1.1rem;
     border-radius: 20px;
     box-shadow: 0 2px 8px rgba(30, 58, 95, 0.08);
     word-break: break-word;
-    line-height: 1.4;
+    line-height: 1.5;
 }
 
 .admin-chat-message.customer {
@@ -325,12 +325,13 @@
     display: flex;
     justify-content: space-between;
     gap: 0.5rem;
-    margin-bottom: 0.15rem; /* ✅ Giảm từ 0.25rem → 0.15rem */
-    font-size: 0.68rem;
+    margin-bottom: 0.2rem;
+    font-size: 0.72rem;
 }
 
 .admin-chat-message-name {
     font-weight: 600;
+    color: #718096;
 }
 
 .admin-chat-message.customer .admin-chat-message-name {
@@ -355,8 +356,8 @@
 }
 
 .admin-chat-message-content {
-    font-size: 0.9rem; /* ✅ Giảm từ 0.95rem → 0.9rem */
-    line-height: 1.4; /* ✅ Giảm từ 1.5 → 1.4 */
+    font-size: 1.4rem !important; /* ~22.4px */
+    line-height: 1.65;
     white-space: pre-wrap;
 }
 
@@ -519,7 +520,7 @@
     resize: none;
     overflow-y: hidden;
     scrollbar-width: none;
-    font-size: 0.95rem;
+    font-size: 1rem;
     line-height: 1.5;
     transition: all 0.2s ease;
 }
@@ -542,7 +543,7 @@
 
 @media (max-width: 1200px) {
     .admin-chat-shell {
-        grid-template-columns: 320px 1fr;
+        grid-template-columns: 260px 1fr;
     }
 }
 

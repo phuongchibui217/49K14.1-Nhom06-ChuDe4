@@ -17,29 +17,24 @@ from django.utils import timezone
 
 from .models import Complaint, ComplaintReply, ComplaintHistory
 from customers.models import CustomerProfile
+from core.user_service import get_display_name
 from .forms import (
     CustomerComplaintForm,
     ComplaintReplyForm,
     ComplaintStatusForm,
     ComplaintAssignForm,
 )
+from core.decorators import customer_required
 
 
 # =====================================================
 # CUSTOMER COMPLAINT VIEWS
 # =====================================================
 
-@login_required
+@customer_required()
 def customer_complaint_create(request):
     """Khách hàng gửi khiếu nại"""
-    # Lấy hoặc tạo CustomerProfile cho user
-    customer_profile, created = CustomerProfile.objects.get_or_create(
-        user=request.user,
-        defaults={
-            'full_name': request.user.get_full_name() or request.user.username,
-            'phone': request.user.username,
-        }
-    )
+    customer_profile = request.user.customer_profile
 
     if request.method == 'POST':
         form = CustomerComplaintForm(request.POST)
@@ -78,17 +73,10 @@ def customer_complaint_create(request):
     })
 
 
-@login_required
+@customer_required()
 def customer_complaint_list(request):
     """Danh sách khiếu nại của khách hàng"""
-    # Dùng cùng logic với create để đảm bảo nhất quán
-    customer_profile, created = CustomerProfile.objects.get_or_create(
-        user=request.user,
-        defaults={
-            'full_name': request.user.get_full_name() or request.user.username,
-            'phone': request.user.username,
-        }
-    )
+    customer_profile = request.user.customer_profile
     complaints = customer_profile.complaints.all().order_by('-created_at')
 
     return render(request, 'complaints/customer_complaint_list.html', {
@@ -97,7 +85,7 @@ def customer_complaint_list(request):
     })
 
 
-@login_required
+@customer_required()
 def customer_complaint_detail(request, complaint_id):
     """Chi tiết khiếu nại của khách hàng"""
     complaint = get_object_or_404(Complaint, id=complaint_id)
@@ -121,7 +109,7 @@ def customer_complaint_detail(request, complaint_id):
     return render(request, 'complaints/customer_complaint_detail.html', context)
 
 
-@login_required
+@customer_required()
 def customer_complaint_reply(request, complaint_id):
     """Khách hàng phản hồi khiếu nại"""
     complaint = get_object_or_404(Complaint, id=complaint_id)
@@ -294,7 +282,7 @@ def admin_complaint_reply(request, complaint_id):
             reply.complaint = complaint
             reply.sender = request.user
             reply.sender_role = 'ADMIN' if request.user.is_superuser else 'STAFF'
-            reply.sender_name = request.user.get_full_name() or request.user.username
+            reply.sender_name = get_display_name(request.user)
             reply.is_internal = request.POST.get('is_internal') == 'on'
             reply.save()
 

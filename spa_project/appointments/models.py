@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 
 
 class Room(models.Model):
-    code = models.CharField(max_length=30, unique=True, verbose_name='Mã phòng')
+    code = models.CharField(max_length=10, unique=True, verbose_name='Mã phòng')
     name = models.CharField(max_length=100, unique=True, verbose_name='Tên phòng')
     capacity = models.PositiveIntegerField(verbose_name='Sức chứa')
     is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
@@ -45,13 +45,18 @@ class Appointment(models.Model):
         ('ZALO', 'Zalo'),
     ]
 
-    appointment_code = models.CharField(max_length=30, unique=True, blank=True, verbose_name='Mã lịch hẹn')
+    appointment_code = models.CharField(max_length=10, unique=True, blank=True, verbose_name='Mã lịch hẹn')
     customer = models.ForeignKey(
         'customers.CustomerProfile', on_delete=models.CASCADE,
         related_name='appointments', verbose_name='Khách hàng'
     )
     service = models.ForeignKey(
         'spa_services.Service', on_delete=models.CASCADE, verbose_name='Dịch vụ'
+    )
+    service_variant = models.ForeignKey(
+        'spa_services.ServiceVariant', on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='appointments', verbose_name='Gói dịch vụ'
     )
     room = models.ForeignKey(
         Room, on_delete=models.PROTECT, verbose_name='Phòng'
@@ -133,7 +138,12 @@ class Appointment(models.Model):
         if self.customer and not self.customer_phone_snapshot:
             self.customer_phone_snapshot = self.customer.phone or ''
         if self.appointment_time and self.service and not self.duration_minutes:
-            self.duration_minutes = self.service.duration_minutes
+            # Ưu tiên lấy từ variant nếu có, fallback về variant đầu tiên của service
+            if self.service_variant:
+                self.duration_minutes = self.service_variant.duration_minutes
+            else:
+                first_variant = self.service.variants.filter(is_active=True).order_by('sort_order', 'duration_minutes').first()
+                self.duration_minutes = first_variant.duration_minutes if first_variant else 60
         if self.appointment_time and self.duration_minutes and not self.end_time:
             from datetime import datetime, timedelta
             start_dt = datetime.combine(datetime.today(), self.appointment_time)
@@ -171,7 +181,7 @@ class Invoice(models.Model):
         ('REFUNDED', 'Đã hoàn tiền'),
     ]
 
-    code = models.CharField(max_length=30, unique=True, blank=True, verbose_name='Mã hóa đơn')
+    code = models.CharField(max_length=10, unique=True, blank=True, verbose_name='Mã hóa đơn')
     appointment = models.OneToOneField(
         Appointment, on_delete=models.CASCADE,
         related_name='invoice', verbose_name='Lịch hẹn'

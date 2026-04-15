@@ -1,4 +1,5 @@
 {% extends 'spa/base.html' %}
+{% load spa_filters %}
 
 {% block title %}Dịch vụ - Spa ANA{% endblock %}
 
@@ -24,6 +25,8 @@
         transition: all 0.3s ease;
         height: 100%;
         border: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
     }
 
     .service-card:hover {
@@ -61,6 +64,19 @@
 
     .service-info {
         padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+
+    .service-description {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.6;
+        min-height: 4.8em;
+        flex: 1;
     }
 
     .service-price {
@@ -121,14 +137,14 @@
                         <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400" alt="{{ service.name }}">
                         {% endif %}
                         <div class="service-overlay">
-                            <span class="badge bg-warning">{{ service.duration|default:'90' }} phút</span>
+                            <span class="badge bg-warning">{% with service.variants.all|first as v %}{% if v %}{{ v.duration_minutes }}{% else %}--{% endif %}{% endwith %} phút</span>
                         </div>
                     </div>
                     <div class="service-info">
                         <h5 class="card-title">{{ service.name }}</h5>
-                        <p class="card-text text-muted small">{{ service.description|truncatewords:15 }}</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="service-price">{{ service.price }} VNĐ</span>
+                        <p class="card-text text-muted small service-description">{{ service.description }}</p>
+                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                            <span class="service-price">{% with service.variants.all|first as v %}{% if v %}{{ v.price|vnd }}{% else %}Liên hệ{% endif %}{% endwith %}</span>
                             <a href="{% url 'appointments:booking' %}?service_id={{ service.id }}" class="btn btn-outline-warning btn-sm">
                                 Đặt lịch ngay
                             </a>

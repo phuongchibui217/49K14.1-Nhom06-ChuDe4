@@ -9,7 +9,7 @@ class Complaint(models.Model):
         ('RESOLVED', 'Đã hoàn thành'),
     ]
 
-    code = models.CharField(max_length=30, unique=True, blank=True, verbose_name='Mã khiếu nại')
+    code = models.CharField(max_length=10, unique=True, blank=True, verbose_name='Mã khiếu nại')
     customer = models.ForeignKey(
         'customers.CustomerProfile', on_delete=models.SET_NULL,
         null=True, blank=True,
@@ -24,7 +24,7 @@ class Complaint(models.Model):
     title = models.CharField(max_length=200, verbose_name='Tiêu đề khiếu nại')
     content = models.TextField(verbose_name='Nội dung khiếu nại')
     incident_date = models.DateTimeField(blank=True, null=True, verbose_name='Ngày xảy ra sự cố')
-    appointment_code = models.CharField(max_length=30, blank=True, null=True, verbose_name='Mã lịch hẹn liên quan')
+    appointment_code = models.CharField(max_length=10, blank=True, null=True, verbose_name='Mã lịch hẹn liên quan')
     related_service = models.ForeignKey(
         'spa_services.Service', on_delete=models.SET_NULL,
         null=True, blank=True, verbose_name='Dịch vụ liên quan'
@@ -84,11 +84,11 @@ class Complaint(models.Model):
                         new_number = 1 + attempt
                 else:
                     new_number = 1 + attempt
-                new_code = f"{prefix}{new_number:06d}"
+                new_code = f"{prefix}{new_number:04d}"
                 if not cls.objects.filter(code=new_code).exists():
                     return new_code
         import time
-        return f"{prefix}{int(time.time()) % 1000000:06d}"
+        return f"{prefix}{int(time.time()) % 10000:04d}"
 
 
 class ComplaintReply(models.Model):

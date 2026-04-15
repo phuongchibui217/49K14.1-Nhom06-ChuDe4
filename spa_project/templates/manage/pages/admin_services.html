@@ -1,5 +1,6 @@
 {% extends "manage/base.html" %}
 {% load static %}
+{% load spa_filters %}
 
 {% block title %}Quản lý Dịch vụ - Spa ANA{% endblock %}
 
@@ -14,6 +15,45 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/admin-services.css' %}">
+<style>
+.variant-row {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr auto;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 6px;
+}
+.variant-row input {
+    font-size: 0.875rem;
+}
+.variant-row .btn-remove-variant {
+    color: #dc3545;
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.15s;
+}
+.variant-row .btn-remove-variant:hover {
+    background: #fee2e2;
+}
+.variant-header {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr auto;
+    gap: 8px;
+    padding: 0 10px 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+</style>
 {% endblock %}
 
 {% block content %}
@@ -33,24 +73,28 @@
                 <div class="col-md-3">
                     <select class="form-select" name="category">
                         <option value="">Tất cả danh mục</option>
-                        <option value="1" {% if category_filter == '1' %}selected{% endif %}>Chăm sóc da</option>
-                        <option value="2" {% if category_filter == '2' %}selected{% endif %}>Massage</option>
-                        <option value="3" {% if category_filter == '3' %}selected{% endif %}>Phun thêu</option>
-                        <option value="4" {% if category_filter == '4' %}selected{% endif %}>Triệt lông</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.code }}" {% if category_filter == cat.code %}selected{% endif %}>{{ cat.name }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div class="col-md-3">
                     <select class="form-select" name="status">
                         <option value="">Tất cả trạng thái</option>
-                        <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Đang hoạt động</option>
-                        <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Ngừng hoạt động</option>
+                        <option value="ACTIVE" {% if status_filter == 'ACTIVE' %}selected{% endif %}>Đang hoạt động</option>
+                        <option value="INACTIVE" {% if status_filter == 'INACTIVE' %}selected{% endif %}>Ngừng hoạt động</option>
                     </select>
                 </div>
                 <div class="col-md-2">
+                    {% if search_query or category_filter or status_filter %}
+                    <a href="{% url 'spa_services:admin_services' %}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-rotate-left me-1"></i>Bỏ lọc
+                    </a>
+                    {% else %}
                     <button type="submit" class="btn btn-secondary w-100">
-                        <i class="fas fa-filter me-2"></i>
-                        Lọc
+                        <i class="fas fa-filter me-2"></i>Lọc
                     </button>
+                    {% endif %}
                 </div>
             </div>
         </form>
@@ -80,8 +124,7 @@
                         <th>Hình ảnh</th>
                         <th>Tên dịch vụ</th>
                         <th>Danh mục</th>
-                        <th>Giá</th>
-                        <th>Thời gian</th>
+                        <th>Gói dịch vụ</th>
                         <th>Trạng thái</th>
                         <th>Thao tác</th>
                     </tr>
@@ -92,18 +135,11 @@
                         <tr>
                             <td><span class="badge bg-secondary">{{ service.code }}</span></td>
                             <td>
-                                {% if service.image and service.image.url %}
-                                <img src="{{ service.image.url }}"
+                                <img src="{{ service.get_image_url }}"
                                      class="rounded"
                                      style="width: 50px; height: 50px; object-fit: cover;"
                                      alt="{{ service.name }}"
                                      onerror="this.src='https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=100'">
-                                {% else %}
-                                <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=100"
-                                     class="rounded"
-                                     style="width: 50px; height: 50px; object-fit: cover;"
-                                     alt="{{ service.name }}">
-                                {% endif %}
                             </td>
                             <td>
                                 <strong>{{ service.name }}</strong>
@@ -111,11 +147,24 @@
                                 <small class="text-muted">{% if service.short_description %}{{ service.short_description|truncatewords:10 }}{% else %}{{ service.description|truncatewords:10 }}{% endif %}</small>
                             </td>
                             <td>{{ service.get_category_name }}</td>
-                            <td class="fw-bold text-warning">{% if service.price %}{{ service.price|floatformat:0 }}đ{% else %}0đ{% endif %}</td>
-                            <td>{{ service.duration_minutes }} phút</td>
                             <td>
-                                <span class="badge {% if service.status == 'active' %}bg-success{% else %}bg-secondary{% endif %}">
-                                    {% if service.status == 'active' %}Đang hoạt động{% else %}Ngừng hoạt động{% endif %}
+                                {% with service.variants.all as variants %}
+                                {% if variants %}
+                                    {% for v in variants %}
+                                    <div class="text-nowrap small {% if not forloop.last %}mb-1{% endif %}">
+                                        <span class="text-muted">{{ v.duration_minutes }}p</span>
+                                        <span class="mx-1 text-muted">—</span>
+                                        <span class="fw-semibold text-warning">{{ v.price|vnd }}</span>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-muted small">Chưa có gói</span>
+                                {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td>
+                                <span class="badge {% if service.status == 'ACTIVE' %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {{ service.get_status_display }}
                                 </span>
                             </td>
                             <td>
@@ -130,7 +179,7 @@
                         {% endfor %}
                     {% else %}
                         <tr>
-                            <td colspan="8" class="text-center py-5">
+                            <td colspan="7" class="text-center py-5">
                                 <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
                                 <p class="mb-0 text-muted">Chưa có dịch vụ nào trong hệ thống</p>
                             </td>
@@ -191,7 +240,7 @@
 
 <!-- Add Service Modal -->
 <div class="modal fade" id="addServiceModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">
@@ -203,94 +252,69 @@
             <div class="modal-body">
                 <form id="addServiceForm" method="post" action="{% url 'spa_services:api_service_create' %}" enctype="multipart/form-data" onsubmit="return submitServiceForm(event)">
                     {% csrf_token %}
+                    <div class="row g-3">
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">
-                                <i class="fas fa-hashtag"></i>
-                                Mã dịch vụ
-                            </label>
-                            <input type="text" class="form-control" name="service_code_preview" value="{{ next_service_code }}" readonly>
-                            <small class="text-muted">Mã dịch vụ tự động tạo</small>
+                        <!-- CỘT TRÁI -->
+                        <div class="col-md-7">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="form-label mb-1"><i class="fas fa-hashtag me-1"></i>Mã dịch vụ</label>
+                                    <input type="text" class="form-control form-control-sm" name="code" id="serviceCodeInput"
+                                           placeholder="Để trống để tự sinh" maxlength="30">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label mb-1"><i class="fas fa-folder me-1"></i>Danh mục</label>
+                                    <select class="form-select form-select-sm" name="category_number" required>
+                                        <option value="">Chọn danh mục</option>
+                                        {% for cat in categories %}
+                                        <option value="{{ cat.code }}">{{ cat.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label mb-1"><i class="fas fa-tag me-1"></i>Tên dịch vụ</label>
+                                    <input type="text" class="form-control form-control-sm" name="name" placeholder="Nhập tên dịch vụ..." required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label mb-1"><i class="fas fa-align-left me-1"></i>Mô tả</label>
+                                    <textarea class="form-control form-control-sm" name="description" rows="3" placeholder="Mô tả chi tiết về dịch vụ..." required></textarea>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label mb-1"><i class="fas fa-toggle-on me-1"></i>Trạng thái</label>
+                                    <select class="form-select form-select-sm" name="status" required>
+                                        <option value="active" selected>Đang hoạt động</option>
+                                        <option value="inactive">Ngừng hoạt động</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">
-                                <i class="fas fa-folder"></i>
-                                Danh mục
-                            </label>
-                            <select class="form-select" name="category_number" required>
-                                <option value="">Chọn danh mục</option>
-                                <option value="1">Chăm sóc da</option>
-                                <option value="2">Massage</option>
-                                <option value="3">Phun thêu</option>
-                                <option value="4">Triệt lông</option>
-                            </select>
-                        </div>
-                    </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">
-                            <i class="fas fa-tag"></i>
-                            Tên dịch vụ
-                        </label>
-                        <input type="text" class="form-control" name="name" placeholder="Nhập tên dịch vụ..." required>
-                    </div>
+                        <!-- CỘT PHẢI -->
+                        <div class="col-md-5">
+                            <!-- Gói dịch vụ -->
+                            <label class="form-label mb-1 fw-semibold"><i class="fas fa-boxes me-1"></i>Gói dịch vụ</label>
+                            <div id="variantList" class="mb-2"></div>
+                            <button type="button" class="btn btn-outline-secondary btn-sm mb-2" onclick="addVariantRow()">
+                                <i class="fas fa-plus me-1"></i> Thêm gói
+                            </button>
+                            <div class="form-text mb-3">Thời lượng (phút) và giá (VNĐ).</div>
 
-                    <div class="mb-3">
-                        <label class="form-label">
-                            <i class="fas fa-align-left"></i>
-                            Mô tả
-                        </label>
-                        <textarea class="form-control" name="description" rows="3" placeholder="Mô tả chi tiết về dịch vụ..." required></textarea>
-                    </div>
+                            <!-- Hình ảnh -->
+                            <label class="form-label mb-1"><i class="fas fa-image me-1"></i>Hình ảnh</label>
+                            <input type="file" class="form-control form-control-sm" name="image" accept="image/jpeg,image/jpg,image/png,image/webp" required onchange="previewImage(this)">
+                            <small class="text-muted d-block mt-1" style="font-size:0.75rem;">JPG, PNG, WebP — tối đa 5MB, tối thiểu 300×300px</small>
+                            <div id="imagePreview" class="mt-2" style="display:none;">
+                                <img id="previewImg" src="" alt="Preview" style="max-width:100%; max-height:140px; border-radius:8px; border:2px solid #e9ecef; object-fit:cover;">
+                            </div>
+                        </div>
 
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">
-                                <i class="fas fa-dollar-sign"></i>
-                                Giá (VNĐ)
-                            </label>
-                            <input type="number" class="form-control" name="price" placeholder="0" min="1" required>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">
-                                <i class="fas fa-clock"></i>
-                                Thời gian (phút)
-                            </label>
-                            <input type="number" class="form-control" name="duration_minutes" placeholder="90" min="5" required>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">
-                                <i class="fas fa-toggle-on"></i>
-                                Trạng thái
-                            </label>
-                            <select class="form-select" name="status" required>
-                                <option value="active" selected>Đang hoạt động</option>
-                                <option value="inactive">Ngừng hoạt động</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">
-                            <i class="fas fa-image"></i>
-                            Hình ảnh
-                        </label>
-                        <input type="file" class="form-control" name="image" accept="image/jpeg,image/jpg,image/png,image/webp" required onchange="previewImage(this)">
-                        <small class="text-muted">Chọn hình ảnh dịch vụ (JPG, PNG, WebP - Max 5MB, Min 300x300px)</small>
-                        <div id="imagePreview" class="mt-2" style="display: none;">
-                            <img id="previewImg" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border-radius: 8px; border: 2px solid #e9ecef;">
-                        </div>
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    Hủy
-                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
                 <button type="submit" class="btn btn-primary" form="addServiceForm">
-                    <i class="fas fa-plus me-2"></i>
-                    Thêm dịch vụ
+                    <i class="fas fa-plus me-2"></i>Thêm dịch vụ
                 </button>
             </div>
         </div>

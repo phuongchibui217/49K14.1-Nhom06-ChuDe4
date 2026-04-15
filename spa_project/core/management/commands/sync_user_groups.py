@@ -87,7 +87,10 @@ class Command(BaseCommand):
                         g = g_manager if user.is_superuser else g_receptionist
                         user.groups.add(g)
                 if not has_staff:
-                    issues.append(f'[WARN] {user.username}: group nhân viên nhưng chưa có StaffProfile')
+                    issues.append(f'[FIX] {user.username}: is_staff=True nhưng chưa có StaffProfile → tạo tự động')
+                    if not dry_run:
+                        from core.user_service import ensure_staff_profile
+                        ensure_staff_profile(user)
 
         if not issues:
             self.stdout.write(self.style.SUCCESS('Tất cả user đều đúng nghiệp vụ.'))

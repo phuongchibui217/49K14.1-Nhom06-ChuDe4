@@ -185,15 +185,16 @@
                                 <label for="id_password1" class="form-label">
                                     Mật khẩu <span class="text-danger">*</span>
                                 </label>
-                                <div class="input-group">
+                                <div class="pw-wrapper">
                                     <input type="password"
                                            class="form-control {% if form.password1.errors %}is-invalid{% endif %}"
                                            id="id_password1"
                                            name="password1"
                                            placeholder="Nhập mật khẩu (ít nhất 6 ký tự)"
                                            required>
-                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('id_password1', this)">
-                                        <i class="fas fa-eye"></i>
+                                    <button class="pw-toggle-btn" type="button" aria-label="Hiện/ẩn mật khẩu">
+                                        <span class="icon-eye"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg></span>
+                                        <span class="icon-eye-off" style="display:none"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88"/></svg></span>
                                     </button>
                                 </div>
                                 <div class="password-strength" id="passwordStrength" style="width: 0%"></div>
@@ -212,15 +213,16 @@
                                 <label for="id_password2" class="form-label">
                                     Xác nhận mật khẩu <span class="text-danger">*</span>
                                 </label>
-                                <div class="input-group">
+                                <div class="pw-wrapper">
                                     <input type="password"
                                            class="form-control {% if form.password2.errors %}is-invalid{% endif %}"
                                            id="id_password2"
                                            name="password2"
                                            placeholder="Nhập lại mật khẩu"
                                            required>
-                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('id_password2', this)">
-                                        <i class="fas fa-eye"></i>
+                                    <button class="pw-toggle-btn" type="button" aria-label="Hiện/ẩn mật khẩu">
+                                        <span class="icon-eye"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg></span>
+                                        <span class="icon-eye-off" style="display:none"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88"/></svg></span>
                                     </button>
                                 </div>
                                 {% if form.password2.errors %}
@@ -281,18 +283,6 @@
 
 {% block extra_js %}
 <script>
-function togglePassword(inputId, btn) {
-    const input = document.getElementById(inputId);
-    const icon = btn.querySelector('i');
-    if (input.type === 'password') {
-        input.type = 'text';
-        icon.classList.replace('fa-eye', 'fa-eye-slash');
-    } else {
-        input.type = 'password';
-        icon.classList.replace('fa-eye-slash', 'fa-eye');
-    }
-}
-
 document.addEventListener('DOMContentLoaded', function() {
     const password1 = document.getElementById('id_password1');
     const password2 = document.getElementById('id_password2');
@@ -302,25 +292,18 @@ document.addEventListener('DOMContentLoaded', function() {
         password1.addEventListener('input', function() {
             const password = this.value;
             let strength = 0;
-
             if (password.length >= 6) strength++;
             if (password.length >= 8) strength++;
             if (/[A-Z]/.test(password)) strength++;
             if (/[0-9]/.test(password)) strength++;
             if (/[^A-Za-z0-9]/.test(password)) strength++;
-
             passwordStrength.className = 'password-strength';
-            if (strength <= 2) {
-                passwordStrength.classList.add('weak');
-            } else if (strength <= 3) {
-                passwordStrength.classList.add('medium');
-            } else {
-                passwordStrength.classList.add('strong');
-            }
+            if (strength <= 2) passwordStrength.classList.add('weak');
+            else if (strength <= 3) passwordStrength.classList.add('medium');
+            else passwordStrength.classList.add('strong');
         });
     }
 
-    // Real-time password match validation (UX only)
     if (password2 && password1) {
         password2.addEventListener('input', function() {
             if (this.value && this.value !== password1.value) {

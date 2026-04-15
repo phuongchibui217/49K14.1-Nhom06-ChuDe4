@@ -110,6 +110,10 @@ def admin_staff(request):
             staff.user.is_superuser = is_superuser
             staff.user.save()
 
+            # Đảm bảo StaffProfile tồn tại sau khi update (idempotent)
+            from core.user_service import ensure_staff_profile
+            ensure_staff_profile(staff.user)
+
             messages.success(request, 'Cập nhật nhân viên thành công!')
             return redirect('staff:admin_staff')
 

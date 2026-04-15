@@ -164,7 +164,12 @@ def check_room_availability(
     for existing in queryset:
         existing_end = existing.end_time or calculate_end_time(
             existing.appointment_time,
-            existing.duration_minutes or existing.service.duration_minutes
+            existing.duration_minutes or (
+                existing.service_variant.duration_minutes if existing.service_variant else (
+                    existing.service.variants.filter(is_active=True).order_by('sort_order').first().duration_minutes
+                    if existing.service else 60
+                )
+            )
         )
 
         # Kiểm tra giao nhau về thời gian

@@ -68,7 +68,7 @@
         dom.badge.classList.remove("d-none");
         dom.badge.setAttribute(
             "aria-label",
-            `${normalizedCount} yêu cầu đặt lịch chờ xác nhận`
+            `${normalizedCount} yêu cầu đặt lịch online chưa xử lý`
         );
 
         // Thêm animation nhỏ khi badge thay đổi

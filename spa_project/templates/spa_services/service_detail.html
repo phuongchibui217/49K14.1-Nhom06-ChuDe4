@@ -1,4 +1,5 @@
 {% extends 'spa/base.html' %}
+{% load spa_filters %}
 
 {% block title %}{{ service.name }} - Spa ANA{% endblock %}
 
@@ -129,7 +130,9 @@
                                 <i class="fas fa-clock feature-icon me-3"></i>
                                 <div>
                                     <h6 class="mb-1">Thời gian</h6>
-                                    <p class="text-muted mb-0">{{ service.duration_minutes|default:'90' }} phút</p>
+                                    {% with service.variants.all|first as v %}
+                                    <p class="text-muted mb-0">{{ v.duration_minutes|default:'—' }} phút</p>
+                                    {% endwith %}
                                 </div>
                             </div>
                         </div>
@@ -168,13 +171,19 @@
             <div class="col-lg-4">
                 <div class="price-card sticky-top" style="top: 100px;">
                     <h4 class="mb-3">Giá dịch vụ</h4>
-                    <div class="price-display mb-3">{{ service.price }} VNĐ</div>
-                    <p class="mb-4">Giá đã bao gồm tất cả thuế và phí</p>
-
+                    {% for v in service.variants.all %}
+                    <div class="mb-2">
+                        <span class="fw-bold">{{ v.label }}</span>:
+                        <span class="price-display" style="font-size:1.4rem;">{{ v.price|vnd }}</span>
+                        <small class="opacity-75">({{ v.duration_minutes }} phút)</small>
+                    </div>
+                    {% empty %}
+                    <p class="opacity-75">Liên hệ để biết giá</p>
+                    {% endfor %}
+                    <p class="mb-4 mt-2">Giá đã bao gồm tất cả thuế và phí</p>
                     <a href="{% url 'appointments:booking' %}?service={{ service.id }}" class="btn btn-dark w-100 btn-lg mb-3">
                         <i class="fas fa-calendar-alt me-2"></i>Đặt lịch ngay
                     </a>
-
                 </div>
             </div>
         </div>
@@ -193,7 +202,7 @@
                     </div>
                     <div class="p-3">
                         <h6 class="mb-2">{{ related.name }}</h6>
-                        <p class="text-warning fw-bold mb-2">{{ related.price }} VNĐ</p>
+                        <p class="text-warning fw-bold mb-2">{% with related.variants.all|first as v %}{% if v %}{{ v.price|vnd }}{% endif %}{% endwith %}</p>
                         <a href="{% url 'spa_services:service_detail' related.id %}" class="btn btn-outline-warning btn-sm w-100">
                             Xem chi tiết
                         </a>

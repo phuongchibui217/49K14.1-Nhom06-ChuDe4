@@ -34,17 +34,20 @@ class ServiceForm(forms.ModelForm):
     """
     category_number = forms.ChoiceField(
         label='Danh mục',
-        choices=[
-            ('1', 'Chăm sóc da'),
-            ('2', 'Massage'),
-            ('3', 'Phun thêu'),
-            ('4', 'Triệt lông'),
-        ],
+        choices=[],  # load từ DB trong __init__
         required=True,
-        widget=forms.Select(attrs={
-            'class': 'form-select'
-        }),
+        widget=forms.Select(attrs={'class': 'form-select'}),
         error_messages={'required': 'Vui lòng chọn danh mục'}
+    )
+
+    code = forms.CharField(
+        label='Mã dịch vụ',
+        max_length=30,
+        required=False,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'VD: DV0001'
+        }),
     )
 
     name = forms.CharField(
@@ -67,30 +70,6 @@ class ServiceForm(forms.ModelForm):
             'placeholder': 'Mô tả chi tiết về dịch vụ...'
         }),
         error_messages={'required': 'Vui lòng nhập mô tả dịch vụ'}
-    )
-
-    price = forms.IntegerField(
-        label='Giá (VNĐ)',
-        required=True,
-        min_value=1,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-control',
-            'placeholder': '0',
-            'min': '0'
-        }),
-        error_messages={'min_value': 'Giá dịch vụ không hợp lệ'}
-    )
-
-    duration_minutes = forms.IntegerField(
-        label='Thời gian (phút)',
-        required=True,
-        min_value=5,
-        widget=forms.NumberInput(attrs={
-            'class': 'form-control',
-            'placeholder': '90',
-            'min': '5'
-        }),
-        error_messages={'min_value': 'Thời gian không hợp lệ'}
     )
 
     status = forms.ChoiceField(
@@ -123,8 +102,23 @@ class ServiceForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Set label for duration_minutes
-        self.fields['duration_minutes'].label = 'Thời gian (phút)'
+        from .models import ServiceCategory
+        self.fields['category_number'].choices = [('', 'Chọn danh mục')] + [
+            (cat.code, cat.name)
+            for cat in ServiceCategory.objects.filter(status='ACTIVE').order_by('sort_order')
+        ]
+
+    def clean_code(self):
+        """Validate mã dịch vụ — unique, tự sinh nếu để trống"""
+        code = self.cleaned_data.get('code', '').strip().upper()
+        if not code:
+            return ''  # sẽ tự sinh trong save()
+        qs = Service.objects.filter(code=code)
+        if self.instance and self.instance.pk:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise forms.ValidationError(f'Mã dịch vụ "{code}" đã tồn tại')
+        return code
 
     def clean_name(self):
         """Validate tên dịch vụ"""
@@ -152,25 +146,10 @@ class ServiceForm(forms.ModelForm):
         return name
 
     def clean_description(self):
-        """Validate mô tả"""
         description = self.cleaned_data.get('description', '').strip()
         if not description:
             raise forms.ValidationError('Vui lòng nhập mô tả dịch vụ')
         return description
-
-    def clean_price(self):
-        """Validate giá"""
-        price = self.cleaned_data.get('price')
-        if price is None or price <= 0:
-            raise forms.ValidationError('Giá dịch vụ không hợp lệ')
-        return price
-
-    def clean_duration_minutes(self):
-        """Validate thời gian"""
-        duration = self.cleaned_data.get('duration_minutes')
-        if duration is None or duration <= 0:
-            raise forms.ValidationError('Thời gian không hợp lệ')
-        return duration
 
     def clean_image(self):
         """Validate hình ảnh"""
@@ -205,17 +184,13 @@ class ServiceForm(forms.ModelForm):
         return image
 
     def clean_category_number(self):
-        """Validate và map category number sang ServiceCategory object"""
-        category_num = self.cleaned_data.get('category_number')
-        if not category_num:
+        """Validate và map category code sang ServiceCategory object"""
+        category_code = self.cleaned_data.get('category_number')
+        if not category_code:
             raise forms.ValidationError('Vui lòng chọn danh mục')
-        _code_map = {'1': 'CAT01', '2': 'CAT02', '3': 'CAT03', '4': 'CAT04'}
-        code = _code_map.get(category_num)
-        if not code:
-            raise forms.ValidationError('Danh mục không hợp lệ')
         from .models import ServiceCategory
         try:
-            return ServiceCategory.objects.get(code=code)
+            return ServiceCategory.objects.get(code=category_code)
         except ServiceCategory.DoesNotExist:
             raise forms.ValidationError('Danh mục không tồn tại trong hệ thống')
 
@@ -224,14 +199,17 @@ class ServiceForm(forms.ModelForm):
         service = super().save(commit=False)
 
         # Map category_number to ServiceCategory object
-        service.category = self.cleaned_data.get('category_number')  # already a ServiceCategory object from clean_category_number
+        service.category = self.cleaned_data.get('category_number')
 
         # Map status to is_active
         service.status = self.cleaned_data.get('status', 'ACTIVE')
         service.is_active = (service.status == 'ACTIVE')
 
-        # Generate code if not exists
-        if not service.code:
+        # Dùng mã do user nhập, hoặc tự sinh nếu để trống
+        custom_code = self.cleaned_data.get('code', '').strip()
+        if custom_code:
+            service.code = custom_code
+        elif not service.code:
             service.code = Service._generate_code()
 
         if commit:

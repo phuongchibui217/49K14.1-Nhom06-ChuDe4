@@ -9,11 +9,9 @@ Author: Spa ANA Team
 
 from django import forms
 
-# Tạm import từ spa.models (CHƯA chuyển model trong phase này)
 from .models import Appointment
-from spa_services.models import Service
+from spa_services.models import Service, ServiceVariant
 
-# Import validation services từ appointments/services
 from .services import validate_appointment_date, validate_appointment_time
 
 
@@ -23,17 +21,11 @@ from .services import validate_appointment_date, validate_appointment_time
 
 class AppointmentForm(forms.ModelForm):
     """
-    Form đặt lịch hẹn
+    Form đặt lịch hẹn cho khách hàng (booking online).
 
-    QUYẾT THIẾT DESIGN:
-    - Nếu user đã đăng nhập: Tự động lấy thông tin từ CustomerProfile
-    - Nếu user chưa đăng nhập: Yêu cầu đăng nhập TRƯỚC (không cho guest booking)
-
-    LÝ DO:
-    - Giảm spam booking
-    - Đảm bảo có thông tin liên hệ
-    - Dễ quản lý lịch hẹn
-    - Theo dõi lịch sử khách hàng
+    - service: bắt buộc
+    - service_variant: optional — nếu service có variants thì khách chọn gói
+    - Nếu không chọn variant → fallback về price/duration của service
     """
     appointment_date = forms.DateField(
         label='Ngày hẹn',
@@ -51,13 +43,19 @@ class AppointmentForm(forms.ModelForm):
         })
     )
 
+    service_variant = forms.ModelChoiceField(
+        queryset=ServiceVariant.objects.none(),
+        required=False,
+        empty_label='-- Chọn gói (nếu có) --',
+        label='Gói dịch vụ',
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
     class Meta:
         model = Appointment
-        fields = ['service', 'appointment_date', 'appointment_time', 'notes']
+        fields = ['service', 'service_variant', 'appointment_date', 'appointment_time', 'notes']
         widgets = {
-            'service': forms.Select(attrs={
-                'class': 'form-select'
-            }),
+            'service': forms.Select(attrs={'class': 'form-select'}),
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
@@ -66,25 +64,25 @@ class AppointmentForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        """Filter only active services"""
         super().__init__(*args, **kwargs)
         self.fields['service'].queryset = Service.objects.filter(is_active=True)
-        self.fields['service'].empty_label = "-- Chọn dịch vụ --"
+        self.fields['service'].empty_label = '-- Chọn dịch vụ --'
         self.fields['service'].required = True
 
-        # Custom label choices - chỉ hiển thị tên dịch vụ (không có mã)
-        service_choices = [('', self.fields['service'].empty_label)]
-        for service in self.fields['service'].queryset:
-            service_choices.append((service.id, service.name))
-        self.fields['service'].choices = service_choices
+        # Nếu đã có service (edit hoặc POST) → load variants của service đó
+        service_id = None
+        if self.data.get('service'):
+            service_id = self.data.get('service')
+        elif self.instance and self.instance.pk and self.instance.service_id:
+            service_id = self.instance.service_id
+
+        if service_id:
+            self.fields['service_variant'].queryset = ServiceVariant.objects.filter(
+                service_id=service_id, is_active=True
+            ).order_by('sort_order', 'duration_minutes')
 
     def clean_appointment_date(self):
-        """
-        Validate ngày hẹn - sử dụng timezone
-
-        QUAN TRỌNG: Dùng timezone.now().date() thay vì date.today()
-        để đảm bảo đúng múi giờ configured trong settings.TIME_ZONE
-        """
+        """Validate ngày hẹn"""
         appointment_date = self.cleaned_data.get('appointment_date')
         if appointment_date:
             # Dùng service để validate (đã xử lý timezone đúng)
@@ -113,25 +111,17 @@ class AppointmentForm(forms.ModelForm):
         return appointment_time
 
     def clean(self):
-        """
-        Validate tổng hợp cho form đặt lịch
-
-        Kiểm tra:
-        - Ngày hợp lệ
-        - Giờ hợp lệ
-        """
         cleaned_data = super().clean()
-
-        # Lấy dữ liệu đã validate
         appointment_date = cleaned_data.get('appointment_date')
         appointment_time = cleaned_data.get('appointment_time')
         service = cleaned_data.get('service')
+        variant = cleaned_data.get('service_variant')
 
-        # Nếu đã có lỗi ở field riêng thì không check thêm
         if not appointment_date or not appointment_time or not service:
             return cleaned_data
 
-        # Các validation bổ sung có thể thêm ở đây
-        # Ví dụ: check phòng trống (nếu form có chọn phòng)
+        # Validate variant thuộc đúng service
+        if variant and variant.service_id != service.id:
+            self.add_error('service_variant', 'Gói dịch vụ không thuộc dịch vụ đã chọn')
 
         return cleaned_data

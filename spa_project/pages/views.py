@@ -23,7 +23,7 @@ def home(request):
         HttpResponse: Render template spa/pages/home.html
     """
     # Lấy 6 dịch vụ active đầu tiên
-    services = Service.objects.filter(status='ACTIVE')[:6]
+    services = Service.objects.filter(status='ACTIVE').select_related('category').prefetch_related('variants')[:6]
 
     return render(request, 'pages/home.html', {'services': services})
 

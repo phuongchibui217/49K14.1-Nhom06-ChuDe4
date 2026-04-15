@@ -155,45 +155,42 @@ def admin_api():
 # CUSTOMER REQUIRED DECORATOR
 # =====================================================
 
-def customer_required(login_url='accounts:login', redirect_on_fail='spa:home'):
+def customer_required(login_url='accounts:login'):
     """
-    Decorator kiểm tra user đã đăng nhập và có CustomerProfile
+    Decorator bảo vệ các trang dành riêng cho khách hàng.
 
-    Sử dụng cho: Các trang dành cho khách hàng đã đăng ký
-
-    Hành vi:
-    - Chưa đăng nhập → Redirect đến trang login
-    - Đã đăng nhập nhưng không có CustomerProfile → Tạo mới hoặc redirect
-
-    Args:
-        login_url: URL trang login
-        redirect_on_fail: URL redirect khi không có profile
-
-    Usage:
-        @customer_required()
-        def my_appointments(request):
-            # View code here
-            pass
+    Quy tắc:
+    - Chưa đăng nhập → redirect login
+    - is_staff hoặc is_superuser → redirect về dashboard quản lý (không được vào flow khách)
+    - Đã login nhưng không có CustomerProfile → redirect login với thông báo
+    - Đã login + có CustomerProfile + không phải staff → cho vào
     """
     def decorator(view_func):
         @wraps(view_func)
-        @login_required(login_url=login_url)
         def _wrapped_view(request, *args, **kwargs):
-            from customers.models import CustomerProfile
+            if not request.user.is_authenticated:
+                from django.conf import settings
+                from urllib.parse import quote
+                next_url = quote(request.get_full_path())
+                return redirect(f'/{login_url.replace("accounts:login", "login")}/?next={next_url}')
 
-            # Kiểm tra có CustomerProfile không
+            # Staff/admin không được vào flow khách
+            if request.user.is_staff or request.user.is_superuser:
+                return redirect('/manage/appointments/')
+
+            # Phải có CustomerProfile
+            from customers.models import CustomerProfile
             try:
-                # Có profile → cho phép truy cập
                 request.user.customer_profile
-                return view_func(request, *args, **kwargs)
             except CustomerProfile.DoesNotExist:
-                # Không có profile → tạo mới hoặc redirect
-                # Tùy business logic, có thể tạo tự động hoặc báo lỗi
-                messages.warning(request, 'Vui lòng hoàn tất thông tin tài khoản.')
-                return redirect(redirect_on_fail)
+                messages.error(request, 'Tài khoản chưa được phân quyền. Vui lòng liên hệ quản trị viên.')
+                from django.contrib.auth import logout as auth_logout
+                auth_logout(request)
+                return redirect('accounts:login')
+
+            return view_func(request, *args, **kwargs)
 
         return _wrapped_view
-
     return decorator
 
 

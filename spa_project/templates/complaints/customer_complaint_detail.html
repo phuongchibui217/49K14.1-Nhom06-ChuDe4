@@ -582,13 +582,16 @@
                         {% if replies %}
                         <div class="replies-list">
                             {% for reply in replies %}
-                            <div class="reply-item {% if reply.sender_role == 'customer' %}customer-reply{% else %}staff-reply{% endif %}">
+                            <div class="reply-item {% if reply.sender_role == 'CUSTOMER' %}customer-reply{% else %}staff-reply{% endif %}">
                                 <div class="reply-header">
                                     <div class="reply-author">
+                                        {% if reply.sender_role == 'CUSTOMER' %}
                                         <strong class="reply-author-name">{{ reply.sender_name }}</strong>
-                                        <span class="reply-role-badge {% if reply.sender_role == 'customer' %}customer{% else %}staff{% endif %}">
-                                            {{ reply.get_sender_role_display }}
-                                        </span>
+                                        <span class="reply-role-badge customer">Bạn</span>
+                                        {% else %}
+                                        <strong class="reply-author-name">Spa ANA</strong>
+                                        <span class="reply-role-badge staff">Hỗ trợ viên</span>
+                                        {% endif %}
                                     </div>
                                     <span class="reply-time">
                                         <i class="far fa-clock me-1"></i>
@@ -687,7 +690,7 @@
                                 <div class="info-label">Người xử lý</div>
                                 <div class="info-value">
                                     <i class="fas fa-user-check me-1"></i>
-                                    {{ complaint.assigned_to.get_full_name|default:complaint.assigned_to.username }}
+                                    Nhân viên hỗ trợ
                                 </div>
                             </div>
                             {% endif %}

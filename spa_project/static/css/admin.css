@@ -247,6 +247,40 @@
     animation: badgePulse 0.5s ease-in-out;
 }
 
+/* ==========================================
+   COMPLAINTS BADGE STYLES
+   ========================================== */
+
+.sidebar-complaints-badge {
+    margin-left: auto;
+    min-width: 1.6rem;
+    height: 1.6rem;
+    padding: 0 0.45rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #f7cf4c;
+    color: #163B6D;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1;
+    border: 1px solid rgba(22, 59, 109, 0.15);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+}
+
+.sidebar-nav .nav-link.active .sidebar-complaints-badge {
+    background: #ffd95e;
+    color: #163B6D;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-complaints-badge.badge-pulse {
+    animation: badgePulse 0.5s ease-in-out;
+}
+
 @keyframes badgePulse {
     0% {
         transform: scale(1);

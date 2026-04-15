@@ -9,14 +9,17 @@ Author: Spa ANA Team
 """
 
 import json
+import time
 
 from django.views.decorators.http import require_http_methods
 from django.db.models import Q
+from django.http import StreamingHttpResponse, JsonResponse
 from django.utils import timezone
 
 from .models import Complaint, ComplaintReply, ComplaintHistory
 from .serializers import serialize_complaint, serialize_reply, serialize_history
 from core.api_response import ApiResponse, staff_api, get_or_404
+from core.user_service import get_display_name
 
 
 # =====================================================
@@ -283,7 +286,7 @@ def api_complaint_reply(request, complaint_id):
 
     if is_staff:
         reply.sender_role = 'ADMIN' if request.user.is_superuser else 'STAFF'
-        reply.sender_name = request.user.get_full_name() or request.user.username
+        reply.sender_name = get_display_name(request.user)
         reply.is_internal = data.get('is_internal', False)
     else:
         if complaint.status == 'RESOLVED':
@@ -511,3 +514,57 @@ def api_complaints_stats(request):
         'stats': stats,
         'total': Complaint.objects.count(),
     })
+
+
+# =====================================================
+# API: BADGE — SỐ KHIẾU NẠI MỚI (NEW)
+# =====================================================
+
+@require_http_methods(["GET"])
+def api_complaints_new_count(request):
+    """
+    API: Lấy số lượng khiếu nại chưa giải quyết (NEW + IN_PROGRESS)
+
+    FE gọi: GET /api/complaints/new-count/
+    Trả về: { "success": true, "count": 3 }
+    """
+    if not _is_staff(request.user):
+        return JsonResponse({'success': False, 'error': 'Không có quyền truy cập'}, status=403)
+
+    try:
+        count = Complaint.objects.filter(status__in=['NEW', 'IN_PROGRESS']).count()
+        return JsonResponse({'success': True, 'count': count})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e), 'count': 0}, status=500)
+
+
+def _complaints_new_count_stream_generator():
+    """SSE generator — push số khiếu nại NEW + IN_PROGRESS mỗi 15 giây."""
+    from datetime import datetime
+    while True:
+        try:
+            count = Complaint.objects.filter(status__in=['NEW', 'IN_PROGRESS']).count()
+            yield f"data: {json.dumps({'count': count, 'timestamp': datetime.now().isoformat()})}\n\n"
+            time.sleep(15)
+        except Exception as e:
+            yield f"data: {json.dumps({'count': 0, 'error': str(e)})}\n\n"
+            time.sleep(15)
+
+
+@require_http_methods(["GET"])
+def api_complaints_new_count_stream(request):
+    """
+    SSE Stream: push số khiếu nại NEW real-time
+
+    FE gọi: GET /api/complaints/new-count/stream/
+    """
+    if not _is_staff(request.user):
+        return JsonResponse({'success': False, 'error': 'Không có quyền truy cập'}, status=403)
+
+    response = StreamingHttpResponse(
+        _complaints_new_count_stream_generator(),
+        content_type='text/event-stream'
+    )
+    response['Cache-Control'] = 'no-cache'
+    response['X-Accel-Buffering'] = 'no'
+    return response

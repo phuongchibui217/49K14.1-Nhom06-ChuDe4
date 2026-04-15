@@ -1,4 +1,5 @@
 {% extends 'spa/base.html' %}
+{% load spa_filters %}
 
 {% block title %}Spa ANA - Hệ thống Quản lý Spa Cao Cấp{% endblock %}
 
@@ -6,6 +7,80 @@
 <style>
     /* Hero section offset for fixed navbar is handled in style.css */
     /* This page uses .hero-section which already has margin-top: 72px */
+
+    /* Service card — đồng bộ với trang /services/ */
+    .service-card {
+        background: white;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(39, 119, 42, 0.08);
+        transition: all 0.3s ease;
+        height: 100%;
+        border: 1px solid #e2e8f0;
+        display: flex;
+        flex-direction: column;
+    }
+    .service-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 10px 30px rgba(212, 168, 53, 0.2);
+        border-color: #d4a835;
+    }
+    .service-image {
+        height: 200px;
+        overflow: hidden;
+        position: relative;
+    }
+    .service-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+    .service-card:hover .service-image img {
+        transform: scale(1.1);
+    }
+    .service-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+        padding: 1rem 1.5rem;
+        color: white;
+    }
+    .service-info {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+
+    .service-description {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        line-height: 1.6;
+        min-height: 4.8em;
+        flex: 1;
+    }
+
+    .service-price {
+        color: #d4a835;
+        font-weight: 700;
+        font-size: 1.25rem;
+    }
+    .category-badge {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background: linear-gradient(135deg, #d4a835, #f1c40f);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
 </style>
 {% endblock %}
 
@@ -58,71 +133,32 @@
             <p class="section-subtitle text-muted">Những liệu trình được khách hàng yêu thích nhất</p>
         </div>
 
-        <div class="row g-4">
+        <div class="row g-4" id="servicesGrid">
             {% for service in services %}
-            <div class="col-md-6 col-lg-3">
-                <div class="service-card card h-100 border-0 shadow-sm">
-                    {% if service.image %}
-                    <img src="{{ service.image.url }}" class="card-img-top" alt="{{ service.name }}">
-                    {% else %}
-                    <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400" class="card-img-top" alt="{{ service.name }}">
-                    {% endif %}
-                    <div class="card-body">
+            <div class="col-md-6 col-lg-4">
+                <div class="service-card">
+                    <div class="service-image">
+                        <span class="category-badge">{{ service.category.name }}</span>
+                        <img src="{{ service.get_image_url }}" alt="{{ service.name }}">
+                        <div class="service-overlay">
+                            <span class="badge bg-warning">{% with service.variants.all|first as v %}{{ v.duration_minutes|default:'—' }}{% endwith %} phút</span>
+                        </div>
+                    </div>
+                    <div class="service-info">
                         <h5 class="card-title">{{ service.name }}</h5>
-                        <p class="card-text text-muted small">{{ service.description|truncatewords:10 }}</p>
-                        <p class="text-warning fw-bold">{{ service.price|floatformat:0 }}đ</p>
-                        <a href="{% url 'appointments:booking' %}?service={{ service.id }}" class="btn btn-outline-warning w-100">Đặt lịch ngay</a>
+                        <p class="card-text text-muted small service-description">{{ service.description }}</p>
+                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                            <span class="service-price">{% with service.variants.all|first as v %}{% if v %}{{ v.price|vnd }}{% else %}Liên hệ{% endif %}{% endwith %}</span>
+                            <a href="{% url 'appointments:booking' %}?service_id={{ service.id }}" class="btn btn-outline-warning btn-sm">
+                                Đặt lịch ngay
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
             {% empty %}
-            <!-- Default services if no data -->
-            <div class="col-md-6 col-lg-3">
-                <div class="service-card card h-100 border-0 shadow-sm">
-                    <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400" class="card-img-top" alt="Chăm sóc da">
-                    <div class="card-body">
-                        <h5 class="card-title">Chăm Sóc Da Chuyên Sâu</h5>
-                        <p class="card-text text-muted small">Điều trị mụn, tái tạo da, trẻ hóa da</p>
-                        <p class="text-warning fw-bold">1.500.000đ</p>
-                        <a href="{% url 'appointments:booking' %}" class="btn btn-outline-warning w-100">Đặt lịch ngay</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-6 col-lg-3">
-                <div class="service-card card h-100 border-0 shadow-sm">
-                    <img src="https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400" class="card-img-top" alt="Massage">
-                    <div class="card-body">
-                        <h5 class="card-title">Massage Thư Giãn</h5>
-                        <p class="card-text text-muted small">Massage toàn thân, giảm stress, thư giãn</p>
-                        <p class="text-warning fw-bold">800.000đ</p>
-                        <a href="{% url 'appointments:booking' %}" class="btn btn-outline-warning w-100">Đặt lịch ngay</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-6 col-lg-3">
-                <div class="service-card card h-100 border-0 shadow-sm">
-                    <img src="https://images.unsplash.com/photo-1560750588-73207b1ef5b8?w=400" class="card-img-top" alt="Phun thêu">
-                    <div class="card-body">
-                        <h5 class="card-title">Phun Thêu Môi & Mày</h5>
-                        <p class="card-text text-muted small">Kỹ thuật 3D tự nhiên, bền màu</p>
-                        <p class="text-warning fw-bold">2.500.000đ</p>
-                        <a href="{% url 'appointments:booking' %}" class="btn btn-outline-warning w-100">Đặt lịch ngay</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-6 col-lg-3">
-                <div class="service-card card h-100 border-0 shadow-sm">
-                    <img src="https://images.unsplash.com/photo-1562322140-8baee
-                    <div class="card-body">
-                        <h5 class="card-title">Triệt Lông Vĩnh Viễn</h5>
-                        <p class="card-text text-muted small">Công nghệ Diode Laser hiện đại</p>
-                        <p class="text-warning fw-bold">800.000đ</p>
-                        <a href="{% url 'spa_services:service_list' %}" class="btn btn-outline-warning w-100">Xem chi tiết</a>
-                    </div>
-                </div>
+            <div class="col-12 text-center">
+                <p class="text-muted">Chưa có dịch vụ nào.</p>
             </div>
             {% endfor %}
         </div>

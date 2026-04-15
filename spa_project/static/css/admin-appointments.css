@@ -192,6 +192,7 @@
   text-overflow:ellipsis;
 }
 
+.status-pending{ background: #fff3cd; }
 .status-not_arrived{ background: #ffe7b8; }
 .status-arrived{ background: #c9f3ff; }
 .status-completed{ background: #ccefd9; }
