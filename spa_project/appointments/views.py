@@ -46,16 +46,11 @@ def booking(request):
     if request.method == 'POST':
         form = AppointmentForm(request.POST)
         if form.is_valid():
-            # Cập nhật thông tin khách hàng
-            customer_name = request.POST.get('customer_name', '').strip()
-            customer_phone = request.POST.get('customer_phone', '').strip()
-            customer_email = request.POST.get('customer_email', '').strip()
-
-            if customer_name:
-                customer_profile.full_name = customer_name
-            if customer_phone:
-                customer_profile.phone = customer_phone
-            customer_profile.save()
+            # Lấy thông tin liên hệ từ form — chỉ dùng cho booking này,
+            # KHÔNG cập nhật vào account/profile của user.
+            contact_name  = request.POST.get('customer_name', '').strip()
+            contact_phone = request.POST.get('customer_phone', '').strip()
+            contact_email = request.POST.get('customer_email', '').strip()
 
             # Tạo lịch hẹn
             appointment = form.save(commit=False)
@@ -64,10 +59,11 @@ def booking(request):
             appointment.status = 'PENDING'
             appointment.created_by = request.user
 
-            # Snapshots
-            appointment.customer_name_snapshot = customer_name or customer_profile.full_name or ''
-            appointment.customer_phone_snapshot = customer_phone or customer_profile.phone or ''
-            appointment.customer_email_snapshot = customer_email or customer_profile.email or ''
+            # Snapshot thông tin liên hệ tại thời điểm đặt lịch.
+            # Fallback về profile nếu user không nhập gì.
+            appointment.customer_name_snapshot  = contact_name  or customer_profile.full_name or ''
+            appointment.customer_phone_snapshot = contact_phone or customer_profile.phone or ''
+            appointment.customer_email_snapshot = contact_email or (customer_profile.email or '')
 
             # Nếu có variant → gán duration từ variant
             variant = form.cleaned_data.get('service_variant')
@@ -139,29 +135,31 @@ def my_appointments(request):
 
         appointments = customer_profile.appointments.all()
 
-        # Map URL param (lowercase) → DB value (uppercase)
-        STATUS_MAP = {
-            'pending': 'PENDING',
-            'not_arrived': 'NOT_ARRIVED',
-            'arrived': 'ARRIVED',
-            'completed': 'COMPLETED',
-            'cancelled': 'CANCELLED',
+        # Customer-facing filter groups:
+        #   pending   → PENDING
+        #   confirmed → NOT_ARRIVED, ARRIVED  (spa đã xác nhận, chờ đến / đang phục vụ)
+        #   completed → COMPLETED
+        #   cancelled → CANCELLED
+        CUSTOMER_STATUS_MAP = {
+            'pending':   ['PENDING'],
+            'confirmed': ['NOT_ARRIVED', 'ARRIVED'],
+            'completed': ['COMPLETED'],
+            'cancelled': ['CANCELLED'],
         }
 
-        if status_filter != 'all' and status_filter in STATUS_MAP:
-            appointments = appointments.filter(status=STATUS_MAP[status_filter])
+        if status_filter != 'all' and status_filter in CUSTOMER_STATUS_MAP:
+            appointments = appointments.filter(status__in=CUSTOMER_STATUS_MAP[status_filter])
 
         appointments = appointments.order_by('-created_at')
 
-        # Đếm số lượng theo từng trạng thái, key dùng lowercase để khớp template
+        base_qs = customer_profile.appointments
         status_counts = {
-            'pending': customer_profile.appointments.filter(status='PENDING').count(),
-            'not_arrived': customer_profile.appointments.filter(status='NOT_ARRIVED').count(),
-            'arrived': customer_profile.appointments.filter(status='ARRIVED').count(),
-            'completed': customer_profile.appointments.filter(status='COMPLETED').count(),
-            'cancelled': customer_profile.appointments.filter(status='CANCELLED').count(),
+            'pending':   base_qs.filter(status='PENDING').count(),
+            'confirmed': base_qs.filter(status__in=['NOT_ARRIVED', 'ARRIVED']).count(),
+            'completed': base_qs.filter(status='COMPLETED').count(),
+            'cancelled': base_qs.filter(status='CANCELLED').count(),
         }
-        status_counts['all'] = customer_profile.appointments.count()
+        status_counts['all'] = base_qs.count()
 
     except CustomerProfile.DoesNotExist:
         appointments = Appointment.objects.none()

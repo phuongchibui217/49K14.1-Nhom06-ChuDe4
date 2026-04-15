@@ -56,6 +56,7 @@ window.chatWidgetConfig = {
     isAuthenticated: {% if user.is_authenticated %}true{% else %}false{% endif %},
     csrfToken: "{{ csrf_token }}",
     bootstrapUrl: "{% url 'chat:api_customer_chat_bootstrap' %}",
+    sendNewUrl: "{% url 'chat:api_customer_chat_send_new' %}",
     sendUrlTemplate: "{% url 'chat:api_customer_chat_send' '__CHAT_CODE__' %}",
     readUrlTemplate: "{% url 'chat:api_customer_chat_mark_read' '__CHAT_CODE__' %}",
     streamUrlTemplate: "{% url 'chat:api_customer_chat_stream' '__CHAT_CODE__' %}",

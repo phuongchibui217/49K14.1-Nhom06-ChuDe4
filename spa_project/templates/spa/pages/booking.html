@@ -1,236 +1,21 @@
 {% extends 'spa/base.html' %}
-
 {% block title %}Đặt lịch hẹn - Spa ANA{% endblock %}
 
 {% block extra_css %}
 <style>
-/* Page Header */
-.page-header {
-    background:
-        linear-gradient(135deg, rgba(30, 58, 95, 0.92), rgba(44, 82, 130, 0.92)),
-        url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920') center/cover;
-    padding: 3rem 0 2rem;
-    text-align: center;
-    color: white;
-    margin-bottom: 2rem;
-}
-
-.page-header h1 {
-    font-weight: 500;
-    font-size: 1.75rem;
-    margin-bottom: 0.5rem;
-}
-
-.page-header .subtitle {
-    font-size: 0.95rem;
-    opacity: 0.9;
-}
-
-/* Main Container */
-.booking-section {
-    padding-bottom: 3rem;
-}
-
-.booking-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
-}
-
-/* Grid Layout - 2 Columns */
 .booking-grid {
-    display: grid;
-    grid-template-columns: 300px 1fr;
-    gap: 1.5rem;
-    align-items: start;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.5rem;
+  align-items: start;
 }
-
-/* Left Column - Customer Info */
 .customer-sidebar {
-    background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border: 1px solid #e2e8f0;
-    position: sticky;
-    top: 2rem;
+  position: sticky;
+  top: 1.5rem;
 }
-
-.customer-sidebar h4 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #1e3a5f;
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid #d4a835;
-}
-
-/* Right Column - Main Content */
-.booking-main {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-/* Form Cards */
-.form-card {
-    background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border: 1px solid #e2e8f0;
-}
-
-.form-card h4 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #1e3a5f;
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid #d4a835;
-}
-
-/* Form Controls */
-.form-control,
-.form-select {
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    padding: 0.6rem 0.8rem;
-    font-size: 0.9rem;
-}
-
-.form-control:focus,
-.form-select:focus {
-    border-color: #d4a835;
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(212, 168, 53, 0.1);
-}
-
-/* Date & Time Inputs - Làm to và nổi bật */
-.form-control[type="date"],
-.form-control[type="time"] {
-    font-size: 1.1rem;
-    font-weight: 600;
-    padding: 0.75rem 0.8rem;
-    border-width: 2px;
-    color: #1e3a5f;
-    background: #fafafa;
-}
-
-.form-control[type="date"]:focus,
-.form-control[type="time"]:focus {
-    background: white;
-    border-color: #d4a835;
-    box-shadow: 0 0 0 3px rgba(212, 168, 53, 0.15);
-}
-
-.form-label {
-    font-weight: 500;
-    color: #333;
-    margin-bottom: 0.4rem;
-    font-size: 0.85rem;
-}
-
-/* Service Info */
-.service-info-box {
-    background: #f8f9fa;
-    padding: 1rem;
-    border-radius: 8px;
-    margin-top: 0.75rem;
-}
-
-.service-info-item {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    font-size: 1.05rem;
-    color: #333;
-    margin-bottom: 0.5rem;
-}
-
-.service-info-item:last-child {
-    margin-bottom: 0;
-}
-
-.service-info-item i {
-    color: #d4a835;
-    font-size: 1.3rem;
-}
-
-.service-info-item .value {
-    font-weight: 700;
-    color: #1e3a5f;
-    font-size: 1.1rem;
-}
-
-/* Button */
-.btn-submit {
-    width: 100%;
-    background: linear-gradient(135deg, #d4a835, #f1c40f);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 0.875rem;
-    font-weight: 600;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-}
-
-.btn-submit:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(212, 168, 53, 0.4);
-    color: white;
-}
-
-/* Error Styling */
-.field-error {
-    color: #dc3545;
-    font-size: 0.75rem;
-    margin-top: 0.25rem;
-}
-
-.is-invalid {
-    border-color: #dc3545 !important;
-}
-
-.alert-danger-ana {
-    background: #fee;
-    border: 1px solid #fcc;
-    border-radius: 8px;
-    padding: 0.875rem 1rem;
-    color: #c33;
-    margin-bottom: 1rem;
-}
-
-/* Responsive */
 @media (max-width: 991px) {
-    .booking-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .customer-sidebar {
-        position: static;
-    }
-}
-
-@media (max-width: 768px) {
-    .page-header {
-        padding: 2rem 0 1.5rem;
-    }
-
-    .page-header h1 {
-        font-size: 1.5rem;
-    }
-
-    .form-card,
-    .customer-sidebar {
-        padding: 1.25rem;
-    }
-
-    .row .col-md-6 {
-        flex: 0 0 100%;
-        max-width: 100%;
-    }
+  .booking-grid { grid-template-columns: 1fr; }
+  .customer-sidebar { position: static; }
 }
 </style>
 {% endblock %}
@@ -238,235 +23,170 @@
 {% block content %}
 <!-- Page Header -->
 <section class="page-header">
-    <div class="container">
-        <h1>Đặt Lịch Hẹn</h1>
-        <p class="subtitle mb-0">Chọn dịch vụ và thời gian phù hợp</p>
-    </div>
+  <div class="container">
+    <h1>Đặt Lịch Hẹn</h1>
+    <p class="subtitle">Chọn dịch vụ và thời gian phù hợp</p>
+  </div>
 </section>
 
-<!-- Booking Section -->
-<section class="booking-section">
-    <div class="booking-container">
+<section style="padding: 2rem 0 3rem;">
+  <div class="container" style="max-width:1100px;">
 
-        {% if form.non_field_errors %}
-        <div class="alert alert-danger-ana" role="alert">
-            <i class="fas fa-exclamation-circle me-2"></i>
-            {% for error in form.non_field_errors %}
-                {{ error }}
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <form method="post" action="{% url 'appointments:booking' %}" id="bookingForm" novalidate>
-            {% csrf_token %}
-
-            <div class="booking-grid">
-
-                <!-- LEFT COLUMN: Thông tin khách hàng -->
-                <div class="customer-sidebar">
-                    <h4><i class="fas fa-user me-2"></i>Thông tin khách hàng</h4>
-                    <div class="mb-3">
-                        <label class="form-label">Họ và tên</label>
-                        <input type="text"
-                               name="customer_name"
-                               class="form-control"
-                               value="{{ customer_profile.full_name|default:request.user.get_full_name|default:request.user.username }}"
-                               placeholder="Nhập họ và tên">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Số điện thoại</label>
-                        <input type="tel"
-                               name="customer_phone"
-                               class="form-control"
-                               value="{{ customer_profile.phone|default:request.user.username }}"
-                               placeholder="Nhập số điện thoại">
-                    </div>
-                    <div class="mb-0">
-                        <label class="form-label">Email</label>
-                        <input type="email"
-                               name="customer_email"
-                               class="form-control"
-                               value="{{ customer_profile.email|default:request.user.email }}"
-                               placeholder="Nhập email">
-                    </div>
-                </div>
-
-                <!-- RIGHT COLUMN: Dịch vụ + Ngày giờ + Ghi chú + Button -->
-                <div class="booking-main">
-
-                    <!-- Dịch vụ & Ngày giờ -->
-                    <div class="form-card">
-                        <h4><i class="fas fa-calendar-alt me-2"></i>Dịch vụ & Thời gian</h4>
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.service.id_for_label }}" class="form-label" style="font-size: 0.95rem; font-weight: 600;">
-                                    <i class="fas fa-spa me-1" style="font-size: 1.1rem;"></i>
-                                    Dịch vụ <span class="text-danger">*</span>
-                                </label>
-                                {{ form.service }}
-                                {% if form.service.errors %}
-                                {% for error in form.service.errors %}
-                                <div class="field-error">{{ error }}</div>
-                                {% endfor %}
-                                {% endif %}
-
-                                <!-- Variant dropdown (load động theo service) -->
-                                <label class="form-label mt-2" style="font-size: 0.85rem; font-weight: 600;">
-                                    <i class="fas fa-list me-1"></i>Gói dịch vụ <span class="text-danger">*</span>
-                                </label>
-                                {{ form.service_variant }}
-                                {% if form.service_variant.errors %}
-                                {% for error in form.service_variant.errors %}
-                                <div class="field-error">{{ error }}</div>
-                                {% endfor %}
-                                {% endif %}
-
-                                <div class="service-info-box">
-                                    <div class="service-info-item">
-                                        <i class="far fa-clock"></i>
-                                        <span>Thời lượng: <span class="value" id="serviceDuration">-</span></span>
-                                    </div>
-                                    <div class="service-info-item">
-                                        <i class="fas fa-tag"></i>
-                                        <span>Giá: <span class="value" id="servicePrice">-</span></span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.appointment_date.id_for_label }}" class="form-label" style="font-size: 0.95rem; font-weight: 600;">
-                                    <i class="far fa-calendar-alt me-1" style="font-size: 1.1rem;"></i>
-                                    Ngày hẹn <span class="text-danger">*</span>
-                                </label>
-                                {{ form.appointment_date }}
-                                {% if form.appointment_date.errors %}
-                                {% for error in form.appointment_date.errors %}
-                                <div class="field-error">{{ error }}</div>
-                                {% endfor %}
-                                {% endif %}
-
-                                <label for="{{ form.appointment_time.id_for_label }}" class="form-label mt-3" style="font-size: 0.95rem; font-weight: 600;">
-                                    <i class="far fa-clock me-1" style="font-size: 1.1rem;"></i>
-                                    Giờ hẹn <span class="text-danger">*</span>
-                                </label>
-                                {{ form.appointment_time }}
-                                {% if form.appointment_time.errors %}
-                                {% for error in form.appointment_time.errors %}
-                                <div class="field-error">{{ error }}</div>
-                                {% endfor %}
-                                {% endif %}
-                                <small class="text-muted" style="font-size: 0.85rem; font-weight: 500;">
-                                    <i class="far fa-clock me-1"></i>
-                                    Giờ làm việc: 9:00 - 21:00
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Ghi chú -->
-                    <div class="form-card">
-                        <h4><i class="far fa-sticky-note me-2"></i>Ghi chú</h4>
-                        {{ form.notes }}
-                        {% if form.notes.errors %}
-                        {% for error in form.notes.errors %}
-                        <div class="field-error">{{ error }}</div>
-                        {% endfor %}
-                        {% endif %}
-                    </div>
-
-                    <!-- Button -->
-                    <button type="submit" class="btn btn-submit">
-                        <i class="fas fa-calendar-check me-2"></i>
-                        Xác nhận đặt lịch
-                    </button>
-
-                </div>
-
-            </div>
-        </form>
+    {% if form.non_field_errors %}
+    <div class="alert-danger-ana mb-3">
+      <i class="fas fa-exclamation-circle me-2"></i>
+      {% for e in form.non_field_errors %}{{ e }}{% endfor %}
     </div>
+    {% endif %}
+
+    <form method="post" action="{% url 'appointments:booking' %}" id="bookingForm" novalidate>
+      {% csrf_token %}
+      <div class="booking-grid">
+
+        <!-- LEFT: Thông tin khách hàng -->
+        <div class="lux-card customer-sidebar" style="padding:1.5rem;">
+          <h4 style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-secondary);margin-bottom:1.25rem;padding-bottom:.75rem;border-bottom:1px solid var(--border);">
+            Thông tin khách hàng
+          </h4>
+          <div class="lux-field">
+            <label class="lux-label">Họ và tên</label>
+            <input type="text" name="customer_name" class="lux-input"
+                   value="{{ customer_profile.full_name|default:request.user.get_full_name|default:request.user.username }}"
+                   placeholder="Nhập họ và tên">
+          </div>
+          <div class="lux-field">
+            <label class="lux-label">Số điện thoại</label>
+            <input type="tel" name="customer_phone" class="lux-input"
+                   value="{{ customer_profile.phone|default:request.user.username }}"
+                   placeholder="Nhập số điện thoại">
+          </div>
+          <div class="lux-field" style="margin-bottom:0;">
+            <label class="lux-label">Email</label>
+            <input type="email" name="customer_email" class="lux-input"
+                   value="{{ customer_profile.email|default:request.user.email }}"
+                   placeholder="Nhập email">
+          </div>
+        </div>
+
+        <!-- RIGHT: Dịch vụ + Ngày giờ + Ghi chú + Submit -->
+        <div style="display:flex;flex-direction:column;gap:1rem;">
+
+          <!-- Dịch vụ & Thời gian -->
+          <div class="lux-card" style="padding:1.5rem;">
+            <h4 style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-secondary);margin-bottom:1.25rem;padding-bottom:.75rem;border-bottom:1px solid var(--border);">
+              Dịch vụ &amp; Thời gian
+            </h4>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="lux-field">
+                  <label class="lux-label" for="{{ form.service.id_for_label }}">Dịch vụ <span style="color:var(--danger);">*</span></label>
+                  {{ form.service }}
+                  {% for e in form.service.errors %}<div class="lux-field-error">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="lux-field">
+                  <label class="lux-label">Gói dịch vụ <span style="color:var(--danger);">*</span></label>
+                  {{ form.service_variant }}
+                  {% for e in form.service_variant.errors %}<div class="lux-field-error">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="service-info-box">
+                  <div class="service-info-item">
+                    <i class="far fa-clock"></i>
+                    <span>Thời lượng: <span class="value" id="serviceDuration">—</span></span>
+                  </div>
+                  <div class="service-info-item">
+                    <i class="fas fa-tag"></i>
+                    <span>Giá: <span class="value" id="servicePrice">—</span></span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="lux-field">
+                  <label class="lux-label" for="{{ form.appointment_date.id_for_label }}">Ngày hẹn <span style="color:var(--danger);">*</span></label>
+                  {{ form.appointment_date }}
+                  {% for e in form.appointment_date.errors %}<div class="lux-field-error">{{ e }}</div>{% endfor %}
+                </div>
+                <div class="lux-field">
+                  <label class="lux-label" for="{{ form.appointment_time.id_for_label }}">Giờ hẹn <span style="color:var(--danger);">*</span></label>
+                  {{ form.appointment_time }}
+                  {% for e in form.appointment_time.errors %}<div class="lux-field-error">{{ e }}</div>{% endfor %}
+                  <p style="font-size:.75rem;color:var(--text-muted);margin-top:5px;">Giờ làm việc: 9:00 – 21:00</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ghi chú -->
+          <div class="lux-card" style="padding:1.5rem;">
+            <h4 style="font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-secondary);margin-bottom:1rem;padding-bottom:.75rem;border-bottom:1px solid var(--border);">
+              Ghi chú
+            </h4>
+            {{ form.notes }}
+            {% for e in form.notes.errors %}<div class="lux-field-error">{{ e }}</div>{% endfor %}
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" class="btn-lux btn-lux-full btn-lux-lg">
+            <i class="fas fa-calendar-check"></i>
+            Xác nhận đặt lịch
+          </button>
+
+        </div>
+      </div>
+    </form>
+  </div>
 </section>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// Variants data từ backend: { "serviceId": [{id, label, duration_minutes, price}, ...] }
 const servicesVariantsData = {{ services_variants_json|safe }};
-
 document.addEventListener('DOMContentLoaded', function() {
-    // Set minimum date to today
-    const dateInput = document.getElementById('{{ form.appointment_date.id_for_label }}');
-    const today = new Date().toISOString().split('T')[0];
-    if (dateInput) {
-        dateInput.setAttribute('min', today);
-        dateInput.value = today;
+  const dateInput = document.getElementById('{{ form.appointment_date.id_for_label }}');
+  const today = new Date().toISOString().split('T')[0];
+  if (dateInput) { dateInput.setAttribute('min', today); dateInput.value = today; }
+
+  const serviceSelect = document.getElementById('{{ form.service.id_for_label }}');
+  const variantSelect = document.getElementById('id_service_variant');
+  const durationSpan  = document.getElementById('serviceDuration');
+  const priceSpan     = document.getElementById('servicePrice');
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const serviceIdFromUrl = urlParams.get('service_id') || urlParams.get('service');
+  if (serviceIdFromUrl && serviceSelect) serviceSelect.value = serviceIdFromUrl;
+
+  function updateVariants() {
+    if (!serviceSelect || !variantSelect) return;
+    const variants = servicesVariantsData[serviceSelect.value] || [];
+    variantSelect.innerHTML = '<option value="">— Chọn gói dịch vụ —</option>';
+    variants.forEach(function(v) {
+      const opt = document.createElement('option');
+      opt.value = v.id;
+      opt.textContent = v.label + ' — ' + v.price.toLocaleString('vi-VN') + ' VNĐ (' + v.duration_minutes + ' phút)';
+      opt.dataset.duration = v.duration_minutes;
+      opt.dataset.price = v.price;
+      variantSelect.appendChild(opt);
+    });
+    if (variants.length === 1) variantSelect.value = variants[0].id;
+    updateServiceInfo();
+  }
+
+  function updateServiceInfo() {
+    if (!variantSelect) return;
+    const opt = variantSelect.options[variantSelect.selectedIndex];
+    if (opt && opt.value) {
+      if (durationSpan) durationSpan.textContent = opt.dataset.duration + ' phút';
+      if (priceSpan) priceSpan.textContent = parseFloat(opt.dataset.price).toLocaleString('vi-VN') + ' VNĐ';
+    } else {
+      if (durationSpan) durationSpan.textContent = '—';
+      if (priceSpan) priceSpan.textContent = '—';
     }
+  }
 
-    const serviceSelect = document.getElementById('{{ form.service.id_for_label }}');
-    const variantSelect = document.getElementById('id_service_variant');
-    const durationSpan = document.getElementById('serviceDuration');
-    const priceSpan = document.getElementById('servicePrice');
+  if (serviceSelect) { serviceSelect.addEventListener('change', updateVariants); setTimeout(updateVariants, 50); }
+  if (variantSelect) variantSelect.addEventListener('change', updateServiceInfo);
 
-    // Pre-select service từ URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const serviceIdFromUrl = urlParams.get('service_id') || urlParams.get('service');
-    if (serviceIdFromUrl && serviceSelect) {
-        serviceSelect.value = serviceIdFromUrl;
-    }
-
-    function updateVariants() {
-        if (!serviceSelect || !variantSelect) return;
-        const serviceId = serviceSelect.value;
-        const variants = servicesVariantsData[serviceId] || [];
-
-        // Reset variant dropdown
-        variantSelect.innerHTML = '<option value="">-- Chọn gói dịch vụ --</option>';
-        variants.forEach(function(v) {
-            const opt = document.createElement('option');
-            opt.value = v.id;
-            opt.textContent = v.label + ' - ' + v.price.toLocaleString('vi-VN') + ' VNĐ (' + v.duration_minutes + ' phút)';
-            opt.dataset.duration = v.duration_minutes;
-            opt.dataset.price = v.price;
-            variantSelect.appendChild(opt);
-        });
-
-        // Auto-select nếu chỉ có 1 variant
-        if (variants.length === 1) {
-            variantSelect.value = variants[0].id;
-        }
-
-        updateServiceInfo();
-    }
-
-    function updateServiceInfo() {
-        if (!variantSelect) return;
-        const selectedOpt = variantSelect.options[variantSelect.selectedIndex];
-        if (selectedOpt && selectedOpt.value) {
-            const duration = selectedOpt.dataset.duration;
-            const price = parseFloat(selectedOpt.dataset.price);
-            if (durationSpan) durationSpan.textContent = duration + ' phút';
-            if (priceSpan) priceSpan.textContent = price.toLocaleString('vi-VN') + ' VNĐ';
-        } else {
-            if (durationSpan) durationSpan.textContent = '-';
-            if (priceSpan) priceSpan.textContent = '-';
-        }
-    }
-
-    if (serviceSelect) {
-        serviceSelect.addEventListener('change', updateVariants);
-        // Trigger initial load
-        setTimeout(updateVariants, 50);
-    }
-
-    if (variantSelect) {
-        variantSelect.addEventListener('change', updateServiceInfo);
-    }
-
-    // Set time constraints
-    const timeInput = document.getElementById('{{ form.appointment_time.id_for_label }}');
-    if (timeInput) {
-        timeInput.setAttribute('min', '09:00');
-        timeInput.setAttribute('max', '21:00');
-    }
+  const timeInput = document.getElementById('{{ form.appointment_time.id_for_label }}');
+  if (timeInput) { timeInput.setAttribute('min', '09:00'); timeInput.setAttribute('max', '21:00'); }
 });
 </script>
 {% endblock %}

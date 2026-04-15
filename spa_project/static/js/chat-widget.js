@@ -402,30 +402,31 @@
             return;
         }
 
-        state.session = data.session;
+        // session có thể là null nếu khách chưa từng gửi tin nhắn
+        state.session = data.session || null;
         state.isBootstrapped = true;
 
         if (config.isAuthenticated) {
             clearGuestStorage();
         } else {
             state.guestKey = data.guestKey || state.guestKey;
-            persistGuestStorage();
+            if (state.session) {
+                persistGuestStorage();
+            }
         }
 
         renderWarning();
         renderMessages(data.messages || []);
-        const lastMessage = (data.messages || []).length ? data.messages[data.messages.length - 1] : null;
-        connectStream(lastMessage ? lastMessage.id : 0);
-        state.unreadCount = 0;
-        updateFloatingBadge();
-        await markCurrentSessionRead();
-    }
 
-    async function ensureChatReady() {
-        if (!state.isBootstrapped) {
-            await bootstrapChat();
+        if (state.session) {
+            const lastMessage = (data.messages || []).length ? data.messages[data.messages.length - 1] : null;
+            connectStream(lastMessage ? lastMessage.id : 0);
+            state.unreadCount = 0;
+            updateFloatingBadge();
+            await markCurrentSessionRead();
         }
     }
+
 
     async function handleSend(event) {
         event.preventDefault();
@@ -434,10 +435,9 @@
             return;
         }
 
-        await ensureChatReady();
-        if (!state.session) {
-            setErrorMessage(config.sendErrorMessage);
-            return;
+        // Nếu chưa bootstrap (chưa mở chat lần nào), thực hiện bootstrap trước
+        if (!state.isBootstrapped) {
+            await bootstrapChat();
         }
 
         const clientMessageId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -457,16 +457,31 @@
         updateSendButtonState();
         setErrorMessage("");
 
-        const payload = {
-            content: content,
-            clientMessageId: clientMessageId,
-        };
+        let data;
 
-        if (!config.isAuthenticated) {
-            payload.guestKey = state.guestKey;
+        if (!state.session) {
+            // Tin nhắn đầu tiên — tạo session mới đồng thời
+            const payload = {
+                content: content,
+                clientMessageId: clientMessageId,
+                sourcePage: window.location.pathname,
+            };
+            if (!config.isAuthenticated && state.guestKey) {
+                payload.guestKey = state.guestKey;
+            }
+            data = await apiPostJson(config.sendNewUrl, payload);
+        } else {
+            // Session đã tồn tại — gửi bình thường
+            const payload = {
+                content: content,
+                clientMessageId: clientMessageId,
+            };
+            if (!config.isAuthenticated) {
+                payload.guestKey = state.guestKey;
+            }
+            data = await apiPostJson(buildChatUrl(config.sendUrlTemplate, state.session.chatCode), payload);
         }
 
-        const data = await apiPostJson(buildChatUrl(config.sendUrlTemplate, state.session.chatCode), payload);
         if (!data.success) {
             updatePendingMessage(
                 clientMessageId,
@@ -479,9 +494,15 @@
         }
 
         if (data.session) {
+            const isFirstMessage = !state.session;
             state.session = data.session;
             if (!config.isAuthenticated) {
+                state.guestKey = data.guestKey || state.guestKey;
                 persistGuestStorage();
+            }
+            // Kết nối stream ngay sau khi session được tạo lần đầu
+            if (isFirstMessage) {
+                connectStream(data.message ? data.message.id : 0);
             }
         }
 
@@ -498,7 +519,11 @@
             scrollMessagesToBottom();
         }, 120);
 
-        ensureChatReady();
+        // Chỉ bootstrap để load lịch sử nếu có thể có session cũ.
+        // Không tạo session mới — session chỉ tạo khi gửi tin nhắn đầu tiên.
+        if (!state.isBootstrapped) {
+            bootstrapChat();
+        }
         markCurrentSessionRead();
     }
 

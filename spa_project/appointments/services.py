@@ -21,16 +21,18 @@ from .models import Appointment, Room
 # APPOINTMENT VALIDATION SERVICES
 # =====================================================
 
-def validate_appointment_date(appointment_date): # hàm kiểm tra ngày hợp lệ
+def validate_appointment_date(appointment_date, is_staff_confirm=False): # hàm kiểm tra ngày hợp lệ
     """
     Kiểm tra ngày hẹn có hợp lệ không
 
     Quy tắc:
-    - Không được chọn ngày trong quá khứ
+    - Không được chọn ngày trong quá khứ (chỉ áp dụng khi khách đặt online)
+    - Staff xác nhận booking cũ được phép dùng ngày quá khứ
     - Sử dụng timezone của Django ( Asia/Ho_Chi_Minh)
 
     Args:
         appointment_date: date object - ngày cần kiểm tra
+        is_staff_confirm: bool - True nếu staff đang xác nhận/sửa lịch (bỏ qua check ngày quá khứ)
 
     Returns:
         None
@@ -38,6 +40,10 @@ def validate_appointment_date(appointment_date): # hàm kiểm tra ngày hợp l
     Raises:
         ValidationError: Nếu ngày không hợp lệ
     """
+    # Staff xác nhận booking → không check ngày quá khứ
+    if is_staff_confirm:
+        return
+
     # Lấy ngày hiện tại theo timezone của Django
     # QUAN TRỌNG: Dùng timezone.now().date() thay vì date.today()
     # để đảm bảo đúng múi giờ configured trong settings.TIME_ZONE
@@ -213,7 +219,8 @@ def validate_appointment_create(
     duration_minutes,
     room_code=None,
     exclude_appointment_code=None,
-    guests=1
+    guests=1,
+    is_staff_confirm=False
 ):
     """
     Validate toàn bộ trước khi tạo/sửa lịch hẹn
@@ -229,6 +236,7 @@ def validate_appointment_create(
         duration_minutes: int - thời lượng
         room_code: str - mã phòng (optional)
         exclude_appointment_code: str - mã lịch hẹn cần loại trừ (khi sửa)
+        is_staff_confirm: bool - True nếu staff đang xác nhận/sửa (bỏ qua check ngày quá khứ)
 
     Returns:
         dict: {'valid': bool, 'errors': list}
@@ -237,7 +245,7 @@ def validate_appointment_create(
 
     # 1. Validate ngày
     try:
-        validate_appointment_date(appointment_date)
+        validate_appointment_date(appointment_date, is_staff_confirm=is_staff_confirm)
     except ValidationError as e:
         errors.append(str(e.message))
 

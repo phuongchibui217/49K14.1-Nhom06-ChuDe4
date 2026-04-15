@@ -1,288 +1,110 @@
 {% load static %}
-<!-- Header -->
 <header class="header-fixed">
-    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'pages:home' %}">
-                <i class="fas fa-spa text-warning me-2"></i>
-                <span class="brand-text">Spa ANA</span>
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'pages:home' %}">Trang chủ</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}" href="{% url 'pages:about' %}">Về Spa ANA</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'service_list' %}active{% endif %}" href="{% url 'spa_services:service_list' %}">Dịch vụ</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'booking' %}active{% endif %}" href="{% url 'appointments:booking' %}">Đặt lịch</a>
-                    </li>
-                </ul>
-                <!-- Right side: User menu -->
-                <div class="d-flex align-items-center">
-                    {% if user.is_authenticated %}
-                        {% if user.is_staff or user.is_superuser %}
-                            {# --- NHÂN VIÊN / ADMIN --- #}
-                            <div class="avatar-dropdown dropdown">
-                                <button class="avatar-btn" type="button" id="avatarDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <div class="avatar-circle">
-                                        {% if user.staff_profile.full_name %}
-                                            {{ user.staff_profile.full_name|slice:":1"|upper }}
-                                        {% else %}
-                                            {{ user.username|slice:":1"|upper }}
-                                        {% endif %}
-                                    </div>
-                                    <span class="avatar-name d-none d-lg-inline">
-                                        {% if user.staff_profile.full_name %}
-                                            {{ user.staff_profile.full_name|truncatechars:15 }}
-                                        {% else %}
-                                            {{ user.username|truncatechars:15 }}
-                                        {% endif %}
-                                    </span>
-                                    <i class="fas fa-chevron-down ms-1 avatar-chevron"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end avatar-menu" aria-labelledby="avatarDropdown">
-                                    <li>
-                                        <a class="dropdown-item" href="/manage/appointments/">
-                                            <i class="fas fa-tachometer-alt"></i>
-                                            <span>Trang quản lý</span>
-                                        </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <a class="dropdown-item text-danger logout-link" href="{% url 'accounts:logout' %}">
-                                            <i class="fas fa-sign-out-alt"></i>
-                                            <span>Đăng xuất</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        {% else %}
-                            {# --- KHÁCH HÀNG --- #}
-                            <div class="avatar-dropdown dropdown">
-                                <button class="avatar-btn" type="button" id="avatarDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <div class="avatar-circle">
-                                        {% if user.customer_profile.full_name %}
-                                            {{ user.customer_profile.full_name|slice:":1"|upper }}
-                                        {% else %}
-                                            {{ user.username|slice:":1"|upper }}
-                                        {% endif %}
-                                    </div>
-                                    <span class="avatar-name d-none d-lg-inline">
-                                        {% if user.customer_profile.full_name %}
-                                            {{ user.customer_profile.full_name|truncatechars:15 }}
-                                        {% else %}
-                                            {{ user.username|truncatechars:15 }}
-                                        {% endif %}
-                                    </span>
-                                    <i class="fas fa-chevron-down ms-1 avatar-chevron"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end avatar-menu" aria-labelledby="avatarDropdown">
-                                    <li>
-                                        <a class="dropdown-item {% if request.resolver_match.url_name == 'my_appointments' %}active{% endif %}" href="{% url 'appointments:my_appointments' %}">
-                                            <i class="fas fa-calendar-check"></i>
-                                            <span>Lịch hẹn của tôi</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item {% if request.resolver_match.url_name == 'customer_complaint_list' %}active{% endif %}" href="{% url 'complaints:customer_complaint_list' %}">
-                                            <i class="fas fa-clipboard-list"></i>
-                                            <span>Khiếu nại của tôi</span>
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item {% if request.resolver_match.url_name == 'customer_profile' %}active{% endif %}" href="{% url 'customers:customer_profile' %}">
-                                            <i class="fas fa-user-cog"></i>
-                                            <span>Tài khoản cá nhân</span>
-                                        </a>
-                                    </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <a class="dropdown-item text-danger logout-link" href="{% url 'accounts:logout' %}">
-                                            <i class="fas fa-sign-out-alt"></i>
-                                            <span>Đăng xuất</span>
-                                        </a>
-                                    </li>
-                                </ul>
-                            </div>
-                        {% endif %}
-                    {% else %}
-                        <!-- Login/Register buttons -->
-                        <a class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %} me-2" href="{% url 'accounts:login' %}">Đăng nhập</a>
-                        <a class="btn btn-warning text-white px-3" href="{% url 'accounts:register' %}">Đăng ký</a>
-                    {% endif %}
+  <nav class="navbar navbar-expand-lg">
+    <div class="container">
+      <a class="navbar-brand" href="{% url 'pages:home' %}">
+        <i class="fas fa-spa brand-icon"></i>
+        <span class="brand-text">Spa ANA</span>
+      </a>
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'pages:home' %}">Trang chủ</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}" href="{% url 'pages:about' %}">Về Spa ANA</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'service_list' %}active{% endif %}" href="{% url 'spa_services:service_list' %}">Dịch vụ</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'booking' %}active{% endif %}" href="{% url 'appointments:booking' %}">Đặt lịch</a>
+          </li>
+        </ul>
+
+        <div class="d-flex align-items-center gap-2">
+          {% if user.is_authenticated %}
+            <div class="avatar-dropdown dropdown">
+              <button class="avatar-btn d-flex align-items-center gap-2" type="button"
+                      id="avatarDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <div class="avatar-circle">
+                  {% if user.is_staff or user.is_superuser %}
+                    {% if user.staff_profile.full_name %}{{ user.staff_profile.full_name|slice:":1"|upper }}
+                    {% else %}{{ user.username|slice:":1"|upper }}{% endif %}
+                  {% else %}
+                    {% if user.customer_profile.full_name %}{{ user.customer_profile.full_name|slice:":1"|upper }}
+                    {% else %}{{ user.username|slice:":1"|upper }}{% endif %}
+                  {% endif %}
                 </div>
+                <span class="d-none d-lg-inline" style="font-size:.875rem;font-weight:500;color:var(--text-primary);">
+                  {% if user.is_staff or user.is_superuser %}
+                    {% if user.staff_profile.full_name %}{{ user.staff_profile.full_name|truncatechars:14 }}
+                    {% else %}{{ user.username|truncatechars:14 }}{% endif %}
+                  {% else %}
+                    {% if user.customer_profile.full_name %}{{ user.customer_profile.full_name|truncatechars:14 }}
+                    {% else %}{{ user.username|truncatechars:14 }}{% endif %}
+                  {% endif %}
+                </span>
+                <i class="fas fa-chevron-down" style="font-size:.65rem;color:var(--text-muted);transition:transform .2s;" id="avatarChevron"></i>
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end" style="min-width:210px;border:none;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.11);padding:6px;">
+                {% if user.is_staff or user.is_superuser %}
+                  <li>
+                    <a class="dropdown-item" href="/manage/appointments/" style="border-radius:10px;padding:10px 14px;font-size:.875rem;display:flex;align-items:center;gap:10px;">
+                      <i class="fas fa-tachometer-alt" style="color:var(--gold);width:16px;"></i> Trang quản lý
+                    </a>
+                  </li>
+                {% else %}
+                  <li>
+                    <a class="dropdown-item {% if request.resolver_match.url_name == 'my_appointments' %}active{% endif %}"
+                       href="{% url 'appointments:my_appointments' %}" style="border-radius:10px;padding:10px 14px;font-size:.875rem;display:flex;align-items:center;gap:10px;">
+                      <i class="fas fa-calendar-check" style="color:var(--gold);width:16px;"></i> Lịch hẹn của tôi
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item {% if request.resolver_match.url_name == 'customer_complaint_list' %}active{% endif %}"
+                       href="{% url 'complaints:customer_complaint_list' %}" style="border-radius:10px;padding:10px 14px;font-size:.875rem;display:flex;align-items:center;gap:10px;">
+                      <i class="fas fa-clipboard-list" style="color:var(--gold);width:16px;"></i> Khiếu nại của tôi
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item {% if request.resolver_match.url_name == 'customer_profile' %}active{% endif %}"
+                       href="{% url 'customers:customer_profile' %}" style="border-radius:10px;padding:10px 14px;font-size:.875rem;display:flex;align-items:center;gap:10px;">
+                      <i class="fas fa-user-cog" style="color:var(--gold);width:16px;"></i> Tài khoản cá nhân
+                    </a>
+                  </li>
+                {% endif %}
+                <li><hr style="margin:4px 0;border-color:var(--border);"></li>
+                <li>
+                  <a class="dropdown-item logout-link" href="{% url 'accounts:logout' %}"
+                     style="border-radius:10px;padding:10px 14px;font-size:.875rem;display:flex;align-items:center;gap:10px;color:var(--danger);">
+                    <i class="fas fa-sign-out-alt" style="width:16px;"></i> Đăng xuất
+                  </a>
+                </li>
+              </ul>
             </div>
+          {% else %}
+            <a class="nav-link" href="{% url 'accounts:login' %}">Đăng nhập</a>
+            <a class="btn-lux btn-lux-sm" href="{% url 'accounts:register' %}">Đăng ký</a>
+          {% endif %}
         </div>
-    </nav>
+      </div>
+    </div>
+  </nav>
 </header>
 
-<!-- Avatar Dropdown Styles -->
-<style>
-/* Avatar Button */
-.avatar-dropdown {
-    position: relative;
-}
-
-.avatar-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: transparent;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 50px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.avatar-btn:hover {
-    background: rgba(212, 168, 83, 0.1);
-}
-
-.avatar-circle {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    font-size: 1rem;
-    border: 2px solid #d4a853;
-    transition: all 0.3s ease;
-}
-
-.avatar-btn:hover .avatar-circle {
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(212, 168, 83, 0.3);
-}
-
-.avatar-name {
-    color: #1e3a5f;
-    font-weight: 500;
-    font-size: 0.95rem;
-    max-width: 120px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    text-align: center;
-}
-
-.avatar-chevron {
-    font-size: 0.7rem;
-    color: #1e3a5f;
-    transition: transform 0.3s ease;
-}
-
-.avatar-btn[aria-expanded="true"] .avatar-chevron {
-    transform: rotate(180deg);
-}
-
-/* Dropdown Menu */
-.avatar-menu {
-    min-width: 220px;
-    padding: 8px 0;
-    border: none;
-    border-radius: 12px;
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-    margin-top: 8px;
-    animation: fadeInDown 0.2s ease;
-}
-
-@keyframes fadeInDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.avatar-menu .dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 20px;
-    color: #2d3748;
-    font-weight: 500;
-    transition: all 0.2s ease;
-}
-
-.avatar-menu .dropdown-item i {
-    width: 20px;
-    text-align: center;
-    color: #1e3a5f;
-}
-
-.avatar-menu .dropdown-item:hover {
-    background: linear-gradient(135deg, rgba(30, 58, 95, 0.05) 0%, rgba(212, 168, 83, 0.1) 100%);
-    color: #1e3a5f;
-}
-
-.avatar-menu .dropdown-item.active {
-    background: linear-gradient(135deg, rgba(212, 168, 83, 0.15) 0%, rgba(212, 168, 83, 0.1) 100%);
-    color: #d4a853;
-    font-weight: 600;
-}
-
-.avatar-menu .dropdown-item.active i {
-    color: #d4a853;
-}
-
-.avatar-menu .dropdown-item.text-danger i {
-    color: #e53e3e;
-}
-
-.avatar-menu .dropdown-item.text-danger:hover {
-    background: rgba(229, 62, 62, 0.1);
-    color: #c53030;
-}
-
-.avatar-menu .dropdown-divider {
-    margin: 4px 0;
-    border-color: #e2e8f0;
-}
-
-/* Mobile Responsive */
-@media (max-width: 991px) {
-    .avatar-dropdown {
-        margin-top: 10px;
-    }
-    
-    .avatar-btn {
-        padding: 8px 16px;
-    }
-    
-    .avatar-menu {
-        position: absolute !important;
-        right: 0;
-        left: auto !important;
-    }
-}
-
-@media (max-width: 575px) {
-    .avatar-name {
-        display: none !important;
-    }
-    
-    .avatar-chevron {
-        display: none;
-    }
-    
-    .avatar-btn {
-        padding: 6px;
-    }
-}
-</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const btn = document.getElementById('avatarDropdown');
+  const chevron = document.getElementById('avatarChevron');
+  if (btn && chevron) {
+    btn.addEventListener('click', function() {
+      const expanded = btn.getAttribute('aria-expanded') === 'true';
+      chevron.style.transform = expanded ? 'rotate(0deg)' : 'rotate(180deg)';
+    });
+  }
+});
+</script>

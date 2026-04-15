@@ -102,7 +102,11 @@ def api_appointments_list(request):
     if not _is_staff(request.user):
         return _deny()
 
-    appointments = Appointment.objects.all()
+    # Scheduler chỉ hiện lịch đã xác nhận
+    # ONLINE + PENDING → thuộc tab "Yêu cầu đặt lịch", không hiện ở đây
+    appointments = Appointment.objects.exclude(
+        source='ONLINE', status='PENDING'
+    )
 
     # Lọc theo ngày
     date_filter = request.GET.get('date', '')
@@ -605,16 +609,21 @@ def api_booking_requests(request):
         return _deny()
 
     # Lấy lịch online + lịch cũ (source=NULL)
-    appointments = Appointment.objects.filter(Q(source='ONLINE') | Q(source__isnull=True))
+    # Chỉ lấy PENDING (chờ xử lý) và CANCELLED (đã từ chối)
+    # Lịch đã xác nhận (NOT_ARRIVED trở lên) → thuộc tab "Lịch theo phòng"
+    appointments = Appointment.objects.filter(
+        Q(source='ONLINE') | Q(source__isnull=True),
+        status__in=['PENDING', 'CANCELLED']
+    )
 
     # Lọc theo ngày
     date_filter = request.GET.get('date', '')
     if date_filter:
         appointments = appointments.filter(appointment_date=date_filter)
 
-    # Lọc theo trạng thái — chấp nhận cả uppercase lẫn lowercase từ FE
+    # Lọc theo trạng thái — chỉ cho phép PENDING hoặc CANCELLED
     status_filter = request.GET.get('status', '').strip().upper()
-    if status_filter:
+    if status_filter and status_filter in ['PENDING', 'CANCELLED']:
         appointments = appointments.filter(status=status_filter)
 
     # Tìm kiếm
@@ -627,8 +636,17 @@ def api_booking_requests(request):
             Q(service__name__icontains=search)
         )
 
-    # Sắp xếp theo mã lịch hẹn (mới nhất lên đầu)
-    appointments = appointments.order_by('-created_at')
+    # Sắp xếp: PENDING lên đầu, sau đó CANCELLED, theo thời gian tạo mới nhất
+    from django.db.models import Case, When, IntegerField
+    appointments = appointments.order_by(
+        Case(
+            When(status='PENDING', then=0),
+            When(status='CANCELLED', then=1),
+            default=2,
+            output_field=IntegerField()
+        ),
+        '-created_at'
+    )
     data = [serialize_appointment(appt) for appt in appointments]
 
     return JsonResponse({'success': True, 'appointments': data})
@@ -833,10 +851,10 @@ def api_booking_pending_count(request):
         return _deny()
 
     try:
-        # Đếm số lượng booking online chưa xử lý (PENDING + NOT_ARRIVED)
+        # Chỉ đếm PENDING — đây là yêu cầu chưa xử lý
         pending_count = Appointment.objects.filter(
             Q(source='ONLINE') | Q(source__isnull=True),
-            status__in=['PENDING', 'NOT_ARRIVED']
+            status='PENDING'
         ).count()
 
         return JsonResponse({
@@ -860,10 +878,10 @@ def _booking_count_stream_generator():
     """
     while True:
         try:
-            # Đếm số lượng booking online chưa xử lý (PENDING + NOT_ARRIVED)
+            # Chỉ đếm PENDING — đây là yêu cầu chưa xử lý
             pending_count = Appointment.objects.filter(
                 Q(source='ONLINE') | Q(source__isnull=True),
-                status__in=['PENDING', 'NOT_ARRIVED']
+                status='PENDING'
             ).count()
 
             # Format SSE response

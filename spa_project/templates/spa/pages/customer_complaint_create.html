@@ -1,356 +1,145 @@
 {% extends 'spa/base.html' %}
 {% load static %}
-
 {% block title %}Gửi khiếu nại - Spa ANA{% endblock %}
 
-{% block extra_css %}
-<style>
-    /* Hero Section - Đồng bộ với booking.html */
-    .complaint-hero {
-        background: linear-gradient(135deg, #1e3a5f 0%, #2c5282 100%);
-        padding: 5rem 0 4rem;
-        text-align: center;
-        color: white;
-    }
-
-    /* Form Section */
-    .complaint-form-section {
-        padding: 3rem 0 4rem;
-        margin-top: -2rem;
-        position: relative;
-        z-index: 2;
-    }
-
-    /* Form Card - Đồng bộ với booking-card */
-    .complaint-card {
-        background: white;
-        border-radius: 24px;
-        box-shadow: 0 10px 40px rgba(30, 58, 95, 0.15);
-        padding: 3rem;
-        border: 1px solid #e2e8f0;
-    }
-
-    /* Section Title - Đồng bộ style */
-    .section-title {
-        font-size: 0.85rem;
-        font-weight: 700;
-        color: #2d3748;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-        margin-bottom: 1.5rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 2px solid #d4a835;
-        display: inline-block;
-    }
-
-    /* Form Controls - Đồng bộ với booking */
-    .form-control, .form-select {
-        border-radius: 12px;
-        border: 2px solid #e2e8f0;
-        padding: 0.75rem 1rem;
-        transition: all 0.3s ease;
-    }
-
-    .form-control:focus, .form-select:focus {
-        border-color: #d4a835;
-        box-shadow: 0 0 0 3px rgba(212, 168, 55, 0.1);
-    }
-
-    /* Customer Info Box */
-    .customer-info {
-        background: #f7fafc;
-        padding: 1.5rem;
-        border-radius: 12px;
-        margin-bottom: 1.5rem;
-        border-left: 4px solid #d4a835;
-    }
-
-    /* Breadcrumb Style */
-    .breadcrumb-wrapper {
-        margin-bottom: 1.5rem;
-    }
-
-    .breadcrumb {
-        background: transparent;
-        padding: 0;
-        margin-bottom: 0;
-    }
-
-    .breadcrumb-item a {
-        color: #1e3a5f;
-        text-decoration: none;
-        transition: color 0.3s ease;
-    }
-
-    .breadcrumb-item a:hover {
-        color: #d4a835;
-    }
-
-    .breadcrumb-item.active {
-        color: #64748b;
-    }
-
-    /* Field Error */
-    .field-error {
-        color: #dc3545;
-        font-size: 0.875rem;
-        margin-top: 0.25rem;
-    }
-
-    .is-invalid {
-        border-color: #dc3545 !important;
-    }
-
-    /* Required Star */
-    .required-star {
-        color: #dc3545;
-    }
-
-    /* Info Alert */
-    .info-alert {
-        background: linear-gradient(135deg, rgba(30, 58, 95, 0.05), rgba(212, 168, 53, 0.05));
-        border: 1px solid #e2e8f0;
-        border-left: 4px solid #d4a835;
-        border-radius: 12px;
-        padding: 1rem 1.25rem;
-    }
-
-    .info-alert i {
-        color: #d4a835;
-    }
-
-    /* Support Card */
-    .support-card {
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        padding: 1.5rem;
-        border: 1px solid #e2e8f0;
-    }
-
-    .support-card h5 {
-        color: #1e3a5f;
-    }
-
-    .support-card .btn-outline-primary {
-        border-color: #d4a835;
-        color: #d4a835;
-    }
-
-    .support-card .btn-outline-primary:hover {
-        background: linear-gradient(135deg, #d4a835, #f1c40f);
-        border-color: #d4a835;
-        color: white;
-    }
-
-    /* Button Group */
-    .btn-group-actions {
-        display: flex;
-        gap: 1rem;
-        justify-content: center;
-        margin-top: 2rem;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-        .complaint-hero {
-            padding: 4rem 0 3rem;
-        }
-
-        .complaint-card {
-            padding: 1.5rem;
-        }
-
-        .btn-group-actions {
-            flex-direction: column;
-        }
-
-        .btn-group-actions .btn {
-            width: 100%;
-        }
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<!-- Hero Section -->
-<section class="complaint-hero">
-    <div class="container">
-        <h1><i class="fas fa-paper-plane me-3"></i>Gửi Khiếu Nại</h1>
-        <p class="subtitle mb-0">Chúng tôi sẵn sàng lắng nghe và giải quyết vấn đề của bạn</p>
-    </div>
+<section class="page-header">
+  <div class="container">
+    <h1>Gửi Khiếu Nại</h1>
+    <p class="subtitle">Chúng tôi sẵn sàng lắng nghe và giải quyết vấn đề của bạn</p>
+  </div>
 </section>
 
-<!-- Complaint Form Section -->
-<section class="complaint-form-section">
-    <div class="container">
-        <!-- Breadcrumb -->
-        <div class="breadcrumb-wrapper">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item">
-                        <a href="{% url 'pages:home' %}">
-                            <i class="fas fa-home me-1"></i>Trang chủ
-                        </a>
-                    </li>
-                    <li class="breadcrumb-item">
-                        <a href="{% url 'complaints:customer_complaint_list' %}">Khiếu nại của tôi</a>
-                    </li>
-                    <li class="breadcrumb-item active">Gửi khiếu nại mới</li>
-                </ol>
-            </nav>
+<section style="padding:2.5rem 0 3rem;">
+  <div class="container" style="max-width:760px;">
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" style="margin-bottom:1.5rem;">
+      <ol class="breadcrumb" style="background:none;padding:0;font-size:.82rem;">
+        <li class="breadcrumb-item"><a href="{% url 'pages:home' %}" style="color:var(--text-secondary);">Trang chủ</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'complaints:customer_complaint_list' %}" style="color:var(--text-secondary);">Khiếu nại của tôi</a></li>
+        <li class="breadcrumb-item active" style="color:var(--text-muted);">Gửi mới</li>
+      </ol>
+    </nav>
+
+    <div class="lux-card" style="padding:2rem;">
+      <form method="post">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+        <div class="lux-alert lux-alert-error mb-3">
+          <i class="fas fa-exclamation-circle" style="flex-shrink:0;"></i>
+          <span>{% for e in form.non_field_errors %}{{ e }}{% endfor %}</span>
+        </div>
+        {% endif %}
+
+        <!-- Thông tin liên hệ (readonly) -->
+        <div style="background:var(--bg-subtle);border-radius:var(--r-md);padding:1.25rem;margin-bottom:1.5rem;">
+          <p style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-secondary);margin-bottom:1rem;">Thông tin liên hệ</p>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="lux-label">Họ và tên</label>
+              <input type="text" class="lux-input" value="{{ customer_profile.full_name|default:request.user.get_full_name|default:request.user.username }}" readonly style="opacity:.7;cursor:default;">
+            </div>
+            <div class="col-md-6">
+              <label class="lux-label">Số điện thoại</label>
+              <input type="tel" class="lux-input" value="{{ customer_profile.phone|default:'' }}" readonly style="opacity:.7;cursor:default;">
+            </div>
+          </div>
+          <p style="font-size:.75rem;color:var(--text-muted);margin-top:.625rem;margin-bottom:0;">
+            <i class="fas fa-info-circle me-1"></i>Thông tin lấy từ hồ sơ của bạn
+          </p>
         </div>
 
-        <div class="row justify-content-center">
-            <div class="col-lg-8">
-                <div class="complaint-card">
-                    <form method="post">
-                        {% csrf_token %}
-                        
-                        {# Hiển thị lỗi form nếu có #}
-                        {% if form.non_field_errors %}
-                        <div class="alert alert-danger" role="alert">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            {% for error in form.non_field_errors %}
-                                {{ error }}
-                            {% endfor %}
-                        </div>
-                        {% endif %}
-                        
-                        {# Thông tin khách hàng #}
-                        <div class="customer-info">
-                            <h4 class="section-title mb-3">
-                                <i class="fas fa-user me-2"></i>Thông tin liên hệ
-                            </h4>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label text-muted small">Họ và tên</label>
-                                    <input type="text" class="form-control"
-                                           value="{{ customer_profile.full_name|default:request.user.get_full_name|default:request.user.username }}" readonly>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label text-muted small">Số điện thoại</label>
-                                    <input type="tel" class="form-control"
-                                           value="{{ customer_profile.phone|default:'' }}" readonly>
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-12">
-                                    <label class="form-label text-muted small">Email</label>
-                                    <input type="email" class="form-control"
-                                           value="{{ request.user.email|default:'' }}" readonly>
-                                </div>
-                            </div>
-                            <small class="text-muted mt-2 d-block">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Thông tin được lấy từ hồ sơ của bạn
-                            </small>
-                        </div>
-                        
-                        {# Nội dung khiếu nại #}
-                        <div class="mb-4">
-                            <h4 class="section-title">
-                                <i class="fas fa-edit me-2"></i>Nội dung khiếu nại
-                            </h4>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">Tiêu đề <span class="required-star">*</span></label>
-                                <input type="text" name="title" class="form-control {% if form.title.errors %}is-invalid{% endif %}" 
-                                       value="{{ form.title.value|default:'' }}" 
-                                       placeholder="Tóm tắt ngắn gọn vấn đề của bạn" required>
-                                {% if form.title.errors %}
-                                    <div class="field-error">
-                                        <i class="fas fa-exclamation-circle me-1"></i>{{ form.title.errors.0 }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">Nội dung chi tiết <span class="required-star">*</span></label>
-                                <textarea name="content" class="form-control {% if form.content.errors %}is-invalid{% endif %}" 
-                                          rows="5" placeholder="Mô tả chi tiết vấn đề của bạn..." required>{{ form.content.value|default:'' }}</textarea>
-                                {% if form.content.errors %}
-                                    <div class="field-error">
-                                        <i class="fas fa-exclamation-circle me-1"></i>{{ form.content.errors.0 }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        {# Thông tin liên quan #}
-                        <div class="mb-4">
-                            <h4 class="section-title">
-                                <i class="fas fa-link me-2"></i>Thông tin liên quan
-                            </h4>
-                            
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Ngày xảy ra vấn đề</label>
-                                    <input type="date" name="incident_date" class="form-control" 
-                                           value="{{ form.incident_date.value|default:'' }}">
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Mã lịch hẹn liên quan</label>
-                                    <input type="text" name="appointment_code" class="form-control" 
-                                           value="{{ form.appointment_code.value|default:'' }}" 
-                                           placeholder="Nhập mã nếu có">
-                                </div>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">Dịch vụ liên quan</label>
-                                <select name="related_service" class="form-select">
-                                    <option value="">-- Chọn dịch vụ (nếu có) --</option>
-                                    {% for service in form.fields.related_service.queryset %}
-                                    <option value="{{ service.id }}" 
-                                            {% if form.related_service.value|stringformat:"s" == service.id|stringformat:"s" %}selected{% endif %}>
-                                        {{ service.name }}
-                                    </option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label class="form-label">Giải pháp mong muốn</label>
-                                <textarea name="expected_solution" class="form-control" rows="3" 
-                                          placeholder="Bạn mong muốn được giải quyết như thế nào?">{{ form.expected_solution.value|default:'' }}</textarea>
-                            </div>
-                        </div>
-                        
-                        {# Lưu ý #}
-                        <div class="info-alert mb-4">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Lưu ý:</strong> Khiếu nại của bạn sẽ được xử lý trong vòng 24-48 giờ làm việc. 
-                            Chúng tôi sẽ liên hệ với bạn qua số điện thoại hoặc email đã cung cấp.
-                        </div>
-                        
-                        {# Buttons #}
-                        <div class="btn-group-actions">
-                            <button type="submit" class="btn btn-warning btn-lg px-5">
-                                <i class="fas fa-paper-plane me-2"></i>Gửi khiếu nại
-                            </button>
-                            <a href="{% url 'complaints:customer_complaint_list' %}" class="btn btn-outline-secondary btn-lg px-5">
-                                <i class="fas fa-times me-2"></i>Hủy
-                            </a>
-                        </div>
-                    </form>
-                </div>
-                
-                <!-- Support Info Card -->
-                <div class="support-card mt-4">
-                    <h5><i class="fas fa-headset me-2"></i>Hỗ trợ nhanh</h5>
-                    <p class="text-muted mb-3">Nếu bạn cần hỗ trợ gấp, hãy liên hệ ngay:</p>
-                    <div class="d-flex gap-3 flex-wrap">
-                        <a href="tel:1900xxxx" class="btn btn-outline-primary">
-                            <i class="fas fa-phone me-2"></i>Hotline: 1900 xxxx
-                        </a>
-                        <a href="https://zalo.me" target="_blank" class="btn btn-outline-primary">
-                            <i class="fas fa-comment me-2"></i>Chat Zalo
-                        </a>
-                    </div>
-                </div>
-            </div>
+        <!-- Nội dung khiếu nại -->
+        <p style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-secondary);margin-bottom:1rem;padding-bottom:.625rem;border-bottom:1px solid var(--border);">Nội dung khiếu nại</p>
+
+        <div class="lux-field">
+          <label class="lux-label" for="id_title">Tiêu đề <span style="color:var(--danger);">*</span></label>
+          <input type="text" name="title" id="id_title"
+                 class="lux-input {% if form.title.errors %}is-invalid{% endif %}"
+                 value="{{ form.title.value|default:'' }}"
+                 placeholder="Tóm tắt ngắn gọn vấn đề của bạn" required>
+          {% if form.title.errors %}<div class="lux-field-error">{{ form.title.errors.0 }}</div>{% endif %}
         </div>
+
+        <div class="lux-field">
+          <label class="lux-label" for="id_content">Nội dung chi tiết <span style="color:var(--danger);">*</span></label>
+          <textarea name="content" id="id_content"
+                    class="lux-textarea {% if form.content.errors %}is-invalid{% endif %}"
+                    rows="5" placeholder="Mô tả chi tiết vấn đề của bạn..." required>{{ form.content.value|default:'' }}</textarea>
+          {% if form.content.errors %}<div class="lux-field-error">{{ form.content.errors.0 }}</div>{% endif %}
+        </div>
+
+        <!-- Thông tin liên quan -->
+        <p style="font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-secondary);margin-bottom:1rem;padding-bottom:.625rem;border-bottom:1px solid var(--border);">Thông tin liên quan</p>
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="lux-field">
+              <label class="lux-label">Ngày xảy ra</label>
+              <input type="date" name="incident_date" class="lux-input" value="{{ form.incident_date.value|default:'' }}">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="lux-field">
+              <label class="lux-label">Mã lịch hẹn</label>
+              <input type="text" name="appointment_code" class="lux-input"
+                     value="{{ form.appointment_code.value|default:'' }}" placeholder="Nhập mã nếu có">
+            </div>
+          </div>
+        </div>
+
+        <div class="lux-field">
+          <label class="lux-label">Dịch vụ liên quan</label>
+          <select name="related_service" class="lux-select">
+            <option value="">— Chọn dịch vụ (nếu có) —</option>
+            {% for service in form.fields.related_service.queryset %}
+            <option value="{{ service.id }}" {% if form.related_service.value|stringformat:"s" == service.id|stringformat:"s" %}selected{% endif %}>{{ service.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="lux-field">
+          <label class="lux-label">Giải pháp mong muốn</label>
+          <textarea name="expected_solution" class="lux-textarea" rows="3"
+                    placeholder="Bạn mong muốn được giải quyết như thế nào?">{{ form.expected_solution.value|default:'' }}</textarea>
+        </div>
+
+        <!-- Note -->
+        <div class="lux-alert lux-alert-warning mb-4">
+          <i class="fas fa-info-circle" style="flex-shrink:0;"></i>
+          <span>Khiếu nại sẽ được xử lý trong vòng 24–48 giờ làm việc. Chúng tôi sẽ liên hệ qua số điện thoại hoặc email đã cung cấp.</span>
+        </div>
+
+        <!-- Actions -->
+        <div class="d-flex gap-3 flex-wrap">
+          <button type="submit" class="btn-lux btn-lux-lg" style="flex:1;min-width:160px;">
+            <i class="fas fa-paper-plane"></i> Gửi khiếu nại
+          </button>
+          <a href="{% url 'complaints:customer_complaint_list' %}" class="btn-lux-ghost btn-lux-lg" style="flex:1;min-width:120px;display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:var(--r-lg);font-weight:600;font-size:1rem;">
+            Hủy
+          </a>
+        </div>
+      </form>
     </div>
+
+    <!-- Support card -->
+    <div class="lux-card mt-3" style="padding:1.25rem 1.5rem;">
+      <p style="font-size:.875rem;font-weight:600;color:var(--text-primary);margin-bottom:.5rem;">
+        <i class="fas fa-headset me-2" style="color:var(--gold);"></i>Hỗ trợ nhanh
+      </p>
+      <p style="font-size:.82rem;color:var(--text-secondary);margin-bottom:.875rem;">Nếu cần hỗ trợ gấp, liên hệ ngay:</p>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="tel:1900xxxx" class="btn-lux-outline btn-lux-sm">
+          <i class="fas fa-phone"></i> Hotline: 1900 xxxx
+        </a>
+        <a href="https://zalo.me" target="_blank" rel="noopener" class="btn-lux-outline btn-lux-sm">
+          <i class="fas fa-comment"></i> Chat Zalo
+        </a>
+      </div>
+    </div>
+
+  </div>
 </section>
 {% endblock %}

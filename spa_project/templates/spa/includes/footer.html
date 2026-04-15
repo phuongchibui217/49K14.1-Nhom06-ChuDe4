@@ -1,42 +1,38 @@
 {% load static %}
-<!-- Footer -->
-<footer class="footer py-5 bg-dark text-white">
-    <div class="container">
-        <div class="row g-4">
-            <div class="col-md-6 col-lg-3">
-                <h5 class="mb-4 text-warning">Spa ANA</h5>
-                <p>Chuyên cung cấp các dịch vụ làm đẹp và thư giãn cao cấp.</p>
-            </div>
-            <div class="col-md-6 col-lg-3">
-                <h5 class="mb-4 text-warning">Liên Hệ</h5>
-                <ul class="list-unstyled">
-                    <li class="mb-2"><i class="fas fa-phone me-2 text-warning"></i> Hotline: 1900 1234</li>
-                    <li class="mb-2"><i class="fas fa-map-marker-alt me-2 text-warning"></i> 123 Đường Nguyễn Huệ, Q.1, TP.HCM</li>
-                    <li class="mb-2"><i class="fas fa-envelope me-2 text-warning"></i> info@spasana.vn</li>
-                </ul>
-            </div>
-            <div class="col-md-6 col-lg-3">
-                <h5 class="mb-4 text-warning">Theo Dõi Chúng tôi</h5>
-                <div class="social-icons">
-                    <a href="#" class="btn btn-outline-light btn-sm me-2 mb-2"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#" class="btn btn-outline-light btn-sm me-2 mb-2"><i class="fab fa-instagram"></i></a>
-                    <a href="#" class="btn btn-outline-light btn-sm me-2 mb-2"><i class="fab fa-tiktok"></i></a>
-                    <a href="#" class="btn btn-outline-light btn-sm me-2 mb-2"><i class="fab fa-youtube"></i></a>
-                </div>
-            </div>
-            <div class="col-md-6 col-lg-3">
-                <h5 class="mb-4 text-warning">Đặt Lịch Ngay</h5>
-                <a href="{% url 'appointments:booking' %}" class="btn btn-warning w-100 mb-3">Đặt lịch hẹn</a>
-                <a href="https://maps.google.com" target="_blank" class="btn btn-outline-light w-100">
-                    <i class="fas fa-map me-2"></i>Google Maps
-                </a>
-            </div>
+<footer class="footer py-5">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-3">
+        <h5>Spa ANA</h5>
+        <p style="color:rgba(255,255,255,.55);font-size:.875rem;line-height:1.7;">Chuyên cung cấp các dịch vụ làm đẹp và thư giãn cao cấp.</p>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <h5>Liên Hệ</h5>
+        <ul class="list-unstyled" style="font-size:.875rem;">
+          <li class="mb-2" style="color:rgba(255,255,255,.55);"><i class="fas fa-phone me-2" style="color:var(--gold);"></i>Hotline: 1900 1234</li>
+          <li class="mb-2" style="color:rgba(255,255,255,.55);"><i class="fas fa-map-marker-alt me-2" style="color:var(--gold);"></i>123 Nguyễn Huệ, Q.1, TP.HCM</li>
+          <li class="mb-2" style="color:rgba(255,255,255,.55);"><i class="fas fa-envelope me-2" style="color:var(--gold);"></i>info@spasana.vn</li>
+        </ul>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <h5>Theo Dõi</h5>
+        <div class="social-icons d-flex flex-wrap gap-2">
+          <a href="#" class="btn" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+          <a href="#" class="btn" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+          <a href="#" class="btn" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+          <a href="#" class="btn" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
         </div>
-        <hr class="my-4 border-secondary">
-        <div class="row">
-            <div class="col-12 text-center">
-                <p class="mb-0 text-muted">© 2024 Spa ANA. All rights reserved.</p>
-            </div>
-        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <h5>Đặt Lịch</h5>
+        <a href="{% url 'appointments:booking' %}" class="btn-lux btn-lux-full mb-2" style="display:flex;justify-content:center;">Đặt lịch hẹn</a>
+        <a href="https://maps.google.com" target="_blank" rel="noopener"
+           style="display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:var(--r-md);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.65);font-size:.875rem;font-weight:500;transition:var(--ease);">
+          <i class="fas fa-map"></i> Google Maps
+        </a>
+      </div>
     </div>
+    <hr style="margin:2rem 0;border-color:rgba(255,255,255,.08);">
+    <p class="text-center mb-0" style="font-size:.8rem;color:rgba(255,255,255,.35);">© 2024 Spa ANA. All rights reserved.</p>
+  </div>
 </footer>

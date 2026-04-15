@@ -160,6 +160,12 @@
     color: #1d4ed8;
 }
 
+/* Customer-facing: NOT_ARRIVED + ARRIVED đều hiện "Đã xác nhận" */
+.status-confirmed {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
 .status-completed {
     background: #f0fdf4;
     color: #15803d;
@@ -291,9 +297,9 @@
                     Chờ xác nhận
                     {% if status_counts.pending > 0 %}<span class="pill-count">{{ status_counts.pending }}</span>{% endif %}
                 </a>
-                <a href="?status=not_arrived" class="filter-pill {% if status_filter == 'not_arrived' %}active{% endif %}">
+                <a href="?status=confirmed" class="filter-pill {% if status_filter == 'confirmed' %}active{% endif %}">
                     Đã xác nhận
-                    {% if status_counts.not_arrived > 0 %}<span class="pill-count">{{ status_counts.not_arrived }}</span>{% endif %}
+                    {% if status_counts.confirmed > 0 %}<span class="pill-count">{{ status_counts.confirmed }}</span>{% endif %}
                 </a>
                 <a href="?status=completed" class="filter-pill {% if status_filter == 'completed' %}active{% endif %}">
                     Hoàn thành
@@ -321,8 +327,8 @@
                                 <i class="fas fa-hashtag me-1"></i>{{ appointment.appointment_code }}
                             </div>
                         </div>
-                        <span class="status-badge status-{{ appointment.status|lower }}">
-                            {{ appointment.get_status_display }}
+                        <span class="status-badge status-{{ appointment.customer_status_css }}">
+                            {{ appointment.customer_status_label }}
                         </span>
                     </div>
 
@@ -353,7 +359,7 @@
                     {% endif %}
 
                     <!-- Footer: nút hủy (chỉ khi chưa hủy) -->
-                    {% if appointment.status == 'PENDING' or appointment.status == 'NOT_ARRIVED' or appointment.status == 'pending' or appointment.status == 'not_arrived' %}
+                    {% if appointment.status == 'PENDING' or appointment.status == 'NOT_ARRIVED' or appointment.status == 'ARRIVED' %}
                     <div class="card-action-footer">
                         <form method="post"
                               action="{% url 'appointments:cancel_appointment' appointment.id %}"

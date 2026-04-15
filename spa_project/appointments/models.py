@@ -127,6 +127,39 @@ class Appointment(models.Model):
             ),
         ]
 
+    # ------------------------------------------------------------------
+    # Customer-facing status (khác với staff/internal status)
+    # NOT_ARRIVED / ARRIVED → "Đã xác nhận" (spa đã xác nhận lịch)
+    # PENDING               → "Chờ xác nhận"
+    # COMPLETED             → "Hoàn thành"
+    # CANCELLED             → "Đã hủy"
+    # ------------------------------------------------------------------
+    CUSTOMER_STATUS_LABELS = {
+        'PENDING':     'Chờ xác nhận',
+        'NOT_ARRIVED': 'Đã xác nhận',
+        'ARRIVED':     'Đã xác nhận',
+        'COMPLETED':   'Hoàn thành',
+        'CANCELLED':   'Đã hủy',
+    }
+    # CSS key dùng trong template (class="status-badge status-<key>")
+    CUSTOMER_STATUS_CSS = {
+        'PENDING':     'pending',
+        'NOT_ARRIVED': 'confirmed',
+        'ARRIVED':     'confirmed',
+        'COMPLETED':   'completed',
+        'CANCELLED':   'cancelled',
+    }
+
+    @property
+    def customer_status_label(self):
+        """Label hiển thị cho khách hàng (không lộ trạng thái vận hành nội bộ)."""
+        return self.CUSTOMER_STATUS_LABELS.get(self.status, self.get_status_display())
+
+    @property
+    def customer_status_css(self):
+        """CSS key cho badge ở trang khách hàng."""
+        return self.CUSTOMER_STATUS_CSS.get(self.status, 'pending')
+
     def __str__(self):
         return f"{self.appointment_code} - {self.customer_name_snapshot}"
 

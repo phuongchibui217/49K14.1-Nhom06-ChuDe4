@@ -12,11 +12,11 @@
     <!-- FontAwesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 
-    <!-- Google Fonts - Montserrat -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v={% now 'His' %}">
     <link rel="stylesheet" href="{% static 'css/admin.css' %}?v={% now 'His' %}">
 
     {% block extra_css %}{% endblock %}
@@ -66,107 +66,103 @@
 
     <!-- Modal xác nhận đăng xuất -->
     <style>
+        #logoutConfirmModal.modal {
+            backdrop-filter: blur(3px);
+            background: rgba(0, 0, 0, 0.35);
+        }
+        .modal-backdrop {
+            backdrop-filter: blur(3px);
+        }
+        #logoutConfirmModal .modal-dialog {
+            max-width: 400px;
+            width: 92%;
+        }
         #logoutConfirmModal .modal-content {
             border: none;
-            border-radius: 14px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-            padding: 8px;
-            animation: logoutModalIn 0.2s ease;
+            border-radius: 20px;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.14), 0 4px 16px rgba(0, 0, 0, 0.08);
+            padding: 32px 28px 28px;
+            text-align: center;
+            background: #ffffff;
+            animation: logoutModalIn 0.2s cubic-bezier(0.34, 1.2, 0.64, 1);
         }
         @keyframes logoutModalIn {
-            from { opacity: 0; transform: scale(0.95); }
+            from { opacity: 0; transform: scale(0.96); }
             to   { opacity: 1; transform: scale(1); }
         }
-        #logoutConfirmModal .modal-header {
-            border: none;
-            padding: 20px 20px 8px;
+        .logout-modal-icon {
+            display: inline-flex;
             align-items: center;
+            justify-content: center;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: 2.5px solid #e53935;
+            color: #e53935;
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 18px;
+            line-height: 1;
+            flex-shrink: 0;
         }
-        #logoutConfirmModal .modal-title {
+        .logout-modal-title {
+            font-size: 21px;
+            font-weight: 700;
+            color: #111827;
+            margin: 0 0 10px;
+            line-height: 1.3;
+        }
+        .logout-modal-desc {
+            font-size: 15px;
+            color: #6b7280;
+            line-height: 1.6;
+            margin: 0 0 28px;
+        }
+        .logout-modal-actions {
+            display: flex;
+            gap: 14px;
+        }
+        .logout-modal-actions .btn-cancel,
+        .logout-modal-actions .btn-logout-confirm {
+            flex: 1;
+            height: 50px;
+            border: none;
+            border-radius: 12px;
             font-size: 15px;
             font-weight: 600;
-            color: #1a1a2e;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            cursor: pointer;
+            transition: background 0.18s, box-shadow 0.18s, transform 0.15s;
         }
-        #logoutConfirmModal .modal-title i {
-            font-size: 15px;
-            color: #e53935;
-            opacity: 0.85;
-        }
-        #logoutConfirmModal .btn-close {
-            opacity: 0.3;
-            transition: opacity 0.2s;
-        }
-        #logoutConfirmModal .btn-close:hover {
-            opacity: 0.7;
-        }
-        #logoutConfirmModal .modal-body {
-            padding: 4px 20px 16px;
-        }
-        #logoutConfirmModal .modal-body p {
-            color: #555;
-            font-size: 14px;
-            margin: 0;
-        }
-        #logoutConfirmModal .modal-footer {
-            border: none;
-            padding: 0 20px 20px;
-            gap: 8px;
-            justify-content: flex-end;
-        }
-        #logoutConfirmModal .btn-cancel {
+        .logout-modal-actions .btn-cancel {
             background: #f3f4f6;
-            border: none;
-            color: #555;
-            font-size: 14px;
-            padding: 8px 18px;
-            border-radius: 8px;
-            transition: background 0.2s;
+            color: #374151;
         }
-        #logoutConfirmModal .btn-cancel:hover {
+        .logout-modal-actions .btn-cancel:hover {
             background: #e5e7eb;
-            color: #333;
         }
-        #logoutConfirmModal .btn-logout-confirm {
+        .logout-modal-actions .btn-logout-confirm {
             background: #e53935;
-            border: none;
-            color: #fff;
-            font-size: 14px;
-            padding: 8px 18px;
-            border-radius: 8px;
-            transition: background 0.2s, box-shadow 0.2s;
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(229, 57, 53, 0.28);
         }
-        #logoutConfirmModal .btn-logout-confirm:hover {
+        .logout-modal-actions .btn-logout-confirm:hover {
             background: #c62828;
-            box-shadow: 0 4px 14px rgba(229, 57, 53, 0.35);
-        }
-        #logoutConfirmModal .modal-backdrop,
-        .modal-backdrop {
-            backdrop-filter: blur(2px);
+            box-shadow: 0 6px 18px rgba(229, 57, 53, 0.38);
+            transform: translateY(-1px);
         }
     </style>
+
     <div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutConfirmModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="logoutConfirmModalLabel">
-                        <i class="fas fa-sign-out-alt"></i>
-                        Xác nhận đăng xuất
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="d-flex justify-content-center">
+                    <div class="logout-modal-icon" aria-hidden="true">!</div>
                 </div>
-                <div class="modal-body">
-                    <p>Bạn có chắc chắn muốn đăng xuất?</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-cancel" data-bs-dismiss="modal">
-                        <i class="fas fa-times me-1"></i>Hủy
-                    </button>
-                    <button type="button" class="btn btn-logout-confirm" id="confirmLogoutBtn">
-                        <i class="fas fa-sign-out-alt me-1"></i>Đăng xuất
-                    </button>
+                <h5 class="logout-modal-title" id="logoutConfirmModalLabel">Xác nhận đăng xuất</h5>
+                <p class="logout-modal-desc">Bạn có chắc chắn muốn đăng xuất?</p>
+                <div class="logout-modal-actions">
+                    <button type="button" class="btn-cancel" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn-logout-confirm" id="confirmLogoutBtn">Đăng xuất</button>
                 </div>
             </div>
         </div>

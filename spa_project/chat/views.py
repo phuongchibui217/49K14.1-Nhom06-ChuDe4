@@ -18,6 +18,7 @@ from .services import (
     get_admin_chat_sessions_data,
     get_attachment_accept_string,
     get_customer_sender_name,
+    get_existing_customer_chat_session,
     get_or_create_customer_chat_session,
     mark_session_read_by_admin,
     mark_session_read_by_customer,
@@ -106,28 +107,84 @@ def admin_live_chat(request):
 
 @require_http_methods(["GET"])
 def api_customer_chat_bootstrap(request):
-    """Lấy hoặc tạo phiên chat cho widget phía khách."""
+    """
+    Lấy phiên chat hiện có cho widget phía khách.
+    KHÔNG tạo session mới — session chỉ được tạo khi khách gửi tin nhắn đầu tiên.
+    """
     guest_key = _get_guest_key(request)
-    source_page = (request.GET.get("source") or "").strip()
-    session, created = get_or_create_customer_chat_session(
+    session = get_existing_customer_chat_session(request, guest_key=guest_key)
+
+    if session:
+        mark_session_read_by_customer(session)
+        return ApiResponse.success(
+            data={
+                "session": serialize_chat_session(session),
+                "messages": _serialize_session_messages(session),
+                "guestKey": session.guest_session_key or "",
+                "historyPreserved": session.customer_type == "authenticated",
+                "isNewSession": False,
+                "warningMessage": (
+                    "Lịch sử chat sẽ không được lưu khi bạn rời khỏi website."
+                    if session.customer_type == "guest"
+                    else ""
+                ),
+            }
+        )
+
+    # Chưa có session — trả về trạng thái rỗng, widget hiển thị UI nhưng chưa tạo DB record
+    return ApiResponse.success(
+        data={
+            "session": None,
+            "messages": [],
+            "guestKey": guest_key or "",
+            "historyPreserved": False,
+            "isNewSession": True,
+            "warningMessage": (
+                "Lịch sử chat sẽ không được lưu khi bạn rời khỏi website."
+                if not request.user.is_authenticated
+                else ""
+            ),
+        }
+    )
+
+
+@require_http_methods(["POST"])
+@safe_api
+def api_customer_chat_send_new(request):
+    """
+    Khách hàng gửi tin nhắn đầu tiên — tạo session mới đồng thời.
+    Chỉ dùng khi chưa có session (state.session == null ở frontend).
+    """
+    if request.content_type and "multipart/form-data" in request.content_type:
+        return ApiResponse.bad_request("Khách hàng chỉ được gửi tin nhắn văn bản.")
+
+    data = _parse_json_body(request)
+    guest_key = _get_guest_key(request, data)
+    source_page = (data.get("sourcePage") or "").strip()[:255]
+
+    session, _ = get_or_create_customer_chat_session(
         request,
         guest_key=guest_key,
         source_page=source_page,
     )
-    mark_session_read_by_customer(session)
+
+    try:
+        message, _ = create_chat_message(
+            session=session,
+            sender_type="customer",
+            sender_user=request.user if request.user.is_authenticated else None,
+            sender_name=get_customer_sender_name(request),
+            content=data.get("content", ""),
+            client_message_id=data.get("clientMessageId", ""),
+        )
+    except Exception as exc:
+        return ApiResponse.from_exception(exc)
 
     return ApiResponse.success(
         data={
+            "message": serialize_chat_message(message),
             "session": serialize_chat_session(session),
-            "messages": _serialize_session_messages(session),
             "guestKey": session.guest_session_key or "",
-            "historyPreserved": session.customer_type == "authenticated",
-            "isNewSession": created,
-            "warningMessage": (
-                "Lịch sử chat sẽ không được lưu khi bạn rời khỏi website."
-                if session.customer_type == "guest"
-                else ""
-            ),
         }
     )
 

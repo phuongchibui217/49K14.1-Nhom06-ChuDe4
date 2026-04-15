@@ -237,18 +237,18 @@ document.addEventListener('DOMContentLoaded', function() {
         position: fixed;
         bottom: 30px;
         right: 30px;
-        width: 50px;
-        height: 50px;
+        width: 44px;
+        height: 44px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #f39c12 0%, #f1c40f 100%);
+        background: #c9a96e;
         color: white;
         border: none;
         cursor: pointer;
         display: none;
         z-index: 999;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        transition: all 0.3s ease;
-        font-size: 1.2rem;
+        box-shadow: 0 4px 12px rgba(201,169,110,.35);
+        transition: all 0.2s ease;
+        font-size: 1rem;
     `;
 
     document.body.appendChild(scrollBtn);

@@ -56,27 +56,17 @@ function getCSRFToken() {
 }
 
 // ===== BOOKING BADGES UPDATE =====
-/**
- * Cập nhật badge trong tab "Yêu cầu đặt lịch" (#webCount)
- * @param {number} count - Số lượng bookings TẤT CẢ (không chỉ pending)
- */
-function updateBookingBadges(count) {
-  // ✅ CHỈ update tab header badge (#webCount)
-  // ❌ KHÔNG update sidebar badge (sidebar badge tự update qua SSE)
+function updateBookingBadges(rows) {
+  // Chỉ đếm PENDING — không tính CANCELLED hay trạng thái khác
+  const pendingCount = rows.filter(r => (r.apptStatus || '').toUpperCase() === 'PENDING').length;
   if (webCount) {
-    const oldCount = webCount.textContent;
-    webCount.textContent = String(count);
-    webCount.setAttribute('data-count', String(count));
-
-    // Animation khi count thay đổi
-    if (oldCount !== String(count)) {
-      webCount.classList.add('badge-update');
-      setTimeout(() => {
-        webCount.classList.remove('badge-update');
-      }, 500);
+    if (pendingCount === 0) {
+      webCount.textContent = '';
+      webCount.classList.add('d-none');
+    } else {
+      webCount.textContent = String(pendingCount);
+      webCount.classList.remove('d-none');
     }
-
-    console.log(`✅ Tab header badge updated: ${oldCount} → ${count}`);
   }
 }
 
@@ -407,7 +397,7 @@ async function renderWebRequests(){
 
   let rows = await loadBookingRequests(statusFilter, dateFilter, searchTerm);
 
-  updateBookingBadges(rows.length);
+  updateBookingBadges(rows);
 
   if(rows.length === 0){
     webTbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">Không có yêu cầu đặt lịch trực tuyến</td></tr>`;

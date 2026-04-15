@@ -91,29 +91,45 @@ def validate_admin_attachment(attachment):
     raise ValidationError("Định dạng tệp không được hỗ trợ.")
 
 
-def get_or_create_customer_chat_session(request, guest_key=None, source_page=""):
+def get_existing_customer_chat_session(request, guest_key=None):
     """
-    Lấy hoặc tạo phiên chat cho khách hàng.
+    Chỉ TÌM phiên chat hiện có, KHÔNG tạo mới.
 
-    - Khách đăng nhập: luôn tái sử dụng phiên open gần nhất.
-    - Khách vãng lai: tái sử dụng theo guest_key đang giữ trong sessionStorage.
+    - Khách đăng nhập: tìm phiên open gần nhất.
+    - Khách vãng lai: tìm theo guest_key.
+    Trả về session hoặc None.
     """
-    source_page = (source_page or "")[:255]
-
     if request.user.is_authenticated:
         customer = ensure_customer_profile(request.user)
-        session = ChatSession.objects.filter(
+        return ChatSession.objects.filter(
             customer=customer,
             customer_type="authenticated",
             status__iexact="open",
         ).order_by("-last_message_at", "-created_at").first()
 
-        if session:
-            if source_page and not session.source_page:
-                session.source_page = source_page
-                session.save(update_fields=["source_page", "updated_at"])
-            return session, False
+    if guest_key:
+        return ChatSession.objects.filter(
+            customer_type="guest",
+            guest_session_key=guest_key,
+            status__iexact="open",
+        ).first()
 
+    return None
+
+
+def create_customer_chat_session(request, guest_key=None, source_page=""):
+    """
+    TẠO phiên chat mới cho khách hàng.
+    Chỉ gọi hàm này khi khách gửi tin nhắn đầu tiên.
+
+    - Khách đăng nhập: tạo session gắn với CustomerProfile.
+    - Khách vãng lai: tạo session với guest_session_key mới.
+    Trả về (session, created=True).
+    """
+    source_page = (source_page or "")[:255]
+
+    if request.user.is_authenticated:
+        customer = ensure_customer_profile(request.user)
         session = ChatSession.objects.create(
             customer_type="authenticated",
             customer=customer,
@@ -121,24 +137,33 @@ def get_or_create_customer_chat_session(request, guest_key=None, source_page="")
         )
         return session, True
 
-    if guest_key:
-        session = ChatSession.objects.filter(
-            customer_type="guest",
-            guest_session_key=guest_key,
-            status__iexact="open",
-        ).first()
-        if session:
-            if source_page and not session.source_page:
-                session.source_page = source_page
-                session.save(update_fields=["source_page", "updated_at"])
-            return session, False
-
+    new_guest_key = guest_key or generate_guest_session_key()
     session = ChatSession.objects.create(
         customer_type="guest",
-        guest_session_key=generate_guest_session_key(),
+        guest_session_key=new_guest_key,
         source_page=source_page,
     )
     return session, True
+
+
+def get_or_create_customer_chat_session(request, guest_key=None, source_page=""):
+    """
+    Lấy phiên chat hiện có hoặc tạo mới.
+    Hàm này chỉ dùng khi khách gửi tin nhắn (đảm bảo có session để lưu message).
+
+    - Khách đăng nhập: tái sử dụng phiên open gần nhất.
+    - Khách vãng lai: tái sử dụng theo guest_key.
+    """
+    source_page = (source_page or "")[:255]
+
+    existing = get_existing_customer_chat_session(request, guest_key=guest_key)
+    if existing:
+        if source_page and not existing.source_page:
+            existing.source_page = source_page
+            existing.save(update_fields=["source_page", "updated_at"])
+        return existing, False
+
+    return create_customer_chat_session(request, guest_key=guest_key, source_page=source_page)
 
 
 def can_customer_access_session(request, session, guest_key=None):
@@ -272,8 +297,13 @@ def mark_session_read_by_customer(session):
 
 
 def get_chat_sessions_queryset(search="", status=""):
-    """Queryset danh sách phiên chat cho admin."""
-    sessions = ChatSession.objects.select_related("customer", "customer__user")
+    """Queryset danh sách phiên chat cho admin.
+    Chỉ trả về session có ít nhất 1 tin nhắn (loại session rỗng).
+    """
+    from django.db.models import Exists, OuterRef
+    sessions = ChatSession.objects.select_related("customer", "customer__user").filter(
+        Exists(ChatMessage.objects.filter(session=OuterRef("pk")))
+    )
 
     if status:
         sessions = sessions.filter(status__iexact=status)

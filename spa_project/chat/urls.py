@@ -15,6 +15,7 @@ urlpatterns = [
 
     # Customer APIs
     path("api/chat/session/boot/", views.api_customer_chat_bootstrap, name="api_customer_chat_bootstrap"),
+    path("api/chat/session/send/", views.api_customer_chat_send_new, name="api_customer_chat_send_new"),
     path("api/chat/session/<str:chat_code>/send/", views.api_customer_chat_send, name="api_customer_chat_send"),
     path("api/chat/session/<str:chat_code>/read/", views.api_customer_chat_mark_read, name="api_customer_chat_mark_read"),
     path("api/chat/session/<str:chat_code>/stream/", views.api_customer_chat_stream, name="api_customer_chat_stream"),
