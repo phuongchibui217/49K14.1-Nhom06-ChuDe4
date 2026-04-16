@@ -24,6 +24,8 @@ def admin_customers(request):
             dob = request.POST.get('dob', '').strip()
             channel = request.POST.get('contact_channel', '').strip()
             notes = request.POST.get('notes', '').strip()
+            gender = request.POST.get('gender', '').strip()
+            address = request.POST.get('address', '').strip()
 
             if not full_name or not phone:
                 messages.error(request, 'Vui lòng nhập đầy đủ họ tên và số điện thoại.')
@@ -39,6 +41,8 @@ def admin_customers(request):
                 dob=dob or None,
                 contact_channel=channel or '',
                 notes=notes,
+                gender=gender or None,
+                address=address,
             )
             messages.success(request, 'Thêm khách hàng thành công!')
             return redirect('customers:admin_customers')
@@ -55,6 +59,8 @@ def admin_customers(request):
             dob = request.POST.get('dob', '').strip()
             channel = request.POST.get('contact_channel', '').strip()
             notes = request.POST.get('notes', '').strip()
+            gender = request.POST.get('gender', '').strip()
+            address = request.POST.get('address', '').strip()
 
             if not full_name or not phone:
                 messages.error(request, 'Vui lòng nhập đầy đủ họ tên và số điện thoại.')
@@ -69,18 +75,10 @@ def admin_customers(request):
             customer.dob = dob or None
             customer.contact_channel = channel or ''
             customer.notes = notes
+            customer.gender = gender or None
+            customer.address = address
             customer.save()
             messages.success(request, 'Cập nhật khách hàng thành công!')
-            return redirect('customers:admin_customers')
-
-        elif action == 'delete':
-            customer_id = request.POST.get('customer_id', '').strip()
-            if not customer_id:
-                messages.error(request, 'Không tìm thấy khách hàng cần xóa.')
-                return redirect('customers:admin_customers')
-            customer = get_object_or_404(CustomerProfile, pk=customer_id)
-            customer.delete()
-            messages.success(request, 'Xóa khách hàng thành công!')
             return redirect('customers:admin_customers')
 
         else:

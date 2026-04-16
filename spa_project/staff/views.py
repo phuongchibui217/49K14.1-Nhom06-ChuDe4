@@ -33,10 +33,13 @@ def admin_staff(request):
             confirm_password = request.POST.get('confirm_password', '')
             phone = request.POST.get('phone', '').strip()
             email = request.POST.get('email', '').strip()
-            is_superuser = request.POST.get('is_superuser', '') == '1'
+            gender = request.POST.get('gender', '').strip()
+            dob = request.POST.get('dob', '').strip()
+            address = request.POST.get('address', '').strip()
+            notes = request.POST.get('notes', '').strip()
 
             if not all([username, full_name, password, confirm_password, phone, email]):
-                messages.error(request, 'Vui lòng nhập đầy đủ thông tin.')
+                messages.error(request, 'Vui lòng nhập đầy đủ thông tin bắt buộc.')
                 return redirect('staff:admin_staff')
 
             if password != confirm_password:
@@ -55,6 +58,10 @@ def admin_staff(request):
                 messages.error(request, 'Số điện thoại đã tồn tại.')
                 return redirect('staff:admin_staff')
 
+            if not phone.isdigit():
+                messages.error(request, 'Số điện thoại chỉ được chứa chữ số.')
+                return redirect('staff:admin_staff')
+
             try:
                 from core.user_service import create_staff_user
                 create_staff_user(
@@ -63,7 +70,10 @@ def admin_staff(request):
                     full_name=full_name,
                     phone=phone,
                     email=email,
-                    is_superuser=is_superuser,
+                    gender=gender or None,
+                    dob=dob or None,
+                    address=address or None,
+                    notes=notes or None,
                 )
             except ValueError as e:
                 messages.error(request, str(e))
@@ -85,11 +95,14 @@ def admin_staff(request):
             full_name = request.POST.get('full_name', '').strip()
             phone = request.POST.get('phone', '').strip()
             email = request.POST.get('email', '').strip()
-            is_superuser = request.POST.get('is_superuser', '') == '1'
             status = request.POST.get('status', '').strip()
+            gender = request.POST.get('gender', '').strip()
+            dob = request.POST.get('dob', '').strip()
+            address = request.POST.get('address', '').strip()
+            notes = request.POST.get('notes', '').strip()
 
             if not all([full_name, phone, email, status]):
-                messages.error(request, 'Vui lòng nhập đầy đủ thông tin.')
+                messages.error(request, 'Vui lòng nhập đầy đủ thông tin bắt buộc.')
                 return redirect('staff:admin_staff')
 
             if StaffProfile.objects.exclude(pk=staff.pk).filter(phone=phone).exists():
@@ -102,12 +115,15 @@ def admin_staff(request):
 
             staff.full_name = full_name
             staff.phone = phone
+            staff.gender = gender or None
+            staff.dob = dob or None
+            staff.address = address or None
+            staff.notes = notes or None
             staff.save()
 
             staff.user.email = email
             staff.user.is_active = (status == 'active')
             staff.user.is_staff = True
-            staff.user.is_superuser = is_superuser
             staff.user.save()
 
             # Đảm bảo StaffProfile tồn tại sau khi update (idempotent)
@@ -136,7 +152,7 @@ def admin_staff(request):
             messages.error(request, 'Thao tác không hợp lệ.')
             return redirect('staff:admin_staff')
 
-    staffs = StaffProfile.objects.select_related('user').all()
+    staffs = StaffProfile.objects.select_related('user').order_by('-created_at')
     return render(request, 'manage/pages/admin_staff.html', {
         'staffs': staffs,
     })

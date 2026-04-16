@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from .models import CustomerProfile
+import re
 
 
 class CustomerProfileForm(forms.ModelForm):
@@ -8,7 +9,7 @@ class CustomerProfileForm(forms.ModelForm):
 
     class Meta:
         model = CustomerProfile
-        fields = ['full_name', 'phone', 'gender', 'dob', 'address', 'notes']
+        fields = ['full_name', 'phone', 'gender', 'dob', 'address','contact_channel', 'notes']
         widgets = {
             'full_name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -49,15 +50,17 @@ class CustomerProfileForm(forms.ModelForm):
 
     def clean_phone(self):
         phone = self.cleaned_data.get('phone', '').strip()
+
         if not phone:
             raise forms.ValidationError('Vui lòng nhập số điện thoại.')
-        phone = ''.join(filter(str.isdigit, phone))
-        if len(phone) < 10 or len(phone) > 11:
-            raise forms.ValidationError('Số điện thoại phải có 10-11 chữ số.')
+
+        if not re.fullmatch(r'0\d{9}', phone):
+            raise forms.ValidationError('Số điện thoại phải gồm 10 chữ số.')
+
         if CustomerProfile.objects.filter(phone=phone).exclude(pk=self.instance.pk).exists():
             raise forms.ValidationError('Số điện thoại này đã được sử dụng.')
-        return phone
 
+        return phone
 
 class ChangePasswordForm(forms.Form):
     """Form đổi mật khẩu khách hàng"""

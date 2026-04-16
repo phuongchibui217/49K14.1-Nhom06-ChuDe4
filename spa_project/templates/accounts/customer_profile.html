@@ -336,20 +336,16 @@
                     <div class="profile-card-body">
                         <ul class="info-list">
                             <li class="info-item">
+                                <span class="info-label">Tên đăng nhập:</span>
+                                <span class="info-value">{{ request.user.username }}</span>
+                            </li>
+                            <li class="info-item">
                                 <span class="info-label">Họ và tên:</span>
                                 <span class="info-value">{{ customer_profile.full_name|default:"Chưa cập nhật" }}</span>
                             </li>
                             <li class="info-item">
                                 <span class="info-label">Số điện thoại:</span>
                                 <span class="info-value">{{ customer_profile.phone }}</span>
-                            </li>
-                            <li class="info-item">
-                                <span class="info-label">Email:</span>
-                                <span class="info-value">{{ customer_profile.email|default:"Chưa cập nhật" }}</span>
-                            </li>
-                            <li class="info-item">
-                                <span class="info-label">Tên đăng nhập:</span>
-                                <span class="info-value">{{ request.user.username }}</span>
                             </li>
                             <li class="info-item">
                                 <span class="info-label">Giới tính:</span>
@@ -377,6 +373,7 @@
                         <i class="fas fa-edit"></i>
                         <h5>Cập nhật thông tin</h5>
                     </div>
+
                     <div class="profile-card-body">
                         {% if profile_form.non_field_errors %}
                         <div class="alert alert-spa alert-danger mb-3">
@@ -390,56 +387,49 @@
                             {% csrf_token %}
                             <input type="hidden" name="action" value="update_profile">
 
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
+                            <div class="row g-3">
+                                <div class="col-md-6">
                                     <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
                                     {{ profile_form.full_name }}
                                     {% if profile_form.full_name.errors %}
                                         {% for error in profile_form.full_name.errors %}
-                                            <div class="field-error"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                                            <div class="field-error">
+                                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                            </div>
                                         {% endfor %}
                                     {% endif %}
                                 </div>
-                                <div class="col-md-6 mb-3">
+
+                                <div class="col-md-6">
                                     <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>
                                     {{ profile_form.phone }}
                                     {% if profile_form.phone.errors %}
                                         {% for error in profile_form.phone.errors %}
-                                            <div class="field-error"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
+                                            <div class="field-error">
+                                                <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                            </div>
                                         {% endfor %}
                                     {% endif %}
                                 </div>
-                            </div>
 
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label">Email</label>
-                                    {{ profile_form.email }}
-                                    {% if profile_form.email.errors %}
-                                        {% for error in profile_form.email.errors %}
-                                            <div class="field-error"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</div>
-                                        {% endfor %}
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-6 mb-3">
+                                <div class="col-md-6">
                                     <label class="form-label">Giới tính</label>
                                     {{ profile_form.gender }}
                                 </div>
-                            </div>
 
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
+                                <div class="col-md-6">
                                     <label class="form-label">Ngày sinh</label>
                                     {{ profile_form.dob }}
                                 </div>
-                                <div class="col-md-6 mb-3">
+
+                                <div class="col-12">
                                     <label class="form-label">Địa chỉ</label>
                                     {{ profile_form.address }}
                                 </div>
                             </div>
 
-                            <div class="text-end">
-                                <button type="submit" class="btn btn-spa-primary">
+                            <div class="text-end mt-4">
+                                <button type="submit" class="btn btn-spa-primary px-4">
                                     <i class="fas fa-save me-2"></i>Lưu thay đổi
                                 </button>
                             </div>

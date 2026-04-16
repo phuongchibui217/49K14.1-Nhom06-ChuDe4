@@ -127,10 +127,11 @@ LOGOUT_REDIRECT_URL = '/'
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
 # Email settings (for password reset)
+# DEV: In email ra terminal thay vì gửi thật
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = ''  # Configure in production
-EMAIL_HOST_PASSWORD = ''  # Configure in production
-DEFAULT_FROM_EMAIL = 'noreply@spaana.com'
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+DEFAULT_FROM_EMAIL = 'Spa ANA <noreply@spaana.com>'

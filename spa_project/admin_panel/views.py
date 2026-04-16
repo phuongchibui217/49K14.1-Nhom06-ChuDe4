@@ -10,7 +10,7 @@ Author: Spa ANA Team
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import logout
+from django.contrib.auth import logout, update_session_auth_hash
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages
 
@@ -71,10 +71,58 @@ def admin_logout(request):
     return render(request, 'manage/pages/admin_clear-login.html')
 
 
+
 @login_required(login_url='accounts:login')
 def admin_profile(request):
     """Tài khoản cá nhân"""
     if not (request.user.is_staff or request.user.is_superuser):
         messages.error(request, 'Bạn không có quyền truy cập trang này.')
         return redirect('pages:home')
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'update_profile':
+            full_name = request.POST.get('full_name', '').strip()
+            email = request.POST.get('email', '').strip()
+
+            if not full_name:
+                messages.error(request, 'Vui lòng nhập họ tên.')
+                return redirect('admin_panel:admin_profile')
+
+            if not email:
+                messages.error(request, 'Vui lòng nhập email.')
+                return redirect('admin_panel:admin_profile')
+
+            parts = full_name.split(None, 1)
+            request.user.first_name = parts[0]
+            request.user.last_name = parts[1] if len(parts) > 1 else ''
+            request.user.email = email
+            request.user.save()
+
+            messages.success(request, 'Cập nhật thông tin thành công.')
+            return redirect('admin_panel:admin_profile')
+
+        elif action == 'change_password':
+            current_password = request.POST.get('current_password', '')
+            new_password = request.POST.get('new_password', '')
+            confirm_password = request.POST.get('confirm_password', '')
+
+            pw_error = None
+            if not request.user.check_password(current_password):
+                pw_error = 'Mật khẩu hiện tại không đúng.'
+            elif len(new_password) < 6:
+                pw_error = 'Mật khẩu mới phải có ít nhất 6 ký tự.'
+            elif new_password != confirm_password:
+                pw_error = 'Xác nhận mật khẩu không khớp.'
+
+            if pw_error:
+                return render(request, 'admin_panel/admin_profile.html', {'pw_error': pw_error})
+
+            request.user.set_password(new_password)
+            request.user.save()
+            update_session_auth_hash(request, request.user)
+
+            return render(request, 'admin_panel/admin_profile.html', {'pw_success': 'Đổi mật khẩu thành công.'})
+
     return render(request, 'admin_panel/admin_profile.html')

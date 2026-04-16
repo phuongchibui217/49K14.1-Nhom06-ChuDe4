@@ -415,7 +415,9 @@
         </div>
 
         <!-- Edit Mode (Hidden by default) -->
-        <form id="editMode" style="display: none;">
+        <form id="editMode" method="post" action="{% url 'admin_panel:admin_profile' %}" style="display: none;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_profile">
             <div class="info-edit-row">
                 <label class="info-edit-label">Tên đăng nhập:</label>
                 <div class="info-edit-input">
@@ -426,14 +428,14 @@
             <div class="info-edit-row">
                 <label class="info-edit-label">Họ tên <span class="text-danger">*</span>:</label>
                 <div class="info-edit-input">
-                    <input type="text" class="form-control" id="editFullName" value="{{ user.get_full_name }}" required>
+                    <input type="text" class="form-control" id="editFullName" name="full_name" value="{{ user.get_full_name }}" required>
                     <div class="error-message" id="fullNameError">Vui lòng nhập họ tên</div>
                 </div>
             </div>
             <div class="info-edit-row">
                 <label class="info-edit-label">Email <span class="text-danger">*</span>:</label>
                 <div class="info-edit-input">
-                    <input type="email" class="form-control" id="editEmail" value="{{ user.email }}" required>
+                    <input type="email" class="form-control" id="editEmail" name="email" value="{{ user.email }}" required>
                     <div class="error-message" id="emailError">Vui lòng nhập email hợp lệ</div>
                 </div>
             </div>
@@ -460,13 +462,27 @@
         </h5>
     </div>
     <div class="section-card-body">
-        <form class="password-form" id="changePasswordForm" onsubmit="changePassword(event)">
+        {% if pw_error %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ pw_error }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+        {% if pw_success %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            {{ pw_success }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endif %}
+        <form class="password-form" id="changePasswordForm" method="post" action="{% url 'admin_panel:admin_profile' %}" onsubmit="changePassword(event)">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="change_password">
             <div class="row">
                 <div class="col-md-4">
                     <div class="mb-3">
                         <label class="form-label">Mật khẩu hiện tại <span class="text-danger">*</span></label>
                         <div class="pw-wrapper">
-                            <input type="password" class="form-control" id="currentPassword" required>
+                            <input type="password" class="form-control" id="currentPassword" name="current_password" required>
                             <button class="pw-toggle-btn" type="button" aria-label="Hiện/ẩn mật khẩu">
                                 <span class="icon-eye"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg></span>
                                 <span class="icon-eye-off" style="display:none"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88"/></svg></span>
@@ -479,7 +495,7 @@
                     <div class="mb-3">
                         <label class="form-label">Mật khẩu mới <span class="text-danger">*</span></label>
                         <div class="pw-wrapper">
-                            <input type="password" class="form-control" id="newPassword" required>
+                            <input type="password" class="form-control" id="newPassword" name="new_password" required>
                             <button class="pw-toggle-btn" type="button" aria-label="Hiện/ẩn mật khẩu">
                                 <span class="icon-eye"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg></span>
                                 <span class="icon-eye-off" style="display:none"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88"/></svg></span>
@@ -492,7 +508,7 @@
                     <div class="mb-3">
                         <label class="form-label">Xác nhận mật khẩu mới <span class="text-danger">*</span></label>
                         <div class="pw-wrapper">
-                            <input type="password" class="form-control" id="confirmPassword" required>
+                            <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required>
                             <button class="pw-toggle-btn" type="button" aria-label="Hiện/ẩn mật khẩu">
                                 <span class="icon-eye"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg></span>
                                 <span class="icon-eye-off" style="display:none"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88"/></svg></span>
@@ -576,16 +592,8 @@ function saveProfile(event) {
 
     if (!isValid) return;
 
-    // TODO: Submit to backend
-    // For now, just show success message
-    alert('Cập nhật thông tin thành công!');
-
-    // Update original data
-    originalData.fullName = fullName;
-    originalData.email = email;
-
-    // Switch back to view mode
-    cancelEdit();
+    // Submit to backend
+    document.getElementById('editMode').submit();
 }
 
 // Change password
@@ -624,12 +632,8 @@ function changePassword(event) {
 
     if (!isValid) return;
 
-    // TODO: Submit to backend
-    alert('Đổi mật khẩu thành công!');
-
-    // Reset form
-    document.getElementById('changePasswordForm').reset();
-    hideAllErrors();
+    // Submit to backend
+    document.getElementById('changePasswordForm').submit();
 }
 
 // Helper functions

@@ -52,18 +52,6 @@ def get_display_name(user: User) -> str:
 
     return user.username
 
-
-def _get_group(name: str) -> Group:
-    """Lấy group theo tên, raise rõ ràng nếu không tồn tại."""
-    try:
-        return Group.objects.get(name=name)
-    except Group.DoesNotExist:
-        raise ValueError(
-            f"Group '{name}' chưa tồn tại trong database. "
-            f"Vui lòng chạy: python manage.py sync_user_groups --init-groups"
-        )
-
-
 def ensure_staff_profile(user: User) -> 'StaffProfile':
     """
     Đảm bảo user staff luôn có đúng 1 StaffProfile. Idempotent — gọi nhiều lần an toàn.
@@ -108,43 +96,9 @@ def ensure_staff_profile(user: User) -> 'StaffProfile':
 
 
 @transaction.atomic
-def create_customer_user(username: str, password: str, full_name: str,
-                         phone: str, email: str = '',
-                         gender=None, dob=None, address=None) -> 'CustomerProfile':
-    """
-    Tạo tài khoản khách hàng:
-    - User với is_staff=False, is_superuser=False
-    - Gán group 'Khách hàng'
-    - Tạo CustomerProfile
-    """
-    from customers.models import CustomerProfile
-
-    group = _get_group(GROUP_CUSTOMER)
-
-    user = User.objects.create_user(
-        username=username,
-        password=password,
-        email=email or '',
-        is_staff=False,
-        is_superuser=False,
-    )
-    user.groups.add(group)
-
-    profile = CustomerProfile.objects.create(
-        user=user,
-        full_name=full_name,
-        phone=phone,
-        gender=gender,
-        dob=dob,
-        address=address or '',
-    )
-    return profile
-
-
-@transaction.atomic
 def create_staff_user(username: str, password: str, full_name: str,
                       phone: str, email: str = '',
-                      is_superuser: bool = False) -> 'StaffProfile':
+                      gender=None, dob=None, address=None, notes=None) -> 'StaffProfile':
     """
     Tạo tài khoản nhân viên:
     - User với is_staff=True
@@ -153,21 +107,21 @@ def create_staff_user(username: str, password: str, full_name: str,
     """
     from staff.models import StaffProfile
 
-    group_name = GROUP_MANAGER if is_superuser else GROUP_RECEPTIONIST
-    group = _get_group(group_name)
-
     user = User.objects.create_user(
         username=username,
         password=password,
         email=email or '',
         is_staff=True,
-        is_superuser=is_superuser,
+        is_superuser=False,
     )
-    user.groups.add(group)
 
     profile = StaffProfile.objects.create(
         user=user,
         full_name=full_name,
         phone=phone,
+        gender=gender,
+        dob=dob or None,
+        address=address or None,
+        notes=notes or None,
     )
     return profile

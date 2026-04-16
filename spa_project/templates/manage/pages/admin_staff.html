@@ -83,7 +83,6 @@
                     <th>Họ tên</th>
                     <th>Số điện thoại</th>
                     <th>Email</th>
-                    <th>Vai trò</th>
                     <th>Trạng thái</th>
                     <th>Hành động</th>
                 </tr>
@@ -95,20 +94,16 @@
                     data-fullname="{{ s.full_name }}"
                     data-phone="{{ s.phone }}"
                     data-email="{{ s.user.email }}"
-                    data-superuser="{{ s.user.is_superuser|yesno:'1,0' }}"
+                    data-gender="{{ s.gender|default:'' }}"
+                    data-dob="{{ s.dob|date:'Y-m-d'|default:'' }}"
+                    data-address="{{ s.address|default:'' }}"
+                    data-notes="{{ s.notes|default:'' }}"
                     data-active="{{ s.user.is_active|yesno:'1,0' }}">
-                    <td>{{ forloop.counter }}</td>
+                    <td>NV{{ s.id|stringformat:"03d" }}</td>
                     <td>{{ s.user.username }}</td>
                     <td>{{ s.full_name }}</td>
                     <td>{{ s.phone }}</td>
                     <td>{{ s.user.email }}</td>
-                    <td>
-                        {% if s.user.is_superuser %}
-                            <span class="badge badge-role-admin">Quản lí</span>
-                        {% else %}
-                            <span class="badge badge-role-letan">Lễ tân</span>
-                        {% endif %}
-                    </td>
                     <td>
                         {% if s.user.is_active %}
                             <span class="badge badge-status-active">Hoạt động</span>
@@ -125,7 +120,9 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="8" class="text-center py-4 text-muted">Chưa có nhân viên nào</td></tr>
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-muted">Chưa có nhân viên nào</td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -188,11 +185,30 @@
                             <input type="email" class="form-control" name="email" required>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="is_superuser" value="1" id="addIsSuperuser">
-                            <label class="form-check-label" for="addIsSuperuser">Cấp quyền Quản lí (Superuser)</label>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Giới tính</label>
+                            <select class="form-select" name="gender">
+                                <option value="">Chọn giới tính</option>
+                                <option value="Nam">Nam</option>
+                                <option value="Nu">Nữ</option>
+                                <option value="Khac">Khác</option>
+                            </select>
                         </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Ngày sinh</label>
+                            <input type="date" class="form-control" name="dob">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Địa chỉ</label>
+                        <input type="text" class="form-control" name="address">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Ghi chú</label>
+                        <textarea class="form-control" name="notes" rows="3"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -240,11 +256,30 @@
                             </select>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="is_superuser" value="1" id="editIsSuperuser">
-                            <label class="form-check-label" for="editIsSuperuser">Cấp quyền Quản lí (Superuser)</label>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Giới tính</label>
+                            <select class="form-select" name="gender" id="editGender">
+                                <option value="">Chọn giới tính</option>
+                                <option value="Nam">Nam</option>
+                                <option value="Nu">Nữ</option>
+                                <option value="Khac">Khác</option>
+                            </select>
                         </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Ngày sinh</label>
+                            <input type="date" class="form-control" name="dob" id="editDob">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Địa chỉ</label>
+                        <input type="text" class="form-control" name="address" id="editAddress">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Ghi chú</label>
+                        <textarea class="form-control" name="notes" id="editNotes" rows="3"></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -311,7 +346,10 @@ function editStaff(id) {
     document.getElementById('editFullName').value = row.dataset.fullname;
     document.getElementById('editPhone').value = row.dataset.phone;
     document.getElementById('editEmail').value = row.dataset.email;
-    document.getElementById('editIsSuperuser').checked = row.dataset.superuser === '1';
+    document.getElementById('editGender').value = row.dataset.gender || '';
+    document.getElementById('editDob').value = row.dataset.dob || '';
+    document.getElementById('editAddress').value = row.dataset.address || '';
+    document.getElementById('editNotes').value = row.dataset.notes || '';
     document.getElementById('editStatus').value = row.dataset.active === '1' ? 'active' : 'inactive';
     new bootstrap.Modal(document.getElementById('editStaffModal')).show();
 }
@@ -326,23 +364,37 @@ function viewStaff(id) {
     const row = document.querySelector(`tr[data-id="${id}"]`);
     if (!row) return;
     const isActive = row.dataset.active === '1';
-    const isSuperuser = row.dataset.superuser === '1';
+    const gender = row.dataset.gender || 'Chưa cập nhật';
+    const dob = row.dataset.dob || 'Chưa cập nhật';
+    const address = row.dataset.address || 'Chưa cập nhật';
+    const notes = row.dataset.notes || 'Chưa cập nhật';
     document.getElementById('drawerContent').innerHTML = `
         <div class="detail-section">
             <h6><i class="fas fa-user me-2"></i>Thông tin cá nhân</h6>
+            <div class="detail-item">
+                <span class="detail-label">Mã nhân viên:</span>
+                <span class="detail-value">NV${String(id).padStart(3, '0')}</span>
+            </div>
             <div class="detail-item"><span class="detail-label">Tên đăng nhập:</span><span class="detail-value">${row.dataset.username}</span></div>
             <div class="detail-item"><span class="detail-label">Họ tên:</span><span class="detail-value">${row.dataset.fullname}</span></div>
             <div class="detail-item"><span class="detail-label">Số điện thoại:</span><span class="detail-value">${row.dataset.phone}</span></div>
             <div class="detail-item"><span class="detail-label">Email:</span><span class="detail-value">${row.dataset.email}</span></div>
+            <div class="detail-item"><span class="detail-label">Giới tính:</span><span class="detail-value">${gender}</span></div>
+            <div class="detail-item"><span class="detail-label">Ngày sinh:</span><span class="detail-value">${dob}</span></div>
+            <div class="detail-item"><span class="detail-label">Địa chỉ:</span><span class="detail-value">${address}</span></div>
+            <div class="detail-item"><span class="detail-label">Ghi chú:</span><span class="detail-value">${notes}</span></div>
         </div>
         <div class="detail-section">
-            <h6><i class="fas fa-user-tag me-2"></i>Phân quyền</h6>
-            <div class="detail-item"><span class="detail-label">Vai trò:</span><span class="detail-value">
-                <span class="badge ${isSuperuser ? 'badge-role-admin' : 'badge-role-letan'}">${isSuperuser ? 'Quản lí' : 'Lễ tân'}</span>
-            </span></div>
-            <div class="detail-item"><span class="detail-label">Trạng thái:</span><span class="detail-value">
-                <span class="badge ${isActive ? 'badge-status-active' : 'badge-status-inactive'}">${isActive ? 'Hoạt động' : 'Vô hiệu hóa'}</span>
-            </span></div>
+            <h6><i class="fas fa-briefcase me-2"></i>Thông tin công việc</h6>
+
+            <div class="detail-item">
+                <span class="detail-label">Trạng thái:</span>
+                <span class="detail-value">
+                    <span class="badge ${isActive ? 'badge-status-active' : 'badge-status-inactive'}">
+                        ${isActive ? 'Hoạt động' : 'Vô hiệu hóa'}
+                    </span>
+                </span>
+            </div>
         </div>
         <div class="d-grid gap-2 mt-3">
             <button class="btn btn-warning" onclick="closeDrawer(); setTimeout(() => editStaff(${id}), 300)">

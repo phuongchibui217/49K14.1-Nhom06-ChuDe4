@@ -18,7 +18,6 @@
 .action-btn { padding: 0.25rem 0.5rem; border-radius: 8px; border: none; cursor: pointer; margin: 0 0.25rem; }
 .action-btn.view { background: #e3f2fd; color: #1976d2; }
 .action-btn.edit { background: #fff3e0; color: #f57c00; }
-.action-btn.delete { background: #ffebee; color: #d32f2f; }
 .action-btn:hover { transform: scale(1.1); }
 .drawer { position: fixed; top: 0; right: 0; width: 400px; height: 100%; background: white; box-shadow: -5px 0 30px rgba(0, 0, 0, 0.2); z-index: 1050; transform: translateX(100%); transition: transform 0.3s ease; overflow-y: auto; }
 .drawer.show { transform: translateX(0); }
@@ -30,6 +29,13 @@
 .detail-label { min-width: 120px; font-weight: 600; color: #6c757d; }
 .detail-value { color: #1e3a5f; }
 .note-box { background: #fff3cd; border: 1px solid #ffc107; border-radius: 12px; padding: 1rem; margin-top: 1rem; }
+.modal-header.spa-header { background: #2f4b6e !important; color: #fff; border-bottom: none;}
+.contact-badge{display:inline-block;padding:6px 12px;border-radius:20px;font-weight:500;font-size:13px;color:#fff}
+.contact-badge.zalo{background:#0084ff}
+.contact-badge.facebook{background:#1877f2}
+.contact-badge.dien-thoai{background:#28a745}
+.contact-badge.khac{background:#6c757d}
+.contact-badge.mac-dinh{background:#17a2b8}
 </style>
 {% endblock %}
 
@@ -84,7 +90,15 @@
                     <td>{{ c.phone }}</td>
                     <td>
                         {% if c.contact_channel %}
-                            <span class="badge bg-info">{{ c.contact_channel }}</span>
+                            <span class="contact-badge
+                                {% if c.contact_channel == 'Zalo' %}zalo
+                                {% elif c.contact_channel == 'Facebook' %}facebook
+                                {% elif c.contact_channel == 'Điện thoại' %}dien-thoai
+                                {% elif c.contact_channel == 'Khác' %}khac
+                                {% else %}mac-dinh
+                                {% endif %}">
+                                {{ c.contact_channel }}
+                            </span>
                         {% else %}
                             <span class="text-muted">Chưa cập nhật</span>
                         {% endif %}
@@ -104,35 +118,29 @@
                                 '{{ c.phone|escapejs }}',
                                 '{% if c.dob %}{{ c.dob|date:"Y-m-d" }}{% endif %}',
                                 '{{ c.contact_channel|default:""|escapejs }}',
-                                '{{ c.allergies|default:""|escapejs }}',
-                                '{{ c.skin_condition|default:""|escapejs }}',
                                 '{{ c.notes|default:""|escapejs }}',
                                 '{% if c.appointments.count %}{{ c.appointments.count }}{% else %}0{% endif %}',
-                                '{{ c.created_at|date:"Y-m-d" }}'
+                                '{{ c.created_at|date:"Y-m-d" }}',
+                                '{{ c.gender|default:""|escapejs }}',
+                                '{{ c.address|default:""|escapejs }}'
                             )"
                             title="Xem">
                             <i class="fas fa-eye"></i>
                         </button>
 
                         <button class="action-btn edit"
-                            onclick="editCustomer(
-                                '{{ c.id }}',
-                                '{{ c.full_name|escapejs }}',
-                                '{{ c.phone|escapejs }}',
-                                '{% if c.dob %}{{ c.dob|date:"Y-m-d" }}{% endif %}',
-                                '{{ c.contact_channel|default:""|escapejs }}',
-                                '{{ c.allergies|default:""|escapejs }}',
-                                '{{ c.skin_condition|default:""|escapejs }}',
-                                '{{ c.notes|default:""|escapejs }}'
-                            )"
+                            onclick='editCustomer(
+                                "{{ c.id }}",
+                                "{{ c.full_name|escapejs }}",
+                                "{{ c.phone|escapejs }}",
+                                "{% if c.dob %}{{ c.dob|date:'Y-m-d' }}{% endif %}",
+                                "{{ c.contact_channel|default:''|escapejs }}",
+                                "{{ c.notes|default:''|escapejs }}",
+                                "{{ c.gender|default:''|escapejs }}",
+                                "{{ c.address|default:''|escapejs }}"
+                            )'
                             title="Sửa">
                             <i class="fas fa-edit"></i>
-                        </button>
-
-                        <button class="action-btn delete"
-                            onclick="deleteCustomer('{{ c.id }}')"
-                            title="Xóa">
-                            <i class="fas fa-trash"></i>
                         </button>
                     </td>
                 </tr>
@@ -160,7 +168,7 @@
 <div class="modal fade" id="addCustomerModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
+            <div class="modal-header spa-header">
                 <h5 class="modal-title"><i class="fas fa-user-plus me-2"></i>Thêm khách hàng mới</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -176,7 +184,9 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label"><span class="text-danger">*</span> Số điện thoại</label>
-                            <input type="text" class="form-control" id="addPhone" name="phone" required>
+                            <input type="text" class="form-control" id="addPhone" name="phone"
+                               required maxlength="10" pattern="^0\d{9}$"
+                               title="Số điện thoại không hợp lệ">
                         </div>
                     </div>
 
@@ -195,19 +205,25 @@
                             </select>
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Giới tính</label>
+                            <select class="form-select" name="gender">
+                                <option value="">-- Chọn --</option>
+                                <option value="Nam">Nam</option>
+                                <option value="Nu">Nữ</option>
+                                <option value="Khac">Khác</option>
+                            </select>
+                        </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Dị ứng</label>
-                        <textarea class="form-control" id="addAllergies" name="allergies" rows="2"></textarea>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Địa chỉ</label>
+                            <input type="text" class="form-control" name="address">
+                        </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Tình trạng da</label>
-                        <textarea class="form-control" id="addSkinCondition" name="skin_condition" rows="2"></textarea>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Ghi chú khác</label>
+                        <label class="form-label">Ghi chú</label>
                         <textarea class="form-control" id="addNotes" name="notes" rows="2"></textarea>
                     </div>
 
@@ -227,7 +243,7 @@
 <div class="modal fade" id="editCustomerModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
+            <div class="modal-header spa-header">
                 <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Cập nhật thông tin</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -244,7 +260,9 @@
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label"><span class="text-danger">*</span> Số điện thoại</label>
-                            <input type="text" class="form-control" id="editPhone" name="phone" required>
+                            <input type="text" class="form-control" id="editPhone" name="phone"
+                               required maxlength="10" pattern="^0\d{9}$"
+                               title="Số điện thoại không hợp lệ">
                         </div>
                     </div>
 
@@ -264,18 +282,24 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Dị ứng</label>
-                        <textarea class="form-control" id="editAllergies" name="allergies" rows="2"></textarea>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Giới tính</label>
+                            <select class="form-select" id="editGender" name="gender">
+                                <option value="Nam">Nam</option>
+                                <option value="Nu">Nữ</option>
+                                <option value="Khac">Khác</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Địa chỉ</label>
+                            <input type="text" class="form-control" id="editAddress" name="address">
+                        </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Tình trạng da</label>
-                        <textarea class="form-control" id="editSkinCondition" name="skin_condition" rows="2"></textarea>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Ghi chú khác</label>
+                        <label class="form-label">Ghi chú</label>
                         <textarea class="form-control" id="editNotes" name="notes" rows="2"></textarea>
                     </div>
 
@@ -287,39 +311,6 @@
                     </div>
                 </form>
             </div>
-        </div>
-    </div>
-</div>
-
-<!-- Delete Customer Modal -->
-<div class="modal fade" id="deleteCustomerModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form id="deleteCustomerForm" method="post" action="{% url 'customers:admin_customers' %}">
-                {% csrf_token %}
-                <input type="hidden" name="action" value="delete">
-                <input type="hidden" id="deleteCustomerId" name="customer_id">
-
-                <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Xác nhận xóa khách hàng</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-
-                <div class="modal-body text-center py-4">
-                    <div style="font-size: 4rem; color: #dc3545; margin-bottom: 1rem;">
-                        <i class="fas fa-trash"></i>
-                    </div>
-                    <h5 class="mb-3">Bạn có chắc chắn muốn xóa khách hàng này?</h5>
-                    <p class="text-muted">Dữ liệu sẽ không thể khôi phục sau khi xóa.</p>
-                </div>
-
-                <div class="modal-footer justify-content-center">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-trash me-2"></i>Xác nhận xóa
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
 </div>
@@ -360,46 +351,40 @@ function searchCustomers() {
     });
 }
 
-function editCustomer(id, name, phone, dob, channel, allergies, skinCondition, notes) {
-    document.getElementById('editCustomerId').value = id;
+function editCustomer(id, name, phone, dob, channel, notes, gender, address) {
+    closeDrawer();
 
+    document.getElementById('editCustomerId').value = id;
     document.getElementById('editName').value = name || '';
     document.getElementById('editPhone').value = phone || '';
     document.getElementById('editDob').value = dob || '';
     document.getElementById('editChannel').value = channel || 'Zalo';
-
-    document.getElementById('editAllergies').value = allergies || '';
-    document.getElementById('editSkinCondition').value = skinCondition || '';
     document.getElementById('editNotes').value = notes || '';
 
-    new bootstrap.Modal(document.getElementById('editCustomerModal')).show();
-}
+    document.getElementById('editGender').value = gender || '';
+    document.getElementById('editAddress').value = address || '';
 
     new bootstrap.Modal(document.getElementById('editCustomerModal')).show();
 }
 
-function deleteCustomer(id) {
-    document.getElementById('deleteCustomerId').value = id;
-    new bootstrap.Modal(document.getElementById('deleteCustomerModal')).show();
-}
-
-function viewCustomer(id, name, phone, dob, channel, allergies, skinCondition, notes, totalAppointments, createdAt) {
+function viewCustomer(id, name, phone, dob, channel, notes, totalAppointments, createdAt, gender, address) {
     document.getElementById('drawerContent').innerHTML = `
         <div class="detail-section">
             <h6><i class="fas fa-user me-2"></i>Thông tin cá nhân</h6>
+
             <div class="detail-item"><span class="detail-label">Mã KH:</span><span class="detail-value"><strong>KH${String(id).padStart(3, '0')}</strong></span></div>
             <div class="detail-item"><span class="detail-label">Họ tên:</span><span class="detail-value">${name}</span></div>
             <div class="detail-item"><span class="detail-label">SĐT:</span><span class="detail-value">${phone}</span></div>
+            <div class="detail-item"><span class="detail-label">Giới tính:</span><span class="detail-value">${gender === 'Nam' ? 'Nam' : gender === 'Nu' ? 'Nữ' : gender === 'Khac' ? 'Khác' : 'Chưa cập nhật'}</span></div>
             <div class="detail-item"><span class="detail-label">Ngày sinh:</span><span class="detail-value">${dob || 'Chưa cập nhật'}</span></div>
+            <div class="detail-item"><span class="detail-label">Địa chỉ:</span><span class="detail-value">${address || 'Chưa cập nhật'}</span></div>
             <div class="detail-item"><span class="detail-label">Kênh LH:</span><span class="detail-value">${channel || 'Chưa cập nhật'}</span></div>
             <div class="detail-item"><span class="detail-label">Ngày tạo:</span><span class="detail-value">${createdAt}</span></div>
         </div>
 
         <div class="detail-section">
             <h6><i class="fas fa-sticky-note me-2"></i>Ghi chú</h6>
-            ${allergies ? `<div class="note-box"><strong>Dị ứng:</strong> ${allergies}</div>` : ''}
-            ${skinCondition ? `<div class="note-box" style="background:#e3f2fd;border-color:#2196f3;"><strong>Tình trạng da:</strong> ${skinCondition}</div>` : ''}
-            ${notes ? `<div class="note-box" style="background:#f8f9fa;border-color:#ced4da;"><strong>Ghi chú khác:</strong> ${notes}</div>` : ''}
+            ${notes ? `<div class="note-box" style="background:#f8f9fa;border-color:#ced4da;">${notes}</div>` : ''}
         </div>
 
         <div class="detail-section">
@@ -408,11 +393,9 @@ function viewCustomer(id, name, phone, dob, channel, allergies, skinCondition, n
         </div>
 
         <div class="d-grid gap-2">
-            <button class="btn btn-warning" onclick="editCustomer('${id}', '${name}', '${phone}', '${dob}', '${channel}', '${allergies}', '${skinCondition}', '${notes}')">
+            <button class="btn btn-warning"
+                onclick="editCustomer('${id}', '${name}', '${phone}', '${dob}', '${channel}', '${notes}', '${gender}', '${address}')">
                 <i class="fas fa-edit me-2"></i>Chỉnh sửa
-            </button>
-            <button class="btn btn-danger" onclick="deleteCustomer('${id}')">
-                <i class="fas fa-trash me-2"></i>Xóa
             </button>
         </div>
     `;
