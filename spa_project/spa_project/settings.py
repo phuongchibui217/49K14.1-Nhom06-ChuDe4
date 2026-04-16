@@ -18,6 +18,8 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 # Application definition
 INSTALLED_APPS = [
+    'daphne',
+    'channels',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -50,6 +52,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'spa_project.urls'
+ASGI_APPLICATION = 'spa_project.asgi.application'
 
 TEMPLATES = [
     {
@@ -74,9 +77,18 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'TEST': {
+            'NAME': BASE_DIR / 'test_db.sqlite3',
+        },
         'OPTIONS': {
             'timeout': 20,
         },
+    }
+}
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
     }
 }
 

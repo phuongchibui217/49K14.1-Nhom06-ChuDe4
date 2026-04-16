@@ -1,4 +1,5 @@
-from django.contrib import admin
+﻿from django.contrib import admin
+
 from .models import ChatMessage, ChatSession, SessionStaff
 
 
@@ -28,4 +29,4 @@ class ChatMessageAdmin(admin.ModelAdmin):
 
 @admin.register(SessionStaff)
 class SessionStaffAdmin(admin.ModelAdmin):
-    list_display = ['session', 'staff', 'join_at', 'left_at']
+    list_display = ['session', 'staff', 'join_at']

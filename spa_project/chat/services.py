@@ -1,20 +1,21 @@
-import json
-import os
+﻿import os
 import secrets
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import F, Q, Sum
+from django.db.models import Exists, F, OuterRef, Q, Sum
 from django.utils import timezone
 
 from customers.models import CustomerProfile
 from core.validators import validate_length, validate_required
 
-from .models import ChatMessage, ChatSession
+from .models import ChatMessage, ChatSession, SessionStaff
 
 
 CHAT_TEXT_MAX_LENGTH = 1000
-CHAT_ATTACHMENT_MAX_SIZE = 10 * 1024 * 1024  # 10MB
+CHAT_ATTACHMENT_MAX_SIZE = 10 * 1024 * 1024
 ALLOWED_IMAGE_TYPES = {
     "image/jpeg",
     "image/jpg",
@@ -42,9 +43,40 @@ ALLOWED_FILE_EXTENSIONS = {
     ".zip",
 }
 
+ADMIN_CHAT_SESSIONS_GROUP = "chat.admin.sessions"
+CUSTOMER_VISIBLE_ADMIN_NAME = "Nhân viên"
+
+
+def get_customer_chat_group(chat_code):
+    return f"chat.customer.{chat_code}"
+
+
+def get_admin_chat_group(chat_code):
+    return f"chat.admin.session.{chat_code}"
+
+
+def normalize_sender_type(sender_type):
+    normalized = (sender_type or "").strip().lower()
+    if normalized == "staff":
+        return "admin"
+    return normalized
+
+
+def get_customer_visible_sender_name(sender_type, sender_name):
+    if normalize_sender_type(sender_type) == "admin":
+        return CUSTOMER_VISIBLE_ADMIN_NAME
+    return (sender_name or "").strip()
+
+
+def _broadcast_group_event(group_name, event):
+    channel_layer = get_channel_layer()
+    if not channel_layer:
+        return
+
+    async_to_sync(channel_layer.group_send)(group_name, event)
+
 
 def ensure_customer_profile(user):
-    """Lấy hoặc tạo CustomerProfile theo cùng pattern các app hiện có."""
     if hasattr(user, "customer_profile"):
         return user.customer_profile
 
@@ -56,28 +88,25 @@ def ensure_customer_profile(user):
 
 
 def generate_guest_session_key():
-    """Sinh khóa tạm thời cho khách vãng lai."""
     return secrets.token_urlsafe(24)
 
 
 def normalize_text_message(content):
-    """Chuẩn hóa và validate nội dung chat text."""
-    content = validate_required(content, "Tin nhắn")
+    content = validate_required(content, "Tin nhan")
     return validate_length(
         content,
         min_len=1,
         max_len=CHAT_TEXT_MAX_LENGTH,
-        field_name="Tin nhắn",
+        field_name="Tin nhan",
     )
 
 
 def validate_admin_attachment(attachment):
-    """Validate file/image đính kèm phía admin."""
     if not attachment:
         return "text"
 
     if attachment.size > CHAT_ATTACHMENT_MAX_SIZE:
-        raise ValidationError("Tệp đính kèm không được vượt quá 10MB.")
+        raise ValidationError("Tep dinh kem khong duoc vuot qua 10MB.")
 
     content_type = getattr(attachment, "content_type", "").lower()
     extension = os.path.splitext(attachment.name or "")[1].lower()
@@ -88,17 +117,10 @@ def validate_admin_attachment(attachment):
     if content_type in ALLOWED_FILE_TYPES or extension in ALLOWED_FILE_EXTENSIONS:
         return "file"
 
-    raise ValidationError("Định dạng tệp không được hỗ trợ.")
+    raise ValidationError("Dinh dang tep khong duoc ho tro.")
 
 
 def get_existing_customer_chat_session(request, guest_key=None):
-    """
-    Chỉ TÌM phiên chat hiện có, KHÔNG tạo mới.
-
-    - Khách đăng nhập: tìm phiên open gần nhất.
-    - Khách vãng lai: tìm theo guest_key.
-    Trả về session hoặc None.
-    """
     if request.user.is_authenticated:
         customer = ensure_customer_profile(request.user)
         return ChatSession.objects.filter(
@@ -118,14 +140,6 @@ def get_existing_customer_chat_session(request, guest_key=None):
 
 
 def create_customer_chat_session(request, guest_key=None, source_page=""):
-    """
-    TẠO phiên chat mới cho khách hàng.
-    Chỉ gọi hàm này khi khách gửi tin nhắn đầu tiên.
-
-    - Khách đăng nhập: tạo session gắn với CustomerProfile.
-    - Khách vãng lai: tạo session với guest_session_key mới.
-    Trả về (session, created=True).
-    """
     source_page = (source_page or "")[:255]
 
     if request.user.is_authenticated:
@@ -135,25 +149,18 @@ def create_customer_chat_session(request, guest_key=None, source_page=""):
             customer=customer,
             source_page=source_page,
         )
-        return session, True
+    else:
+        session = ChatSession.objects.create(
+            customer_type="guest",
+            guest_session_key=guest_key or generate_guest_session_key(),
+            source_page=source_page,
+        )
 
-    new_guest_key = guest_key or generate_guest_session_key()
-    session = ChatSession.objects.create(
-        customer_type="guest",
-        guest_session_key=new_guest_key,
-        source_page=source_page,
-    )
+    notify_chat_session_changed(session)
     return session, True
 
 
 def get_or_create_customer_chat_session(request, guest_key=None, source_page=""):
-    """
-    Lấy phiên chat hiện có hoặc tạo mới.
-    Hàm này chỉ dùng khi khách gửi tin nhắn (đảm bảo có session để lưu message).
-
-    - Khách đăng nhập: tái sử dụng phiên open gần nhất.
-    - Khách vãng lai: tái sử dụng theo guest_key.
-    """
     source_page = (source_page or "")[:255]
 
     existing = get_existing_customer_chat_session(request, guest_key=guest_key)
@@ -161,44 +168,47 @@ def get_or_create_customer_chat_session(request, guest_key=None, source_page="")
         if source_page and not existing.source_page:
             existing.source_page = source_page
             existing.save(update_fields=["source_page", "updated_at"])
+            notify_chat_session_changed(existing)
         return existing, False
 
     return create_customer_chat_session(request, guest_key=guest_key, source_page=source_page)
 
 
-def can_customer_access_session(request, session, guest_key=None):
-    """Kiểm tra khách hàng hiện tại có quyền truy cập phiên chat không."""
+def can_user_access_session(user, session, guest_key=None):
     if session.customer_type == "authenticated":
-        return (
-            request.user.is_authenticated
+        return bool(
+            getattr(user, "is_authenticated", False)
             and session.customer_id
-            and hasattr(request.user, "customer_profile")
-            and session.customer_id == request.user.customer_profile.id
+            and hasattr(user, "customer_profile")
+            and session.customer_id == user.customer_profile.id
         )
 
     return bool(guest_key and session.guest_session_key == guest_key)
 
 
+def can_customer_access_session(request, session, guest_key=None):
+    return can_user_access_session(request.user, session, guest_key)
+
+
 def get_customer_sender_name(request):
-    """Tên người gửi phía khách."""
     if request.user.is_authenticated:
         profile = ensure_customer_profile(request.user)
         return profile.full_name or profile.phone or request.user.username
-    return "Khách vãng lai"
+    return "Khach vang lai"
 
 
 def touch_session_from_message(session, message):
-    """Cập nhật activity và unread counters của phiên chat."""
+    sender_type = normalize_sender_type(message.sender_type)
     update_kwargs = {
         "last_message_at": message.created_at,
         "last_message_preview": message.get_preview_text()[:255],
-        "last_sender_type": message.sender_type,
+        "last_sender_type": sender_type,
         "updated_at": timezone.now(),
     }
-    if message.sender_type == "customer":
+    if sender_type == "customer":
         update_kwargs["admin_unread_count"] = F("admin_unread_count") + 1
         update_kwargs["customer_unread_count"] = 0
-    elif message.sender_type == "admin":
+    elif sender_type == "admin":
         update_kwargs["customer_unread_count"] = F("customer_unread_count") + 1
         update_kwargs["admin_unread_count"] = 0
 
@@ -224,13 +234,13 @@ def create_chat_message(
     attachment=None,
     client_message_id=None,
 ):
-    """Tạo tin nhắn mới, có chống duplicate theo client_message_id."""
+    sender_type = normalize_sender_type(sender_type)
     sender_name = (sender_name or "").strip()
     content = (content or "").strip()
     client_message_id = (client_message_id or "").strip() or None
 
     if sender_type == "customer" and attachment:
-        raise ValidationError("Khách hàng chỉ được gửi tin nhắn văn bản.")
+        raise ValidationError("Khach hang chi duoc gui tin nhan van ban.")
 
     message_type = validate_admin_attachment(attachment)
 
@@ -238,7 +248,7 @@ def create_chat_message(
         content = normalize_text_message(content)
 
     if not content and not attachment:
-        raise ValidationError("Vui lòng nhập nội dung tin nhắn.")
+        raise ValidationError("Vui long nhap noi dung tin nhan.")
 
     with transaction.atomic():
         locked_session = ChatSession.objects.select_for_update().get(pk=session.pk)
@@ -256,6 +266,7 @@ def create_chat_message(
             session=locked_session,
             sender_type=sender_type,
             sender=sender_user,
+            sender_user=sender_user,
             sender_name=sender_name,
             message_type=message_type if attachment else "text",
             content=content,
@@ -271,11 +282,72 @@ def create_chat_message(
         message.save()
         touch_session_from_message(locked_session, message)
         session.refresh_from_db()
-        return message, True
+
+    notify_chat_message_created(message)
+    return message, True
+
+
+def ensure_staff_session_participation(session, staff_user):
+    if not staff_user or not getattr(staff_user, "is_authenticated", False):
+        return None, False
+
+    return SessionStaff.objects.get_or_create(
+        session=session,
+        staff=staff_user,
+    )
+
+
+def notify_admin_sessions_changed():
+    _broadcast_group_event(
+        ADMIN_CHAT_SESSIONS_GROUP,
+        {"type": "chat.sessions_refresh"},
+    )
+
+
+def notify_chat_session_changed(session):
+    session_payload = serialize_chat_session(session)
+    _broadcast_group_event(
+        get_customer_chat_group(session.chat_code),
+        {
+            "type": "chat.session",
+            "session": session_payload,
+        },
+    )
+    _broadcast_group_event(
+        get_admin_chat_group(session.chat_code),
+        {
+            "type": "chat.session",
+            "session": session_payload,
+        },
+    )
+    notify_admin_sessions_changed()
+
+
+def notify_chat_message_created(message):
+    customer_message_payload = serialize_customer_chat_message(message)
+    admin_message_payload = serialize_chat_message(message)
+    session_payload = serialize_chat_session(message.session)
+
+    _broadcast_group_event(
+        get_customer_chat_group(message.session.chat_code),
+        {
+            "type": "chat.message",
+            "message": customer_message_payload,
+            "session": session_payload,
+        },
+    )
+    _broadcast_group_event(
+        get_admin_chat_group(message.session.chat_code),
+        {
+            "type": "chat.message",
+            "message": admin_message_payload,
+            "session": session_payload,
+        },
+    )
+    notify_admin_sessions_changed()
 
 
 def mark_session_read_by_admin(session):
-    """Reset unread phía admin khi một admin đã xem phiên."""
     if session.admin_unread_count:
         session.admin_unread_count = 0
         session.updated_at = timezone.now()
@@ -283,10 +355,10 @@ def mark_session_read_by_admin(session):
             admin_unread_count=0,
             updated_at=session.updated_at,
         )
+        notify_chat_session_changed(session)
 
 
 def mark_session_read_by_customer(session):
-    """Reset unread phía khách khi khách mở chat."""
     if session.customer_unread_count:
         session.customer_unread_count = 0
         session.updated_at = timezone.now()
@@ -294,13 +366,10 @@ def mark_session_read_by_customer(session):
             customer_unread_count=0,
             updated_at=session.updated_at,
         )
+        notify_chat_session_changed(session)
 
 
 def get_chat_sessions_queryset(search="", status=""):
-    """Queryset danh sách phiên chat cho admin.
-    Chỉ trả về session có ít nhất 1 tin nhắn (loại session rỗng).
-    """
-    from django.db.models import Exists, OuterRef
     sessions = ChatSession.objects.select_related("customer", "customer__user").filter(
         Exists(ChatMessage.objects.filter(session=OuterRef("pk")))
     )
@@ -322,50 +391,40 @@ def get_chat_sessions_queryset(search="", status=""):
 
 
 def get_admin_chat_sessions_data(search="", status="", limit=200):
-    """
-    Trả về danh sách phiên chat cho admin cùng tổng unread phía admin.
-
-    unreadTotal được tính trên toàn bộ queryset đã filter,
-    không chỉ phần sessions đang hiển thị.
-    """
     sessions_qs = get_chat_sessions_queryset(search=search, status=status)
     unread_total = sessions_qs.order_by().aggregate(total=Sum("admin_unread_count"))["total"] or 0
     return list(sessions_qs[:limit]), unread_total
 
 
-def serialize_chat_message(message):
-    """Serialize tin nhắn cho frontend.
+def _get_attachment_url(message):
+    if message.attachment:
+        return message.attachment.url
+    return message.attachment_url or ""
 
-    senderName  → tên hiển thị phía KHÁCH:
-                  - staff/admin → "Nhân viên" (ẩn username nội bộ)
-                  - customer    → tên khách
-                  - system      → ""
-    staffName   → tên thật của staff, chỉ dùng phía ADMIN panel.
-                  Với tin nhắn của khách thì trả về tên khách.
-    """
-    is_staff_msg = message.sender_type in ("STAFF", "admin")
 
-    # Tên hiển thị an toàn cho phía khách
-    if is_staff_msg:
-        safe_sender_name = "Nhân viên"
+def serialize_chat_message(message, customer_safe=False):
+    sender_type = normalize_sender_type(message.sender_type)
+    raw_sender_name = (message.sender_name or "").strip()
+
+    if customer_safe:
+        sender_name = get_customer_visible_sender_name(sender_type, raw_sender_name)
+        staff_name = ""
     else:
-        safe_sender_name = message.sender_name or ""
-
-    # Tên thật dùng nội bộ cho admin panel
-    staff_name = (message.sender_name or "") if is_staff_msg else ""
+        sender_name = raw_sender_name
+        staff_name = raw_sender_name if sender_type == "admin" else ""
 
     return {
         "id": message.id,
         "sessionCode": message.session.chat_code,
-        "senderType": message.sender_type,
-        "senderName": safe_sender_name,
+        "senderType": sender_type,
+        "senderName": sender_name,
         "staffName": staff_name,
         "messageType": message.message_type,
         "content": message.content or "",
         "status": message.status,
         "createdAt": message.created_at.isoformat(),
         "timeLabel": timezone.localtime(message.created_at).strftime("%H:%M"),
-        "attachmentUrl": message.attachment.url if message.attachment else "",
+        "attachmentUrl": _get_attachment_url(message),
         "attachmentName": message.attachment_name or "",
         "attachmentSize": message.attachment_size or 0,
         "attachmentContentType": message.attachment_content_type or "",
@@ -373,8 +432,15 @@ def serialize_chat_message(message):
     }
 
 
+def serialize_customer_chat_message(message):
+    return serialize_chat_message(message, customer_safe=True)
+
+
+def serialize_chat_messages(messages, customer_safe=False):
+    return [serialize_chat_message(message, customer_safe=customer_safe) for message in messages]
+
+
 def serialize_chat_session(session):
-    """Serialize phiên chat cho danh sách admin và widget khách."""
     return {
         "id": session.id,
         "chatCode": session.chat_code,
@@ -384,7 +450,7 @@ def serialize_chat_session(session):
         "status": session.status,
         "sourcePage": session.source_page or "",
         "lastMessagePreview": session.get_last_message_label(),
-        "lastSenderType": session.last_sender_type or "",
+        "lastSenderType": normalize_sender_type(session.last_sender_type),
         "lastMessageAt": session.last_message_at.isoformat() if session.last_message_at else "",
         "lastMessageTimeLabel": timezone.localtime(session.last_message_at).strftime("%H:%M")
         if session.last_message_at
@@ -395,15 +461,5 @@ def serialize_chat_session(session):
     }
 
 
-def serialize_chat_messages(messages):
-    return [serialize_chat_message(message) for message in messages]
-
-
-def build_sse_payload(event, data):
-    """Chuẩn hóa SSE payload."""
-    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n"
-
-
 def get_attachment_accept_string():
-    """Chuỗi accept cho input file phía admin."""
     return ",".join(sorted(ALLOWED_IMAGE_TYPES | ALLOWED_FILE_TYPES | ALLOWED_FILE_EXTENSIONS))

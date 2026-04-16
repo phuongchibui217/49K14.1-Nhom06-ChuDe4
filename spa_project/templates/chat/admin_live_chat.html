@@ -105,11 +105,11 @@
 window.adminChatConfig = {
     csrfToken: "{{ csrf_token }}",
     sessionsUrl: "{% url 'chat:api_admin_chat_sessions' %}",
-    sessionsStreamUrl: "{% url 'chat:api_admin_chat_sessions_stream' %}",
+    sessionsSocketPath: "/ws/admin/chat/sessions/",
     messagesUrlTemplate: "{% url 'chat:api_admin_chat_messages' '__CHAT_CODE__' %}",
     sendUrlTemplate: "{% url 'chat:api_admin_chat_send' '__CHAT_CODE__' %}",
     readUrlTemplate: "{% url 'chat:api_admin_chat_mark_read' '__CHAT_CODE__' %}",
-    streamUrlTemplate: "{% url 'chat:api_admin_chat_stream' '__CHAT_CODE__' %}",
+    messageSocketPathTemplate: "/ws/admin/chat/sessions/__CHAT_CODE__/",
     sendErrorMessage: "Không thể gửi tin nhắn. Vui lòng thử lại sau"
 };
 </script>

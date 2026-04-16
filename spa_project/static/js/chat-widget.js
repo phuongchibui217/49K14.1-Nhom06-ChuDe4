@@ -6,7 +6,6 @@
 
     const STORAGE_KEYS = {
         guestKey: "spa_ana_guest_chat_key",
-        chatCode: "spa_ana_guest_chat_code",
     };
 
     const state = {
@@ -17,11 +16,11 @@
         messageIds: new Set(),
         unreadCount: 0,
         stream: null,
+        reconnectTimer: null,
     };
 
     const dom = {
         widget: document.getElementById("chatWidgetContainer"),
-        statusLabel: document.getElementById("chatStatusLabel"),
         warning: document.getElementById("chatGuestWarning"),
         messages: document.getElementById("chatMessages"),
         emptyState: document.getElementById("chatEmptyState"),
@@ -34,6 +33,12 @@
 
     function buildChatUrl(template, chatCode) {
         return template.replace("__CHAT_CODE__", chatCode);
+    }
+
+    function buildWebSocketUrl(path, params) {
+        const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+        const queryString = params && params.toString() ? `?${params.toString()}` : "";
+        return `${protocol}://${window.location.host}${path}${queryString}`;
     }
 
     function getCsrfToken() {
@@ -164,7 +169,7 @@
 
     function clearGuestStorage() {
         sessionStorage.removeItem(STORAGE_KEYS.guestKey);
-        sessionStorage.removeItem(STORAGE_KEYS.chatCode);
+        sessionStorage.removeItem("spa_ana_guest_chat_code");
         state.guestKey = "";
     }
 
@@ -176,7 +181,6 @@
 
         state.guestKey = state.guestKey || "";
         sessionStorage.setItem(STORAGE_KEYS.guestKey, state.guestKey);
-        sessionStorage.setItem(STORAGE_KEYS.chatCode, state.session.chatCode);
     }
 
     function updateFloatingBadge() {
@@ -242,7 +246,9 @@
 
         const displayName = message.senderType === "customer"
             ? "Bạn"
-            : message.senderName || "Spa ANA";
+            : senderClass === "admin"
+                ? "Nhân viên"
+                : message.senderName || "Spa ANA";
 
         const headerHtml = senderClass === "system"
             ? ""
@@ -338,9 +344,26 @@
 
     function disconnectStream() {
         if (state.stream) {
+            state.stream.onclose = null;
             state.stream.close();
             state.stream = null;
         }
+
+        if (state.reconnectTimer) {
+            clearTimeout(state.reconnectTimer);
+            state.reconnectTimer = null;
+        }
+    }
+
+    function scheduleReconnect(lastMessageId) {
+        if (state.reconnectTimer || !state.session) {
+            return;
+        }
+
+        state.reconnectTimer = window.setTimeout(function () {
+            state.reconnectTimer = null;
+            connectStream(lastMessageId);
+        }, 3000);
     }
 
     function connectStream(lastMessageId) {
@@ -357,13 +380,21 @@
             params.set("guestKey", state.guestKey);
         }
 
-        const streamUrl = `${buildChatUrl(config.streamUrlTemplate, state.session.chatCode)}?${params.toString()}`;
-        const eventSource = new EventSource(streamUrl);
-        state.stream = eventSource;
+        const socketUrl = buildWebSocketUrl(
+            buildChatUrl(config.socketPathTemplate, state.session.chatCode),
+            params
+        );
+        const socket = new WebSocket(socketUrl);
+        state.stream = socket;
 
-        eventSource.addEventListener("message", async (event) => {
-            const data = JSON.parse(event.data);
-            if (!data.message) {
+        socket.addEventListener("message", async (event) => {
+            const data = JSON.parse(event.data || "{}");
+            if (data.event === "session" && data.session) {
+                state.session = data.session;
+                return;
+            }
+
+            if (data.event !== "message" || !data.message) {
                 return;
             }
 
@@ -386,13 +417,13 @@
             }
         });
 
-        eventSource.onerror = function () {
-            eventSource.close();
-            if (state.session) {
-                const currentLastId = [...state.messageIds].length ? Math.max(...state.messageIds) : 0;
-                setTimeout(() => connectStream(currentLastId), 3000);
+        socket.addEventListener("close", function () {
+            if (state.stream === socket) {
+                state.stream = null;
+                const currentLastId = state.messageIds.size ? Math.max(...state.messageIds) : (lastMessageId || 0);
+                scheduleReconnect(currentLastId);
             }
-        };
+        });
     }
 
     async function bootstrapChat() {

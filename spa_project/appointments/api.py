@@ -16,18 +16,17 @@ Author: Spa ANA Team
 
 import json
 from datetime import datetime
-import time
 
-from django.http import JsonResponse, StreamingHttpResponse
+from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count
 from django.db import transaction
-from django.template.loader import render_to_string
 
 from .models import Appointment, Room
 from customers.models import CustomerProfile
 from spa_services.models import Service
+from .realtime import get_pending_booking_count_payload
 
 # Import serializer (chuyển model → dict)
 from .serializers import serialize_appointment
@@ -851,90 +850,14 @@ def api_booking_pending_count(request):
         return _deny()
 
     try:
-        # Chỉ đếm PENDING — đây là yêu cầu chưa xử lý
-        pending_count = Appointment.objects.filter(
-            Q(source='ONLINE') | Q(source__isnull=True),
-            status='PENDING'
-        ).count()
-
+        payload = get_pending_booking_count_payload()
         return JsonResponse({
             'success': True,
-            'count': pending_count,
-            'timestamp': datetime.now().isoformat()
+            **payload,
         })
     except Exception as e:
         return JsonResponse({
             'success': False,
             'error': f'Không thể lấy số lượng: {str(e)}',
             'count': 0
-        }, status=500)
-
-
-def _booking_count_stream_generator():
-    """
-    SSE Stream generator để推送 số lượng booking pending real-time
-
-    Yield: data: {JSON}\n\n
-    """
-    while True:
-        try:
-            # Chỉ đếm PENDING — đây là yêu cầu chưa xử lý
-            pending_count = Appointment.objects.filter(
-                Q(source='ONLINE') | Q(source__isnull=True),
-                status='PENDING'
-            ).count()
-
-            # Format SSE response
-            data = {
-                'count': pending_count,
-                'timestamp': datetime.now().isoformat()
-            }
-
-            yield f"data: {json.dumps(data)}\n\n"
-
-            # Sleep 10 giây trước khi推送 tiếp
-            time.sleep(10)
-
-        except Exception as e:
-            # Nếu có lỗi, log và tiếp tục
-            error_data = {
-                'count': 0,
-                'timestamp': datetime.now().isoformat(),
-                'error': str(e)
-            }
-            yield f"data: {json.dumps(error_data)}\n\n"
-            time.sleep(10)
-
-
-@require_http_methods(["GET"])
-def api_booking_pending_count_stream(request):
-    """
-    API: SSE Stream để推送 số lượng booking pending real-time
-
-    FE gọi: GET /api/booking/pending-count/stream/
-
-    Server-Sent Events (SSE) stream:
-    data: {"count": 5, "timestamp": "2026-04-12T10:30:00"}
-
-    Dùng cho notification badge auto-update
-    """
-    if not _is_staff(request.user):
-        return _deny()
-
-    try:
-        response = StreamingHttpResponse(
-            _booking_count_stream_generator(),
-            content_type='text/event-stream'
-        )
-
-        # Cấu hình SSE headers (KHÔNG set Connection header - WSGI tự handle)
-        response['Cache-Control'] = 'no-cache'
-        response['X-Accel-Buffering'] = 'no'  # Disable Nginx buffering
-
-        return response
-
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': f'Stream error: {str(e)}'
         }, status=500)

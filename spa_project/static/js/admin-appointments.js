@@ -701,49 +701,18 @@ document.addEventListener("DOMContentLoaded", async ()=>{
   await refreshData();
   await renderWebRequests();
 
-  // ===== SSE: REAL-TIME BOOKING COUNT UPDATE =====
-  // ✅ SSE stream cập nhật SIDEBAR BADGE (pending count) - KHÔNG update tab badge
-  // ❌ Tab badge (#webCount) chỉ update bằng renderWebRequests() (total count)
-  if(window.EventSource){
-    try{
-      const eventSource = new EventSource('/api/booking/pending-count/stream/');
-      let previousPendingCount = null;
+  // ===== REAL-TIME BOOKING COUNT UPDATE (WebSocket badge dispatcher) =====
+  let previousPendingCount = null;
+  window.addEventListener('booking-pending-count:update', async function(event){
+    const currentPendingCount = Number(event?.detail?.count || 0);
 
-      eventSource.addEventListener("message", async function(event){
-        try{
-          const data = JSON.parse(event.data);
-          const currentPendingCount = data.count;
-
-          console.log('🔔 SSE - Pending count updated (sidebar badge):', currentPendingCount);
-
-          // ✅ CHỈ update sidebar badge - KHÔNG update tab badge (#webCount)
-          const sidebarBadge = document.getElementById('adminSidebarBookingBadge');
-          if (sidebarBadge) {
-            sidebarBadge.textContent = String(currentPendingCount);
-            sidebarBadge.setAttribute('data-count', String(currentPendingCount));
-          }
-
-          // Auto-refresh bảng nếu pending count thay đổi (có booking mới hoặc bị hủy)
-          if(previousPendingCount !== null && currentPendingCount !== previousPendingCount){
-            console.log('🔄 Pending count changed from', previousPendingCount, 'to', currentPendingCount, '- refreshing web requests table');
-            await renderWebRequests();
-          }
-
-          previousPendingCount = currentPendingCount;
-        }catch(err){
-          console.error('SSE parse error:', err);
-        }
-      });
-      eventSource.onerror = function(error){
-        console.error('SSE connection error:', error);
-      };
-      console.log('✅ SSE connected for real-time sidebar badge updates');
-    }catch(err){
-      console.error('SSE init error:', err);
+    if(previousPendingCount !== null && currentPendingCount !== previousPendingCount){
+      console.log('🔄 Pending count changed from', previousPendingCount, 'to', currentPendingCount, '- refreshing web requests table');
+      await renderWebRequests();
     }
-  }else{
-    console.warn('EventSource not supported, badges will only update on reload');
-  }
+
+    previousPendingCount = currentPendingCount;
+  });
 
   if(btnToday) btnToday.addEventListener("click", ()=> setDay(todayISO()));
   if(btnPrev) btnPrev.addEventListener("click", ()=> shiftDay(-1));

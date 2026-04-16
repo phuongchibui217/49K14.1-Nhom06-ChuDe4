@@ -1,31 +1,24 @@
-"""
+﻿"""
 URL configuration cho appointments app
 
-Phân tách rõ ràng:
-- views.py  → Trang web (HTML)   → import views
-- api.py    → API endpoints (JSON) → import api
+Phan tach ro rang:
+- views.py  -> Trang web (HTML)   -> import views
+- api.py    -> API endpoints (JSON) -> import api
 
 Author: Spa ANA Team
 """
 
 from django.urls import path
-from . import views
-from . import api
+
+from . import api, views
 
 app_name = 'appointments'
 
 urlpatterns = [
-    # ============================================================
-    # TRANG WEB (views.py) - Trả về HTML
-    # ============================================================
     path('booking/', views.booking, name='booking'),
     path('lich-hen-cua-toi/', views.my_appointments, name='my_appointments'),
     path('lich-hen/cancel/<int:appointment_id>/', views.cancel_appointment, name='cancel_appointment'),
     path('manage/appointments/', views.admin_appointments, name='admin_appointments'),
-
-    # ============================================================
-    # API ENDPOINTS (api.py) - Trả về JSON
-    # ============================================================
     path('api/rooms/', api.api_rooms_list, name='api_rooms_list'),
     path('api/appointments/', api.api_appointments_list, name='api_appointments_list'),
     path('api/appointments/create/', api.api_appointment_create, name='api_appointment_create'),
@@ -34,10 +27,5 @@ urlpatterns = [
     path('api/appointments/<str:appointment_code>/status/', api.api_appointment_status, name='api_appointment_status'),
     path('api/appointments/<str:appointment_code>/delete/', api.api_appointment_delete, name='api_appointment_delete'),
     path('api/booking-requests/', api.api_booking_requests, name='api_booking_requests'),
-
-    # ============================================================
-    # NOTIFICATION BADGE APIs (api.py)
-    # ============================================================
-    path('api/booking/pending-count/', api.api_booking_pending_count, name='api_booking_pending_count'), #Lấy số lượng booking pending (chờ xác nhận) tại thời điểm gọi
-    path('api/booking/pending-count/stream/', api.api_booking_pending_count_stream, name='api_booking_pending_count_stream'), #- Kết nối liên tục, server tự động đẩy data mỗi 10 giây,Không cần frontend gọi lại liên tục,Auto-update badge real-time
+    path('api/booking/pending-count/', api.api_booking_pending_count, name='api_booking_pending_count'),
 ]

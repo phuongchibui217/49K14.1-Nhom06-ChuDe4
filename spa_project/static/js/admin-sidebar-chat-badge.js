@@ -17,6 +17,11 @@
         reconnectTimer: null,
     };
 
+    function buildWebSocketUrl(path) {
+        const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+        return `${protocol}://${window.location.host}${path}`;
+    }
+
     function normalizeCount(value) {
         const count = Number(value);
         if (!Number.isFinite(count) || count <= 0) {
@@ -76,6 +81,7 @@
 
     function disconnectStream() {
         if (state.stream) {
+            state.stream.onclose = null;
             state.stream.close();
             state.stream = null;
         }
@@ -100,29 +106,27 @@
     function connectStream() {
         disconnectStream();
 
-        if (!window.EventSource) {
-            return;
-        }
+        const socket = new WebSocket(buildWebSocketUrl(config.sessionsSocketPath));
+        state.stream = socket;
 
-        const eventSource = new EventSource(config.sessionsStreamUrl);
-        state.stream = eventSource;
-
-        eventSource.addEventListener("sessions", function (event) {
+        socket.addEventListener("message", function (event) {
             try {
-                const data = JSON.parse(event.data);
+                const data = JSON.parse(event.data || "{}");
+                if (data.event !== "sessions") {
+                    return;
+                }
                 renderBadge(data.unreadTotal);
             } catch (error) {
                 // Bỏ qua payload lỗi và chờ event tiếp theo.
             }
         });
 
-        eventSource.onerror = function () {
-            if (state.stream === eventSource) {
-                eventSource.close();
+        socket.addEventListener("close", function () {
+            if (state.stream === socket) {
                 state.stream = null;
             }
             scheduleReconnect();
-        };
+        });
     }
 
     document.addEventListener("DOMContentLoaded", function () {

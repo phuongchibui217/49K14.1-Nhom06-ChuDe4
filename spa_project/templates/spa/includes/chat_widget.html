@@ -59,7 +59,7 @@ window.chatWidgetConfig = {
     sendNewUrl: "{% url 'chat:api_customer_chat_send_new' %}",
     sendUrlTemplate: "{% url 'chat:api_customer_chat_send' '__CHAT_CODE__' %}",
     readUrlTemplate: "{% url 'chat:api_customer_chat_mark_read' '__CHAT_CODE__' %}",
-    streamUrlTemplate: "{% url 'chat:api_customer_chat_stream' '__CHAT_CODE__' %}",
+    socketPathTemplate: "/ws/chat/session/__CHAT_CODE__/",
     guestWarningMessage: "Lịch sử chat sẽ không được lưu khi bạn rời khỏi website.",
     sendErrorMessage: "Không thể gửi tin nhắn. Vui lòng thử lại sau"
 };

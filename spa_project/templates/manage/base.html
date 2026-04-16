@@ -201,7 +201,7 @@
     <script>
         window.adminSidebarChatBadgeConfig = {
             sessionsUrl: "{% url 'chat:api_admin_chat_sessions' %}",
-            sessionsStreamUrl: "{% url 'chat:api_admin_chat_sessions_stream' %}"
+            sessionsSocketPath: "/ws/admin/chat/sessions/"
         };
     </script>
     <script src="{% static 'js/admin-sidebar-chat-badge.js' %}"></script>
@@ -209,7 +209,7 @@
     <script>
         window.adminSidebarBookingBadgeConfig = {
             countUrl: "{% url 'appointments:api_booking_pending_count' %}",
-            countStreamUrl: "{% url 'appointments:api_booking_pending_count_stream' %}"
+            countSocketPath: "/ws/admin/booking/pending-count/"
         };
     </script>
     <script src="{% static 'js/admin-sidebar-booking-badge.js' %}?v={% now 'His' %}"></script>

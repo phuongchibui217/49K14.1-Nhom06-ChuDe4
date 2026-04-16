@@ -10,8 +10,9 @@
         selectedFile: null,
         sessionStream: null,
         messageStream: null,
+        sessionReconnectTimer: null,
+        messageReconnectTimer: null,
         messageIds: new Set(),
-        search: "",
     };
 
     const dom = {
@@ -38,6 +39,12 @@
 
     function buildChatUrl(template, chatCode) {
         return template.replace("__CHAT_CODE__", chatCode);
+    }
+
+    function buildWebSocketUrl(path, params) {
+        const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+        const queryString = params && params.toString() ? `?${params.toString()}` : "";
+        return `${protocol}://${window.location.host}${path}${queryString}`;
     }
 
     function getCsrfToken() {
@@ -392,28 +399,73 @@
 
     function disconnectMessageStream() {
         if (state.messageStream) {
+            state.messageStream.onclose = null;
             state.messageStream.close();
             state.messageStream = null;
+        }
+
+        if (state.messageReconnectTimer) {
+            clearTimeout(state.messageReconnectTimer);
+            state.messageReconnectTimer = null;
         }
     }
 
     function disconnectSessionStream() {
         if (state.sessionStream) {
+            state.sessionStream.onclose = null;
             state.sessionStream.close();
             state.sessionStream = null;
         }
+
+        if (state.sessionReconnectTimer) {
+            clearTimeout(state.sessionReconnectTimer);
+            state.sessionReconnectTimer = null;
+        }
+    }
+
+    function scheduleSessionReconnect() {
+        if (state.sessionReconnectTimer) {
+            return;
+        }
+
+        state.sessionReconnectTimer = window.setTimeout(function () {
+            state.sessionReconnectTimer = null;
+            connectSessionStream();
+        }, 3000);
+    }
+
+    function scheduleMessageReconnect(chatCode, lastMessageId) {
+        if (state.messageReconnectTimer) {
+            return;
+        }
+
+        state.messageReconnectTimer = window.setTimeout(function () {
+            state.messageReconnectTimer = null;
+            if (state.selectedSession && state.selectedSession.chatCode === chatCode) {
+                connectMessageStream(chatCode, lastMessageId);
+            }
+        }, 3000);
     }
 
     function connectSessionStream() {
         disconnectSessionStream();
 
         const search = dom.searchInput.value.trim();
-        const query = search ? `?search=${encodeURIComponent(search)}` : "";
-        const eventSource = new EventSource(`${config.sessionsStreamUrl}${query}`);
-        state.sessionStream = eventSource;
+        const params = new URLSearchParams();
+        if (search) {
+            params.set("search", search);
+        }
 
-        eventSource.addEventListener("sessions", (event) => {
-            const data = JSON.parse(event.data);
+        const socket = new WebSocket(
+            buildWebSocketUrl(config.sessionsSocketPath, params)
+        );
+        state.sessionStream = socket;
+
+        socket.addEventListener("message", (event) => {
+            const data = JSON.parse(event.data || "{}");
+            if (data.event !== "sessions") {
+                return;
+            }
             state.sessions = data.sessions || [];
             renderSessions();
 
@@ -427,22 +479,36 @@
             }
         });
 
-        eventSource.onerror = function () {
-            eventSource.close();
-            setTimeout(connectSessionStream, 3000);
-        };
+        socket.addEventListener("close", function () {
+            if (state.sessionStream === socket) {
+                state.sessionStream = null;
+                scheduleSessionReconnect();
+            }
+        });
     }
 
     function connectMessageStream(chatCode, lastMessageId) {
         disconnectMessageStream();
 
-        const streamUrl = `${buildChatUrl(config.streamUrlTemplate, chatCode)}?lastMessageId=${lastMessageId || 0}`;
-        const eventSource = new EventSource(streamUrl);
-        state.messageStream = eventSource;
+        const params = new URLSearchParams({
+            lastMessageId: String(lastMessageId || 0),
+        });
+        const socket = new WebSocket(
+            buildWebSocketUrl(
+                buildChatUrl(config.messageSocketPathTemplate, chatCode),
+                params
+            )
+        );
+        state.messageStream = socket;
 
-        eventSource.addEventListener("message", async (event) => {
-            const data = JSON.parse(event.data);
-            if (!data.message) {
+        socket.addEventListener("message", async (event) => {
+            const data = JSON.parse(event.data || "{}");
+            if (data.event === "session" && data.session && state.selectedSession && data.session.chatCode === state.selectedSession.chatCode) {
+                updateSelectedSession(data.session);
+                return;
+            }
+
+            if (data.event !== "message" || !data.message) {
                 return;
             }
 
@@ -460,12 +526,12 @@
             }
         });
 
-        eventSource.onerror = function () {
-            eventSource.close();
-            if (state.selectedSession && state.selectedSession.chatCode === chatCode) {
-                setTimeout(() => connectMessageStream(chatCode, lastMessageId), 3000);
+        socket.addEventListener("close", function () {
+            if (state.messageStream === socket) {
+                state.messageStream = null;
+                scheduleMessageReconnect(chatCode, lastMessageId);
             }
-        };
+        });
     }
 
     async function selectSession(chatCode) {
@@ -532,7 +598,6 @@
     }
 
     function handleSearchInput() {
-        state.search = dom.searchInput.value.trim();
         loadSessions();
         connectSessionStream();
     }
