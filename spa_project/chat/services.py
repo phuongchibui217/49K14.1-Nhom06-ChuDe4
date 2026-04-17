@@ -120,9 +120,9 @@ def validate_admin_attachment(attachment):
     raise ValidationError("Dinh dang tep khong duoc ho tro.")
 
 
-def get_existing_customer_chat_session(request, guest_key=None):
-    if request.user.is_authenticated:
-        customer = ensure_customer_profile(request.user)
+def get_existing_customer_chat_session_for_identity(user=None, guest_key=None):
+    if user and getattr(user, "is_authenticated", False):
+        customer = ensure_customer_profile(user)
         return ChatSession.objects.filter(
             customer=customer,
             customer_type="authenticated",
@@ -139,11 +139,11 @@ def get_existing_customer_chat_session(request, guest_key=None):
     return None
 
 
-def create_customer_chat_session(request, guest_key=None, source_page=""):
+def create_customer_chat_session_for_identity(user=None, guest_key=None, source_page=""):
     source_page = (source_page or "")[:255]
 
-    if request.user.is_authenticated:
-        customer = ensure_customer_profile(request.user)
+    if user and getattr(user, "is_authenticated", False):
+        customer = ensure_customer_profile(user)
         session = ChatSession.objects.create(
             customer_type="authenticated",
             customer=customer,
@@ -157,21 +157,21 @@ def create_customer_chat_session(request, guest_key=None, source_page=""):
         )
 
     notify_chat_session_changed(session)
-    return session, True
+    return session
 
 
-def get_or_create_customer_chat_session(request, guest_key=None, source_page=""):
+def get_or_create_customer_chat_session_for_identity(user=None, guest_key=None, source_page=""):
     source_page = (source_page or "")[:255]
 
-    existing = get_existing_customer_chat_session(request, guest_key=guest_key)
+    existing = get_existing_customer_chat_session_for_identity(user=user, guest_key=guest_key)
     if existing:
         if source_page and not existing.source_page:
             existing.source_page = source_page
             existing.save(update_fields=["source_page", "updated_at"])
             notify_chat_session_changed(existing)
-        return existing, False
+        return existing
 
-    return create_customer_chat_session(request, guest_key=guest_key, source_page=source_page)
+    return create_customer_chat_session_for_identity(user=user, guest_key=guest_key, source_page=source_page)
 
 
 def can_user_access_session(user, session, guest_key=None):
@@ -184,17 +184,6 @@ def can_user_access_session(user, session, guest_key=None):
         )
 
     return bool(guest_key and session.guest_session_key == guest_key)
-
-
-def can_customer_access_session(request, session, guest_key=None):
-    return can_user_access_session(request.user, session, guest_key)
-
-
-def get_customer_sender_name(request):
-    if request.user.is_authenticated:
-        profile = ensure_customer_profile(request.user)
-        return profile.full_name or profile.phone or request.user.username
-    return "Khach vang lai"
 
 
 def touch_session_from_message(session, message):
@@ -397,9 +386,18 @@ def get_admin_chat_sessions_data(search="", status="", limit=200):
 
 
 def _get_attachment_url(message):
-    if message.attachment:
-        return message.attachment.url
-    return message.attachment_url or ""
+    attachment = getattr(message, "attachment", None)
+    attachment_name = getattr(attachment, "name", "")
+
+    if attachment and attachment_name:
+        storage = getattr(attachment, "storage", None)
+        try:
+            if storage and storage.exists(attachment_name):
+                return attachment.url
+        except Exception:
+            pass
+
+    return (message.attachment_url or "").strip()
 
 
 def serialize_chat_message(message, customer_safe=False):
@@ -416,6 +414,7 @@ def serialize_chat_message(message, customer_safe=False):
     return {
         "id": message.id,
         "sessionCode": message.session.chat_code,
+        "clientMessageId": message.client_message_id or "",
         "senderType": sender_type,
         "senderName": sender_name,
         "staffName": staff_name,

@@ -47,31 +47,10 @@
         return `${protocol}://${window.location.host}${path}${queryString}`;
     }
 
-    function getCsrfToken() {
-        const tokenInput = dom.form.querySelector('input[name="csrfmiddlewaretoken"]');
-        return config.csrfToken || (tokenInput ? tokenInput.value : "");
-    }
-
     function escapeHtml(value) {
         const div = document.createElement("div");
         div.textContent = value || "";
         return div.innerHTML;
-    }
-
-    function formatTime(value) {
-        if (!value) {
-            return "";
-        }
-
-        const date = new Date(value);
-        if (Number.isNaN(date.getTime())) {
-            return "";
-        }
-
-        return date.toLocaleTimeString("vi-VN", {
-            hour: "2-digit",
-            minute: "2-digit",
-        });
     }
 
     function formatDateTime(value) {
@@ -107,7 +86,7 @@
 
     function getSessionStatusLabel(status) {
         const normalized = String(status || "").trim().toUpperCase();
-        return normalized === "CLOSED" ? "Đã đóng" : "Đang mở";
+        return normalized === "CLOSED" ? "Da dong" : "Dang mo";
     }
 
     function debounce(fn, delay) {
@@ -116,62 +95,6 @@
             clearTimeout(timeoutId);
             timeoutId = setTimeout(() => fn.apply(this, args), delay);
         };
-    }
-
-    async function parseJsonResponse(response) {
-        const contentType = response.headers.get("content-type") || "";
-
-        if (!contentType.includes("application/json")) {
-            return {
-                success: false,
-                error: config.sendErrorMessage,
-            };
-        }
-
-        try {
-            return await response.json();
-        } catch (error) {
-            return {
-                success: false,
-                error: config.sendErrorMessage,
-            };
-        }
-    }
-
-    async function apiGet(url) {
-        try {
-            const response = await fetch(url, {
-                credentials: "same-origin",
-            });
-            return await parseJsonResponse(response);
-        } catch (error) {
-            return {
-                success: false,
-                error: config.sendErrorMessage,
-            };
-        }
-    }
-
-    async function apiPost(url, body, headers) {
-        try {
-            const response = await fetch(url, {
-                method: "POST",
-                credentials: "same-origin",
-                headers: Object.assign(
-                    {
-                        "X-CSRFToken": getCsrfToken(),
-                    },
-                    headers || {}
-                ),
-                body: body,
-            });
-            return await parseJsonResponse(response);
-        } catch (error) {
-            return {
-                success: false,
-                error: config.sendErrorMessage,
-            };
-        }
     }
 
     function setErrorMessage(message) {
@@ -212,13 +135,14 @@
     }
 
     function renderSessions() {
-        dom.unreadTotal.textContent = `${state.sessions.reduce((sum, item) => sum + (item.adminUnreadCount || 0), 0)} chưa đọc`;
+        const unreadCount = state.sessions.reduce((sum, item) => sum + (item.adminUnreadCount || 0), 0);
+        dom.unreadTotal.textContent = `${unreadCount} chua doc`;
 
         if (!state.sessions.length) {
             dom.sessionList.innerHTML = `
                 <div class="admin-chat-list-empty">
                     <i class="fas fa-comments"></i>
-                    <p>Chưa có phiên chat nào.</p>
+                    <p>Chua co phien chat nao.</p>
                 </div>
             `;
             return;
@@ -230,7 +154,7 @@
                 const unreadBadge = session.adminUnreadCount
                     ? `<span class="admin-chat-unread-badge">${session.adminUnreadCount}</span>`
                     : "";
-                const contactLabel = session.customerPhone || (session.isGuest ? "Khách vãng lai" : "Khách hàng");
+                const contactLabel = session.customerPhone || (session.isGuest ? "Khach vang lai" : "Khach hang");
 
                 return `
                     <button
@@ -240,12 +164,12 @@
                     >
                         <div class="admin-chat-session-top">
                             <div>
-                                <p class="admin-chat-session-name">${escapeHtml(session.customerName || "Khách hàng")}</p>
+                                <p class="admin-chat-session-name">${escapeHtml(session.customerName || "Khach hang")}</p>
                                 <span class="admin-chat-session-code">${escapeHtml(session.chatCode)}</span>
                             </div>
-                            <span class="admin-chat-session-time">${escapeHtml(session.lastMessageTimeLabel || "Mới tạo")}</span>
+                            <span class="admin-chat-session-time">${escapeHtml(session.lastMessageTimeLabel || "Moi tao")}</span>
                         </div>
-                        <div class="admin-chat-session-preview">${escapeHtml(session.lastMessagePreview || "Chưa có tin nhắn")}</div>
+                        <div class="admin-chat-session-preview">${escapeHtml(session.lastMessagePreview || "Chua co tin nhan")}</div>
                         <div class="admin-chat-session-bottom">
                             <span class="admin-chat-session-contact">${escapeHtml(contactLabel)}</span>
                             ${unreadBadge}
@@ -263,38 +187,50 @@
     }
 
     function renderMessageAttachment(message) {
-        if (!message.attachmentUrl) {
-            return "";
-        }
+        if (message.attachmentUrl) {
+            if (message.isImage) {
+                return `
+                    <div class="admin-chat-attachment">
+                        <a href="${message.attachmentUrl}" target="_blank" rel="noopener noreferrer">
+                            <img
+                                src="${message.attachmentUrl}"
+                                alt="${escapeHtml(message.attachmentName || "Hinh anh chat")}"
+                                class="admin-chat-attachment-image"
+                            >
+                        </a>
+                    </div>
+                `;
+            }
 
-        if (message.isImage) {
             return `
                 <div class="admin-chat-attachment">
-                    <a href="${message.attachmentUrl}" target="_blank" rel="noopener noreferrer">
-                        <img
-                            src="${message.attachmentUrl}"
-                            alt="${escapeHtml(message.attachmentName || "Hình ảnh chat")}"
-                            class="admin-chat-attachment-image"
-                        >
+                    <a
+                        href="${message.attachmentUrl}"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="admin-chat-attachment-file"
+                    >
+                        <i class="fas fa-file-alt"></i>
+                        <span>${escapeHtml(message.attachmentName || "Tep dinh kem")}</span>
+                        <small>${escapeHtml(formatFileSize(message.attachmentSize))}</small>
                     </a>
                 </div>
             `;
         }
 
-        return `
-            <div class="admin-chat-attachment">
-                <a
-                    href="${message.attachmentUrl}"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="admin-chat-attachment-file"
-                >
-                    <i class="fas fa-file-alt"></i>
-                    <span>${escapeHtml(message.attachmentName || "Tệp đính kèm")}</span>
-                    <small>${escapeHtml(formatFileSize(message.attachmentSize))}</small>
-                </a>
-            </div>
-        `;
+        if (message.attachmentName) {
+            return `
+                <div class="admin-chat-attachment">
+                    <div class="admin-chat-attachment-file">
+                        <i class="fas fa-file-alt"></i>
+                        <span>${escapeHtml(message.attachmentName)}</span>
+                        <small>${escapeHtml(formatFileSize(message.attachmentSize))}</small>
+                    </div>
+                </div>
+            `;
+        }
+
+        return "";
     }
 
     function buildMessageHtml(message) {
@@ -304,13 +240,12 @@
                 ? "system"
                 : "customer";
 
-        // Phía admin: hiện tên thật staff (staffName) hoặc tên khách (senderName)
         const displayName = message.senderType === "admin"
-            ? (message.staffName || message.senderName || "Nhân viên")
-            : (message.senderName || "Khách hàng");
+            ? (message.staffName || message.senderName || "Nhan vien")
+            : (message.senderName || "Khach hang");
 
         return `
-            <div class="admin-chat-message ${messageClass}" data-message-id="${message.id}">
+            <div class="admin-chat-message ${messageClass}" data-message-id="${escapeHtml(message.id)}">
                 <div class="admin-chat-message-header">
                     <span class="admin-chat-message-name">${escapeHtml(displayName)}</span>
                     <span class="admin-chat-message-time">${escapeHtml(message.timeLabel || formatDateTime(message.createdAt))}</span>
@@ -326,13 +261,18 @@
     }
 
     function renderMessages(messages) {
-        state.messageIds = new Set(messages.map((message) => Number(message.id)));
+        state.messageIds = new Set(
+            messages
+                .map((message) => Number(message.id))
+                .filter((id) => Number.isFinite(id) && id > 0)
+        );
+
         dom.messages.innerHTML = messages.length
             ? messages.map(buildMessageHtml).join("")
             : `
                 <div class="admin-chat-empty">
                     <i class="fas fa-comment-slash"></i>
-                    <p>Phiên chat này chưa có tin nhắn nào.</p>
+                    <p>Phien chat nay chua co tin nhan nao.</p>
                 </div>
             `;
 
@@ -340,11 +280,14 @@
     }
 
     function appendMessage(message) {
-        if (state.messageIds.has(Number(message.id))) {
+        const numericId = Number(message.id);
+        if (Number.isFinite(numericId) && numericId > 0 && state.messageIds.has(numericId)) {
             return;
         }
 
-        state.messageIds.add(Number(message.id));
+        if (Number.isFinite(numericId) && numericId > 0) {
+            state.messageIds.add(numericId);
+        }
 
         const emptyState = dom.messages.querySelector(".admin-chat-empty");
         if (emptyState) {
@@ -359,42 +302,23 @@
         state.selectedSession = session;
         dom.emptyState.classList.add("d-none");
         dom.panel.classList.remove("d-none");
-        dom.sessionName.textContent = session.customerName || "Khách hàng";
+        dom.sessionName.textContent = session.customerName || "Khach hang";
         dom.sessionCode.textContent = session.chatCode || "";
-        dom.sessionContact.textContent = session.customerPhone || (session.isGuest ? "Khách vãng lai" : "");
+        dom.sessionContact.textContent = session.customerPhone || (session.isGuest ? "Khach vang lai" : "");
         dom.sessionStatus.textContent = getSessionStatusLabel(session.status);
         updateSendButtonState();
         renderSessions();
     }
 
-    async function loadSessions() {
-        const search = dom.searchInput.value.trim();
-        const query = search ? `?search=${encodeURIComponent(search)}` : "";
-        const data = await apiGet(`${config.sessionsUrl}${query}`);
-
-        if (!data.success) {
-            return;
-        }
-
-        state.sessions = data.sessions || [];
-        renderSessions();
-
-        if (state.selectedSession) {
-            const refreshed = state.sessions.find((item) => item.chatCode === state.selectedSession.chatCode);
-            if (refreshed) {
-                state.selectedSession = refreshed;
-                dom.sessionContact.textContent = refreshed.customerPhone || (refreshed.isGuest ? "Khách vãng lai" : "");
-                dom.sessionStatus.textContent = getSessionStatusLabel(refreshed.status);
-            }
-        }
-    }
-
-    async function markCurrentSessionRead() {
+    function refreshSelectedSessionFromList() {
         if (!state.selectedSession) {
             return;
         }
 
-        await apiPost(buildChatUrl(config.readUrlTemplate, state.selectedSession.chatCode), new FormData(), {});
+        const refreshed = state.sessions.find((item) => item.chatCode === state.selectedSession.chatCode);
+        if (refreshed) {
+            updateSelectedSession(refreshed);
+        }
     }
 
     function disconnectMessageStream() {
@@ -434,7 +358,7 @@
         }, 3000);
     }
 
-    function scheduleMessageReconnect(chatCode, lastMessageId) {
+    function scheduleMessageReconnect(chatCode) {
         if (state.messageReconnectTimer) {
             return;
         }
@@ -442,7 +366,7 @@
         state.messageReconnectTimer = window.setTimeout(function () {
             state.messageReconnectTimer = null;
             if (state.selectedSession && state.selectedSession.chatCode === chatCode) {
-                connectMessageStream(chatCode, lastMessageId);
+                connectMessageStream(chatCode);
             }
         }, 3000);
     }
@@ -450,33 +374,30 @@
     function connectSessionStream() {
         disconnectSessionStream();
 
-        const search = dom.searchInput.value.trim();
         const params = new URLSearchParams();
+        const search = dom.searchInput.value.trim();
         if (search) {
             params.set("search", search);
         }
 
-        const socket = new WebSocket(
-            buildWebSocketUrl(config.sessionsSocketPath, params)
-        );
+        const socket = new WebSocket(buildWebSocketUrl(config.sessionsSocketPath, params));
         state.sessionStream = socket;
 
-        socket.addEventListener("message", (event) => {
-            const data = JSON.parse(event.data || "{}");
+        socket.addEventListener("message", function (event) {
+            let data;
+            try {
+                data = JSON.parse(event.data || "{}");
+            } catch (error) {
+                return;
+            }
+
             if (data.event !== "sessions") {
                 return;
             }
+
             state.sessions = data.sessions || [];
             renderSessions();
-
-            if (state.selectedSession) {
-                const refreshed = state.sessions.find((item) => item.chatCode === state.selectedSession.chatCode);
-                if (refreshed) {
-                    state.selectedSession = refreshed;
-                    dom.sessionContact.textContent = refreshed.customerPhone || (refreshed.isGuest ? "Khách vãng lai" : "");
-                    dom.sessionStatus.textContent = getSessionStatusLabel(refreshed.status);
-                }
-            }
+            refreshSelectedSessionFromList();
         });
 
         socket.addEventListener("close", function () {
@@ -487,65 +408,118 @@
         });
     }
 
-    function connectMessageStream(chatCode, lastMessageId) {
-        disconnectMessageStream();
+    function sendMessageAction(payload) {
+        if (!state.messageStream || state.messageStream.readyState !== WebSocket.OPEN) {
+            setErrorMessage(config.connectionErrorMessage || config.sendErrorMessage);
+            return false;
+        }
 
-        const params = new URLSearchParams({
-            lastMessageId: String(lastMessageId || 0),
-        });
+        state.messageStream.send(JSON.stringify(payload));
+        return true;
+    }
+
+    function sendMarkRead() {
+        if (!state.selectedSession) {
+            return;
+        }
+
+        sendMessageAction({action: "mark_read"});
+    }
+
+    function showMessagesLoading() {
+        dom.messages.innerHTML = `
+            <div class="admin-chat-empty">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Dang tai lich su chat...</p>
+            </div>
+        `;
+    }
+
+    function connectMessageStream(chatCode) {
+        disconnectMessageStream();
+        state.messageIds = new Set();
+        showMessagesLoading();
+
         const socket = new WebSocket(
             buildWebSocketUrl(
-                buildChatUrl(config.messageSocketPathTemplate, chatCode),
-                params
+                buildChatUrl(config.messageSocketPathTemplate, chatCode)
             )
         );
         state.messageStream = socket;
 
-        socket.addEventListener("message", async (event) => {
-            const data = JSON.parse(event.data || "{}");
+        socket.addEventListener("message", function (event) {
+            let data;
+            try {
+                data = JSON.parse(event.data || "{}");
+            } catch (error) {
+                return;
+            }
+
+            if (data.event === "bootstrap") {
+                if (data.session && data.session.chatCode === chatCode) {
+                    updateSelectedSession(data.session);
+                }
+                renderMessages(data.messages || []);
+                setErrorMessage("");
+                return;
+            }
+
             if (data.event === "session" && data.session && state.selectedSession && data.session.chatCode === state.selectedSession.chatCode) {
                 updateSelectedSession(data.session);
                 return;
             }
 
-            if (data.event !== "message" || !data.message) {
+            if (data.event === "message" && data.message) {
+                appendMessage(data.message);
+
+                if (data.session && state.selectedSession && data.session.chatCode === state.selectedSession.chatCode) {
+                    updateSelectedSession(data.session);
+                }
+
+                if (data.message.senderType === "customer") {
+                    sendMarkRead();
+                }
                 return;
             }
 
-            lastMessageId = data.message.id || lastMessageId;
-
-            appendMessage(data.message);
-
-            if (data.session && state.selectedSession && data.session.chatCode === state.selectedSession.chatCode) {
-                updateSelectedSession(data.session);
-            }
-
-            if (data.message.senderType === "customer") {
-                await markCurrentSessionRead();
-                await loadSessions();
+            if (data.event === "error") {
+                setErrorMessage(data.message || config.sendErrorMessage);
             }
         });
 
         socket.addEventListener("close", function () {
             if (state.messageStream === socket) {
                 state.messageStream = null;
-                scheduleMessageReconnect(chatCode, lastMessageId);
+                scheduleMessageReconnect(chatCode);
             }
         });
     }
 
-    async function selectSession(chatCode) {
-        const data = await apiGet(buildChatUrl(config.messagesUrlTemplate, chatCode));
-        if (!data.success) {
+    function selectSession(chatCode) {
+        const session = state.sessions.find((item) => item.chatCode === chatCode);
+        if (!session) {
             return;
         }
 
-        updateSelectedSession(data.session);
-        renderMessages(data.messages || []);
+        updateSelectedSession(session);
+        connectMessageStream(chatCode);
+    }
 
-        const lastMessage = (data.messages || []).length ? data.messages[data.messages.length - 1] : null;
-        connectMessageStream(chatCode, lastMessage ? lastMessage.id : 0);
-        await loadSessions();
+    async function fileToAttachmentPayload(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = function () {
+                resolve({
+                    name: file.name,
+                    contentType: file.type || "application/octet-stream",
+                    data: reader.result || "",
+                });
+            };
+            reader.onerror = function () {
+                reject(new Error("Khong the doc tep dinh kem."));
+            };
+            reader.readAsDataURL(file);
+        });
     }
 
     async function sendMessage(event) {
@@ -559,51 +533,52 @@
             return;
         }
 
-        dom.sendBtn.disabled = true;
-        setErrorMessage("");
-
-        const formData = new FormData();
-        formData.append("content", content);
-        formData.append("clientMessageId", `admin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
-
-        if (state.selectedFile) {
-            formData.append("attachment", state.selectedFile);
-        }
-
-        const data = await apiPost(
-            buildChatUrl(config.sendUrlTemplate, state.selectedSession.chatCode),
-            formData,
-            {}
-        );
-
-        if (!data.success) {
-            setErrorMessage(data.error || config.sendErrorMessage);
-            updateSendButtonState();
+        if (!state.messageStream || state.messageStream.readyState !== WebSocket.OPEN) {
+            setErrorMessage(config.connectionErrorMessage || config.sendErrorMessage);
             return;
         }
 
-        if (data.message) {
-            appendMessage(data.message);
+        if (state.selectedFile && config.maxAttachmentSize && state.selectedFile.size > config.maxAttachmentSize) {
+            setErrorMessage("Tep dinh kem khong duoc vuot qua 10MB.");
+            return;
         }
 
-        if (data.session) {
-            updateSelectedSession(data.session);
+        dom.sendBtn.disabled = true;
+        setErrorMessage("");
+
+        const payload = {
+            action: "send_message",
+            content: content,
+            clientMessageId: `admin-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        };
+
+        if (state.selectedFile) {
+            try {
+                payload.attachment = await fileToAttachmentPayload(state.selectedFile);
+            } catch (error) {
+                setErrorMessage(error.message || config.sendErrorMessage);
+                updateSendButtonState();
+                return;
+            }
+        }
+
+        const sent = sendMessageAction(payload);
+        if (!sent) {
+            updateSendButtonState();
+            return;
         }
 
         dom.input.value = "";
         autoResizeInput();
         setSelectedFile(null);
         updateSendButtonState();
-        await loadSessions();
     }
 
     function handleSearchInput() {
-        loadSessions();
         connectSessionStream();
     }
 
     function initialize() {
-        loadSessions();
         connectSessionStream();
 
         dom.searchInput.addEventListener("input", debounce(handleSearchInput, 350));
@@ -622,7 +597,9 @@
         });
 
         dom.form.addEventListener("submit", sendMessage);
-        dom.attachBtn.addEventListener("click", () => dom.attachmentInput.click());
+        dom.attachBtn.addEventListener("click", function () {
+            dom.attachmentInput.click();
+        });
         dom.attachmentInput.addEventListener("change", function () {
             const file = this.files && this.files.length ? this.files[0] : null;
             setSelectedFile(file);

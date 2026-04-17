@@ -1,22 +1,23 @@
 {% extends "manage/base.html" %}
 {% load static %}
 
-{% block title %}Chat trực tuyến - Spa ANA{% endblock %}
+{% block title %}Chat truc tuyen - Spa ANA{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/admin-chat.css' %}?v={{ 'now'|date:'YmdHi' }}">
+{% now "YmdHis" as admin_chat_css_version %}
+<link rel="stylesheet" href="{% static 'css/admin-chat.css' %}?v={{ admin_chat_css_version }}">
 {% endblock %}
 
 {% block content %}
-<div class="admin-chat-page" id="adminChatApp">
+<div class="admin-chat-page admin-chat-page--balanced" id="adminChatApp">
     <div class="admin-chat-shell">
         <aside class="admin-chat-sidebar">
             <div class="admin-chat-sidebar-header">
                 <div>
                     <p class="admin-chat-eyebrow">Live Support</p>
-                    <h2 class="admin-chat-title">Phiên chat khách hàng</h2>
+                    <h2 class="admin-chat-title">Phien chat khach hang</h2>
                 </div>
-                <span class="admin-chat-total" id="adminChatUnreadTotal">0 chưa đọc</span>
+                <span class="admin-chat-total" id="adminChatUnreadTotal">0 chua doc</span>
             </div>
 
             <div class="admin-chat-sidebar-tools">
@@ -25,7 +26,7 @@
                     <input
                         type="text"
                         id="adminChatSearch"
-                        placeholder="Tìm theo mã chat, tên, SĐT..."
+                        placeholder="Tim theo ma chat, ten, SDT..."
                     >
                 </div>
             </div>
@@ -33,7 +34,7 @@
             <div class="admin-chat-session-list" id="adminChatSessionList">
                 <div class="admin-chat-list-empty">
                     <i class="fas fa-comments"></i>
-                    <p>Đang tải danh sách chat...</p>
+                    <p>Dang tai danh sach chat...</p>
                 </div>
             </div>
         </aside>
@@ -43,18 +44,18 @@
                 <div class="admin-chat-empty-icon">
                     <i class="fas fa-comment-dots"></i>
                 </div>
-                <h3>Chọn một phiên chat để bắt đầu</h3>
-                <p>Danh sách bên trái sẽ tự cập nhật khi có khách hàng gửi tin nhắn mới.</p>
+                <h3>Chon mot phien chat de bat dau</h3>
+                <p>Danh sach ben trai se tu cap nhat khi co khach hang gui tin nhan moi.</p>
             </div>
 
             <div class="admin-chat-panel d-none" id="adminChatPanel">
                 <header class="admin-chat-panel-header">
                     <div>
-                        <h3 id="adminChatSessionName">Khách hàng</h3>
+                        <h3 id="adminChatSessionName">Khach hang</h3>
                         <div class="admin-chat-meta-row">
                             <span class="admin-chat-code" id="adminChatSessionCode">CHAT...</span>
                             <span class="admin-chat-contact" id="adminChatSessionContact"></span>
-                            <span class="admin-chat-status" id="adminChatSessionStatus">Đang mở</span>
+                            <span class="admin-chat-status" id="adminChatSessionStatus">Dang mo</span>
                         </div>
                     </div>
                 </header>
@@ -73,26 +74,25 @@
                     </div>
 
                     <div class="admin-chat-error d-none" id="adminChatErrorMessage">
-                        Không thể gửi tin nhắn. Vui lòng thử lại sau
+                        Khong the gui tin nhan. Vui long thu lai sau
                     </div>
 
                     <form id="adminChatComposerForm" class="admin-chat-composer-form">
-                        {% csrf_token %}
                         <input type="file" id="adminChatAttachmentInput" accept="{{ chat_attachment_accept }}" hidden>
 
-                        <button type="button" class="admin-chat-attach-btn" id="adminChatAttachBtn" title="Đính kèm file hoặc hình ảnh">
+                        <button type="button" class="admin-chat-attach-btn" id="adminChatAttachBtn" title="Dinh kem file hoac hinh anh">
                             <i class="fas fa-paperclip"></i>
                         </button>
 
                         <textarea
                             id="adminChatInput"
                             rows="1"
-                            placeholder="Nhập tin nhắn cho khách hàng..."
+                            placeholder="Nhap tin nhan cho khach hang..."
                         ></textarea>
 
                         <button type="submit" class="admin-chat-send-btn" id="adminChatSendBtn" disabled>
                             <i class="fas fa-paper-plane"></i>
-                            <span>Gửi</span>
+                            <span>Gui</span>
                         </button>
                     </form>
                 </footer>
@@ -103,14 +103,11 @@
 
 <script>
 window.adminChatConfig = {
-    csrfToken: "{{ csrf_token }}",
-    sessionsUrl: "{% url 'chat:api_admin_chat_sessions' %}",
     sessionsSocketPath: "/ws/admin/chat/sessions/",
-    messagesUrlTemplate: "{% url 'chat:api_admin_chat_messages' '__CHAT_CODE__' %}",
-    sendUrlTemplate: "{% url 'chat:api_admin_chat_send' '__CHAT_CODE__' %}",
-    readUrlTemplate: "{% url 'chat:api_admin_chat_mark_read' '__CHAT_CODE__' %}",
     messageSocketPathTemplate: "/ws/admin/chat/sessions/__CHAT_CODE__/",
-    sendErrorMessage: "Không thể gửi tin nhắn. Vui lòng thử lại sau"
+    sendErrorMessage: "Khong the gui tin nhan. Vui long thu lai sau",
+    connectionErrorMessage: "Khong the ket noi chat. Vui long thu lai.",
+    maxAttachmentSize: 10485760
 };
 </script>
 <script src="{% static 'js/admin-chat.js' %}"></script>

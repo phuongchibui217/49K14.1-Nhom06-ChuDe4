@@ -9,11 +9,10 @@ Author: Spa ANA Team
 """
 
 import json
-import time
 
 from django.views.decorators.http import require_http_methods
 from django.db.models import Q
-from django.http import StreamingHttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.utils import timezone
 
 from .models import Complaint, ComplaintReply, ComplaintHistory

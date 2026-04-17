@@ -47,36 +47,8 @@
         dom.badge.classList.remove("d-none");
         dom.badge.setAttribute(
             "aria-label",
-            `${normalizedCount} tin nhắn chat khách hàng chưa đọc`
+            `${normalizedCount} tin nhan chat khach hang chua doc`
         );
-    }
-
-    async function parseJsonResponse(response) {
-        const contentType = response.headers.get("content-type") || "";
-        if (!contentType.includes("application/json")) {
-            return null;
-        }
-
-        try {
-            return await response.json();
-        } catch (error) {
-            return null;
-        }
-    }
-
-    async function fetchUnreadTotal() {
-        try {
-            const response = await fetch(config.sessionsUrl, {
-                credentials: "same-origin",
-            });
-            const data = await parseJsonResponse(response);
-
-            if (data && data.success) {
-                renderBadge(data.unreadTotal);
-            }
-        } catch (error) {
-            // Giữ badge hiện tại nếu request lỗi.
-        }
     }
 
     function disconnectStream() {
@@ -117,7 +89,7 @@
                 }
                 renderBadge(data.unreadTotal);
             } catch (error) {
-                // Bỏ qua payload lỗi và chờ event tiếp theo.
+                // Bo qua payload loi va cho event tiep theo.
             }
         });
 
@@ -130,7 +102,6 @@
     }
 
     document.addEventListener("DOMContentLoaded", function () {
-        fetchUnreadTotal();
         connectStream();
     });
 

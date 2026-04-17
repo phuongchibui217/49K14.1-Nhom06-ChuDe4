@@ -175,6 +175,14 @@ class ComplaintAdminViewTests(TestCase):
         self.complaint.refresh_from_db()
         self.assertEqual(self.complaint.status, "RESOLVED")
 
+    def test_admin_layout_no_longer_exposes_complaints_stream_url(self):
+        resp = self.client.get(reverse("complaints:admin_complaints"))
+        self.assertEqual(resp.status_code, 200)
+        content = resp.content.decode("utf-8")
+        self.assertIn("/api/complaints/new-count/", content)
+        self.assertNotIn("/api/complaints/new-count/stream/", content)
+        self.assertNotIn("countStreamUrl", content)
+
 
 # ─────────────────────────────────────────────
 # API TESTS

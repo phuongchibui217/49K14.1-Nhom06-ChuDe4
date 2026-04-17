@@ -40,7 +40,6 @@ urlpatterns = [
     path('api/complaints/', api.api_complaints_list, name='api_complaints_list'),
     path('api/complaints/stats/', api.api_complaints_stats, name='api_complaints_stats'),
     path('api/complaints/new-count/', api.api_complaints_new_count, name='api_complaints_new_count'),
-    path('api/complaints/new-count/stream/', api.api_complaints_new_count_stream, name='api_complaints_new_count_stream'),
     path('api/complaints/create/', api.api_complaint_create, name='api_complaint_create'),
     path('api/complaints/<int:complaint_id>/', api.api_complaint_detail, name='api_complaint_detail'),
     path('api/complaints/<int:complaint_id>/reply/', api.api_complaint_reply, name='api_complaint_reply'),

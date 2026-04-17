@@ -9,41 +9,40 @@
                 <i class="fas fa-spa"></i>
                 <div>
                     <h6>Spa ANA</h6>
-                    <p id="chatStatusLabel">Tư vấn trực tuyến</p>
+                    <p id="chatStatusLabel">Tu van truc tuyen</p>
                 </div>
             </div>
 
-            <button class="chat-close-btn" type="button" onclick="toggleChat()" aria-label="Đóng chat">
+            <button class="chat-close-btn" type="button" onclick="toggleChat()" aria-label="Dong chat">
                 <i class="fas fa-times"></i>
             </button>
         </div>
 
         <div class="chat-warning-note d-none" id="chatGuestWarning">
             <i class="fas fa-exclamation-circle"></i>
-            <span>Lịch sử chat sẽ không được lưu khi bạn rời khỏi website.</span>
+            <span>Lich su chat se khong duoc luu khi ban roi khoi website.</span>
         </div>
 
         <div class="chat-messages" id="chatMessages">
             <div class="chat-empty-state" id="chatEmptyState">
                 <i class="fas fa-comments"></i>
-                <p>Nhắn tin để bắt đầu cuộc trò chuyện với Spa ANA.</p>
+                <p>Nhan tin de bat dau cuoc tro chuyen voi Spa ANA.</p>
             </div>
         </div>
 
         <div class="chat-error-message d-none" id="chatErrorMessage">
-            Không thể gửi tin nhắn. Vui lòng thử lại sau
+            Khong the gui tin nhan. Vui long thu lai sau
         </div>
 
         <form class="chat-footer" id="chatForm">
-            {% csrf_token %}
             <div class="chat-input-container">
                 <textarea
                     class="chat-input"
                     id="chatInput"
                     rows="1"
-                    placeholder="Nhập nội dung tin nhắn..."
+                    placeholder="Nhap noi dung tin nhan..."
                 ></textarea>
-                <button class="chat-send-btn" id="chatSendBtn" type="submit" disabled aria-label="Gửi tin nhắn">
+                <button class="chat-send-btn" id="chatSendBtn" type="submit" disabled aria-label="Gui tin nhan">
                     <i class="fas fa-paper-plane"></i>
                 </button>
             </div>
@@ -54,14 +53,10 @@
 <script>
 window.chatWidgetConfig = {
     isAuthenticated: {% if user.is_authenticated %}true{% else %}false{% endif %},
-    csrfToken: "{{ csrf_token }}",
-    bootstrapUrl: "{% url 'chat:api_customer_chat_bootstrap' %}",
-    sendNewUrl: "{% url 'chat:api_customer_chat_send_new' %}",
-    sendUrlTemplate: "{% url 'chat:api_customer_chat_send' '__CHAT_CODE__' %}",
-    readUrlTemplate: "{% url 'chat:api_customer_chat_mark_read' '__CHAT_CODE__' %}",
-    socketPathTemplate: "/ws/chat/session/__CHAT_CODE__/",
-    guestWarningMessage: "Lịch sử chat sẽ không được lưu khi bạn rời khỏi website.",
-    sendErrorMessage: "Không thể gửi tin nhắn. Vui lòng thử lại sau"
+    socketPath: "/ws/chat/customer/",
+    guestWarningMessage: "Lich su chat se khong duoc luu khi ban roi khoi website.",
+    sendErrorMessage: "Khong the gui tin nhan. Vui long thu lai sau",
+    connectionErrorMessage: "Khong the ket noi chat. Vui long thu lai."
 };
 </script>
 <script src="{% static 'js/chat-widget.js' %}"></script>

@@ -17,6 +17,9 @@
         unreadCount: 0,
         stream: null,
         reconnectTimer: null,
+        bootstrapPromise: null,
+        resolveBootstrap: null,
+        rejectBootstrap: null,
     };
 
     const dom = {
@@ -31,25 +34,23 @@
         floatingBadge: document.getElementById("chatFloatingBadge"),
     };
 
-    function buildChatUrl(template, chatCode) {
-        return template.replace("__CHAT_CODE__", chatCode);
-    }
-
     function buildWebSocketUrl(path, params) {
         const protocol = window.location.protocol === "https:" ? "wss" : "ws";
         const queryString = params && params.toString() ? `?${params.toString()}` : "";
         return `${protocol}://${window.location.host}${path}${queryString}`;
     }
 
-    function getCsrfToken() {
-        const tokenInput = dom.form.querySelector('input[name="csrfmiddlewaretoken"]');
-        return config.csrfToken || (tokenInput ? tokenInput.value : "");
-    }
-
     function escapeHtml(value) {
         const div = document.createElement("div");
         div.textContent = value || "";
         return div.innerHTML;
+    }
+
+    function escapeSelectorValue(value) {
+        if (window.CSS && typeof window.CSS.escape === "function") {
+            return window.CSS.escape(value);
+        }
+        return String(value || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"');
     }
 
     function formatTime(value) {
@@ -81,70 +82,41 @@
         return `${Math.ceil(value / 1024)} KB`;
     }
 
-    function getBootstrapUrl() {
-        const params = new URLSearchParams({
-            source: window.location.pathname,
+    function hasOpenStream() {
+        return !!state.stream && state.stream.readyState === WebSocket.OPEN;
+    }
+
+    function hasPendingStream() {
+        return !!state.stream && (
+            state.stream.readyState === WebSocket.OPEN
+            || state.stream.readyState === WebSocket.CONNECTING
+        );
+    }
+
+    function createBootstrapPromise() {
+        state.bootstrapPromise = new Promise((resolve, reject) => {
+            state.resolveBootstrap = resolve;
+            state.rejectBootstrap = reject;
         });
-
-        if (!config.isAuthenticated && state.guestKey) {
-            params.set("guestKey", state.guestKey);
-        }
-
-        return `${config.bootstrapUrl}?${params.toString()}`;
+        return state.bootstrapPromise;
     }
 
-    async function parseJsonResponse(response) {
-        const contentType = response.headers.get("content-type") || "";
-
-        if (!contentType.includes("application/json")) {
-            return {
-                success: false,
-                error: config.sendErrorMessage,
-            };
+    function resolveBootstrap(data) {
+        if (state.resolveBootstrap) {
+            state.resolveBootstrap(data);
         }
-
-        try {
-            return await response.json();
-        } catch (error) {
-            return {
-                success: false,
-                error: config.sendErrorMessage,
-            };
-        }
+        state.bootstrapPromise = null;
+        state.resolveBootstrap = null;
+        state.rejectBootstrap = null;
     }
 
-    async function apiGet(url) {
-        try {
-            const response = await fetch(url, {
-                credentials: "same-origin",
-            });
-            return await parseJsonResponse(response);
-        } catch (error) {
-            return {
-                success: false,
-                error: config.sendErrorMessage,
-            };
+    function rejectBootstrap(error) {
+        if (state.rejectBootstrap) {
+            state.rejectBootstrap(error);
         }
-    }
-
-    async function apiPostJson(url, payload) {
-        try {
-            const response = await fetch(url, {
-                method: "POST",
-                credentials: "same-origin",
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": getCsrfToken(),
-                },
-                body: JSON.stringify(payload || {}),
-            });
-            return await parseJsonResponse(response);
-        } catch (error) {
-            return {
-                success: false,
-                error: config.sendErrorMessage,
-            };
-        }
+        state.bootstrapPromise = null;
+        state.resolveBootstrap = null;
+        state.rejectBootstrap = null;
     }
 
     function setErrorMessage(message) {
@@ -169,18 +141,21 @@
 
     function clearGuestStorage() {
         sessionStorage.removeItem(STORAGE_KEYS.guestKey);
-        sessionStorage.removeItem("spa_ana_guest_chat_code");
         state.guestKey = "";
     }
 
     function persistGuestStorage() {
-        if (config.isAuthenticated || !state.session) {
+        if (config.isAuthenticated) {
             clearGuestStorage();
             return;
         }
 
-        state.guestKey = state.guestKey || "";
-        sessionStorage.setItem(STORAGE_KEYS.guestKey, state.guestKey);
+        if (state.guestKey) {
+            sessionStorage.setItem(STORAGE_KEYS.guestKey, state.guestKey);
+            return;
+        }
+
+        sessionStorage.removeItem(STORAGE_KEYS.guestKey);
     }
 
     function updateFloatingBadge() {
@@ -197,9 +172,9 @@
         }
     }
 
-    function renderWarning() {
+    function renderWarning(message) {
         if (!config.isAuthenticated) {
-            dom.warning.querySelector("span").textContent = config.guestWarningMessage;
+            dom.warning.querySelector("span").textContent = message || config.guestWarningMessage;
             dom.warning.classList.remove("d-none");
         } else {
             dom.warning.classList.add("d-none");
@@ -215,7 +190,7 @@
             return `
                 <div class="chat-attachment">
                     <a href="${message.attachmentUrl}" target="_blank" rel="noopener noreferrer">
-                        <img src="${message.attachmentUrl}" alt="${escapeHtml(message.attachmentName || "Hình ảnh")}">
+                        <img src="${message.attachmentUrl}" alt="${escapeHtml(message.attachmentName || "Hinh anh")}">
                     </a>
                 </div>
             `;
@@ -230,7 +205,7 @@
                     rel="noopener noreferrer"
                 >
                     <i class="fas fa-file-alt"></i>
-                    <span>${escapeHtml(message.attachmentName || "Tệp đính kèm")}</span>
+                    <span>${escapeHtml(message.attachmentName || "Tep dinh kem")}</span>
                     <small>${escapeHtml(formatFileSize(message.attachmentSize))}</small>
                 </a>
             </div>
@@ -245,9 +220,9 @@
                 : "admin";
 
         const displayName = message.senderType === "customer"
-            ? "Bạn"
+            ? "Ban"
             : senderClass === "admin"
-                ? "Nhân viên"
+                ? "Nhan vien"
                 : message.senderName || "Spa ANA";
 
         const headerHtml = senderClass === "system"
@@ -259,13 +234,12 @@
                 </div>
             `;
 
-        let deliveryHtml = "";
-        if (message.senderType === "customer" && deliveryState) {
-            deliveryHtml = `<div class="chat-message-status">${escapeHtml(deliveryState)}</div>`;
-        }
+        const deliveryHtml = message.senderType === "customer" && deliveryState
+            ? `<div class="chat-message-status">${escapeHtml(deliveryState)}</div>`
+            : "";
 
         return `
-            <div class="chat-message ${senderClass}" data-message-id="${message.id}">
+            <div class="chat-message ${senderClass}" data-message-id="${escapeHtml(message.id)}">
                 ${headerHtml}
                 ${message.content ? `<div class="chat-message-body">${escapeHtml(message.content)}</div>` : ""}
                 ${buildAttachmentHtml(message)}
@@ -279,7 +253,11 @@
     }
 
     function renderMessages(messages) {
-        state.messageIds = new Set(messages.map((message) => Number(message.id)));
+        state.messageIds = new Set(
+            messages
+                .map((message) => Number(message.id))
+                .filter((id) => Number.isFinite(id) && id > 0)
+        );
 
         if (!messages.length) {
             dom.messages.innerHTML = "";
@@ -289,18 +267,19 @@
         }
 
         dom.messages.innerHTML = messages
-            .map((message) => buildMessageHtml(message, message.senderType === "customer" ? "Đã gửi" : ""))
+            .map((message) => buildMessageHtml(message, message.senderType === "customer" ? "Da gui" : ""))
             .join("");
         scrollMessagesToBottom();
     }
 
     function appendMessage(message, deliveryState) {
-        if (message.id && state.messageIds.has(Number(message.id))) {
+        const numericId = Number(message.id);
+        if (Number.isFinite(numericId) && numericId > 0 && state.messageIds.has(numericId)) {
             return;
         }
 
-        if (message.id) {
-            state.messageIds.add(Number(message.id));
+        if (Number.isFinite(numericId) && numericId > 0) {
+            state.messageIds.add(numericId);
         }
 
         if (dom.emptyState.parentNode === dom.messages) {
@@ -311,8 +290,9 @@
         scrollMessagesToBottom();
     }
 
-    function updatePendingMessage(clientMessageId, message, deliveryState, failed) {
-        const element = dom.messages.querySelector(`[data-message-id="${clientMessageId}"]`);
+    function updatePendingMessage(pendingId, message, deliveryState, failed) {
+        const selector = `[data-message-id="${escapeSelectorValue(pendingId)}"]`;
+        const element = dom.messages.querySelector(selector);
         if (!element) {
             appendMessage(message, deliveryState);
             return;
@@ -325,21 +305,125 @@
             nextElement.classList.add("failed");
         }
         element.replaceWith(nextElement);
-        if (message.id) {
-            state.messageIds.add(Number(message.id));
+
+        const numericId = Number(message.id);
+        if (Number.isFinite(numericId) && numericId > 0) {
+            state.messageIds.add(numericId);
         }
+
         scrollMessagesToBottom();
     }
 
-    async function markCurrentSessionRead() {
-        if (!state.session) {
+    function markPendingMessageFailed(pendingId) {
+        const selector = `[data-message-id="${escapeSelectorValue(pendingId)}"]`;
+        const element = dom.messages.querySelector(selector);
+        if (!element) {
             return;
         }
 
-        const payload = config.isAuthenticated ? {} : { guestKey: state.guestKey };
-        await apiPostJson(buildChatUrl(config.readUrlTemplate, state.session.chatCode), payload);
-        state.unreadCount = 0;
+        element.classList.add("failed");
+        const statusElement = element.querySelector(".chat-message-status");
+        if (statusElement) {
+            statusElement.textContent = "Loi gui";
+            return;
+        }
+
+        element.insertAdjacentHTML("beforeend", '<div class="chat-message-status">Loi gui</div>');
+    }
+
+    function applySessionState(session, guestKey) {
+        state.session = session || null;
+
+        if (!config.isAuthenticated && typeof guestKey !== "undefined") {
+            state.guestKey = guestKey || "";
+            persistGuestStorage();
+        }
+
+        if (config.isAuthenticated) {
+            clearGuestStorage();
+        }
+    }
+
+    function handleBootstrap(data) {
+        applySessionState(data.session || null, data.guestKey);
+        state.isBootstrapped = true;
+        renderWarning(data.warningMessage || config.guestWarningMessage);
+        renderMessages(data.messages || []);
+
+        if (state.session) {
+            state.unreadCount = state.isOpen ? 0 : Number(state.session.customerUnreadCount || 0);
+        } else {
+            state.unreadCount = 0;
+        }
         updateFloatingBadge();
+        setErrorMessage("");
+
+        if (state.isOpen && state.session) {
+            sendMarkRead();
+        }
+    }
+
+    function handleSessionEvent(data) {
+        if (!data.session) {
+            return;
+        }
+
+        applySessionState(data.session, data.guestKey);
+
+        if (!state.isOpen && state.session) {
+            state.unreadCount = Number(state.session.customerUnreadCount || 0);
+            updateFloatingBadge();
+        }
+    }
+
+    function handleIncomingMessage(data) {
+        const message = data.message;
+        if (!message) {
+            return;
+        }
+
+        if (data.session) {
+            applySessionState(data.session, data.guestKey);
+        }
+
+        const pendingId = (message.clientMessageId || "").trim();
+        if (pendingId) {
+            const selector = `[data-message-id="${escapeSelectorValue(pendingId)}"]`;
+            if (dom.messages.querySelector(selector)) {
+                updatePendingMessage(
+                    pendingId,
+                    message,
+                    message.senderType === "customer" ? "Da gui" : "",
+                    false
+                );
+            } else {
+                appendMessage(message, message.senderType === "customer" ? "Da gui" : "");
+            }
+        } else {
+            appendMessage(message, message.senderType === "customer" ? "Da gui" : "");
+        }
+
+        if (message.senderType === "admin") {
+            if (state.isOpen) {
+                state.unreadCount = 0;
+                updateFloatingBadge();
+                sendMarkRead();
+            } else if (data.session) {
+                state.unreadCount = Number(data.session.customerUnreadCount || 0);
+                updateFloatingBadge();
+            } else {
+                state.unreadCount += 1;
+                updateFloatingBadge();
+            }
+        }
+    }
+
+    function handleSocketError(data) {
+        if (data.clientMessageId) {
+            markPendingMessageFailed(data.clientMessageId);
+        }
+
+        setErrorMessage(data.message || config.sendErrorMessage);
     }
 
     function disconnectStream() {
@@ -353,209 +437,186 @@
             clearTimeout(state.reconnectTimer);
             state.reconnectTimer = null;
         }
+
+        rejectBootstrap(new Error("Socket closed"));
     }
 
-    function scheduleReconnect(lastMessageId) {
-        if (state.reconnectTimer || !state.session) {
+    function scheduleReconnect() {
+        if (state.reconnectTimer || !state.isBootstrapped) {
             return;
         }
 
         state.reconnectTimer = window.setTimeout(function () {
             state.reconnectTimer = null;
-            connectStream(lastMessageId);
+            connectStream().catch(function () {
+                setErrorMessage(config.connectionErrorMessage || config.sendErrorMessage);
+            });
         }, 3000);
     }
 
-    function connectStream(lastMessageId) {
-        disconnectStream();
-        if (!state.session) {
-            return;
+    function connectStream() {
+        if (hasOpenStream() && state.isBootstrapped) {
+            return Promise.resolve();
         }
 
-        const params = new URLSearchParams({
-            lastMessageId: String(lastMessageId || 0),
-        });
+        if (state.bootstrapPromise) {
+            return state.bootstrapPromise;
+        }
 
+        if (hasPendingStream()) {
+            return state.bootstrapPromise || Promise.resolve();
+        }
+
+        if (state.reconnectTimer) {
+            clearTimeout(state.reconnectTimer);
+            state.reconnectTimer = null;
+        }
+
+        const params = new URLSearchParams();
         if (!config.isAuthenticated && state.guestKey) {
             params.set("guestKey", state.guestKey);
         }
 
-        const socketUrl = buildWebSocketUrl(
-            buildChatUrl(config.socketPathTemplate, state.session.chatCode),
-            params
-        );
-        const socket = new WebSocket(socketUrl);
+        const socket = new WebSocket(buildWebSocketUrl(config.socketPath, params));
         state.stream = socket;
+        const promise = createBootstrapPromise();
 
-        socket.addEventListener("message", async (event) => {
-            const data = JSON.parse(event.data || "{}");
-            if (data.event === "session" && data.session) {
-                state.session = data.session;
+        socket.addEventListener("message", function (event) {
+            let data;
+            try {
+                data = JSON.parse(event.data || "{}");
+            } catch (error) {
                 return;
             }
 
-            if (data.event !== "message" || !data.message) {
+            if (data.event === "bootstrap") {
+                handleBootstrap(data);
+                resolveBootstrap(data);
                 return;
             }
 
-            appendMessage(
-                data.message,
-                data.message.senderType === "customer" ? "Đã gửi" : ""
-            );
-
-            if (data.session) {
-                state.session = data.session;
+            if (data.event === "session") {
+                handleSessionEvent(data);
+                return;
             }
 
-            if (data.message.senderType === "admin") {
-                if (state.isOpen) {
-                    await markCurrentSessionRead();
-                } else {
-                    state.unreadCount += 1;
-                    updateFloatingBadge();
-                }
+            if (data.event === "message") {
+                handleIncomingMessage(data);
+                return;
+            }
+
+            if (data.event === "error") {
+                handleSocketError(data);
             }
         });
 
         socket.addEventListener("close", function () {
             if (state.stream === socket) {
                 state.stream = null;
-                const currentLastId = state.messageIds.size ? Math.max(...state.messageIds) : (lastMessageId || 0);
-                scheduleReconnect(currentLastId);
+                rejectBootstrap(new Error("Socket closed"));
+                scheduleReconnect();
             }
         });
+
+        socket.addEventListener("error", function () {
+            if (state.stream === socket && !hasOpenStream()) {
+                rejectBootstrap(new Error("Socket error"));
+            }
+        });
+
+        return promise;
     }
 
-    async function bootstrapChat() {
-        const data = await apiGet(getBootstrapUrl());
-        if (!data.success) {
-            setErrorMessage(config.sendErrorMessage);
+    async function ensureStreamReady() {
+        if (hasOpenStream() && state.isBootstrapped) {
             return;
         }
 
-        // session có thể là null nếu khách chưa từng gửi tin nhắn
-        state.session = data.session || null;
-        state.isBootstrapped = true;
-
-        if (config.isAuthenticated) {
-            clearGuestStorage();
-        } else {
-            state.guestKey = data.guestKey || state.guestKey;
-            if (state.session) {
-                persistGuestStorage();
-            }
-        }
-
-        renderWarning();
-        renderMessages(data.messages || []);
-
-        if (state.session) {
-            const lastMessage = (data.messages || []).length ? data.messages[data.messages.length - 1] : null;
-            connectStream(lastMessage ? lastMessage.id : 0);
-            state.unreadCount = 0;
-            updateFloatingBadge();
-            await markCurrentSessionRead();
-        }
+        await connectStream();
     }
 
+    function sendAction(payload) {
+        if (!hasOpenStream()) {
+            setErrorMessage(config.connectionErrorMessage || config.sendErrorMessage);
+            return false;
+        }
+
+        state.stream.send(JSON.stringify(payload));
+        return true;
+    }
+
+    function sendMarkRead() {
+        if (!state.session || !hasOpenStream()) {
+            return;
+        }
+
+        state.unreadCount = 0;
+        updateFloatingBadge();
+        sendAction({action: "mark_read"});
+    }
 
     async function handleSend(event) {
         event.preventDefault();
+
         const content = dom.input.value.trim();
         if (!content) {
             return;
         }
 
-        // Nếu chưa bootstrap (chưa mở chat lần nào), thực hiện bootstrap trước
-        if (!state.isBootstrapped) {
-            await bootstrapChat();
+        try {
+            await ensureStreamReady();
+        } catch (error) {
+            setErrorMessage(config.connectionErrorMessage || config.sendErrorMessage);
+            return;
         }
 
         const clientMessageId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
         const tempMessage = {
             id: clientMessageId,
+            clientMessageId: clientMessageId,
             senderType: "customer",
-            senderName: "Bạn",
+            senderName: "Ban",
             messageType: "text",
             content: content,
             createdAt: new Date().toISOString(),
             timeLabel: formatTime(new Date().toISOString()),
         };
 
-        appendMessage(tempMessage, "Đang gửi...");
+        appendMessage(tempMessage, "Dang gui...");
         dom.input.value = "";
         autoResizeInput();
         updateSendButtonState();
         setErrorMessage("");
 
-        let data;
+        const sent = sendAction({
+            action: "send_message",
+            content: content,
+            clientMessageId: clientMessageId,
+            sourcePage: window.location.pathname,
+        });
 
-        if (!state.session) {
-            // Tin nhắn đầu tiên — tạo session mới đồng thời
-            const payload = {
-                content: content,
-                clientMessageId: clientMessageId,
-                sourcePage: window.location.pathname,
-            };
-            if (!config.isAuthenticated && state.guestKey) {
-                payload.guestKey = state.guestKey;
-            }
-            data = await apiPostJson(config.sendNewUrl, payload);
-        } else {
-            // Session đã tồn tại — gửi bình thường
-            const payload = {
-                content: content,
-                clientMessageId: clientMessageId,
-            };
-            if (!config.isAuthenticated) {
-                payload.guestKey = state.guestKey;
-            }
-            data = await apiPostJson(buildChatUrl(config.sendUrlTemplate, state.session.chatCode), payload);
-        }
-
-        if (!data.success) {
-            updatePendingMessage(
-                clientMessageId,
-                tempMessage,
-                "Lỗi gửi",
-                true
-            );
-            setErrorMessage(data.error || config.sendErrorMessage);
-            return;
-        }
-
-        if (data.session) {
-            const isFirstMessage = !state.session;
-            state.session = data.session;
-            if (!config.isAuthenticated) {
-                state.guestKey = data.guestKey || state.guestKey;
-                persistGuestStorage();
-            }
-            // Kết nối stream ngay sau khi session được tạo lần đầu
-            if (isFirstMessage) {
-                connectStream(data.message ? data.message.id : 0);
-            }
-        }
-
-        if (data.message) {
-            updatePendingMessage(clientMessageId, data.message, "Đã gửi", false);
+        if (!sent) {
+            updatePendingMessage(clientMessageId, tempMessage, "Loi gui", true);
         }
     }
 
     function openChat() {
         state.isOpen = true;
         dom.widget.classList.add("active");
-        setTimeout(() => {
+        setTimeout(function () {
             dom.input.focus();
             scrollMessagesToBottom();
         }, 120);
 
-        // Chỉ bootstrap để load lịch sử nếu có thể có session cũ.
-        // Không tạo session mới — session chỉ tạo khi gửi tin nhắn đầu tiên.
-        if (!state.isBootstrapped) {
-            bootstrapChat();
-        }
-        markCurrentSessionRead();
+        connectStream()
+            .then(function () {
+                if (state.session) {
+                    sendMarkRead();
+                }
+            })
+            .catch(function () {
+                setErrorMessage(config.connectionErrorMessage || config.sendErrorMessage);
+            });
     }
 
     function closeChat() {
@@ -572,7 +633,7 @@
     }
 
     function initialize() {
-        renderWarning();
+        renderWarning(config.guestWarningMessage);
         autoResizeInput();
         updateSendButtonState();
         updateFloatingBadge();

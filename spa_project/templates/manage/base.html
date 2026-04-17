@@ -200,7 +200,6 @@
     {% if request.user.is_staff or request.user.is_superuser %}
     <script>
         window.adminSidebarChatBadgeConfig = {
-            sessionsUrl: "{% url 'chat:api_admin_chat_sessions' %}",
             sessionsSocketPath: "/ws/admin/chat/sessions/"
         };
     </script>
@@ -216,8 +215,7 @@
 
     <script>
         window.adminSidebarComplaintsBadgeConfig = {
-            countUrl: "{% url 'complaints:api_complaints_new_count' %}",
-            countStreamUrl: "{% url 'complaints:api_complaints_new_count_stream' %}"
+            countUrl: "{% url 'complaints:api_complaints_new_count' %}"
         };
     </script>
     <script src="{% static 'js/admin-sidebar-complaints-badge.js' %}?v={% now 'His' %}"></script>

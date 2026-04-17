@@ -1,8 +1,8 @@
 /**
- * Notification Badge: Khiếu nại mới chưa xử lý
+ * Notification Badge: Khieu nai moi chua xu ly
  *
- * Hiển thị số lượng khiếu nại có status='NEW'
- * Auto-update real-time qua SSE stream (polling fallback nếu SSE lỗi)
+ * Hien thi so luong khieu nai chua giai quyet.
+ * Auto-update dinh ky qua HTTP polling de tranh giu ket noi SSE dai han.
  */
 (function () {
     const config = window.adminSidebarComplaintsBadgeConfig;
@@ -14,12 +14,7 @@
     if (!dom.badge) return;
 
     const state = {
-        stream: null,
-        reconnectTimer: null,
         pollingTimer: null,
-        usePolling: false,
-        reconnectAttempts: 0,
-        maxReconnectAttempts: 3,
     };
 
     function normalizeCount(value) {
@@ -36,7 +31,7 @@
         }
         dom.badge.textContent = n > 99 ? '99+' : String(n);
         dom.badge.classList.remove('d-none');
-        dom.badge.setAttribute('aria-label', `${n} khiếu nại chưa giải quyết`);
+        dom.badge.setAttribute('aria-label', `${n} khieu nai chua giai quyet`);
         dom.badge.classList.add('badge-pulse');
         setTimeout(() => dom.badge.classList.remove('badge-pulse'), 500);
     }
@@ -52,44 +47,18 @@
     }
 
     function disconnect() {
-        if (state.stream) { state.stream.close(); state.stream = null; }
-        if (state.reconnectTimer) { clearTimeout(state.reconnectTimer); state.reconnectTimer = null; }
-        if (state.pollingTimer) { clearInterval(state.pollingTimer); state.pollingTimer = null; }
+        if (state.pollingTimer) {
+            clearInterval(state.pollingTimer);
+            state.pollingTimer = null;
+        }
     }
 
     function startPolling() {
         if (state.pollingTimer) return;
-        state.usePolling = true;
         fetchCount();
         state.pollingTimer = setInterval(fetchCount, 15000);
     }
 
-    function scheduleReconnect() {
-        if (state.reconnectTimer) return;
-        state.reconnectAttempts++;
-        if (state.reconnectAttempts > state.maxReconnectAttempts) { startPolling(); return; }
-        const delay = Math.min(3000 * state.reconnectAttempts, 10000);
-        state.reconnectTimer = setTimeout(() => { state.reconnectTimer = null; connectStream(); }, delay);
-    }
-
-    function connectStream() {
-        if (state.usePolling) return;
-        disconnect();
-        if (!window.EventSource) { startPolling(); return; }
-        try {
-            const es = new EventSource(config.countStreamUrl);
-            state.stream = es;
-            state.reconnectAttempts = 0;
-            es.addEventListener('message', (e) => {
-                try { renderBadge(JSON.parse(e.data).count); } catch (_) {}
-            });
-            es.onerror = () => {
-                if (state.stream === es) { es.close(); state.stream = null; }
-                scheduleReconnect();
-            };
-        } catch (_) { startPolling(); }
-    }
-
-    document.addEventListener('DOMContentLoaded', () => { fetchCount(); connectStream(); });
+    document.addEventListener('DOMContentLoaded', startPolling);
     window.addEventListener('beforeunload', disconnect);
 })();
