@@ -1,10 +1,12 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
+from . import api
 
 app_name = 'accounts'
 
 urlpatterns = [
+    # ── HTML views ────────────────────────────────────────────────────
     path('login/', views.login_view, name='login'),
     path('register/', views.register, name='register'),
     path('logout/', views.logout_view, name='logout'),
@@ -28,4 +30,10 @@ urlpatterns = [
     path('reset-mat-khau/hoan-tat/', auth_views.PasswordResetCompleteView.as_view(
         template_name='accounts/password_reset_complete.html',
     ), name='password_reset_complete'),
+
+    # ── JSON API ──────────────────────────────────────────────────────
+    path('api/auth/login/', api.api_login, name='api_login'),
+    path('api/auth/register/', api.api_register, name='api_register'),
+    path('api/auth/logout/', api.api_logout, name='api_logout'),
+    path('api/auth/me/', api.api_me, name='api_me'),
 ]

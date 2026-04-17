@@ -9,15 +9,16 @@ Author: Spa ANA Team
 """
 
 import json
+import time
 
 from django.views.decorators.http import require_http_methods
 from django.db.models import Q
-from django.http import JsonResponse
+from django.http import JsonResponse, StreamingHttpResponse
 from django.utils import timezone
 
 from .models import Complaint, ComplaintReply, ComplaintHistory
 from .serializers import serialize_complaint, serialize_reply, serialize_history
-from core.api_response import ApiResponse, staff_api, get_or_404
+from core.api_response import ApiResponse, staff_api, safe_api, get_or_404
 from core.user_service import get_display_name
 
 
@@ -140,6 +141,7 @@ def api_complaint_detail(request, complaint_id):
 # =====================================================
 
 @require_http_methods(["POST"])
+@safe_api
 def api_complaint_create(request):
     """
     API: Khách hàng tạo khiếu nại mới

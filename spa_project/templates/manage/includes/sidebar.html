@@ -47,6 +47,12 @@
                 Quản lý nhân viên
             </a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'admin_reports' %}active{% endif %}" href="{% url 'reports:admin_reports' %}">
+                <i class="fas fa-chart-bar"></i>
+                Báo cáo thống kê
+            </a>
+        </li>
         {% endif %}
         <li class="nav-item">
             <a class="nav-link {% if request.resolver_match.url_name == 'admin_profile' %}active{% endif %}" href="{% url 'admin_panel:admin_profile' %}">

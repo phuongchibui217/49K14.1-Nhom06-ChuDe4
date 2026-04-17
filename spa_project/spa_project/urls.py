@@ -27,6 +27,8 @@ urlpatterns = [
     path('', include('staff.urls')),
     # Phase 8.8: Live Chat (admin live chat)
     path('', include('chat.urls')),
+    # Phase 9: Reports (báo cáo thống kê)
+    path('', include('reports.urls')),
 ]
 
 # Serve media files in development

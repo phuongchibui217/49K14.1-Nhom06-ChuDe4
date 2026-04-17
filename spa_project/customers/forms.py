@@ -135,10 +135,11 @@ class CustomerRegistrationForm(forms.ModelForm):
     )
     email = forms.EmailField(
         label='Email',
-        required=False,
+        required=True,
+        error_messages={'required': 'Vui lòng nhập địa chỉ Gmail.'},
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
-            'placeholder': 'Email (dùng để khôi phục mật khẩu)',
+            'placeholder': 'Địa chỉ Gmail (ví dụ: ten@gmail.com)',
             'autocomplete': 'email',
         })
     )
@@ -202,6 +203,16 @@ class CustomerRegistrationForm(forms.ModelForm):
         self.fields['dob'].required = False
         # address optional
         self.fields['address'].required = False
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').strip().lower()
+        if not email:
+            raise forms.ValidationError('Vui lòng nhập địa chỉ Gmail.')
+        if not email.endswith('@gmail.com'):
+            raise forms.ValidationError('Vui lòng nhập địa chỉ Gmail hợp lệ (phải kết thúc bằng @gmail.com).')
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError('Địa chỉ Gmail này đã được sử dụng.')
+        return email
 
     def clean_username(self):
         username = self.cleaned_data.get('username', '').strip()

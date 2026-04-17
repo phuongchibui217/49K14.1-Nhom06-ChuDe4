@@ -70,16 +70,17 @@
         background: linear-gradient(135deg, #d4a835, #f1c40f);
         color: white;
         border: none;
-        border-radius: 50px;
-        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        padding: 0.45rem 1.1rem;
+        font-size: 0.875rem;
         font-weight: 500;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(212, 168, 53, 0.3);
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(212, 168, 53, 0.25);
     }
 
     .btn-spa-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(212, 168, 53, 0.4);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(212, 168, 53, 0.35);
         color: white;
     }
 
@@ -387,7 +388,7 @@
                 Danh sách khiếu nại
             </h4>
             <a href="{% url 'complaints:customer_complaint_create' %}" class="btn btn-spa-primary">
-                <i class="fas fa-plus me-2"></i>Gửi khiếu nại mới
+                Gửi khiếu nại mới
             </a>
         </div>
 
@@ -438,7 +439,7 @@
             <h4>Bạn chưa có khiếu nại nào</h4>
             <p>Nếu bạn có vấn đề cần khiếu nại, hãy gửi khiếu nại mới để được chúng tôi giải đáp.</p>
             <a href="{% url 'complaints:customer_complaint_create' %}" class="btn btn-spa-primary">
-                <i class="fas fa-plus me-2"></i>Gửi khiếu nại
+                Gửi khiếu nại
             </a>
         </div>
         {% endif %}

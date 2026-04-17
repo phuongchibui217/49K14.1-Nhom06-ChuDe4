@@ -96,6 +96,41 @@ def ensure_staff_profile(user: User) -> 'StaffProfile':
 
 
 @transaction.atomic
+def create_customer_user(username: str, password: str, full_name: str,
+                         phone: str, email: str = '',
+                         gender=None, dob=None, address=None) -> 'CustomerProfile':
+    """
+    Tạo tài khoản khách hàng:
+    - User thường (is_staff=False)
+    - Gán group 'Khách hàng'
+    - Tạo CustomerProfile liên kết
+    """
+    from customers.models import CustomerProfile
+
+    user = User.objects.create_user(
+        username=username,
+        password=password,
+        email=email or '',
+        is_staff=False,
+        is_superuser=False,
+    )
+
+    # Gán group Khách hàng (tạo nếu chưa có)
+    group, _ = Group.objects.get_or_create(name=GROUP_CUSTOMER)
+    user.groups.add(group)
+
+    profile = CustomerProfile.objects.create(
+        user=user,
+        full_name=full_name,
+        phone=phone,
+        gender=gender or None,
+        dob=dob or None,
+        address=address or None,
+    )
+    return profile
+
+
+@transaction.atomic
 def create_staff_user(username: str, password: str, full_name: str,
                       phone: str, email: str = '',
                       gender=None, dob=None, address=None, notes=None) -> 'StaffProfile':

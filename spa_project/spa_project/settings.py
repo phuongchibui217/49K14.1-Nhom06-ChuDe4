@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'customers',
     'staff',
     'chat',
+    # Phase 9: Reports
+    'reports',
 ]
 
 MIDDLEWARE = [

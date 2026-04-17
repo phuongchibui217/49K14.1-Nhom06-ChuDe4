@@ -62,6 +62,9 @@ def _redirect_by_role(request, user, show_welcome=False):
             full_name = user.get_full_name() or user.username
             role = "Quản trị viên" if user.is_superuser else "Nhân viên"
             messages.success(request, f'Chào mừng {full_name}! ({role})')
+        # Chủ Spa (superuser) → trang báo cáo thống kê
+        if user.is_superuser:
+            return redirect('reports:admin_reports')
         return redirect('/manage/appointments/')
 
     try:
@@ -98,7 +101,7 @@ def register(request):
                 messages.error(request, 'Có lỗi hệ thống khi tạo tài khoản. Vui lòng thử lại.')
                 return render(request, 'accounts/register.html', {'form': form})
 
-            messages.success(request, f'Đăng ký thành công! Chào mừng {profile.full_name}')
+            # Đăng nhập ngay sau khi tạo tài khoản thành công
             user = authenticate(
                 request,
                 username=form.cleaned_data['username'],
@@ -106,7 +109,12 @@ def register(request):
             )
             if user is not None:
                 login(request, user)
-            return redirect('appointments:my_appointments')
+                messages.success(request, f'Đăng ký thành công! Chào mừng {profile.full_name}')
+                return redirect('appointments:my_appointments')
+            else:
+                # Tài khoản đã tạo nhưng authenticate thất bại (hiếm gặp)
+                messages.success(request, f'Đăng ký thành công! Vui lòng đăng nhập.')
+                return redirect('accounts:login')
     else:
         form = CustomerRegistrationForm()
 
