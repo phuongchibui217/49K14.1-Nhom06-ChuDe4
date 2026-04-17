@@ -1,217 +1,751 @@
 {% extends 'spa/base.html' %}
 {% load spa_filters %}
 
-{% block title %}{{ service.name }} - Spa ANA{% endblock %}
+{% block title %}{{ service.name }} — Spa ANA{% endblock %}
 
 {% block extra_css %}
 <style>
-    .page-header {
-        background: linear-gradient(135deg, rgba(243, 156, 18, 0.9), rgba(241, 196, 15, 0.9)),
-                    url('https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=1920') center/cover;
-        padding: 6rem 0 3rem;
-        text-align: center;
-        color: white;
-    }
+/* ═══════════════════════════════════════════════════
+   TOKENS
+═══════════════════════════════════════════════════ */
+:root {
+  --cream:   #faf8f4;
+  --sand:    #f0ebe0;
+  --taupe:   #c8b89a;
+  --gold:    #c8a97e;        /* màu chủ đạo spa — sáng hơn chút để dễ đọc */
+  --gold-lt: #dfc09a;
+  --brown:   #5a3e28;        /* đậm hơn để tương phản tốt */
+  --ink:     #2c2c2c;        /* gần đen, dễ đọc */
+  --body:    #333333;        /* nội dung chính */
+  --muted:   #666666;        /* text phụ — đậm hơn #78716c cũ */
+  --border:  #e8e0d4;
+  --white:   #ffffff;
+  --radius:  4px;
+}
 
-    .service-detail-section {
-        padding: 4rem 0;
-    }
+/* ═══════════════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════════════ */
+.sd-hero {
+  position: relative;
+  height: 88vh;
+  min-height: 560px;
+  max-height: 820px;
+  overflow: hidden;
+}
+.sd-hero__img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+.sd-hero__overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(28,25,23,.18) 0%,
+    rgba(28,25,23,.52) 60%,
+    rgba(28,25,23,.72) 100%
+  );
+}
+.sd-hero__content {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 0 0 5rem;
+  text-align: center;
+  color: #fff;
+}
+.sd-hero__eyebrow {
+  display: inline-block;
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--taupe);
+  margin-bottom: 1rem;
+}
+.sd-hero__title {
+  font-family: 'Montserrat', serif;
+  font-size: clamp(2.2rem, 5vw, 4rem);
+  font-weight: 300;
+  letter-spacing: .04em;
+  line-height: 1.15;
+  margin: 0 auto .9rem;
+  max-width: 700px;
+}
+.sd-hero__tagline {
+  font-size: clamp(.9rem, 1.6vw, 1.05rem);
+  font-weight: 300;
+  color: rgba(255,255,255,.78);
+  letter-spacing: .06em;
+  margin: 0;
+}
+.sd-hero__scroll {
+  position: absolute;
+  bottom: 1.6rem; left: 50%;
+  transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  color: rgba(255,255,255,.5);
+  font-size: .65rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  animation: sdBounce 2s ease-in-out infinite;
+}
+.sd-hero__scroll i { font-size: .8rem; }
+@keyframes sdBounce {
+  0%,100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(6px); }
+}
 
-    .service-image {
-        border-radius: 20px;
-        overflow: hidden;
-        box-shadow: 0 20px 40px rgba(37, 157, 97, 0.15);
-        margin-bottom: 2rem;
-    }
+/* ═══════════════════════════════════════════════════
+   LAYOUT WRAPPER
+═══════════════════════════════════════════════════ */
+.sd-page { background: var(--cream); }
 
-    .service-image img {
-        width: 100%;
-        height: 400px;
-        object-fit: cover;
-        transition: transform 0.5s ease;
-    }
+.sd-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
 
-    .service-image:hover img {
-        transform: scale(1.05);
-    }
+/* ═══════════════════════════════════════════════════
+   INTRO STRIP
+═══════════════════════════════════════════════════ */
+.sd-intro {
+  background: var(--white);
+  padding: 4rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.sd-intro__inner {
+  max-width: 680px;
+  margin: 0 auto;
+  text-align: center;
+}
+.sd-intro__rule {
+  width: 40px; height: 1px;
+  background: var(--gold);
+  margin: 0 auto 1.6rem;
+}
+.sd-intro__text {
+  font-size: 1.1rem;
+  line-height: 1.9;
+  color: var(--body);
+  font-weight: 400;
+  letter-spacing: .01em;
+}
 
-    .price-card {
-        background: linear-gradient(135deg, #f39c12, #e67e22);
-        color: white;
-        border-radius: 20px;
-        padding: 2rem;
-        box-shadow: 0 15px 35px rgba(243, 156, 18, 0.3);
-    }
+/* ═══════════════════════════════════════════════════
+   MAIN BODY — 2-col on desktop
+═══════════════════════════════════════════════════ */
+.sd-body {
+  padding: 5rem 0 6rem;
+}
+.sd-body__grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 5rem;
+  align-items: start;
+}
+@media (max-width: 1024px) {
+  .sd-body__grid { grid-template-columns: 1fr; gap: 3rem; }
+}
 
-    .price-display {
-        font-size: 2.5rem;
-        font-weight: 700;
-    }
+/* ═══════════════════════════════════════════════════
+   LEFT — INFO SECTIONS
+═══════════════════════════════════════════════════ */
+.sd-section { margin-bottom: 2.8rem; }
+.sd-section:last-child { margin-bottom: 0; }
 
-    .feature-item {
-        padding: 1rem 0;
-        border-bottom: 1px solid #eee;
-    }
+.sd-section__label {
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: .55rem;
+}
+.sd-section__title {
+  font-size: 1.5rem;          /* ~24px */
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: .01em;
+  margin-bottom: 1.1rem;
+  line-height: 1.3;
+}
+.sd-section__body {
+  font-size: 1rem;            /* 16px */
+  line-height: 1.75;
+  color: var(--body);
+  font-weight: 400;
+}
+.sd-divider {
+  width: 32px; height: 1px;
+  background: var(--border);
+  margin: 2.8rem 0;
+}
 
-    .feature-item:last-child {
-        border-bottom: none;
-    }
+/* Benefits list */
+.sd-benefits {
+  list-style: none;
+  padding: 0; margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem 2.5rem;
+}
+@media (max-width: 600px) { .sd-benefits { grid-template-columns: 1fr; } }
+.sd-benefits li {
+  display: flex; align-items: flex-start; gap: .75rem;
+  font-size: 1rem;
+  color: var(--body);
+  line-height: 1.65;
+  font-weight: 400;
+}
+.sd-benefits li::before {
+  content: '';
+  display: block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--gold);
+  margin-top: .42rem;
+  flex-shrink: 0;
+}
 
-    .feature-icon {
-        color: #f39c12;
-        width: 40px;
-        font-size: 1.5rem;
-    }
+/* Process steps */
+.sd-steps {
+  list-style: none;
+  padding: 0; margin: 0;
+  counter-reset: step;
+}
+.sd-steps li {
+  counter-increment: step;
+  display: flex; gap: 1.25rem;
+  padding-bottom: 1.75rem;
+  position: relative;
+}
+.sd-steps li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 17px; top: 36px; bottom: 0;
+  width: 1px;
+  background: var(--border);
+}
+.sd-steps__num {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--gold);   /* filled — nổi bật hơn */
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  position: relative; z-index: 1;
+  letter-spacing: .03em;
+}
+.sd-steps__text {
+  font-size: 1rem;
+  color: var(--body);
+  line-height: 1.7;
+  padding-top: .45rem;
+}
+.sd-steps__text strong {
+  color: var(--ink);
+  font-weight: 600;
+  display: block;
+  margin-bottom: .2rem;
+  font-size: 1rem;
+}
 
-    .related-service {
-        background: white;
-        border-radius: 15px;
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-        transition: all 0.3s ease;
-        height: 100%;
-    }
+/* Suitable tags */
+.sd-tags {
+  display: flex; flex-wrap: wrap; gap: .55rem;
+}
+.sd-tag {
+  display: inline-block;
+  padding: .4rem 1rem;
+  border: 1px solid var(--taupe);
+  border-radius: 999px;
+  font-size: .85rem;
+  color: var(--body);
+  background: var(--white);
+  letter-spacing: .02em;
+  font-weight: 400;
+}
 
-    .related-service:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
-    }
+/* Notes */
+.sd-notes {
+  background: var(--sand);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 1.3rem 1.6rem;
+}
+.sd-notes p {
+  font-size: .97rem;
+  color: var(--brown);
+  line-height: 1.8;
+  margin: 0;
+  font-weight: 400;
+}
 
-    .related-image {
-        height: 150px;
-        overflow: hidden;
-    }
+/* ═══════════════════════════════════════════════════
+   RIGHT — STICKY BOOKING CARD
+═══════════════════════════════════════════════════ */
+.sd-card {
+  position: sticky;
+  top: 100px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(28,25,23,.07);
+}
+.sd-card__eyebrow {
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--taupe);
+  margin-bottom: .5rem;
+}
+.sd-card__title {
+  font-size: 1.15rem;
+  font-weight: 400;
+  color: var(--ink);
+  margin-bottom: 1.6rem;
+  letter-spacing: .02em;
+}
+.sd-card__rule {
+  width: 28px; height: 1px;
+  background: var(--gold);
+  margin-bottom: 1.6rem;
+}
 
-    .related-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.3s ease;
-    }
+/* Variant selector */
+.sd-variant {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: .9rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  margin-bottom: .5rem;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  position: relative;
+}
+.sd-variant:hover { border-color: var(--taupe); background: var(--cream); }
+.sd-variant.is-selected {
+  border-color: var(--gold);
+  background: #fdf9f2;
+}
+.sd-variant input[type="radio"] {
+  accent-color: var(--gold);
+  width: 16px; height: 16px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.sd-variant__info { flex: 1; min-width: 0; }
+.sd-variant__label {
+  font-size: .88rem;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.3;
+}
+.sd-variant__duration {
+  font-size: .75rem;
+  color: var(--muted);
+  margin-top: 1px;
+}
+.sd-variant__price {
+  font-size: .97rem;
+  font-weight: 600;
+  color: var(--gold);
+  white-space: nowrap;
+}
+.sd-variant__popular {
+  position: absolute;
+  top: -9px; right: 10px;
+  background: var(--gold);
+  color: #fff;
+  font-size: .6rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
 
-    .related-service:hover .related-image img {
-        transform: scale(1.1);
-    }
+.sd-card__note {
+  font-size: .75rem;
+  color: var(--taupe);
+  margin: .8rem 0 1.4rem;
+  display: flex; align-items: center; gap: .4rem;
+}
+
+/* Book button */
+.sd-btn-book {
+  display: block;
+  width: 100%;
+  padding: .95rem 1rem;
+  background: var(--ink);
+  color: #fff;
+  border: none;
+  border-radius: 2px;
+  font-size: .88rem;
+  font-weight: 600;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .18s, transform .15s;
+  text-align: center;
+  text-decoration: none;
+}
+.sd-btn-book:hover:not(:disabled) {
+  background: var(--brown);
+  color: #fff;
+  transform: translateY(-1px);
+}
+.sd-btn-book:disabled {
+  background: var(--border);
+  color: var(--taupe);
+  cursor: not-allowed;
+  transform: none;
+}
+.sd-btn-book--outline {
+  background: transparent;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+}
+.sd-btn-book--outline:hover {
+  background: var(--ink);
+  color: #fff;
+}
+.sd-card__hint {
+  font-size: .72rem;
+  color: var(--taupe);
+  text-align: center;
+  margin-top: .7rem;
+  letter-spacing: .02em;
+}
+
+/* ═══════════════════════════════════════════════════
+   RELATED SERVICES
+═══════════════════════════════════════════════════ */
+.sd-related {
+  background: var(--white);
+  padding: 5rem 0;
+  border-top: 1px solid var(--border);
+}
+.sd-related__header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+.sd-related__eyebrow {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: .5rem;
+}
+.sd-related__title {
+  font-size: 1.6rem;
+  font-weight: 300;
+  color: var(--ink);
+  letter-spacing: .03em;
+}
+.sd-related__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.5rem;
+}
+.sd-rel-card {
+  background: var(--cream);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  transition: box-shadow .2s, transform .2s;
+  text-decoration: none;
+  display: block;
+  color: inherit;
+}
+.sd-rel-card:hover {
+  box-shadow: 0 12px 32px rgba(28,25,23,.1);
+  transform: translateY(-3px);
+  color: inherit;
+}
+.sd-rel-card__img {
+  width: 100%; height: 160px;
+  object-fit: cover;
+  display: block;
+}
+.sd-rel-card__body { padding: 1rem 1.1rem 1.2rem; }
+.sd-rel-card__name {
+  font-size: .9rem;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: .3rem;
+  line-height: 1.35;
+}
+.sd-rel-card__price {
+  font-size: .8rem;
+  color: var(--gold);
+  font-weight: 600;
+  margin-bottom: .7rem;
+}
+.sd-rel-card__cta {
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex; align-items: center; gap: .4rem;
+}
+.sd-rel-card__cta i { font-size: .6rem; }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Page Header -->
-<section class="page-header">
-    <div class="container">
-        <h1>{{ service.name }}</h1>
-        <p class="lead mb-0">{{ service.category.name|default:'Dịch vụ chăm sóc sắc đẹp' }}</p>
+<div class="sd-page">
+
+  {# ── HERO ── #}
+  <section class="sd-hero">
+    <img class="sd-hero__img"
+         src="{{ service.get_image_url }}"
+         alt="{{ service.name }}">
+    <div class="sd-hero__overlay"></div>
+    <div class="sd-hero__content">
+      <span class="sd-hero__eyebrow">{{ service.category.name|default:"Dịch vụ spa" }}</span>
+      <h1 class="sd-hero__title">{{ service.name }}</h1>
+      {% if service.short_description %}
+        <p class="sd-hero__tagline">{{ service.short_description }}</p>
+      {% else %}
+        <p class="sd-hero__tagline">Trải nghiệm thư giãn toàn diện, được thiết kế riêng cho bạn</p>
+      {% endif %}
     </div>
-</section>
+    <div class="sd-hero__scroll">
+      <i class="fas fa-chevron-down"></i>
+      <span>Khám phá</span>
+    </div>
+  </section>
 
-<!-- Service Detail Section -->
-<section class="service-detail-section">
-    <div class="container">
-        <div class="row">
-            <!-- Left Column - Service Info -->
-            <div class="col-lg-8">
-                <!-- Service Image -->
-                <div class="service-image">
-                    <img src="{{ service.get_image_url }}" alt="{{ service.name }}">
-                </div>
-
-                <!-- Service Description -->
-                <div class="mb-5">
-                    <h2 class="mb-4">Giới thiệu</h2>
-                    <p class="text-muted">{{ service.description }}</p>
-                </div>
-
-                <!-- Service Features -->
-                <div class="mb-5">
-                    <h3 class="mb-4">Đặc điểm nổi bật</h3>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="feature-item d-flex">
-                                <i class="fas fa-clock feature-icon me-3"></i>
-                                <div>
-                                    <h6 class="mb-1">Thời gian</h6>
-                                    {% with service.variants.all|first as v %}
-                                    <p class="text-muted mb-0">{{ v.duration_minutes|default:'—' }} phút</p>
-                                    {% endwith %}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="feature-item d-flex">
-                                <i class="fas fa-certificate feature-icon me-3"></i>
-                                <div>
-                                    <h6 class="mb-1">Chất lượng</h6>
-                                    <p class="text-muted mb-0">Cam kết hài lòng</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="feature-item d-flex">
-                                <i class="fas fa-user-md feature-icon me-3"></i>
-                                <div>
-                                    <h6 class="mb-1">Chuyên gia</h6>
-                                    <p class="text-muted mb-0">Kỹ thuật viên chuyên nghiệp</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="feature-item d-flex">
-                                <i class="fas fa-leaf feature-icon me-3"></i>
-                                <div>
-                                    <h6 class="mb-1">Sản phẩm</h6>
-                                    <p class="text-muted mb-0">100% tự nhiên</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Column - Booking Card -->
-            <div class="col-lg-4">
-                <div class="price-card sticky-top" style="top: 100px;">
-                    <h4 class="mb-3">Giá dịch vụ</h4>
-                    {% for v in service.variants.all %}
-                    <div class="mb-2">
-                        <span class="fw-bold">{{ v.label }}</span>:
-                        <span class="price-display" style="font-size:1.4rem;">{{ v.price|vnd }}</span>
-                        <small class="opacity-75">({{ v.duration_minutes }} phút)</small>
-                    </div>
-                    {% empty %}
-                    <p class="opacity-75">Liên hệ để biết giá</p>
-                    {% endfor %}
-                    <p class="mb-4 mt-2">Giá đã bao gồm tất cả thuế và phí</p>
-                    <a href="{% url 'appointments:booking' %}?service={{ service.id }}" class="btn btn-dark w-100 btn-lg mb-3">
-                        <i class="fas fa-calendar-alt me-2"></i>Đặt lịch ngay
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Related Services -->
-        {% if related_services %}
-        <div class="row mt-5">
-            <div class="col-12">
-                <h3 class="text-center mb-4">Dịch vụ liên quan</h3>
-            </div>
-            {% for related in related_services %}
-            <div class="col-md-6 col-lg-3 mb-4">
-                <div class="related-service">
-                    <div class="related-image">
-                        <img src="{{ related.get_image_url }}" alt="{{ related.name }}">
-                    </div>
-                    <div class="p-3">
-                        <h6 class="mb-2">{{ related.name }}</h6>
-                        <p class="text-warning fw-bold mb-2">{% with related.variants.all|first as v %}{% if v %}{{ v.price|vnd }}{% endif %}{% endwith %}</p>
-                        <a href="{% url 'spa_services:service_detail' related.id %}" class="btn btn-outline-warning btn-sm w-100">
-                            Xem chi tiết
-                        </a>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
+  {# ── INTRO ── #}
+  <div class="sd-intro">
+    <div class="sd-container">
+      <div class="sd-intro__inner">
+        <div class="sd-intro__rule"></div>
+        {% if service.description %}
+          <p class="sd-intro__text">{{ service.description }}</p>
+        {% else %}
+          <p class="sd-intro__text">
+            Mỗi liệu trình tại Spa ANA được thiết kế để phục hồi sự cân bằng tự nhiên của cơ thể và tâm trí.
+            Chúng tôi kết hợp kỹ thuật truyền thống với sản phẩm thiên nhiên thuần khiết,
+            mang đến trải nghiệm thư giãn sâu và tái tạo năng lượng bền vững.
+          </p>
         {% endif %}
+      </div>
     </div>
-</section>
+  </div>
+
+  {# ── BODY ── #}
+  <div class="sd-body">
+    <div class="sd-container">
+      <div class="sd-body__grid">
+
+        {# ── LEFT: INFO ── #}
+        <div class="sd-left">
+
+          {# Lợi ích #}
+          <div class="sd-section">
+            <p class="sd-section__label">Lợi ích</p>
+            <h2 class="sd-section__title">Điều dịch vụ này mang lại cho bạn</h2>
+            <ul class="sd-benefits">
+              <li>Thư giãn cơ bắp sâu, giảm căng thẳng tích tụ</li>
+              <li>Cải thiện tuần hoàn máu và bạch huyết</li>
+              <li>Tái tạo năng lượng, phục hồi tinh thần</li>
+              <li>Làn da mềm mịn, sáng khỏe tự nhiên</li>
+              <li>Giảm đau nhức, cải thiện chất lượng giấc ngủ</li>
+              <li>Cân bằng cảm xúc, tăng cảm giác an yên</li>
+            </ul>
+          </div>
+
+          <div class="sd-divider"></div>
+
+          {# Quy trình #}
+          <div class="sd-section">
+            <p class="sd-section__label">Quy trình</p>
+            <h2 class="sd-section__title">Trải nghiệm từng bước</h2>
+            <ol class="sd-steps">
+              <li>
+                <span class="sd-steps__num">01</span>
+                <span class="sd-steps__text"><strong>Tư vấn &amp; chuẩn bị</strong> — Chuyên viên trao đổi về tình trạng sức khỏe và mong muốn của bạn, lựa chọn liệu trình phù hợp nhất.</span>
+              </li>
+              <li>
+                <span class="sd-steps__num">02</span>
+                <span class="sd-steps__text"><strong>Làm sạch &amp; khởi động</strong> — Cơ thể được làm sạch nhẹ nhàng, chuẩn bị cho liệu trình chính với các sản phẩm thiên nhiên.</span>
+              </li>
+              <li>
+                <span class="sd-steps__num">03</span>
+                <span class="sd-steps__text"><strong>Liệu trình chính</strong> — Kỹ thuật viên thực hiện liệu trình với kỹ thuật chuyên sâu, điều chỉnh áp lực theo nhu cầu của bạn.</span>
+              </li>
+              <li>
+                <span class="sd-steps__num">04</span>
+                <span class="sd-steps__text"><strong>Hoàn thiện &amp; nghỉ ngơi</strong> — Kết thúc bằng liệu pháp thư giãn, bạn có thời gian nghỉ ngơi và thưởng thức trà thảo mộc.</span>
+              </li>
+            </ol>
+          </div>
+
+          <div class="sd-divider"></div>
+
+          {# Phù hợp với ai #}
+          <div class="sd-section">
+            <p class="sd-section__label">Phù hợp với</p>
+            <h2 class="sd-section__title">Dịch vụ này dành cho bạn nếu</h2>
+            <div class="sd-tags">
+              <span class="sd-tag">Căng thẳng, mệt mỏi</span>
+              <span class="sd-tag">Đau nhức cơ thể</span>
+              <span class="sd-tag">Muốn thư giãn sâu</span>
+              <span class="sd-tag">Chăm sóc sức khỏe định kỳ</span>
+              <span class="sd-tag">Phục hồi sau vận động</span>
+              <span class="sd-tag">Tặng quà người thân</span>
+            </div>
+          </div>
+
+          <div class="sd-divider"></div>
+
+          {# Lưu ý #}
+          <div class="sd-section">
+            <p class="sd-section__label">Lưu ý</p>
+            <h2 class="sd-section__title">Trước &amp; sau liệu trình</h2>
+            <div class="sd-notes">
+              <p>
+                Vui lòng uống đủ nước trước khi đến. Tránh ăn no trong vòng 1 giờ trước liệu trình.
+                Thông báo cho chuyên viên nếu bạn đang mang thai, có vấn đề về tim mạch hoặc da liễu.
+                Sau liệu trình, hãy nghỉ ngơi nhẹ nhàng và tiếp tục bổ sung nước để tối ưu hiệu quả.
+              </p>
+            </div>
+          </div>
+
+        </div>{# /sd-left #}
+
+        {# ── RIGHT: BOOKING CARD ── #}
+        <div class="sd-right">
+          <div class="sd-card">
+            <p class="sd-card__eyebrow">Đặt lịch</p>
+            <h3 class="sd-card__title">Chọn gói phù hợp</h3>
+            <div class="sd-card__rule"></div>
+
+            {% with variants=service.variants.all %}
+            {% if variants %}
+              <div id="variantList">
+                {% for v in variants %}
+                {% if v.is_active %}
+                <label class="sd-variant" id="label-variant-{{ v.id }}">
+                  {% if forloop.counter == 2 and variants|length >= 3 %}
+                    <span class="sd-variant__popular">Phổ biến</span>
+                  {% endif %}
+                  <input type="radio"
+                         name="selected_variant"
+                         value="{{ v.id }}"
+                         data-duration="{{ v.duration_minutes }}"
+                         data-price="{{ v.price }}"
+                         onchange="onVariantChange(this)">
+                  <div class="sd-variant__info">
+                    <div class="sd-variant__label">{{ v.label }}</div>
+                    <div class="sd-variant__duration">{{ v.duration_minutes }} phút</div>
+                  </div>
+                  <div class="sd-variant__price">{{ v.price|vnd }}</div>
+                </label>
+                {% endif %}
+                {% endfor %}
+              </div>
+
+              <p class="sd-card__note">
+                <i class="fas fa-circle-check" style="color:var(--gold);font-size:.7rem;"></i>
+                Giá đã bao gồm thuế &amp; phí dịch vụ
+              </p>
+
+              <button class="sd-btn-book" id="btnBook" disabled
+                      onclick="goToBooking({{ service.id }})">
+                Đặt lịch ngay
+              </button>
+              <p class="sd-card__hint" id="bookingNote">Vui lòng chọn gói để tiếp tục</p>
+
+            {% else %}
+              <p style="font-size:.88rem;color:var(--muted);margin-bottom:1.4rem;">
+                Liên hệ trực tiếp để được tư vấn gói phù hợp.
+              </p>
+              <a href="{% url 'appointments:booking' %}?service={{ service.id }}"
+                 class="sd-btn-book sd-btn-book--outline">
+                Liên hệ đặt lịch
+              </a>
+            {% endif %}
+            {% endwith %}
+
+            {# Divider + contact #}
+            <div style="margin-top:1.6rem;padding-top:1.4rem;border-top:1px solid var(--border);">
+              <p style="font-size:.75rem;color:var(--taupe);margin:0;line-height:1.7;">
+                <i class="fas fa-phone" style="margin-right:.4rem;"></i>Cần tư vấn?
+                Gọi <strong style="color:var(--ink);">0123 456 789</strong>
+              </p>
+            </div>
+          </div>
+        </div>{# /sd-right #}
+
+      </div>{# /sd-body__grid #}
+    </div>{# /sd-container #}
+  </div>{# /sd-body #}
+
+  {# ── RELATED SERVICES ── #}
+  {% if related_services %}
+  <section class="sd-related">
+    <div class="sd-container">
+      <div class="sd-related__header">
+        <p class="sd-related__eyebrow">Khám phá thêm</p>
+        <h2 class="sd-related__title">Dịch vụ liên quan</h2>
+      </div>
+      <div class="sd-related__grid">
+        {% for rel in related_services %}
+        <a href="{% url 'spa_services:service_detail' rel.id %}" class="sd-rel-card">
+          <img class="sd-rel-card__img"
+               src="{{ rel.get_image_url }}"
+               alt="{{ rel.name }}"
+               loading="lazy">
+          <div class="sd-rel-card__body">
+            <div class="sd-rel-card__name">{{ rel.name }}</div>
+            {% with rel.variants.all|first as rv %}
+            {% if rv %}
+            <div class="sd-rel-card__price">Từ {{ rv.price|vnd }}</div>
+            {% endif %}
+            {% endwith %}
+            <div class="sd-rel-card__cta">
+              Xem chi tiết <i class="fas fa-arrow-right"></i>
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+</div>{# /sd-page #}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function onVariantChange(radio) {
+  document.querySelectorAll('.sd-variant').forEach(el => el.classList.remove('is-selected'));
+  radio.closest('.sd-variant').classList.add('is-selected');
+  const btn  = document.getElementById('btnBook');
+  const note = document.getElementById('bookingNote');
+  if (btn)  btn.disabled = false;
+  if (note) note.textContent = '';
+}
+
+function goToBooking(serviceId) {
+  const selected = document.querySelector('input[name="selected_variant"]:checked');
+  if (!selected) return;
+  window.location.href = `/booking/?service=${serviceId}&variant=${selected.value}`;
+}
+</script>
 {% endblock %}

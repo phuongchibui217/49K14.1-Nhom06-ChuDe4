@@ -62,14 +62,26 @@ class ServiceForm(forms.ModelForm):
     )
 
     description = forms.CharField(
-        label='Mô tả',
-        required=True,
+        label='Mô tả ngắn',
+        required=False,
         widget=forms.Textarea(attrs={
             'class': 'form-control',
-            'rows': 3,
-            'placeholder': 'Mô tả chi tiết về dịch vụ...'
+            'rows': 2,
+            'placeholder': 'Mô tả ngắn hiển thị ở trang danh sách (tối đa 255 ký tự)...',
+            'maxlength': '255',
         }),
-        error_messages={'required': 'Vui lòng nhập mô tả dịch vụ'}
+        help_text='Hiển thị ở trang danh sách dịch vụ. Để trống sẽ tự sinh từ mô tả chi tiết.',
+    )
+
+    detail_description = forms.CharField(
+        label='Mô tả chi tiết',
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 5,
+            'placeholder': 'Mô tả chi tiết hiển thị ở trang chi tiết dịch vụ. Để trống sẽ tự sinh.',
+        }),
+        help_text='Hiển thị ở trang chi tiết dịch vụ. Để trống sẽ tự sinh từ tên, danh mục và gói dịch vụ.',
     )
 
     status = forms.ChoiceField(
@@ -146,10 +158,12 @@ class ServiceForm(forms.ModelForm):
         return name
 
     def clean_description(self):
-        description = self.cleaned_data.get('description', '').strip()
-        if not description:
-            raise forms.ValidationError('Vui lòng nhập mô tả dịch vụ')
-        return description
+        """short_description — cắt tối đa 255 ký tự"""
+        value = self.cleaned_data.get('description', '').strip()
+        return value[:255] if value else ''
+
+    def clean_detail_description(self):
+        return self.cleaned_data.get('detail_description', '').strip()
 
     def clean_image(self):
         """Validate hình ảnh"""
@@ -197,15 +211,16 @@ class ServiceForm(forms.ModelForm):
             raise forms.ValidationError('Danh mục không tồn tại trong hệ thống')
 
     def save(self, commit=True):
-        """Override save để xử lý mapping và sinh mã"""
+        """Override save để xử lý mapping, sinh mã, và auto-generate description"""
+        from .description_helpers import generate_service_description, should_generate_description
+
         service = super().save(commit=False)
 
         # Map category_number to ServiceCategory object
         service.category = self.cleaned_data.get('category_number')
 
-        # Map status to is_active
+        # Map status
         service.status = self.cleaned_data.get('status', 'ACTIVE')
-        service.is_active = (service.status == 'ACTIVE')
 
         # Dùng mã do user nhập, hoặc tự sinh nếu để trống
         custom_code = self.cleaned_data.get('code', '').strip()
@@ -213,6 +228,19 @@ class ServiceForm(forms.ModelForm):
             service.code = custom_code
         elif not service.code:
             service.code = Service._generate_code()
+
+        # short_description: từ field 'description' trong form
+        short_desc = self.cleaned_data.get('description', '').strip()
+        # detail description: từ field 'detail_description' trong form
+        detail_desc = self.cleaned_data.get('detail_description', '').strip()
+
+        # Nếu short_description trống, fallback sang detail_description cắt ngắn
+        service.short_description = short_desc or (detail_desc[:255] if detail_desc else '')
+
+        # Auto-generate description nếu để trống
+        service.description = detail_desc
+        if should_generate_description(service):
+            service.description = generate_service_description(service)
 
         if commit:
             service.save()

@@ -7,9 +7,10 @@
   --line-strong:#dfe3e8;
 
   /* scheduler sizes */
-  --leftCol: 70px;
-  --slotW: 52px;     /* 30 phút = 1 ô ngang */
-  --rowH: 66px;      /* tăng chút để khỏi khuất chữ */
+  --leftCol: 60px;
+  /* --slotW chỉ còn dùng làm min-width fallback khi màn hình quá nhỏ */
+  --slotW: 36px;
+  --rowH: 72px;
   --headerH: 42px;
   --topBarH: 58px;
 
@@ -24,6 +25,9 @@
   border-radius: 14px;
   overflow:hidden;
   box-shadow: 0 4px 16px rgba(0,0,0,.06);
+  /* Đảm bảo card chiếm full width của admin-main */
+  width: 100%;
+  min-width: 0;
 }
 
 .topbar{
@@ -51,11 +55,23 @@
 }
 
 .scheduler-wrap{
-  position:relative;
-  width:100%;
-  overflow:auto;
-  background:#fff;
+  position: relative;
+  width: 100%;
+  /* Chỉ scroll ngang khi màn hình thực sự quá nhỏ (< min-width của inner) */
+  overflow-x: auto;
+  overflow-y: auto;
+  background: #fff;
   height: 720px;
+}
+
+/* scheduler-inner: giãn full width container, không đặt min-width cứng
+   → trên desktop sẽ fit vừa đủ 9h–21h mà không cần scroll ngang
+   → chỉ scroll ngang khi viewport < 24 slot × 36px + 60px = 924px */
+.scheduler-inner{
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: calc(var(--leftCol) + (var(--slotW) * var(--totalSlots)));
 }
 
 /* sticky header row (time) */
@@ -63,10 +79,11 @@
   position: sticky;
   top: 0;
   z-index: 20;
-  display:flex;
+  display: flex;
   height: var(--headerH);
-  background:#fff;
+  background: #fff;
   border-bottom: 1px solid var(--line-strong);
+  width: 100%;
 }
 .time-header .leftcell{
   width: var(--leftCol);
@@ -78,37 +95,40 @@
   background:#fff;
 }
 .time-header .slots{
-  display:flex;
-  min-width: calc(var(--slotW) * var(--totalSlots));
+  display: flex;
+  flex: 1;          /* chiếm toàn bộ phần còn lại sau cột Phòng */
+  min-width: 0;     /* không đặt min-width cứng → không gây scroll ngang */
 }
 .time-header .slot{
-  width: var(--slotW);
-  flex: 0 0 var(--slotW);
+  flex: 1;          /* tất cả slot chia đều chiều ngang */
+  min-width: 0;     /* cho phép co lại khi cần */
   border-right: 1px solid var(--line);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:.8rem;
-  color:#6b7280;
-  user-select:none;
-  white-space:nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .75rem;
+  color: #6b7280;
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
 }
 .time-header .slot.major{
   border-right: 1px solid var(--line-strong);
-  color:#111827;
-  font-weight:700;
+  color: #111827;
+  font-weight: 700;
 }
 
 /* grid body */
 .grid{
   position: relative;
-  min-width: calc(var(--leftCol) + (var(--slotW) * var(--totalSlots)));
+  width: 100%;
 }
 
 .lane-row{
-  display:flex;
+  display: flex;
   height: var(--rowH);
   border-bottom: 1px solid var(--line);
+  width: 100%;
 }
 
 /* phòng (sticky left) */
@@ -122,10 +142,11 @@
   background:#fff;
   display:flex;
   align-items:center;
-  padding: 0 10px;
-  gap: 8px;
+  padding: 0 8px;
+  gap: 6px;
   color:#111827;
   font-weight:800;
+  font-size: .82rem;
 }
 .roomcell .dot{
   width:10px;height:10px;border-radius:50%;
@@ -144,28 +165,37 @@
 
 .lane-row .slots{
   position: relative;
-  display:flex;
-  min-width: calc(var(--slotW) * var(--totalSlots));
-  background:#fff;
+  display: flex;
+  flex: 1;      /* chiếm toàn bộ phần còn lại sau cột Phòng */
+  min-width: 0; /* không đặt min-width cứng → không gây scroll ngang */
+  background: #fff;
 }
 
-/* grid nhẹ: line giờ (mỗi 60p = 2 slot) */
+/* grid nhẹ: line giờ (mỗi 60p = 2 slot) — dùng % thay vì px cố định */
 .lane-row .slots::after{
   content:"";
   position:absolute; inset:0;
+  /* chia đều 12 giờ = 12 đường kẻ dọc, mỗi đường cách nhau 1/12 chiều rộng */
   background:
-    linear-gradient(to right, var(--line-strong) 1px, transparent 1px) 0 0 / calc(var(--slotW) * 2) 100%;
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent calc(100% / 12 - 1px),
+      var(--line-strong) calc(100% / 12 - 1px),
+      var(--line-strong) calc(100% / 12)
+    );
   pointer-events:none;
-  opacity:.6;
+  opacity:.5;
 }
 
 /* appointment blocks */
 .appt{
   position:absolute;
-  top: 6px;
-  height: calc(var(--rowH) - 12px);
+  top: 5px;
+  height: calc(var(--rowH) - 10px);
+  min-height: 48px;
   border-radius: 12px;
-  padding: 6px 8px;
+  padding: 7px 10px;
   color:#0b1220;
   overflow:hidden;
   cursor:pointer;
@@ -175,18 +205,18 @@
 }
 .appt .t1{
   font-weight:800;
-  font-size:.78rem;
-  line-height:1.15;
+  font-size:.82rem;
+  line-height:1.2;
   display:-webkit-box;
   -webkit-line-clamp:2;
   -webkit-box-orient:vertical;
   overflow:hidden;
 }
 .appt .t2{
-  font-size:.70rem;
+  font-size:.73rem;
   opacity:.9;
   margin-top:4px;
-  line-height:1.1;
+  line-height:1.15;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;

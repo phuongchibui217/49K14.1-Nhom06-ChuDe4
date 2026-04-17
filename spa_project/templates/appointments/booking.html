@@ -402,9 +402,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const durationSpan = document.getElementById('serviceDuration');
     const priceSpan = document.getElementById('servicePrice');
 
-    // Pre-select service từ URL
+    // Pre-select service và variant từ URL
     const urlParams = new URLSearchParams(window.location.search);
     const serviceIdFromUrl = urlParams.get('service_id') || urlParams.get('service');
+    const variantIdFromUrl = urlParams.get('variant');
     if (serviceIdFromUrl && serviceSelect) {
         serviceSelect.value = serviceIdFromUrl;
     }
@@ -424,7 +425,10 @@ document.addEventListener('DOMContentLoaded', function() {
             variantSelect.appendChild(opt);
         });
 
-        if (variants.length === 1) {
+        // Ưu tiên pre-select variant từ URL, nếu không có thì chọn tự động khi chỉ có 1 gói
+        if (variantIdFromUrl) {
+            variantSelect.value = variantIdFromUrl;
+        } else if (variants.length === 1) {
             variantSelect.value = variants[0].id;
         }
 

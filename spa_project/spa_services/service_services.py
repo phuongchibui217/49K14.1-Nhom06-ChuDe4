@@ -178,11 +178,19 @@ def validate_service_data(data, exclude_id=None):
         cleaned_data['category'] = ServiceCategory.objects.filter(status='ACTIVE').first()
 
     description = data.get('description', '').strip()
+    short_description = data.get('short_description', '').strip()
+
+    # short_description: dùng giá trị riêng nếu có, fallback sang description cắt ngắn
+    if short_description:
+        cleaned_data['short_description'] = short_description[:255]
+    elif description:
+        cleaned_data['short_description'] = description[:255]
+    else:
+        cleaned_data['short_description'] = ''
+
     cleaned_data['description'] = description
-    cleaned_data['short_description'] = description[:300] if len(description) > 300 else description
 
     status = data.get('status', 'active')
-    cleaned_data['is_active'] = (status == 'active')
     cleaned_data['status'] = status
 
     return {
@@ -225,7 +233,7 @@ def create_service(data, created_by=None):
             category=cleaned['category'],
             short_description=cleaned['short_description'],
             description=cleaned['description'],
-            is_active=cleaned['is_active'],
+            status=cleaned['status'],
             created_by=created_by,
             updated_by=created_by,
         )
@@ -266,7 +274,7 @@ def update_service(service, data, updated_by=None):
         service.category = cleaned['category']
         service.short_description = cleaned['short_description']
         service.description = cleaned['description']
-        service.is_active = cleaned['is_active']
+        service.status = cleaned['status']
         service.updated_by = updated_by
         service.slug = slugify(cleaned['name'])
 
@@ -325,7 +333,9 @@ def serialize_service(service):
         'category': service.category,
         'categoryName': service.get_category_name(),
         'description': service.short_description or (service.description[:100] if service.description else ''),
-        'status': service.status if hasattr(service, 'status') else ('active' if service.is_active else 'inactive'),
+        'short_description': service.short_description or '',
+        'detail_description': service.description or '',
+        'status': service.status if hasattr(service, 'status') else 'active',
         'image': service.image.url if service.image else 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=100',
         'variants': [
             {'id': v.id, 'label': v.label, 'duration_minutes': v.duration_minutes, 'price': float(v.price)}

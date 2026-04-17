@@ -65,7 +65,7 @@ class AppointmentForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['service'].queryset = Service.objects.filter(is_active=True)
+        self.fields['service'].queryset = Service.objects.filter(status='ACTIVE')
         self.fields['service'].empty_label = '-- Chọn dịch vụ --'
         self.fields['service'].required = True
 

@@ -1,5 +1,21 @@
 // Admin Services Page JavaScript
 
+// ===== CHAR COUNTER FOR DESCRIPTION FIELDS =====
+function updateCounter(inputId, counterId, maxLen) {
+    const input = document.getElementById(inputId);
+    const counter = document.getElementById(counterId);
+    if (!input || !counter) return;
+    const len = input.value.length;
+    counter.textContent = `${len} / ${maxLen}`;
+    counter.classList.remove('warn', 'over');
+    if (len > maxLen) counter.classList.add('over');
+    else if (len > maxLen * 0.85) counter.classList.add('warn');
+}
+
+function resetCounters() {
+    updateCounter('shortDescInput', 'shortDescCounter', 255);
+}
+
 // ===== VARIANT MANAGEMENT =====
 
 const VARIANT_HEADER_HTML = `
@@ -542,7 +558,18 @@ function editService(serviceId) {
             }
 
             form.querySelector('[name="name"]').value = service.name || '';
-            form.querySelector('[name="description"]').value = service.description || '';
+
+            // Mô tả ngắn (trang danh sách)
+            const shortDescField = form.querySelector('[name="short_description"]');
+            if (shortDescField) {
+                shortDescField.value = service.short_description || '';
+                updateCounter('shortDescInput', 'shortDescCounter', 255);
+            }
+
+            // Mô tả chi tiết (trang chi tiết)
+            const descField = form.querySelector('[name="description"]');
+            if (descField) descField.value = service.detail_description || '';
+
             form.querySelector('[name="status"]').value = (service.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE';
 
             // Show existing image preview
@@ -761,6 +788,9 @@ function resetFormToAddMode() {
 
     // Reset form
     form.reset();
+
+    // Reset char counters
+    resetCounters();
 
     // Reset modal title and button
     const modalTitle = document.querySelector('#addServiceModal .modal-title');

@@ -1011,3 +1011,112 @@ input[type="time"] {
 /* Dropdown items */
 .dropdown-item:hover, .dropdown-item:focus { background: var(--bg-subtle); }
 .dropdown-item.active { background: var(--gold-muted); color: var(--gold-hover); }
+
+/* ── SERVICE LIST CARD (shared — dùng ở services.html + home.html) ─── */
+.sl-card {
+  background: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  height: 100%;
+  transition: box-shadow .22s, transform .22s, border-color .22s;
+}
+.sl-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 40px rgba(28,25,23,.1);
+  border-color: var(--gold-border);
+}
+.sl-card__img-wrap { position: relative; height: 210px; overflow: hidden; }
+.sl-card__img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+  transition: transform .5s ease;
+}
+.sl-card:hover .sl-card__img { transform: scale(1.06); }
+.sl-card__cat {
+  position: absolute; top: 12px; left: 12px;
+  background: rgba(28,25,23,.62); backdrop-filter: blur(6px);
+  color: var(--gold-light);
+  font-size: .65rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  padding: .3rem .75rem; border-radius: var(--r-pill);
+}
+.sl-card__duration {
+  position: absolute; bottom: 12px; right: 12px;
+  background: rgba(28,25,23,.55); backdrop-filter: blur(6px);
+  color: rgba(255,255,255,.9);
+  font-size: .72rem; font-weight: 600;
+  padding: .25rem .65rem; border-radius: var(--r-pill);
+}
+.sl-card__body {
+  padding: 1.25rem 1.35rem 1.4rem;
+  display: flex; flex-direction: column; flex: 1;
+}
+.sl-card__name {
+  font-size: 1rem; font-weight: 600;
+  color: var(--text-primary); margin: 0 0 .5rem; line-height: 1.35;
+}
+.sl-card__desc {
+  font-size: .83rem; color: var(--text-secondary); line-height: 1.65; flex: 1;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+  overflow: hidden; margin: 0 0 1rem;
+}
+.sl-card__meta {
+  font-size: .75rem; color: var(--text-muted);
+  margin-bottom: .875rem; display: flex; align-items: center; gap: .35rem;
+}
+.sl-card__meta i { color: var(--gold); }
+.sl-card__footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: .875rem; border-top: 1px solid var(--bg-subtle); margin-top: auto;
+}
+.sl-card__price { font-size: .97rem; font-weight: 700; color: var(--gold); line-height: 1.2; }
+.sl-card__price-label {
+  font-size: .68rem; font-weight: 400;
+  color: var(--text-muted); display: block; margin-bottom: 1px;
+}
+.sl-card__cta {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: .45rem 1rem;
+  border: 1.5px solid var(--text-primary); border-radius: var(--r-sm);
+  font-size: .78rem; font-weight: 600; color: var(--text-primary);
+  text-decoration: none; transition: var(--ease); white-space: nowrap;
+}
+.sl-card__cta:hover { background: var(--text-primary); color: #fff; }
+
+/* ── PAGE HEADER — luxury dark (overrides old blue gradient) ─────── */
+.page-header {
+  background:
+    linear-gradient(135deg, rgba(28,25,23,.82), rgba(44,38,32,.82)),
+    url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920') center/cover !important;
+  padding: 3.5rem 0 2.5rem;
+  text-align: center;
+  color: #fff;
+  margin-top: 68px;
+}
+.page-header h1 {
+  font-size: 1.75rem; font-weight: 300;
+  letter-spacing: .04em; margin-bottom: .375rem;
+}
+.page-header .subtitle,
+.page-header .lead {
+  font-size: .95rem; opacity: .8;
+  font-weight: 300; margin: 0; letter-spacing: .03em;
+}
+
+/* ── CTA STRIP (home) ────────────────────────────────────────────── */
+.home-cta-strip {
+  background: var(--bg-subtle);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 4rem 0; text-align: center;
+}
+.home-cta-strip h2 {
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 600; letter-spacing: -.01em;
+  color: var(--text-primary); margin-bottom: .6rem;
+}
+.home-cta-strip p { font-size: .95rem; color: var(--text-secondary); margin-bottom: 2rem; }
+
+/* Remove old spa-gradient-bg orange tint */
+.spa-gradient-bg { background: var(--bg-subtle) !important; }

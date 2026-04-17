@@ -69,7 +69,6 @@ class Service(models.Model):
         null=True,
         verbose_name='Hình ảnh dịch vụ'
     )
-    is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
     created_by = models.ForeignKey(
         User, on_delete=models.PROTECT,
         related_name='services_created', verbose_name='Người tạo'

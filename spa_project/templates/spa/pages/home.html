@@ -1,217 +1,464 @@
 {% extends 'spa/base.html' %}
 {% load spa_filters %}
 
-{% block title %}Spa ANA - Hệ thống Quản lý Spa Cao Cấp{% endblock %}
+{% block title %}Spa ANA — Trải nghiệm thư giãn cao cấp{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* Hero section offset for fixed navbar is handled in style.css */
-    /* This page uses .hero-section which already has margin-top: 72px */
+/* ── HOME PAGE ─────────────────────────────────────── */
+
+/* Hero carousel */
+.home-hero { margin-top: 68px; }
+.home-hero .carousel,
+.home-hero .carousel-item { height: 600px; }
+@media (max-width: 991px) { .home-hero .carousel, .home-hero .carousel-item { height: 460px; } }
+@media (max-width: 767px)  { .home-hero .carousel, .home-hero .carousel-item { height: 380px; } }
+
+.home-hero .carousel-item {
+  background-size: cover;
+  background-position: center;
+  transition: transform .8s ease-in-out;
+}
+.home-hero .carousel-item::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, rgba(28,25,23,.3) 0%, rgba(28,25,23,.6) 100%);
+}
+.home-hero .carousel-caption {
+  bottom: 50%; transform: translateY(50%);
+  z-index: 1;
+}
+.home-hero .carousel-caption h1 {
+  font-size: clamp(1.8rem, 4.5vw, 3.2rem);
+  font-weight: 300;
+  letter-spacing: .04em;
+  margin-bottom: .875rem;
+  color: #fff;
+}
+.home-hero .carousel-caption .lead {
+  font-size: clamp(.9rem, 1.8vw, 1.1rem);
+  color: rgba(255,255,255,.8);
+  margin-bottom: 2rem;
+  font-weight: 300;
+  letter-spacing: .03em;
+}
+.hero-eyebrow {
+  display: inline-block;
+  font-size: .65rem; font-weight: 700;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--gold-light);
+  margin-bottom: .75rem;
+}
+.hero-cta {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: .875rem 2rem;
+  background: var(--gold);
+  color: #fff;
+  border-radius: var(--r-md);
+  font-size: .9rem; font-weight: 600;
+  letter-spacing: .04em;
+  text-decoration: none;
+  transition: var(--ease);
+  border: none;
+}
+.hero-cta:hover {
+  background: var(--gold-hover);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-gold);
+}
+.hero-cta-outline {
+  background: transparent;
+  border: 1.5px solid rgba(255,255,255,.6);
+  color: #fff;
+  margin-left: .75rem;
+}
+.hero-cta-outline:hover {
+  background: rgba(255,255,255,.12);
+  border-color: #fff;
+  color: #fff;
+  box-shadow: none;
+}
+
+/* Section wrapper */
+.home-section { padding: 5rem 0; }
+.home-section--alt { background: var(--bg-white); }
+.home-section--dark {
+  background: #1f2937;
+  color: #fff;
+}
+
+/* Section header */
+.home-section-header { text-align: center; margin-bottom: 3.5rem; }
+.home-section-eyebrow {
+  display: inline-block;
+  font-size: .68rem; font-weight: 700;
+  letter-spacing: .2em; text-transform: uppercase;
+  color: var(--gold); margin-bottom: .6rem;
+}
+.home-section-rule {
+  width: 36px; height: 1px;
+  background: var(--gold);
+  margin: 0 auto .9rem;
+}
+.home-section-title {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 600; letter-spacing: -.01em;
+  color: var(--text-primary); margin: 0 0 .5rem;
+}
+.home-section--dark .home-section-title { color: #fff; }
+.home-section-sub {
+  font-size: .95rem; color: var(--text-secondary);
+  margin: 0; max-width: 520px; margin: 0 auto;
+}
+.home-section--dark .home-section-sub { color: rgba(255,255,255,.6); }
+
+/* Service card — dùng chung với trang /services/ */
+.sl-card {
+  background: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  height: 100%;
+  transition: box-shadow .22s, transform .22s, border-color .22s;
+}
+.sl-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 40px rgba(28,25,23,.1);
+  border-color: var(--gold-border);
+}
+.sl-card__img-wrap { position: relative; height: 210px; overflow: hidden; }
+.sl-card__img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; display: block; }
+.sl-card:hover .sl-card__img { transform: scale(1.06); }
+.sl-card__cat {
+  position: absolute; top: 12px; left: 12px;
+  background: rgba(28,25,23,.62); backdrop-filter: blur(6px);
+  color: var(--gold-light);
+  font-size: .65rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  padding: .3rem .75rem; border-radius: var(--r-pill);
+}
+.sl-card__duration {
+  position: absolute; bottom: 12px; right: 12px;
+  background: rgba(28,25,23,.55); backdrop-filter: blur(6px);
+  color: rgba(255,255,255,.9);
+  font-size: .72rem; font-weight: 600;
+  padding: .25rem .65rem; border-radius: var(--r-pill);
+}
+.sl-card__body { padding: 1.25rem 1.35rem 1.4rem; display: flex; flex-direction: column; flex: 1; }
+.sl-card__name { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin: 0 0 .5rem; line-height: 1.35; }
+.sl-card__desc {
+  font-size: .83rem; color: var(--text-secondary); line-height: 1.65; flex: 1;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  margin: 0 0 1rem;
+}
+.sl-card__meta { font-size: .75rem; color: var(--text-muted); margin-bottom: .875rem; display: flex; align-items: center; gap: .35rem; }
+.sl-card__meta i { color: var(--gold); }
+.sl-card__footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: .875rem; border-top: 1px solid var(--bg-subtle); margin-top: auto;
+}
+.sl-card__price { font-size: .97rem; font-weight: 700; color: var(--gold); line-height: 1.2; }
+.sl-card__price-label { font-size: .68rem; font-weight: 400; color: var(--text-muted); display: block; margin-bottom: 1px; }
+.sl-card__cta {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: .45rem 1rem;
+  border: 1.5px solid var(--text-primary); border-radius: var(--r-sm);
+  font-size: .78rem; font-weight: 600; color: var(--text-primary);
+  text-decoration: none; transition: var(--ease); white-space: nowrap;
+}
+.sl-card__cta:hover { background: var(--text-primary); color: #fff; }
+
+/* Feature boxes */
+.home-feature {
+  text-align: center;
+  padding: 2rem 1.5rem;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-white);
+  transition: var(--ease);
+}
+.home-feature:hover {
+  border-color: var(--gold-border);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-4px);
+}
+.home-feature__icon {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: var(--gold-muted);
+  border: 1.5px solid var(--gold-border);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1.25rem;
+  transition: var(--ease);
+}
+.home-feature:hover .home-feature__icon { background: var(--gold-light); }
+.home-feature__icon i { color: var(--gold); font-size: 1.4rem; }
+.home-feature h4 { font-size: .975rem; font-weight: 600; color: var(--text-primary); margin-bottom: .5rem; }
+.home-feature p { font-size: .85rem; color: var(--text-secondary); margin: 0; line-height: 1.65; }
+
+/* Stats */
+.home-stat { text-align: center; padding: 1.5rem 1rem; }
+.home-stat__num {
+  font-size: 2.5rem; font-weight: 700;
+  color: var(--gold); line-height: 1; margin-bottom: .4rem;
+}
+.home-stat__label { font-size: .875rem; color: rgba(255,255,255,.7); }
+
+/* CTA strip */
+.home-cta-strip {
+  background: var(--bg-subtle);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 4rem 0;
+  text-align: center;
+}
+.home-cta-strip h2 {
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 600; letter-spacing: -.01em;
+  color: var(--text-primary); margin-bottom: .6rem;
+}
+.home-cta-strip p {
+  font-size: .95rem; color: var(--text-secondary);
+  margin-bottom: 2rem;
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Hero Banner Slider -->
-<section id="banner-slider" class="hero-section">
-    <div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel">
-        <div class="carousel-indicators">
-            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active"></button>
-            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1"></button>
-            <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2"></button>
-        </div>
-        <div class="carousel-inner">
-            <div class="carousel-item active" style="background: linear-gradient(rgba(30, 58, 95, 0.4), rgba(30, 58, 95, 0.6)), url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920') center/cover;">
-                <div class="carousel-caption">
-                    <h1>Trải Nghiệm Thư Giãn Tuyệt Đối</h1>
-                    <p class="lead">Tận hưởng những liệu trình spa cao cấp, tái tạo năng lượng và vẻ đẹp tự nhiên</p>
-                    <a href="{% url 'appointments:booking' %}" class="btn btn-warning btn-lg">Đặt lịch ngay</a>
-                </div>
-            </div>
-            <div class="carousel-item" style="background: linear-gradient(rgba(30, 58, 95, 0.4), rgba(30, 58, 95, 0.6)), url('https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=1920') center/cover;">
-                <div class="carousel-caption">
-                    <h1>Ưu Đãi Đặc Biệt</h1>
-                    <p class="lead">Giảm ngay 30% cho liệu trình chăm sóc da trong tháng này</p>
-                    <a href="{% url 'spa_services:service_list' %}" class="btn btn-warning btn-lg">Xem chi tiết</a>
-                </div>
-            </div>
-            <div class="carousel-item" style="background: linear-gradient(rgba(30, 58, 95, 0.4), rgba(30, 58, 95, 0.6)), url('https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=1920') center/cover;">
-                <div class="carousel-caption">
-                    <h1>Đội Ngũ Chuyên Gia</h1>
-                    <p class="lead">Kỹ thuật viên chuyên nghiệp, tận tâm mang lại trải nghiệm hoàn hảo</p>
-                    <a href="{% url 'pages:about' %}" class="btn btn-warning btn-lg">Tìm hiểu thêm</a>
-                </div>
-            </div>
-        </div>
-        <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
-            <span class="carousel-control-prev-icon"></span>
-        </button>
-        <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
-            <span class="carousel-control-next-icon"></span>
-        </button>
+
+{# ── HERO CAROUSEL ── #}
+<section class="home-hero">
+  <div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel">
+    <div class="carousel-indicators">
+      <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active"></button>
+      <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1"></button>
+      <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2"></button>
     </div>
+    <div class="carousel-inner">
+      <div class="carousel-item active"
+           style="background:url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920') center/cover;">
+        <div class="carousel-caption">
+          <span class="hero-eyebrow">Spa ANA</span>
+          <h1>Trải Nghiệm Thư Giãn Tuyệt Đối</h1>
+          <p class="lead">Tận hưởng những liệu trình spa cao cấp, tái tạo năng lượng và vẻ đẹp tự nhiên</p>
+          <a href="{% url 'appointments:booking' %}" class="hero-cta">
+            <i class="fas fa-calendar-check"></i> Đặt lịch ngay
+          </a>
+          <a href="{% url 'spa_services:service_list' %}" class="hero-cta hero-cta-outline">
+            Khám phá dịch vụ
+          </a>
+        </div>
+      </div>
+      <div class="carousel-item"
+           style="background:url('https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=1920') center/cover;">
+        <div class="carousel-caption">
+          <span class="hero-eyebrow">Ưu đãi tháng này</span>
+          <h1>Ưu Đãi Đặc Biệt</h1>
+          <p class="lead">Giảm ngay 30% cho liệu trình chăm sóc da trong tháng này</p>
+          <a href="{% url 'spa_services:service_list' %}" class="hero-cta">
+            <i class="fas fa-tags"></i> Xem chi tiết
+          </a>
+        </div>
+      </div>
+      <div class="carousel-item"
+           style="background:url('https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=1920') center/cover;">
+        <div class="carousel-caption">
+          <span class="hero-eyebrow">Đội ngũ chuyên gia</span>
+          <h1>Kỹ Thuật Viên Chuyên Nghiệp</h1>
+          <p class="lead">Được đào tạo bài bản, tận tâm mang lại trải nghiệm hoàn hảo</p>
+          <a href="{% url 'pages:about' %}" class="hero-cta">
+            Tìm hiểu thêm
+          </a>
+        </div>
+      </div>
+    </div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+      <span class="carousel-control-prev-icon"></span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+      <span class="carousel-control-next-icon"></span>
+    </button>
+  </div>
 </section>
 
-<!-- Featured Services -->
-<section class="services-section py-5 spa-gradient-bg">
-    <div class="container">
-        <div class="text-center mb-5">
-            <h2 class="section-title">Dịch Vụ Nổi Bật</h2>
-            <p class="section-subtitle text-muted">Những liệu trình được khách hàng yêu thích nhất</p>
-        </div>
-
-        <div class="row g-4">
-            {% for service in services %}
-            <div class="col-md-6 col-lg-3">
-                <div class="service-card card h-100 border-0 shadow-sm">
-                    {% if service.image %}
-                    <img src="{{ service.image.url }}" class="card-img-top" alt="{{ service.name }}">
-                    {% else %}
-                    <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400" class="card-img-top" alt="{{ service.name }}">
-                    {% endif %}
-                    <div class="card-body d-flex flex-direction-column" style="flex-direction:column;display:flex;">
-                        <h5 class="card-title">{{ service.name }}</h5>
-                        <p class="card-text text-muted small" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;line-height:1.6;min-height:4.8em;flex:1;">{{ service.description }}</p>
-                        <p class="text-warning fw-bold mt-auto mb-2">{% with service.variants.all|first as v %}{% if v %}{{ v.price|vnd }}{% else %}--{% endif %}{% endwith %}</p>
-                        <a href="{% url 'appointments:booking' %}?service={{ service.id }}" class="btn btn-outline-warning w-100">Đặt lịch ngay</a>
-                    </div>
-                </div>
-            </div>
-            {% empty %}
-            <!-- Default services if no data -->
-            <div class="col-md-6 col-lg-3">
-                <div class="service-card card h-100 border-0 shadow-sm">
-                    <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400" class="card-img-top" alt="Chăm sóc da">
-                    <div class="card-body">
-                        <h5 class="card-title">Chăm Sóc Da Chuyên Sâu</h5>
-                        <p class="card-text text-muted small">Điều trị mụn, tái tạo da, trẻ hóa da</p>
-                        <p class="text-warning fw-bold">1.500.000đ</p>
-                        <a href="{% url 'appointments:booking' %}" class="btn btn-outline-warning w-100">Đặt lịch ngay</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-6 col-lg-3">
-                <div class="service-card card h-100 border-0 shadow-sm">
-                    <img src="https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400" class="card-img-top" alt="Massage">
-                    <div class="card-body">
-                        <h5 class="card-title">Massage Thư Giãn</h5>
-                        <p class="card-text text-muted small">Massage toàn thân, giảm stress, thư giãn</p>
-                        <p class="text-warning fw-bold">800.000đ</p>
-                        <a href="{% url 'appointments:booking' %}" class="btn btn-outline-warning w-100">Đặt lịch ngay</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-6 col-lg-3">
-                <div class="service-card card h-100 border-0 shadow-sm">
-                    <img src="https://images.unsplash.com/photo-1560750588-73207b1ef5b8?w=400" class="card-img-top" alt="Phun thêu">
-                    <div class="card-body">
-                        <h5 class="card-title">Phun Thêu Môi & Mày</h5>
-                        <p class="card-text text-muted small">Kỹ thuật 3D tự nhiên, bền màu</p>
-                        <p class="text-warning fw-bold">2.500.000đ</p>
-                        <a href="{% url 'appointments:booking' %}" class="btn btn-outline-warning w-100">Đặt lịch ngay</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-6 col-lg-3">
-                <div class="service-card card h-100 border-0 shadow-sm">
-                    <img src="https://images.unsplash.com/photo-1562322140-8baee
-                    <div class="card-body">
-                        <h5 class="card-title">Triệt Lông Vĩnh Viễn</h5>
-                        <p class="card-text text-muted small">Công nghệ Diode Laser hiện đại</p>
-                        <p class="text-warning fw-bold">800.000đ</p>
-                        <a href="{% url 'spa_services:service_list' %}" class="btn btn-outline-warning w-100">Xem chi tiết</a>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-
-        <div class="text-center mt-5">
-            <a href="{% url 'spa_services:service_list' %}" class="btn btn-warning px-5">Xem tất cả dịch vụ</a>
-        </div>
+{# ── FEATURED SERVICES ── #}
+<section class="home-section home-section--alt">
+  <div class="container">
+    <div class="home-section-header">
+      <span class="home-section-eyebrow">Dịch vụ nổi bật</span>
+      <div class="home-section-rule"></div>
+      <h2 class="home-section-title">Liệu Trình Được Yêu Thích Nhất</h2>
+      <p class="home-section-sub">Những liệu trình chăm sóc cao cấp, được thiết kế riêng cho bạn</p>
     </div>
+
+    <div class="row g-4">
+      {% for service in services %}
+      <div class="col-sm-6 col-lg-4">
+        <div class="sl-card">
+
+          <div class="sl-card__img-wrap">
+            <span class="sl-card__cat">{{ service.category.name }}</span>
+            <img class="sl-card__img"
+                 src="{{ service.get_image_url }}"
+                 alt="{{ service.name }}"
+                 loading="lazy">
+            {% if service.min_duration %}
+            <span class="sl-card__duration">
+              {% if service.min_duration == service.max_duration %}
+                {{ service.min_duration }} phút
+              {% else %}
+                {{ service.min_duration }}–{{ service.max_duration }} phút
+              {% endif %}
+            </span>
+            {% endif %}
+          </div>
+
+          <div class="sl-card__body">
+            <h3 class="sl-card__name">{{ service.name }}</h3>
+            <p class="sl-card__desc">{{ service.short_description|default:service.description }}</p>
+
+            {% if service.variant_count %}
+            <p class="sl-card__meta">
+              <i class="fas fa-layer-group"></i>
+              {{ service.variant_count }} gói dịch vụ
+            </p>
+            {% endif %}
+
+            <div class="sl-card__footer">
+              <div class="sl-card__price">
+                <span class="sl-card__price-label">Từ</span>
+                {% if service.min_price %}
+                  {% if service.min_price == service.max_price %}
+                    {{ service.min_price|vnd }}
+                  {% else %}
+                    {{ service.min_price|vnd }} – {{ service.max_price|vnd }}
+                  {% endif %}
+                {% else %}
+                  Liên hệ
+                {% endif %}
+              </div>
+              <a href="{% url 'spa_services:service_detail' service.id %}" class="sl-card__cta">
+                Xem chi tiết <i class="fas fa-arrow-right" style="font-size:.65rem;"></i>
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12 text-center" style="color:var(--text-muted);padding:3rem 0;">
+        <i class="fas fa-spa" style="font-size:2rem;margin-bottom:1rem;display:block;"></i>
+        Chưa có dịch vụ nào.
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="text-center mt-5">
+      <a href="{% url 'spa_services:service_list' %}" class="btn-lux btn-lux-lg">
+        <i class="fas fa-spa"></i> Xem tất cả dịch vụ
+      </a>
+    </div>
+  </div>
 </section>
 
-<!-- Why Choose Us -->
-<section class="why-us-section py-5">
-    <div class="container">
-        <div class="text-center mb-5">
-            <h2 class="section-title">Tại Sao Chọn Spa ANA?</h2>
-            <p class="section-subtitle text-muted">Cam kết mang đến trải nghiệm tốt nhất cho bạn</p>
-        </div>
-
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="feature-box text-center">
-                    <div class="feature-icon mb-4">
-                        <i class="fas fa-award fa-3x text-warning"></i>
-                    </div>
-                    <h4>Uy Tín 10 Năm</h4>
-                    <p class="text-muted">Spa cao cấp uy tín hàng đầu với hơn 10 năm kinh nghiệm</p>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="feature-box text-center">
-                    <div class="feature-icon mb-4">
-                        <i class="fas fa-user-md fa-3x text-warning"></i>
-                    </div>
-                    <h4>Đội Ngũ Chuyên Gia</h4>
-                    <p class="text-muted">Kỹ thuật viên chuyên nghiệp, được đào tạo bài bản và chứng chỉ quốc tế</p>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="feature-box text-center">
-                    <div class="feature-icon mb-4">
-                        <i class="fas fa-microscope fa-3x text-warning"></i>
-                    </div>
-                    <h4>Công Nghệ Hiện Đại</h4>
-                    <p class="text-muted">Sở hữu hệ thống thiết bị spa tiên tiến nhất thế giới</p>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="feature-box text-center">
-                    <div class="feature-icon mb-4">
-                        <i class="fas fa-shield-alt fa-3x text-warning"></i>
-                    </div>
-                    <h4>An Toàn Tuyệt Đối</h4>
-                    <p class="text-muted">Quy trình khử khuẩn đạt chuẩn, cam kết an toàn cho khách hàng</p>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="feature-box text-center">
-                    <div class="feature-icon mb-4">
-                        <i class="fas fa-tags fa-3x text-warning"></i>
-                    </div>
-                    <h4>Giá Cả Hợp Lý</h4>
-                    <p class="text-muted">Chất lượng 5 sao với mức giá cạnh tranh nhất thị trường</p>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="feature-box text-center">
-                    <div class="feature-icon mb-4">
-                        <i class="fas fa-headset fa-3x text-warning"></i>
-                    </div>
-                    <h4>Hỗ Trợ 24/7</h4>
-                    <p class="text-muted">Đội ngũ tư vấn nhiệt tình, hỗ trợ khách hàng mọi lúc</p>
-                </div>
-            </div>
-        </div>
+{# ── WHY CHOOSE US ── #}
+<section class="home-section">
+  <div class="container">
+    <div class="home-section-header">
+      <span class="home-section-eyebrow">Tại sao chọn chúng tôi</span>
+      <div class="home-section-rule"></div>
+      <h2 class="home-section-title">Cam Kết Của Spa ANA</h2>
+      <p class="home-section-sub">Mỗi trải nghiệm tại Spa ANA đều được chăm chút từng chi tiết</p>
     </div>
+    <div class="row g-4">
+      <div class="col-md-4 col-lg-2-custom">
+        <div class="home-feature">
+          <div class="home-feature__icon"><i class="fas fa-award"></i></div>
+          <h4>Uy Tín 10 Năm</h4>
+          <p>Hơn 10 năm kinh nghiệm trong lĩnh vực chăm sóc sắc đẹp cao cấp</p>
+        </div>
+      </div>
+      <div class="col-md-4 col-lg-2-custom">
+        <div class="home-feature">
+          <div class="home-feature__icon"><i class="fas fa-user-md"></i></div>
+          <h4>Chuyên Gia Bài Bản</h4>
+          <p>Kỹ thuật viên được đào tạo chuyên sâu với chứng chỉ quốc tế</p>
+        </div>
+      </div>
+      <div class="col-md-4 col-lg-2-custom">
+        <div class="home-feature">
+          <div class="home-feature__icon"><i class="fas fa-leaf"></i></div>
+          <h4>Sản Phẩm Thiên Nhiên</h4>
+          <p>100% nguyên liệu thiên nhiên, an toàn và thân thiện với mọi loại da</p>
+        </div>
+      </div>
+      <div class="col-md-4 col-lg-2-custom">
+        <div class="home-feature">
+          <div class="home-feature__icon"><i class="fas fa-shield-alt"></i></div>
+          <h4>An Toàn Tuyệt Đối</h4>
+          <p>Quy trình vệ sinh đạt chuẩn, cam kết an toàn cho mọi khách hàng</p>
+        </div>
+      </div>
+      <div class="col-md-4 col-lg-2-custom">
+        <div class="home-feature">
+          <div class="home-feature__icon"><i class="fas fa-tags"></i></div>
+          <h4>Giá Cả Hợp Lý</h4>
+          <p>Chất lượng 5 sao với mức giá cạnh tranh và nhiều ưu đãi hấp dẫn</p>
+        </div>
+      </div>
+      <div class="col-md-4 col-lg-2-custom">
+        <div class="home-feature">
+          <div class="home-feature__icon"><i class="fas fa-headset"></i></div>
+          <h4>Hỗ Trợ 24/7</h4>
+          <p>Đội ngũ tư vấn nhiệt tình, sẵn sàng hỗ trợ bạn mọi lúc</p>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
-<!-- CTA Section -->
-<section class="cta-section py-5 spa-gradient-bg">
-    <div class="container text-center">
-        <h2 class="mb-4">Sẵn Sàng Đổi Lấy Vẻ Đẹp Của Bạn?</h2>
-        <p class="lead mb-4">Đăng ký ngay để nhận tư vấn miễn phí từ chuyên gia</p>
-        <a href="{% url 'appointments:booking' %}" class="btn btn-warning btn-lg px-5">Đặt lịch hẹn</a>
+{# ── STATS ── #}
+<section class="home-section home-section--dark">
+  <div class="container">
+    <div class="row g-4 justify-content-center">
+      <div class="col-6 col-md-3">
+        <div class="home-stat">
+          <div class="home-stat__num">10+</div>
+          <div class="home-stat__label">Năm kinh nghiệm</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="home-stat">
+          <div class="home-stat__num">30K+</div>
+          <div class="home-stat__label">Khách hàng hài lòng</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="home-stat">
+          <div class="home-stat__num">20+</div>
+          <div class="home-stat__label">Chuyên gia spa</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="home-stat">
+          <div class="home-stat__num">100%</div>
+          <div class="home-stat__label">Cam kết chất lượng</div>
+        </div>
+      </div>
     </div>
+  </div>
 </section>
+
+{# ── CTA STRIP ── #}
+<div class="home-cta-strip">
+  <div class="container">
+    <h2>Sẵn Sàng Trải Nghiệm?</h2>
+    <p>Đặt lịch ngay hôm nay để nhận tư vấn miễn phí từ chuyên gia</p>
+    <a href="{% url 'appointments:booking' %}" class="btn-lux btn-lux-lg">
+      <i class="fas fa-calendar-check"></i> Đặt lịch hẹn
+    </a>
+  </div>
+</div>
+
 {% endblock %}

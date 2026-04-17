@@ -28,7 +28,7 @@
       <li class="nav-item" role="presentation">
         <button class="nav-link" id="tab-web" data-bs-toggle="pill" data-bs-target="#pane-web" type="button" role="tab">
           <i class="fas fa-globe me-2"></i>Yêu cầu đặt lịch
-          <span class="badge badge-soft ms-2" id="webCount">0</span>
+          <span class="badge badge-soft ms-2 d-none" id="webCount"></span>
         </button>
       </li>
     </ul>
@@ -114,10 +114,12 @@
           </div>
         </div>
       </div>
-              <!-- HTML chỉ là container rỗng -->
+      <!-- HTML chỉ là container rỗng -->
       <div class="scheduler-wrap" id="schedulerWrap">
-        <div class="time-header" id="timeHeader"></div>
-        <div class="grid" id="grid"></div>
+        <div class="scheduler-inner">
+          <div class="time-header" id="timeHeader"></div>
+          <div class="grid" id="grid"></div>
+        </div>
       </div>
     </div>
 
@@ -143,9 +145,6 @@
                 <select class="form-select" id="webStatusFilter">
                   <option value="">Tất cả trạng thái</option>
                   <option value="PENDING">Chờ xác nhận</option>
-                  <option value="NOT_ARRIVED">Chưa đến</option>
-                  <option value="ARRIVED">Đã đến</option>
-                  <option value="COMPLETED">Hoàn thành</option>
                   <option value="CANCELLED">Đã hủy</option>
                 </select>
               </div>
@@ -373,103 +372,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- Original JavaScript (temporarily reverted) -->
 <script src="{% static 'js/admin-appointments.js' %}?v={{ 'now'|date:'His' }}"></script>
-
-<script>
-// ========================================
-// BADGE DEBUG SYSTEM - CLEAN VERSION
-// ========================================
-
-console.log('🔧 LOADING BADGE DEBUG SYSTEM...');
-
-// ===== DEBUG FUNCTION: Check DOM Elements =====
-window.debugBadgeElements = function() {
-  console.log('=== DOM ELEMENTS CHECK ===');
-
-  const webCount = document.getElementById("webCount");
-  console.log('1. Tab Header Badge (#webCount):', webCount ? '✅ FOUND' : '❌ NOT FOUND');
-  if (webCount) {
-    console.log('   - Current text:', webCount.textContent);
-    console.log('   - Display:', window.getComputedStyle(webCount).display);
-    console.log('   - Classes:', webCount.className);
-  }
-
-  const sidebarBadge = document.getElementById("adminSidebarBookingBadge");
-  console.log('2. Sidebar Badge (#adminSidebarBookingBadge):', sidebarBadge ? '✅ FOUND' : '❌ NOT FOUND');
-  if (sidebarBadge) {
-    console.log('   - Current text:', sidebarBadge.textContent);
-    console.log('   - Display:', window.getComputedStyle(sidebarBadge).display);
-    console.log('   - Classes:', sidebarBadge.className);
-  }
-
-  console.log('=== END DOM CHECK ===\n');
-};
-
-// ===== DEBUG FUNCTION: Manual Badge Update =====
-window.debugUpdateBadge = function(count) {
-  console.log('=== MANUAL BADGE UPDATE ===', count, '===');
-
-  // Update tab header badge
-  const webCount = document.getElementById("webCount");
-  if (webCount) {
-    webCount.textContent = String(count);
-    webCount.classList.remove('badge-update');
-    void webCount.offsetWidth; // Trigger reflow
-    webCount.classList.add('badge-update');
-    setTimeout(() => webCount.classList.remove('badge-update'), 500);
-    console.log('✅ Tab header badge updated →', count);
-  } else {
-    console.log('❌ Tab header badge NOT FOUND');
-  }
-
-  console.log('=== END MANUAL UPDATE ===\n');
-};
-
-// ===== DEBUG FUNCTION: Test API =====
-window.debugBadgeAPI = async function() {
-  console.log('=== API TEST ===');
-
-  try {
-    const response = await fetch('/api/booking/pending-count/');
-    const data = await response.json();
-
-    console.log('Pending Count API Response:', data);
-    console.log('Success:', data.success);
-    console.log('Count:', data.count);
-
-    if (data.success) {
-      console.log('✅ Real pending count:', data.count);
-    } else {
-      console.log('❌ API Error:', data.error);
-    }
-
-  } catch (error) {
-    console.error('API Test Failed:', error);
-  }
-
-  console.log('=== END API TEST ===\n');
-};
-
-// Auto-run debug on page load
-document.addEventListener('DOMContentLoaded', function() {
-  console.log('📄 Page loaded');
-
-  setTimeout(() => {
-    console.log('\n🔍 CHECKING BADGE ELEMENTS...');
-    debugBadgeElements();
-  }, 1500);
-
-  setTimeout(() => {
-    console.log('\n🎯 CHECKING API...');
-    debugBadgeAPI();
-  }, 3000);
-});
-
-console.log('✅ Badge Debug System Loaded!');
-console.log('Available commands:');
-console.log('  - debugBadgeElements()  : Check DOM elements');
-console.log('  - debugUpdateBadge(5)   : Manual badge update');
-console.log('  - debugBadgeAPI()       : Test API');
-</script>
 {% endblock %}

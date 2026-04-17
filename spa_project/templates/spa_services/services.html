@@ -1,180 +1,312 @@
 {% extends 'spa/base.html' %}
 {% load spa_filters %}
 
-{% block title %}Dịch vụ - Spa ANA{% endblock %}
+{% block title %}Dịch vụ — Spa ANA{% endblock %}
 
 {% block extra_css %}
 <style>
-    .page-header {
-        background: linear-gradient(135deg, rgba(30, 58, 95, 0.9), rgba(44, 82, 130, 0.9)),
-                    url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920') center/cover;
-        padding: 6rem 0 3rem;
-        text-align: center;
-        color: white;
-    }
+/* ── SERVICE LIST PAGE ─────────────────────────────── */
 
-    .services-section {
-        padding: 4rem 0;
-    }
+/* Page header — luxury dark overlay */
+.sl-hero {
+  position: relative;
+  height: 320px;
+  overflow: hidden;
+  margin-top: 68px;
+}
+.sl-hero__img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+.sl-hero__overlay {
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom, rgba(28,25,23,.45), rgba(28,25,23,.68));
+}
+.sl-hero__content {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; color: #fff;
+  padding: 0 1rem;
+}
+.sl-hero__eyebrow {
+  font-size: .68rem; font-weight: 700;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--gold-light); margin-bottom: .75rem;
+}
+.sl-hero__title {
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-weight: 300; letter-spacing: .04em;
+  margin: 0 0 .6rem;
+}
+.sl-hero__sub {
+  font-size: .95rem; font-weight: 300;
+  color: rgba(255,255,255,.75); margin: 0;
+  letter-spacing: .04em;
+}
 
-    .service-card {
-        background: white;
-        border-radius: 20px;
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(39, 119, 42, 0.08);
-        transition: all 0.3s ease;
-        height: 100%;
-        border: 1px solid #e2e8f0;
-        display: flex;
-        flex-direction: column;
-    }
+/* Filter bar */
+.sl-filter {
+  background: var(--bg-white);
+  border-bottom: 1px solid var(--border);
+  padding: 1.1rem 0;
+  position: sticky; top: 68px; z-index: 100;
+}
+.sl-filter__inner {
+  display: flex; flex-wrap: wrap;
+  justify-content: center; gap: .5rem;
+}
+.sl-filter-btn {
+  display: inline-flex; align-items: center;
+  padding: .45rem 1.1rem;
+  border-radius: var(--r-pill);
+  font-size: .8rem; font-weight: 500;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--ease);
+  white-space: nowrap;
+}
+.sl-filter-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+.sl-filter-btn.is-active {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  color: #fff;
+}
 
-    .service-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 10px 30px rgba(212, 168, 53, 0.2);
-        border-color: #d4a835;
-    }
+/* Grid */
+.sl-section { padding: 3.5rem 0 5rem; background: var(--bg-page); }
 
-    .service-image {
-        height: 200px;
-        overflow: hidden;
-        position: relative;
-    }
+/* Service card — luxury minimal */
+.sl-card {
+  background: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  height: 100%;
+  transition: box-shadow .22s, transform .22s, border-color .22s;
+}
+.sl-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 40px rgba(28,25,23,.1);
+  border-color: var(--gold-border);
+}
 
-    .service-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.5s ease;
-    }
+/* Image */
+.sl-card__img-wrap {
+  position: relative;
+  height: 210px; overflow: hidden;
+}
+.sl-card__img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform .5s ease;
+  display: block;
+}
+.sl-card:hover .sl-card__img { transform: scale(1.06); }
 
-    .service-card:hover .service-image img {
-        transform: scale(1.1);
-    }
+.sl-card__cat {
+  position: absolute; top: 12px; left: 12px;
+  background: rgba(28,25,23,.62);
+  backdrop-filter: blur(6px);
+  color: var(--gold-light);
+  font-size: .65rem; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase;
+  padding: .3rem .75rem;
+  border-radius: var(--r-pill);
+}
+.sl-card__duration {
+  position: absolute; bottom: 12px; right: 12px;
+  background: rgba(28,25,23,.55);
+  backdrop-filter: blur(6px);
+  color: rgba(255,255,255,.9);
+  font-size: .72rem; font-weight: 600;
+  padding: .25rem .65rem;
+  border-radius: var(--r-pill);
+}
 
-    .service-overlay {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
-        padding: 1rem 1.5rem;
-        color: white;
-    }
+/* Body */
+.sl-card__body {
+  padding: 1.25rem 1.35rem 1.4rem;
+  display: flex; flex-direction: column; flex: 1;
+}
+.sl-card__name {
+  font-size: 1rem; font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 .5rem;
+  line-height: 1.35;
+}
+.sl-card__desc {
+  font-size: .83rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0 0 1rem;
+}
+.sl-card__meta {
+  font-size: .75rem;
+  color: var(--text-muted);
+  margin-bottom: .875rem;
+  display: flex; align-items: center; gap: .35rem;
+}
+.sl-card__meta i { color: var(--gold); }
 
-    .service-info {
-        padding: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-    }
+.sl-card__footer {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding-top: .875rem;
+  border-top: 1px solid var(--bg-subtle);
+  margin-top: auto;
+}
+.sl-card__price {
+  font-size: .97rem; font-weight: 700;
+  color: var(--gold);
+  line-height: 1.2;
+}
+.sl-card__price-label {
+  font-size: .68rem; font-weight: 400;
+  color: var(--text-muted);
+  display: block; margin-bottom: 1px;
+}
+.sl-card__cta {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: .45rem 1rem;
+  border: 1.5px solid var(--text-primary);
+  border-radius: var(--r-sm);
+  font-size: .78rem; font-weight: 600;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: var(--ease);
+  white-space: nowrap;
+}
+.sl-card__cta:hover {
+  background: var(--text-primary);
+  color: #fff;
+}
 
-    .service-description {
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        line-height: 1.6;
-        min-height: 4.8em;
-        flex: 1;
-    }
-
-    .service-price {
-        color: #d4a835;
-        font-weight: 700;
-        font-size: 1.25rem;
-    }
-
-    .category-badge {
-        position: absolute;
-        top: 15px;
-        left: 15px;
-        background: linear-gradient(135deg, #d4a835, #f1c40f);
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
+/* Empty */
+.sl-empty {
+  text-align: center; padding: 5rem 2rem;
+  color: var(--text-muted);
+}
+.sl-empty i { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Page Header -->
-<section class="page-header">
-    <div class="container">
-        <h1>Dịch Vụ Của Chúng Tôi</h1>
-        <p class="lead mb-0">Khám phá các dịch vụ thư giãn và chăm sóc sắc đẹp chất lượng cao tại Spa ANA</p>
+
+{# ── HERO ── #}
+<div class="sl-hero">
+  <img class="sl-hero__img"
+       src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920"
+       alt="Dịch vụ Spa ANA">
+  <div class="sl-hero__overlay"></div>
+  <div class="sl-hero__content">
+    <span class="sl-hero__eyebrow">Spa ANA</span>
+    <h1 class="sl-hero__title">Dịch Vụ Của Chúng Tôi</h1>
+    <p class="sl-hero__sub">Khám phá các liệu trình thư giãn và chăm sóc sắc đẹp cao cấp</p>
+  </div>
+</div>
+
+{# ── FILTER BAR ── #}
+<div class="sl-filter">
+  <div class="container">
+    <div class="sl-filter__inner">
+      <button class="sl-filter-btn is-active" onclick="filterServices('all', this)">Tất cả</button>
+      {% for cat in categories %}
+      <button class="sl-filter-btn" onclick="filterServices('{{ cat.code }}', this)">{{ cat.name }}</button>
+      {% endfor %}
     </div>
+  </div>
+</div>
+
+{# ── GRID ── #}
+<section class="sl-section">
+  <div class="container">
+    <div class="row g-4" id="servicesGrid">
+      {% for service in services %}
+      <div class="col-sm-6 col-lg-4 service-item" data-category="{{ service.category.code }}">
+        <div class="sl-card">
+
+          <div class="sl-card__img-wrap">
+            <span class="sl-card__cat">{{ service.category.name }}</span>
+            <img class="sl-card__img"
+                 src="{{ service.get_image_url }}"
+                 alt="{{ service.name }}"
+                 loading="lazy">
+            {% if service.min_duration %}
+            <span class="sl-card__duration">
+              {% if service.min_duration == service.max_duration %}
+                {{ service.min_duration }} phút
+              {% else %}
+                {{ service.min_duration }}–{{ service.max_duration }} phút
+              {% endif %}
+            </span>
+            {% endif %}
+          </div>
+
+          <div class="sl-card__body">
+            <h3 class="sl-card__name">{{ service.name }}</h3>
+            <p class="sl-card__desc">{{ service.short_description|default:service.description }}</p>
+
+            {% if service.variant_count %}
+            <p class="sl-card__meta">
+              <i class="fas fa-layer-group"></i>
+              {{ service.variant_count }} gói dịch vụ
+            </p>
+            {% endif %}
+
+            <div class="sl-card__footer">
+              <div class="sl-card__price">
+                <span class="sl-card__price-label">Từ</span>
+                {% if service.min_price %}
+                  {% if service.min_price == service.max_price %}
+                    {{ service.min_price|vnd }}
+                  {% else %}
+                    {{ service.min_price|vnd }} – {{ service.max_price|vnd }}
+                  {% endif %}
+                {% else %}
+                  Liên hệ
+                {% endif %}
+              </div>
+              <a href="{% url 'spa_services:service_detail' service.id %}" class="sl-card__cta">
+                Xem chi tiết <i class="fas fa-arrow-right" style="font-size:.65rem;"></i>
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      {% empty %}
+      <div class="col-12 sl-empty">
+        <i class="fas fa-spa"></i>
+        <p>Chưa có dịch vụ nào.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
 </section>
 
-<!-- Services Section -->
-<section class="services-section">
-    <div class="container">
-        <!-- Filter -->
-        <div class="row mb-5">
-            <div class="col-12">
-                <div class="d-flex flex-wrap justify-content-center gap-2">
-                    <button class="btn btn-warning active" onclick="filterServices('all', this)">Tất cả</button>
-                    {% for cat in categories %}
-                    <button class="btn btn-outline-warning" onclick="filterServices('{{ cat.code }}', this)">{{ cat.name }}</button>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Services Grid -->
-        <div class="row" id="servicesGrid">
-            {% for service in services %}
-            <div class="col-md-6 col-lg-4 mb-4 service-item" data-category="{{ service.category.code }}">
-                <div class="service-card">
-                    <div class="service-image">
-                        <span class="category-badge">{{ service.category.name }}</span>
-                        <img src="{{ service.get_image_url }}" alt="{{ service.name }}">
-                        <div class="service-overlay">
-                            <span class="badge bg-warning">{% with service.variants.all|first as v %}{{ v.duration_minutes|default:'—' }}{% endwith %} phút</span>
-                        </div>
-                    </div>
-                    <div class="service-info">
-                        <h5 class="card-title">{{ service.name }}</h5>
-                        <p class="card-text text-muted small service-description">{{ service.description }}</p>
-                        <div class="d-flex justify-content-between align-items-center mt-auto">
-                            <span class="service-price">{% with service.variants.all|first as v %}{% if v %}{{ v.price|vnd }}{% else %}Liên hệ{% endif %}{% endwith %}</span>
-                            <a href="{% url 'appointments:booking' %}?service_id={{ service.id }}" class="btn btn-outline-warning btn-sm">
-                                Đặt lịch ngay
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% empty %}
-            <div class="col-12 text-center">
-                <p class="text-muted">Chưa có dịch vụ nào.</p>
-            </div>
-            {% endfor %}
-        </div>
-    </div>
-</section>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-function filterServices(category, btn) {
-    const items = document.querySelectorAll('.service-item');
-    const buttons = document.querySelectorAll('[onclick^="filterServices"]');
-
-    // Update active button
-    buttons.forEach(b => {
-        b.classList.remove('active', 'btn-warning');
-        b.classList.add('btn-outline-warning');
-    });
-    btn.classList.remove('btn-outline-warning');
-    btn.classList.add('btn-warning', 'active');
-
-    // Filter items
-    items.forEach(item => {
-        item.style.display = (category === 'all' || item.dataset.category === category) ? 'block' : 'none';
-    });
+function filterServices(code, btn) {
+  document.querySelectorAll('.sl-filter-btn').forEach(b => b.classList.remove('is-active'));
+  btn.classList.add('is-active');
+  document.querySelectorAll('.service-item').forEach(item => {
+    item.style.display = (code === 'all' || item.dataset.category === code) ? '' : 'none';
+  });
 }
 </script>
 {% endblock %}

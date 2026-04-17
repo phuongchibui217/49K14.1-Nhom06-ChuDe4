@@ -98,7 +98,7 @@ def booking(request):
         if selected_service_id:
             form.fields['service'].initial = selected_service_id
 
-    services = Service.objects.filter(is_active=True).prefetch_related('variants')
+    services = Service.objects.filter(status='ACTIVE').prefetch_related('variants')
 
     # Truyền variants data dạng JSON để JS render dropdown động
     import json as _json

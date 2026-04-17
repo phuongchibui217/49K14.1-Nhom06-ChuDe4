@@ -11,10 +11,10 @@ class ServiceVariantInline(admin.TabularInline):
 
 @admin.register(Service)
 class ServiceAdmin(admin.ModelAdmin):
-    list_display = ['name', 'category', 'is_active', 'created_at']
-    list_filter = ['category', 'is_active', 'created_at']
+    list_display = ['name', 'category', 'status', 'created_at']
+    list_filter = ['category', 'status', 'created_at']
     search_fields = ['name', 'description']
-    list_editable = ['is_active']
+    list_editable = ['status']
     readonly_fields = ['created_at', 'updated_at']
     inlines = [ServiceVariantInline]
     fieldsets = (
@@ -25,13 +25,20 @@ class ServiceAdmin(admin.ModelAdmin):
             'fields': ('short_description', 'description', 'image')
         }),
         ('Trạng thái', {
-            'fields': ('is_active',)
+            'fields': ('status',)
         }),
         ('Thời gian', {
             'fields': ('created_at', 'updated_at'),
             'classes': ('collapse',)
         }),
     )
+
+    def save_model(self, request, obj, form, change):
+        if not change:
+            # Tạo mới: set cả created_by và updated_by
+            obj.created_by = request.user
+        obj.updated_by = request.user
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(ServiceVariant)

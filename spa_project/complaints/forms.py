@@ -57,7 +57,7 @@ class CustomerComplaintForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['related_service'].queryset = Service.objects.filter(is_active=True)
+        self.fields['related_service'].queryset = Service.objects.filter(status='ACTIVE')
         self.fields['related_service'].required = False
         self.fields['related_service'].empty_label = "-- Chọn dịch vụ liên quan (nếu có) --"
         self.fields['related_service'].widget.attrs.update({'class': 'form-select'})
@@ -123,7 +123,7 @@ class GuestComplaintForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['related_service'].queryset = Service.objects.filter(is_active=True)
+        self.fields['related_service'].queryset = Service.objects.filter(status='ACTIVE')
         self.fields['related_service'].required = False
         self.fields['related_service'].empty_label = "-- Chọn dịch vụ liên quan (nếu có) --"
         self.fields['related_service'].widget.attrs.update({'class': 'form-select'})

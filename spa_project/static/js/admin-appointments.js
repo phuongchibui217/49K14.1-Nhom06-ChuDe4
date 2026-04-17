@@ -260,7 +260,29 @@ function overlaps(aStart,aEnd,bStart,bEnd){ return aStart < bEnd && bStart < aEn
 
 function resetModalError(){ modalError.classList.add("d-none"); modalError.textContent = ""; }
 
-function getSlotWidth(){ return parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--slotW")) || 52; }
+// Tổng số phút của toàn bộ timeline (9:00 → 21:00 = 720 phút)
+function totalTimelineMinutes(){ return (END_HOUR - START_HOUR) * 60; }
+
+// Chuyển số phút từ START_HOUR sang % chiều ngang của vùng slots
+function minutesToPercent(minutes){ return (minutes / totalTimelineMinutes()) * 100; }
+
+function getSlotWidth(){
+  // Đọc chiều rộng thực tế của 1 slot từ DOM (sau khi flex giãn)
+  // Dùng cho tính toán click position
+  const firstSlot = timeHeader ? timeHeader.querySelector('.slot') : null;
+  if (firstSlot) {
+    const w = firstSlot.getBoundingClientRect().width;
+    if (w > 0) return w;
+  }
+  // Fallback: chia đều chiều rộng vùng slots
+  const slotsEl = timeHeader ? timeHeader.querySelector('.slots') : null;
+  if (slotsEl) {
+    const totalW = slotsEl.getBoundingClientRect().width;
+    const totalSlots = ((END_HOUR - START_HOUR) * 60) / SLOT_MIN;
+    if (totalW > 0 && totalSlots > 0) return totalW / totalSlots;
+  }
+  return parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--slotW")) || 36;
+}
 
 function capacityOK({roomId, day, start, end, guestsCount, ignoreId}){
   const roomInfo = ROOMS.find(r=>r.id===roomId);
@@ -295,6 +317,18 @@ function capacityOK({roomId, day, start, end, guestsCount, ignoreId}){
   console.log('========================');
 
   return (sum + guestsCount) <= roomInfo.capacity;
+}
+
+// ===== LOADING SKELETON CHO GRID =====
+function showGridLoading(){
+  if (!grid) return;
+  // Hiện 5 dòng skeleton để layout không bị trống trong lúc fetch
+  const rowH = getComputedStyle(document.documentElement).getPropertyValue('--rowH') || '72px';
+  grid.innerHTML = Array.from({length: 5}, (_, i) => `
+    <div class="lane-row" style="opacity:.45;">
+      <div class="roomcell"><span class="dot"></span>—</div>
+      <div class="slots" style="background: repeating-linear-gradient(90deg,#f3f4f6 0,#f3f4f6 40%,#e9eaec 40%,#e9eaec 100%) 0 0 / 120px 100%;"></div>
+    </div>`).join('');
 }
 
 // ===== RENDER NHÓM VẼ GIAO DIỆN RENDER-UI =====
@@ -361,9 +395,13 @@ function renderGrid(){
       // click vào ô trống ==> tạo lịch
       slotsEl.addEventListener("click", (e)=>{
         const rect = slotsEl.getBoundingClientRect();
-        const x = e.clientX - rect.left + slotsEl.scrollLeft;
-        const slotIndex = Math.floor(x / getSlotWidth());
-        const minutes = slotIndex * SLOT_MIN;
+        const x = e.clientX - rect.left;
+        // Tính theo tỉ lệ % → phút → giờ:phút
+        const ratio = Math.max(0, Math.min(1, x / rect.width));
+        const totalMin = totalTimelineMinutes();
+        // Làm tròn xuống bội số của SLOT_MIN
+        const rawMin = ratio * totalMin;
+        const minutes = Math.floor(rawMin / SLOT_MIN) * SLOT_MIN;
         const clickedTime = `${pad2(START_HOUR + Math.floor(minutes/60))}:${pad2(minutes%60)}`;
         openCreateModal({ roomId: r.id, day, time: clickedTime });
       });
@@ -376,8 +414,11 @@ function renderGrid(){
         block.dataset.id = a.id;
         const leftMin = minutesFromStart(a.start);
         const durMin = Math.max(SLOT_MIN, minutesFromStart(a.end) - leftMin);
-        block.style.left = `${(leftMin / SLOT_MIN) * getSlotWidth()}px`;
-        block.style.width = `${Math.max(36, (durMin / SLOT_MIN) * getSlotWidth() - 4)}px`;
+        // Dùng % thay vì px → tự co giãn theo chiều rộng thực tế của vùng slots
+        const leftPct  = minutesToPercent(leftMin);
+        const widthPct = minutesToPercent(durMin);
+        block.style.left  = `calc(${leftPct}% + 2px)`;
+        block.style.width = `calc(${widthPct}% - 4px)`;
         block.innerHTML = `<div class="t1">${a.customerName} • ${a.service}</div><div class="t2">${a.start}–${a.end} • ${a.guests} khách</div>`;
 
         // click vào lịch ==> sửa
@@ -672,7 +713,6 @@ if(searchInput){
 
 // ===== INIT =====
 document.addEventListener("DOMContentLoaded", async ()=>{
-  console.log('🚀 Page loaded - Initializing scheduler...');
 
   if (modalEl) modal = new bootstrap.Modal(modalEl);
   if (toastEl) toast = new bootstrap.Toast(toastEl);
@@ -685,21 +725,23 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 
   if(sidebarToggle) sidebarToggle.addEventListener("click", ()=> sidebar.classList.toggle("show"));
 
-  await loadRooms();
+  // ── Render header timeline NGAY LẬP TỨC trước khi fetch ──
+  // Để layout ổn định, không bị trống trong lúc chờ API
+  dayPicker.value = todayISO();
+  renderHeader();
+  showGridLoading();   // hiện skeleton trong vùng grid
 
-  await loadServices();
+  // ── Fetch song song rooms + services để giảm thời gian chờ ──
+  await Promise.all([loadRooms(), loadServices()]);
 
   fillRoomsSelect();
   fillServiceFilter();
 
-  dayPicker.value = todayISO();
-  console.log('📅 Today:', dayPicker.value);
-
-  renderHeader();
-  console.log('📊 Header rendered');
-
-  await refreshData();
-  await renderWebRequests();
+  // ── Fetch appointments + web requests song song ──
+  await Promise.all([
+    refreshData(),
+    renderWebRequests(),
+  ]);
 
   // ===== REAL-TIME BOOKING COUNT UPDATE (WebSocket badge dispatcher) =====
   let previousPendingCount = null;

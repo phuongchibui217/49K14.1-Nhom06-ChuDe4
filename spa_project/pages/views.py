@@ -9,21 +9,28 @@ Author: Spa ANA Team
 """
 
 from django.shortcuts import render
+from django.db.models import Min, Max, Count, Q
 from spa_services.models import Service
 
 
 def home(request):
     """
     Trang chủ - Hiển thị 6 dịch vụ active
-
-    Args:
-        request: HttpRequest
-
-    Returns:
-        HttpResponse: Render template spa/pages/home.html
     """
-    # Lấy 6 dịch vụ active đầu tiên
-    services = Service.objects.filter(status='ACTIVE').select_related('category').prefetch_related('variants')[:6]
+    services = (
+        Service.objects
+        .filter(status='ACTIVE')
+        .select_related('category')
+        .prefetch_related('variants')
+        .annotate(
+            min_price=Min('variants__price', filter=Q(variants__is_active=True)),
+            max_price=Max('variants__price', filter=Q(variants__is_active=True)),
+            min_duration=Min('variants__duration_minutes', filter=Q(variants__is_active=True)),
+            max_duration=Max('variants__duration_minutes', filter=Q(variants__is_active=True)),
+            variant_count=Count('variants', filter=Q(variants__is_active=True)),
+        )
+        [:6]
+    )
 
     return render(request, 'pages/home.html', {'services': services})
 

@@ -53,9 +53,24 @@ def _save_service_image(service, image_file):
 # =====================================================
 
 def service_list(request):
-    """Danh sách dịch vụ - Lọc chỉ active"""
+    """Danh sách dịch vụ - Lọc chỉ active, tính min/max price và duration từ variants"""
     from .models import ServiceCategory
-    services = Service.objects.filter(status='ACTIVE').select_related('category').order_by('-created_at')
+    from django.db.models import Min, Max, Count
+
+    services = (
+        Service.objects
+        .filter(status='ACTIVE')
+        .select_related('category')
+        .prefetch_related('variants')
+        .annotate(
+            min_price=Min('variants__price', filter=Q(variants__is_active=True)),
+            max_price=Max('variants__price', filter=Q(variants__is_active=True)),
+            min_duration=Min('variants__duration_minutes', filter=Q(variants__is_active=True)),
+            max_duration=Max('variants__duration_minutes', filter=Q(variants__is_active=True)),
+            variant_count=Count('variants', filter=Q(variants__is_active=True)),
+        )
+        .order_by('-created_at')
+    )
     categories = ServiceCategory.objects.filter(status='ACTIVE').order_by('sort_order', 'name')
     return render(request, 'spa_services/services.html', {
         'services': services,
@@ -271,6 +286,8 @@ def api_services_list(request):
             'categoryCode': s.category.code if s.category else '',
             'categoryName': s.get_category_name(),
             'description': s.short_description or (s.description[:100] if s.description else ''),
+            'short_description': s.short_description or '',
+            'detail_description': s.description or '',
             'status': s.status,
             'image': s.image.url if s.image else 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=100',
             'variants': [
@@ -297,6 +314,7 @@ def api_service_create(request):
         if request.content_type and 'multipart/form-data' in request.content_type:
             name = request.POST.get('name', '').strip()
             category = request.POST.get('category_number', '').strip()
+            short_description = request.POST.get('short_description', '').strip()
             description = request.POST.get('description', '').strip()
             status = (request.POST.get('status', 'ACTIVE') or 'ACTIVE').upper()
             code = request.POST.get('code', '').strip().upper()
@@ -305,10 +323,15 @@ def api_service_create(request):
             data = json.loads(request.body)
             name = data.get('name', '').strip()
             category = data.get('category_number', data.get('category', '')).strip()
+            short_description = data.get('short_description', '').strip()
             description = data.get('description', '').strip()
             status = (data.get('status', 'ACTIVE') or 'ACTIVE').upper()
             code = data.get('code', '').strip().upper()
             image_file = None
+
+        # Fallback: nếu short_description trống thì dùng description cắt ngắn
+        if not short_description:
+            short_description = description[:255] if description else ''
 
         if not name:
             return JsonResponse({'error': 'Vui lòng nhập tên dịch vụ!'}, status=400)
@@ -329,22 +352,28 @@ def api_service_create(request):
 
         status = status if status in ('ACTIVE', 'INACTIVE') else 'ACTIVE'
 
+        # Auto-generate description nếu để trống / quá ngắn
+        from .description_helpers import generate_service_description, should_generate_description
+        _tmp = Service(name=name, category=category_obj, short_description=short_description, description=description)
+        if should_generate_description(_tmp):
+            description = generate_service_description(_tmp)
+
         service = Service.objects.create(
             name=name,
             category=category_obj,
-            short_description=description[:300] if len(description) > 300 else description,
+            short_description=short_description,
             description=description,
             status=status,
-            is_active=(status == 'ACTIVE'),
             image='',
             created_by=request.user,
+            updated_by=request.user,
         )
         if code:
             if Service.objects.filter(code=code).exclude(id=service.id).exists():
                 service.delete()
                 return JsonResponse({'error': f'Mã dịch vụ "{code}" đã tồn tại!'}, status=400)
             service.code = code
-            service.save()
+            service.save(update_fields=['code'])
 
         if image_file:
             if image_file.size > 5 * 1024 * 1024:
@@ -422,6 +451,7 @@ def api_service_update(request, service_id):
         if request.content_type and 'multipart/form-data' in request.content_type:
             name = request.POST.get('name', '').strip()
             category = request.POST.get('category_number', '').strip()
+            short_description = request.POST.get('short_description', '').strip()
             description = request.POST.get('description', '').strip()
             status = (request.POST.get('status', 'ACTIVE') or 'ACTIVE').upper()
             code = request.POST.get('code', '').strip().upper()
@@ -430,10 +460,15 @@ def api_service_update(request, service_id):
             data = json.loads(request.body)
             name = data.get('name', '').strip()
             category = data.get('category_number', data.get('category', '')).strip()
+            short_description = data.get('short_description', '').strip()
             description = data.get('description', '').strip()
             status = (data.get('status', 'ACTIVE') or 'ACTIVE').upper()
             code = data.get('code', '').strip().upper()
             image_file = None
+
+        # Fallback: nếu short_description trống thì dùng description cắt ngắn
+        if not short_description:
+            short_description = description[:255] if description else ''
 
         if not name:
             return JsonResponse({'error': 'Vui lòng nhập tên dịch vụ!'}, status=400)
@@ -458,10 +493,16 @@ def api_service_update(request, service_id):
 
         status = status if status in ('ACTIVE', 'INACTIVE') else 'ACTIVE'
         service.name = name
-        service.short_description = description[:300] if len(description) > 300 else description
+        service.short_description = short_description
+
+        # Auto-generate description nếu để trống / quá ngắn
+        from .description_helpers import generate_service_description, should_generate_description
         service.description = description
+        if should_generate_description(service):
+            service.description = generate_service_description(service)
+
         service.status = status
-        service.is_active = (status == 'ACTIVE')
+        service.updated_by = request.user
 
         if image_file:
             if image_file.size > 5 * 1024 * 1024:

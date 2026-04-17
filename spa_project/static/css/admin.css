@@ -34,8 +34,10 @@
 .admin-content {
   margin-left: var(--sidebar-w);
   flex: 1;
+  min-width: 0;       /* quan trọng: cho phép flex child co lại đúng cách */
   min-height: 100vh;
   background: #f9fafb;
+  overflow-x: hidden; /* tránh scroll ngang ở cấp layout */
 }
 
 /* ── SIDEBAR HEADER ─────────────────────────────────────── */
@@ -224,7 +226,10 @@
   color: #1f2937;
 }
 
-.admin-main { padding: 1.75rem; }
+.admin-main {
+  padding: 1.75rem;
+  min-width: 0;   /* tránh flex child tràn ra ngoài */
+}
 
 /* ── STATS CARDS ────────────────────────────────────────── */
 .stats-grid {
