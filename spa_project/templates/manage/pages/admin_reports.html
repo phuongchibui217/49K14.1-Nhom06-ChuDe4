@@ -6,22 +6,22 @@
 {% block extra_css %}
 <style>
   /* ── Layout ─────────────────────────────────────────── */
-  .reports-page { padding: 24px; }
+  .reports-page { padding: 0; }
 
   /* ── Filter bar ─────────────────────────────────────── */
   .filter-card {
     background: #fff;
     border-radius: 14px;
-    padding: 20px 24px;
+    padding: 12px 20px;
     box-shadow: 0 2px 8px rgba(0,0,0,.06);
-    margin-bottom: 24px;
+    margin-bottom: 16px;
   }
-  .filter-card .form-label { font-weight: 600; font-size: 13px; color: #374151; }
+  .filter-card .form-label { font-weight: 600; font-size: 12px; color: #374151; margin-bottom: 2px; }
   .filter-card .form-control {
     border-radius: 8px;
     border: 1.5px solid #e5e7eb;
-    font-size: 14px;
-    height: 40px;
+    font-size: 13px;
+    height: 36px;
   }
   .filter-card .form-control:focus { border-color: #E0B21B; box-shadow: 0 0 0 3px rgba(224,178,27,.15); }
   .btn-report {
@@ -29,10 +29,10 @@
     color: #fff;
     border: none;
     border-radius: 8px;
-    height: 40px;
-    padding: 0 24px;
+    height: 36px;
+    padding: 0 20px;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 13px;
     transition: background .18s;
   }
   .btn-report:hover { background: #c9a018; color: #fff; }
@@ -132,6 +132,18 @@
   }
   @media (max-width: 900px) { .bottom-grid { grid-template-columns: 1fr; } }
 
+  /* Thu gọn 2 bảng bottom — giữ nguyên section-card chung */
+  .bottom-grid .section-card {
+    padding: 14px 18px;
+    margin-bottom: 0;
+  }
+  .bottom-grid .section-title { margin-bottom: 10px; }
+  .bottom-grid .report-table th { padding: 8px 12px; }
+  .bottom-grid .report-table td { padding: 8px 12px; }
+
+  /* Giảm padding admin-main riêng cho trang báo cáo */
+  .admin-main { padding: 1rem 1.75rem !important; }
+
   /* ── Alert / empty ──────────────────────────────────── */
   .alert-report {
     border-radius: 10px;
@@ -155,33 +167,28 @@
 {% block content %}
 <div class="reports-page">
 
-  <!-- Page header -->
-  <div class="d-flex align-items-center gap-3 mb-4">
-    <div>
-      <h4 class="mb-0 fw-bold" style="color:#111827;">Báo cáo thống kê</h4>
-      <p class="mb-0 text-muted" style="font-size:13px;">Tổng quan hoạt động kinh doanh theo khoảng thời gian</p>
+  <!-- Page header + filter cùng hàng -->
+  <div class="d-flex align-items-center justify-content-between gap-3 mb-2 flex-wrap">
+    <h4 class="mb-0 fw-bold" style="color:#111827;">Báo cáo thống kê</h4>
+    <div class="filter-card mb-0" style="box-shadow:none; padding:0; background:transparent;">
+      <form method="get" id="reportFilterForm">
+        <div class="row g-2 align-items-end">
+          <div class="col-auto">
+            <label class="form-label mb-1">Từ ngày</label>
+            <input type="date" name="date_from" class="form-control" value="{{ date_from }}" max="{{ date_to }}">
+          </div>
+          <div class="col-auto">
+            <label class="form-label mb-1">Đến ngày</label>
+            <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
+          </div>
+          <div class="col-auto">
+            <button type="submit" class="btn-report">
+              <i class="fas fa-chart-bar me-1"></i> Xem báo cáo
+            </button>
+          </div>
+        </div>
+      </form>
     </div>
-  </div>
-
-  <!-- Filter bar -->
-  <div class="filter-card">
-    <form method="get" id="reportFilterForm">
-      <div class="row g-3 align-items-end">
-        <div class="col-auto">
-          <label class="form-label mb-1">Từ ngày</label>
-          <input type="date" name="date_from" class="form-control" value="{{ date_from }}" max="{{ date_to }}">
-        </div>
-        <div class="col-auto">
-          <label class="form-label mb-1">Đến ngày</label>
-          <input type="date" name="date_to" class="form-control" value="{{ date_to }}">
-        </div>
-        <div class="col-auto">
-          <button type="submit" class="btn-report">
-            <i class="fas fa-chart-bar me-1"></i> Xem báo cáo
-          </button>
-        </div>
-      </div>
-    </form>
   </div>
 
   <!-- Error / no-data alerts -->

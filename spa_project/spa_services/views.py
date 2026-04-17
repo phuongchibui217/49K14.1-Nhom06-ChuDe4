@@ -38,19 +38,14 @@ from .service_services import (
 from core.api_response import staff_api, get_or_404
 
 
-def _save_service_image(image_file):
-    """Lưu file ảnh dịch vụ vào MEDIA_ROOT và trả về relative path."""
-    import os, uuid
-    from django.conf import settings
-    ext = os.path.splitext(image_file.name or '')[1].lower() or '.jpg'
-    filename = f"{uuid.uuid4().hex}{ext}"
-    rel_path = f"services/{filename}"
-    abs_path = os.path.join(settings.MEDIA_ROOT, 'services', filename)
-    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
-    with open(abs_path, 'wb') as f:
-        for chunk in image_file.chunks():
-            f.write(chunk)
-    return rel_path
+def _save_service_image(service, image_file):
+    """
+    Gán image_file vào ImageField của service và lưu.
+    Django ImageField tự xử lý: sinh tên file, lưu vào MEDIA_ROOT/services/,
+    và lưu relative path vào DB — không cần tự ghép path thủ công.
+    """
+    service.image = image_file
+    service.save(update_fields=['image'])
 
 
 # =====================================================
@@ -277,7 +272,7 @@ def api_services_list(request):
             'categoryName': s.get_category_name(),
             'description': s.short_description or (s.description[:100] if s.description else ''),
             'status': s.status,
-            'image': s.image if s.image else 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=100',
+            'image': s.image.url if s.image else 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=100',
             'variants': [
                 {
                     'id': v.id,
@@ -359,8 +354,7 @@ def api_service_create(request):
             if image_file.content_type not in allowed_types:
                 service.delete()
                 return JsonResponse({'error': 'Chỉ chấp nhận file ảnh (JPG, PNG, GIF, WebP)!'}, status=400)
-            service.image = _save_service_image(image_file)
-            service.save()
+            _save_service_image(service, image_file)
 
         # Tạo variants nếu có
         from .models import ServiceVariant
@@ -407,7 +401,7 @@ def api_service_create(request):
                 'code': service.code or '',
                 'name': service.name,
                 'categoryName': service.get_category_name(),
-                'image': service.image if service.image else 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=100'
+                'image': service.image.url if service.image else 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=100'
             }
         })
     except Exception as e:
@@ -475,7 +469,7 @@ def api_service_update(request, service_id):
             allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
             if image_file.content_type not in allowed_types:
                 return JsonResponse({'error': 'Chỉ chấp nhận file ảnh (JPG, PNG, GIF, WebP)!'}, status=400)
-            service.image = _save_service_image(image_file)
+            _save_service_image(service, image_file)
 
         service.save()
 

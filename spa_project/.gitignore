@@ -25,7 +25,9 @@ wheels/
 local_settings.py
 
 /staticfiles/
-/media/
+# /media/ — KHÔNG ignore, để ảnh upload được commit vào git cùng source code
+# Nếu chuyển sang production với S3/cloud storage thì bỏ comment dòng dưới lại
+# /media/
 
 # Virtual environment
 venv/

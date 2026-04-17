@@ -60,7 +60,15 @@ class Service(models.Model):
     short_description = models.CharField(max_length=255, blank=True, null=True, verbose_name='Mô tả ngắn')
     description = models.TextField(blank=True, null=True, verbose_name='Mô tả chi tiết')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ACTIVE', verbose_name='Trạng thái')
-    image = models.CharField(max_length=500, verbose_name='Đường dẫn hình ảnh')
+    # ImageField tự quản lý upload_to, lưu relative path trong DB (vd: services/abc.jpg)
+    # File vật lý được lưu vào MEDIA_ROOT/services/ và serve qua MEDIA_URL
+    # KHÔNG dùng CharField để lưu path thủ công — sẽ mất khả năng .url và validation
+    image = models.ImageField(
+        upload_to='services/',
+        blank=True,
+        null=True,
+        verbose_name='Hình ảnh dịch vụ'
+    )
     is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
     created_by = models.ForeignKey(
         User, on_delete=models.PROTECT,
@@ -101,9 +109,15 @@ class Service(models.Model):
         return self.category.name if self.category else ''
 
     def get_image_url(self):
-        """Trả về URL ảnh hoặc ảnh mặc định"""
+        """
+        Trả về URL ảnh dịch vụ hoặc ảnh placeholder nếu không có.
+        Dùng field.url để Django tự tính đúng MEDIA_URL — không hard-code path.
+        """
         if self.image:
-            return f"/media/{self.image}"
+            try:
+                return self.image.url
+            except Exception:
+                pass
         return "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400"
 
     @classmethod

@@ -155,12 +155,11 @@ class ServiceForm(forms.ModelForm):
         """Validate hình ảnh"""
         image = self.cleaned_data.get('image')
 
-        # If no image is provided
+        # Nếu không upload ảnh mới
         if not image:
-            # If this is an edit and the instance already has an image, keep it
+            # Đang edit và instance đã có ảnh → giữ nguyên (trả về False để Django không xóa)
             if self.instance and self.instance.pk and self.instance.image:
-                return self.instance.image
-            # If creating new service, image is required
+                return False  # False = "không thay đổi" với ImageField trong ModelForm
             raise forms.ValidationError('Vui lòng chọn hình ảnh dịch vụ')
 
         # Check file size (max 5MB)
@@ -178,7 +177,10 @@ class ServiceForm(forms.ModelForm):
             width, height = img.size
             if width < 300 or height < 300:
                 raise forms.ValidationError('Kích thước ảnh tối thiểu là 300x300px')
-        except Exception as e:
+            image.seek(0)  # reset file pointer sau khi PIL đọc
+        except forms.ValidationError:
+            raise
+        except Exception:
             raise forms.ValidationError('Có lỗi khi đọc hình ảnh')
 
         return image
