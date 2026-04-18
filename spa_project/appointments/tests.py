@@ -4,18 +4,14 @@ Tests cho Appointments app — covers models, APIs, views.
 import json
 from datetime import date, time, timedelta, datetime
 
-from asgiref.sync import async_to_sync, sync_to_async
-from channels.testing import WebsocketCommunicator
 from django.contrib.auth.models import User
-from django.test import Client, TestCase, TransactionTestCase
+from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils.crypto import get_random_string
 
 from customers.models import CustomerProfile
-from spa_project.asgi import application
 from spa_services.models import Service, ServiceCategory, ServiceVariant
 from .models import Appointment, Room
-from .realtime import get_pending_booking_count
 
 
 # ─────────────────────────────────────────────
@@ -219,16 +215,11 @@ class BookingBadgeTemplateTests(TestCase):
             is_staff=True,
         )
 
-    def test_admin_base_uses_booking_websocket_config(self):
+    def test_admin_appointments_page_loads(self):
         client = Client()
         client.force_login(self.admin_user)
-
         response = client.get(reverse("appointments:admin_appointments"))
-
         self.assertEqual(response.status_code, 200)
-        content = response.content.decode("utf-8")
-        self.assertIn("/ws/admin/booking/pending-count/", content)
-        self.assertNotIn("/api/booking/pending-count/stream/", content)
 
 
 class BookingPendingCountApiTests(TestCase):
@@ -300,140 +291,6 @@ class BookingPendingCountApiTests(TestCase):
         payload = response.json()
         self.assertTrue(payload["success"])
         self.assertEqual(payload["count"], 1)
-        self.assertEqual(get_pending_booking_count(), 1)
-
-
-class BookingPendingCountWebSocketTests(TransactionTestCase):
-    reset_sequences = True
-
-    def setUp(self):
-        self.admin_user = User.objects.create_user(
-            username="booking-admin",
-            password="testpass123",
-            is_staff=True,
-        )
-        self.customer_user = User.objects.create_user(
-            username="0900000002",
-            password="testpass123",
-        )
-        self.customer = CustomerProfile.objects.create(
-            user=self.customer_user,
-            phone="0900000002",
-            full_name="Khach Hang 2",
-        )
-        self.room = Room.objects.create(code="R02", name="Phong 2", capacity=2)
-        self.category = ServiceCategory.objects.order_by("id").first()
-        if not self.category:
-            self.category = ServiceCategory.objects.create(
-                code=f"CAT-{get_random_string(6)}",
-                name=f"Category {get_random_string(6)}",
-                status="ACTIVE",
-            )
-        self.service = Service.objects.create(
-            category=self.category,
-            name=f"Massage body {get_random_string(6)}",
-            status="ACTIVE",
-            image="/media/services/test-2.jpg",
-            created_by=self.admin_user,
-        )
-        ServiceVariant.objects.create(
-            service=self.service,
-            label="60 phut",
-            duration_minutes=60,
-            price=200000,
-        )
-
-    def build_cookie_header(self, client):
-        cookies = [f"{key}={morsel.value}" for key, morsel in client.cookies.items()]
-        return "; ".join(cookies)
-
-    def get_websocket_headers(self, client=None):
-        headers = [(b"origin", b"http://localhost")]
-        if client:
-            cookie_header = self.build_cookie_header(client)
-            if cookie_header:
-                headers.append((b"cookie", cookie_header.encode("utf-8")))
-        return headers
-
-    async def connect_websocket(self, path, client=None):
-        communicator = WebsocketCommunicator(
-            application,
-            path,
-            headers=self.get_websocket_headers(client),
-        )
-        connected, _ = await communicator.connect()
-        self.assertTrue(connected)
-        return communicator
-
-    async def receive_ws_json(self, communicator, timeout=5):
-        return await communicator.receive_json_from(timeout=timeout)
-
-    async def disconnect_ws(self, communicator):
-        await communicator.disconnect()
-
-    def create_appointment(self, *, source="ONLINE", status="PENDING"):
-        return Appointment.objects.create(
-            customer=self.customer,
-            service=self.service,
-            room=self.room,
-            customer_name_snapshot=self.customer.full_name,
-            customer_phone_snapshot=self.customer.phone,
-            appointment_date=date(2026, 4, 15),
-            appointment_time=time(11, 0),
-            end_time=time(12, 0),
-            duration_minutes=60,
-            guests=1,
-            status=status,
-            source=source,
-            created_by=self.admin_user,
-        )
-
-    def test_booking_pending_count_websocket_pushes_updates(self):
-        async def scenario():
-            admin_client = Client(HTTP_HOST="localhost")
-            await sync_to_async(admin_client.force_login, thread_sensitive=True)(self.admin_user)
-
-            communicator = await self.connect_websocket(
-                "/ws/admin/booking/pending-count/",
-                admin_client,
-            )
-
-            try:
-                initial_event = await self.receive_ws_json(communicator)
-                self.assertEqual(initial_event["event"], "pending_count")
-                self.assertEqual(initial_event["count"], 0)
-
-                appointment = await sync_to_async(self.create_appointment, thread_sensitive=True)()
-
-                created_event = await self.receive_ws_json(communicator)
-                self.assertEqual(created_event["event"], "pending_count")
-                self.assertEqual(created_event["count"], 1)
-
-                appointment.status = "CANCELLED"
-                await sync_to_async(appointment.save, thread_sensitive=True)()
-
-                updated_event = await self.receive_ws_json(communicator)
-                self.assertEqual(updated_event["event"], "pending_count")
-                self.assertEqual(updated_event["count"], 0)
-            finally:
-                await self.disconnect_ws(communicator)
-
-        async_to_sync(scenario)()
-
-    def test_non_staff_user_cannot_connect_booking_pending_count_websocket(self):
-        async def scenario():
-            customer_client = Client(HTTP_HOST="localhost")
-            await sync_to_async(customer_client.force_login, thread_sensitive=True)(self.customer_user)
-
-            communicator = WebsocketCommunicator(
-                application,
-                "/ws/admin/booking/pending-count/",
-                headers=self.get_websocket_headers(customer_client),
-            )
-            connected, _ = await communicator.connect()
-            self.assertFalse(connected)
-
-        async_to_sync(scenario)()
 
 
 # ─────────────────────────────────────────────

@@ -234,24 +234,62 @@
                 </label>
                 <input class="form-control" id="phone" required placeholder="Nhập số điện thoại" inputmode="numeric" autocomplete="off" />
                 <div class="invalid-feedback">Số điện thoại không hợp lệ</div>
-                <div id="customerMatchBadgePhone" class="d-none mt-1 d-flex align-items-center gap-2 px-2 py-1 rounded-2"
-                     style="background:#e8f5e9;border:1px solid #a5d6a7;font-size:.8rem;">
-                  <i class="fas fa-user-check" style="color:#2e7d32;"></i>
-                  <span id="customerMatchLabelPhone" style="font-weight:600;color:#1b5e20;flex:1;"></span>
-                  <button type="button" class="btn-close" id="clearCustomerMatchBtnPhone"
-                          title="Bỏ liên kết hồ sơ" style="font-size:.55rem;"></button>
+                {# Gợi ý: tìm thấy khách — chờ xác nhận #}
+                <div id="customerMatchBadgePhone" class="d-none mt-1 rounded-2 px-2 py-1"
+                     style="background:#f0fdf4;border:1px solid #86efac;font-size:.8rem;">
+                  <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-user-circle" style="color:#16a34a;flex-shrink:0;"></i>
+                    <span id="customerMatchLabelPhone" style="font-weight:600;color:#15803d;flex:1;"></span>
+                    <button type="button" class="btn btn-success btn-sm py-0 px-2" id="confirmMatchBtnPhone"
+                            style="font-size:.72rem;white-space:nowrap;">✓ Dùng</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" id="dismissMatchBtnPhone"
+                            style="font-size:.72rem;">✕</button>
+                  </div>
+                </div>
+                {# Đã liên kết #}
+                <div id="customerLinkedBadgePhone" class="d-none mt-1 d-flex align-items-center gap-2 px-2 py-1 rounded-2"
+                     style="background:#dcfce7;border:1px solid #86efac;font-size:.8rem;">
+                  <i class="fas fa-user-check" style="color:#16a34a;flex-shrink:0;"></i>
+                  <span id="customerLinkedLabelPhone" style="font-weight:600;color:#15803d;flex:1;"></span>
+                  <button type="button" class="btn-close" id="unlinkBtnPhone"
+                          title="Bỏ liên kết" style="font-size:.55rem;"></button>
+                </div>
+                {# Cảnh báo trùng SĐT #}
+                <div id="customerWarnBadgePhone" class="d-none mt-1 px-2 py-1 rounded-2"
+                     style="background:#fefce8;border:1px solid #fde047;font-size:.78rem;color:#854d0e;">
+                  <i class="fas fa-triangle-exclamation me-1"></i>
+                  <span id="customerWarnLabelPhone"></span>
                 </div>
               </div>
 
               <div class="mb-3">
                 <label class="form-label fw-semibold">Email</label>
                 <input type="email" class="form-control" id="email" placeholder="Nhập email" autocomplete="off" />
-                <div id="customerMatchBadgeEmail" class="d-none mt-1 d-flex align-items-center gap-2 px-2 py-1 rounded-2"
-                     style="background:#e8f5e9;border:1px solid #a5d6a7;font-size:.8rem;">
-                  <i class="fas fa-user-check" style="color:#2e7d32;"></i>
-                  <span id="customerMatchLabelEmail" style="font-weight:600;color:#1b5e20;flex:1;"></span>
-                  <button type="button" class="btn-close" id="clearCustomerMatchBtnEmail"
-                          title="Bỏ liên kết hồ sơ" style="font-size:.55rem;"></button>
+                {# Gợi ý: tìm thấy khách — chờ xác nhận #}
+                <div id="customerMatchBadgeEmail" class="d-none mt-1 rounded-2 px-2 py-1"
+                     style="background:#f0fdf4;border:1px solid #86efac;font-size:.8rem;">
+                  <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-user-circle" style="color:#16a34a;flex-shrink:0;"></i>
+                    <span id="customerMatchLabelEmail" style="font-weight:600;color:#15803d;flex:1;"></span>
+                    <button type="button" class="btn btn-success btn-sm py-0 px-2" id="confirmMatchBtnEmail"
+                            style="font-size:.72rem;white-space:nowrap;">✓ Dùng</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm py-0 px-2" id="dismissMatchBtnEmail"
+                            style="font-size:.72rem;">✕</button>
+                  </div>
+                </div>
+                {# Đã liên kết #}
+                <div id="customerLinkedBadgeEmail" class="d-none mt-1 d-flex align-items-center gap-2 px-2 py-1 rounded-2"
+                     style="background:#dcfce7;border:1px solid #86efac;font-size:.8rem;">
+                  <i class="fas fa-user-check" style="color:#16a34a;flex-shrink:0;"></i>
+                  <span id="customerLinkedLabelEmail" style="font-weight:600;color:#15803d;flex:1;"></span>
+                  <button type="button" class="btn-close" id="unlinkBtnEmail"
+                          title="Bỏ liên kết" style="font-size:.55rem;"></button>
+                </div>
+                {# Cảnh báo trùng email #}
+                <div id="customerWarnBadgeEmail" class="d-none mt-1 px-2 py-1 rounded-2"
+                     style="background:#fefce8;border:1px solid #fde047;font-size:.78rem;color:#854d0e;">
+                  <i class="fas fa-triangle-exclamation me-1"></i>
+                  <span id="customerWarnLabelEmail"></span>
                 </div>
               </div>
 
@@ -381,38 +419,67 @@
   </div>
 </div>
 
-<!-- Appointment Modal  xác nhận Xóa lịch hẹn -->
+<!-- Modal xác nhận xóa lịch hẹn — Luxury Spa Style -->
 <div class="modal fade" id="deleteAppointmentModal" tabindex="-1" aria-labelledby="deleteAppointmentModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 16px; border: none; overflow: hidden;">
-            <div class="modal-header bg-danger text-white border-0 py-3">
-                <h5 class="modal-title">
-                    <i class="fas fa-trash-alt me-2"></i>
-                    Xác nhận xóa lịch hẹn
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4 text-center">
-                <div class="mb-3">
-                    <i class="fas fa-exclamation-circle fa-4x text-danger mb-3"></i>
-                </div>
-                <p class="mb-2 fs-5 fw-semibold">Bạn có chắc chắn muốn xóa lịch hẹn này?</p>
-                <p class="text-muted mb-0">Dữ liệu sẽ bị xóa vĩnh viễn và không thể khôi phục.</p>
-                <div class="mt-3 p-3 bg-light rounded">
-                    <p class="mb-1 text-muted small">Mã lịch hẹn:</p>
-                    <p class="mb-0 fw-bold" id="deleteAppointmentCode">-</p>
-                </div>
-            </div>
-            <div class="modal-footer border-0 pt-0 pb-4">
-                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
-                    <i class="fas fa-times me-2"></i>Hủy
-                </button>
-                <button type="button" class="btn btn-danger px-4" id="confirmDeleteAppointmentBtn">
-                    <i class="fas fa-trash-alt me-2"></i>Xóa lịch hẹn
-                </button>
-            </div>
-        </div>
+  <div class="modal-dialog modal-dialog-centered" style="max-width:380px;">
+    <div class="modal-content border-0" style="border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.15);overflow:hidden;">
+
+      <style>
+        #deleteAppointmentModal .modal.fade .modal-dialog { transform: scale(.96); }
+        #deleteAppointmentModal .modal.show  .modal-dialog { transform: scale(1); }
+        .del-modal-body   { padding: 2rem 2rem 1.25rem; text-align: center; }
+        .del-modal-icon   {
+          width: 48px; height: 48px; border-radius: 50%;
+          background: #fff1f2; border: 1.5px solid #fecdd3;
+          display: inline-flex; align-items: center; justify-content: center;
+          margin-bottom: 1.1rem;
+        }
+        .del-modal-icon i { color: #e11d48; font-size: 1.1rem; }
+        .del-modal-title  { font-size: 1rem; font-weight: 600; color: #1f2937; margin-bottom: .4rem; }
+        .del-modal-sub    { font-size: .82rem; color: #9ca3af; line-height: 1.6; margin: 0; }
+        .del-modal-info   {
+          margin: 1rem 0 0;
+          padding: .6rem 1rem;
+          background: #f9fafb;
+          border-radius: 10px;
+          font-size: .82rem;
+          color: #374151;
+          font-weight: 500;
+        }
+        .del-modal-footer { padding: 1rem 2rem 1.75rem; display: flex; gap: .75rem; }
+        .del-btn-cancel {
+          flex: 1; padding: .6rem 0;
+          border: 1.5px solid #e5e7eb; border-radius: 10px;
+          background: #fff; color: #6b7280;
+          font-size: .875rem; font-weight: 500;
+          cursor: pointer; transition: all .18s;
+        }
+        .del-btn-cancel:hover { background: #f3f4f6; border-color: #d1d5db; color: #374151; }
+        .del-btn-confirm {
+          flex: 1; padding: .6rem 0;
+          border: none; border-radius: 10px;
+          background: #e11d48; color: #fff;
+          font-size: .875rem; font-weight: 600;
+          cursor: pointer; transition: all .18s;
+          box-shadow: 0 2px 10px rgba(225,29,72,.25);
+        }
+        .del-btn-confirm:hover { background: #be123c; box-shadow: 0 4px 14px rgba(225,29,72,.35); transform: translateY(-1px); }
+      </style>
+
+      <div class="del-modal-body">
+        <div class="del-modal-icon"><i class="fas fa-trash-alt"></i></div>
+        <div class="del-modal-title">Xóa lịch hẹn?</div>
+        <p class="del-modal-sub">Hành động này không thể hoàn tác.</p>
+        <div class="del-modal-info" id="deleteAppointmentInfo"></div>
+      </div>
+
+      <div class="del-modal-footer">
+        <button type="button" class="del-btn-cancel" data-bs-dismiss="modal">Hủy</button>
+        <button type="button" class="del-btn-confirm" id="confirmDeleteAppointmentBtn">Xóa</button>
+      </div>
+
     </div>
+  </div>
 </div>
 
 <!-- Toast -->

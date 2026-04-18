@@ -26,7 +26,6 @@ from django.db import transaction
 from .models import Appointment, Room
 from customers.models import CustomerProfile
 from spa_services.models import Service
-from .realtime import get_pending_booking_count_payload
 
 # Import serializer (chuyển model → dict)
 from .serializers import serialize_appointment
@@ -258,18 +257,30 @@ def api_appointment_create(request):
         cleaned = validation['cleaned_data']
 
         # Bước 2: Resolve khách hàng
-        # Nếu FE gửi customerId → dùng profile đó, snapshot lấy từ form (cho phép override)
-        # Nếu không có customerId → tìm/tạo theo SĐT như cũ
+        # - Nếu FE gửi customerId → dùng profile đó (đã xác nhận ✓)
+        # - Nếu không có customerId → tìm theo SĐT (không tạo mới nếu đã tồn tại)
+        #   Nếu SĐT chưa có trong hệ thống → tạo CustomerProfile mới
+        #   Nếu SĐT đã có nhưng user chọn ✕ → customerId=null, tạo lịch guest
+        #   (appointment.customer vẫn cần FK, dùng profile tìm được hoặc tạo mới)
         if customer_id:
             try:
                 customer = CustomerProfile.objects.get(id=customer_id)
             except CustomerProfile.DoesNotExist:
                 return JsonResponse({'success': False, 'error': 'Không tìm thấy khách hàng'}, status=404)
         else:
-            customer = _get_or_create_customer(
-                phone=cleaned['phone'],
-                customer_name=cleaned['customer_name']
-            )
+            # Tìm theo SĐT — KHÔNG tạo mới nếu đã tồn tại (tránh duplicate)
+            phone_digits = cleaned['phone']
+            try:
+                customer = CustomerProfile.objects.get(phone=phone_digits)
+                # Tìm thấy nhưng FE không gửi customerId (user đã chọn ✕)
+                # → vẫn link appointment vào profile này (FK bắt buộc)
+                # nhưng snapshot lấy từ form (không phải từ profile)
+            except CustomerProfile.DoesNotExist:
+                # Chưa có profile → tạo mới (khách thực sự mới)
+                customer = _get_or_create_customer(
+                    phone=phone_digits,
+                    customer_name=cleaned['customer_name']
+                )
 
         # Bước 3: Tạo lịch hẹn với TRANSACTION LOCK để tránh race condition
         with transaction.atomic():
@@ -900,10 +911,15 @@ def api_booking_pending_count(request):
         return _deny()
 
     try:
-        payload = get_pending_booking_count_payload()
+        from django.utils import timezone
+        count = Appointment.objects.filter(
+            Q(source='ONLINE') | Q(source__isnull=True),
+            status='PENDING',
+        ).count()
         return JsonResponse({
             'success': True,
-            **payload,
+            'count': count,
+            'timestamp': timezone.now().isoformat(),
         })
     except Exception as e:
         return JsonResponse({

@@ -13,17 +13,14 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'spa_project.settings')
 
 django_asgi_app = get_asgi_application()
 
-from appointments.routing import websocket_urlpatterns as appointment_websocket_urlpatterns
 from chat.routing import websocket_urlpatterns as chat_websocket_urlpatterns
-
-websocket_urlpatterns = chat_websocket_urlpatterns + appointment_websocket_urlpatterns
 
 application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
         "websocket": AllowedHostsOriginValidator(
             AuthMiddlewareStack(
-                URLRouter(websocket_urlpatterns)
+                URLRouter(chat_websocket_urlpatterns)
             )
         ),
     }

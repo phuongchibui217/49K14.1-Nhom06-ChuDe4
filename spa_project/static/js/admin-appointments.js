@@ -480,32 +480,34 @@ function fillServiceFilter(){
 }
 
 // ===== CUSTOMER INLINE LOOKUP =====
-// Nhận diện khách qua phone/email — không có search box riêng
+// Spec: nhập SĐT/email → gợi ý → nhân viên xác nhận ✓ hoặc bỏ qua ✕
+// Không tự fill, không tạo duplicate CustomerProfile
+
 let _phoneTimer = null;
 let _emailTimer = null;
+// Lưu kết quả match đang chờ xác nhận (chưa nhấn ✓ hay ✕)
+let _pendingMatch = { phone: null, email: null };
 
 function initCustomerSearch() {
-  const phoneEl       = document.getElementById('phone');
-  const emailEl       = document.getElementById('email');
-  const clearBtnPhone = document.getElementById('clearCustomerMatchBtnPhone');
-  const clearBtnEmail = document.getElementById('clearCustomerMatchBtnEmail');
+  const phoneEl = document.getElementById('phone');
+  const emailEl = document.getElementById('email');
   if (!phoneEl) return;
 
-  // Lookup khi nhập phone (debounce 500ms)
+  // ── Phone input ──
   phoneEl.addEventListener('input', () => {
     clearTimeout(_phoneTimer);
-    _clearMatchBadge();
+    _resetPhoneState();                          // reset mọi badge phone
     const val = phoneEl.value.replace(/\D/g, '');
     if (val.length >= 9) {
       _phoneTimer = setTimeout(() => _lookupByPhone(val), 500);
     }
   });
 
-  // Lookup khi nhập email (debounce 600ms)
+  // ── Email input ──
   if (emailEl) {
     emailEl.addEventListener('input', () => {
       clearTimeout(_emailTimer);
-      _clearMatchBadge();
+      _resetEmailState();                        // reset mọi badge email
       const val = emailEl.value.trim();
       if (val.includes('@') && val.length >= 6) {
         _emailTimer = setTimeout(() => _lookupByEmail(val), 600);
@@ -513,79 +515,160 @@ function initCustomerSearch() {
     });
   }
 
-  // Nhấn X → xóa liên kết + xóa toàn bộ thông tin khách
-  if (clearBtnPhone) clearBtnPhone.addEventListener('click', () => _clearMatchBadge(true));
-  if (clearBtnEmail) clearBtnEmail.addEventListener('click', () => _clearMatchBadge(true));
+  // ── Nút ✓ Dùng (phone) ──
+  document.getElementById('confirmMatchBtnPhone')?.addEventListener('click', () => {
+    if (_pendingMatch.phone) _confirmMatch(_pendingMatch.phone, 'phone');
+  });
+  // ── Nút ✕ Bỏ qua (phone) ──
+  document.getElementById('dismissMatchBtnPhone')?.addEventListener('click', () => {
+    if (_pendingMatch.phone) _dismissMatch(_pendingMatch.phone, 'phone');
+  });
+  // ── Nút ✓ Dùng (email) ──
+  document.getElementById('confirmMatchBtnEmail')?.addEventListener('click', () => {
+    if (_pendingMatch.email) _confirmMatch(_pendingMatch.email, 'email');
+  });
+  // ── Nút ✕ Bỏ qua (email) ──
+  document.getElementById('dismissMatchBtnEmail')?.addEventListener('click', () => {
+    if (_pendingMatch.email) _dismissMatch(_pendingMatch.email, 'email');
+  });
+  // ── Nút bỏ liên kết (phone) ──
+  document.getElementById('unlinkBtnPhone')?.addEventListener('click', () => _unlinkCustomer('phone'));
+  // ── Nút bỏ liên kết (email) ──
+  document.getElementById('unlinkBtnEmail')?.addEventListener('click', () => _unlinkCustomer('email'));
 }
 
-async function _lookupByPhone(phone) {
-  if (document.getElementById('apptId').value.trim()) return; // chỉ lookup khi tạo mới
+// Lookup theo phone — exact match
+async function _lookupByPhone(phoneVal) {
+  if (document.getElementById('apptId').value.trim()) return; // chỉ khi tạo mới
   try {
-    const res = await apiGet(`${API_BASE}/customers/search/?q=${encodeURIComponent(phone)}`);
+    const res = await apiGet(`${API_BASE}/customers/search/?q=${encodeURIComponent(phoneVal)}`);
     if (!res.success) return;
-    const match = res.customers.find(c => c.phone.replace(/\D/g, '') === phone);
-    if (match) _applyMatch(match, 'phone');
+    const match = res.customers.find(c => c.phone.replace(/\D/g, '') === phoneVal);
+    if (match) _showSuggestion(match, 'phone');
   } catch(e) { /* silent */ }
 }
 
-async function _lookupByEmail(email) {
+// Lookup theo email — exact match
+async function _lookupByEmail(emailVal) {
   if (document.getElementById('apptId').value.trim()) return;
   try {
-    const res = await apiGet(`${API_BASE}/customers/search/?q=${encodeURIComponent(email)}`);
+    const res = await apiGet(`${API_BASE}/customers/search/?q=${encodeURIComponent(emailVal)}`);
     if (!res.success) return;
-    const match = res.customers.find(c => c.email && c.email.toLowerCase() === email.toLowerCase());
-    if (match) _applyMatch(match, 'email');
+    const match = res.customers.find(c => c.email && c.email.toLowerCase() === emailVal.toLowerCase());
+    if (match) _showSuggestion(match, 'email');
   } catch(e) { /* silent */ }
 }
 
-function _applyMatch(c, via) {
+// Hiện badge gợi ý — CHƯA fill form, chờ nhân viên xác nhận
+function _showSuggestion(c, via) {
+  _pendingMatch[via] = c;
+  if (via === 'phone') {
+    const badge = document.getElementById('customerMatchBadgePhone');
+    const label = document.getElementById('customerMatchLabelPhone');
+    if (label) label.textContent = `Khách đã có hồ sơ: ${c.fullName} · ${c.phone}`;
+    if (badge) badge.classList.remove('d-none');
+  } else {
+    const badge = document.getElementById('customerMatchBadgeEmail');
+    const label = document.getElementById('customerMatchLabelEmail');
+    if (label) label.textContent = `Khách đã có hồ sơ: ${c.fullName} · ${c.phone}`;
+    if (badge) badge.classList.remove('d-none');
+  }
+}
+
+// Nhấn ✓ — xác nhận dùng hồ sơ: gán customer_id + fill form
+function _confirmMatch(c, via) {
+  // Gán customer_id
   document.getElementById('selectedCustomerId').value = c.id;
 
-  // Autofill chỉ các field còn trống
+  // Fill toàn bộ thông tin từ profile
   const nameEl  = document.getElementById('customerName');
   const phoneEl = document.getElementById('phone');
   const emailEl = document.getElementById('email');
-  if (nameEl  && !nameEl.value.trim())  nameEl.value  = c.fullName;
-  if (phoneEl && !phoneEl.value.trim()) phoneEl.value = c.phone;
-  if (emailEl && !emailEl.value.trim()) emailEl.value = c.email || '';
+  if (nameEl)  nameEl.value  = c.fullName;
+  if (phoneEl) phoneEl.value = c.phone;
+  if (emailEl) emailEl.value = c.email || '';
 
-  // Hiện đúng badge theo field trigger
-  const badgePhone = document.getElementById('customerMatchBadgePhone');
-  const labelPhone = document.getElementById('customerMatchLabelPhone');
-  const badgeEmail = document.getElementById('customerMatchBadgeEmail');
-  const labelEmail = document.getElementById('customerMatchLabelEmail');
-
-  if (via === 'email') {
-    if (badgeEmail && labelEmail) {
-      labelEmail.textContent = `Khách đã có hồ sơ: ${c.fullName}`;
-      badgeEmail.classList.remove('d-none');
-    }
-    if (badgePhone) badgePhone.classList.add('d-none');
+  // Ẩn badge gợi ý, hiện badge đã liên kết
+  if (via === 'phone') {
+    document.getElementById('customerMatchBadgePhone')?.classList.add('d-none');
+    const linked = document.getElementById('customerLinkedBadgePhone');
+    const label  = document.getElementById('customerLinkedLabelPhone');
+    if (label)  label.textContent = `Đã liên kết: ${c.fullName}`;
+    if (linked) linked.classList.remove('d-none');
   } else {
-    if (badgePhone && labelPhone) {
-      labelPhone.textContent = `Khách đã có hồ sơ: ${c.fullName}`;
-      badgePhone.classList.remove('d-none');
-    }
-    if (badgeEmail) badgeEmail.classList.add('d-none');
+    document.getElementById('customerMatchBadgeEmail')?.classList.add('d-none');
+    const linked = document.getElementById('customerLinkedBadgeEmail');
+    const label  = document.getElementById('customerLinkedLabelEmail');
+    if (label)  label.textContent = `Đã liên kết: ${c.fullName}`;
+    if (linked) linked.classList.remove('d-none');
+  }
+  _pendingMatch[via] = null;
+}
+
+// Nhấn ✕ — bỏ qua: không fill, không gán customer_id, hiện cảnh báo nếu trùng
+function _dismissMatch(c, via) {
+  // Ẩn badge gợi ý
+  if (via === 'phone') {
+    document.getElementById('customerMatchBadgePhone')?.classList.add('d-none');
+    // Hiện cảnh báo trùng SĐT
+    const warn  = document.getElementById('customerWarnBadgePhone');
+    const label = document.getElementById('customerWarnLabelPhone');
+    if (label) label.textContent = `SĐT này đã thuộc về khách "${c.fullName}" — lịch sẽ tạo dạng khách vãng lai`;
+    if (warn)  warn.classList.remove('d-none');
+  } else {
+    document.getElementById('customerMatchBadgeEmail')?.classList.add('d-none');
+    const warn  = document.getElementById('customerWarnBadgeEmail');
+    const label = document.getElementById('customerWarnLabelEmail');
+    if (label) label.textContent = `Email này đã thuộc về khách "${c.fullName}" — lịch sẽ tạo dạng khách vãng lai`;
+    if (warn)  warn.classList.remove('d-none');
+  }
+  _pendingMatch[via] = null;
+  // customer_id vẫn = '' (null khi submit)
+}
+
+// Nhấn X trên badge đã liên kết — bỏ liên kết, xóa form
+function _unlinkCustomer(via) {
+  document.getElementById('selectedCustomerId').value = '';
+  const nameEl  = document.getElementById('customerName');
+  const phoneEl = document.getElementById('phone');
+  const emailEl = document.getElementById('email');
+  if (nameEl)  nameEl.value  = '';
+  if (phoneEl) phoneEl.value = '';
+  if (emailEl) emailEl.value = '';
+  if (via === 'phone') {
+    document.getElementById('customerLinkedBadgePhone')?.classList.add('d-none');
+  } else {
+    document.getElementById('customerLinkedBadgeEmail')?.classList.add('d-none');
   }
 }
 
-// clearFields=true khi nhấn X → xóa luôn thông tin khách đã fill
-function _clearMatchBadge(clearFields = false) {
+// Reset toàn bộ state phone (khi user sửa lại SĐT)
+function _resetPhoneState() {
+  _pendingMatch.phone = null;
   document.getElementById('selectedCustomerId').value = '';
-  const badgePhone = document.getElementById('customerMatchBadgePhone');
-  const badgeEmail = document.getElementById('customerMatchBadgeEmail');
-  if (badgePhone) badgePhone.classList.add('d-none');
-  if (badgeEmail) badgeEmail.classList.add('d-none');
+  document.getElementById('customerMatchBadgePhone')?.classList.add('d-none');
+  document.getElementById('customerLinkedBadgePhone')?.classList.add('d-none');
+  document.getElementById('customerWarnBadgePhone')?.classList.add('d-none');
+}
 
-  if (clearFields) {
-    const nameEl  = document.getElementById('customerName');
-    const phoneEl = document.getElementById('phone');
-    const emailEl = document.getElementById('email');
-    if (nameEl)  nameEl.value  = '';
-    if (phoneEl) phoneEl.value = '';
-    if (emailEl) emailEl.value = '';
-  }
+// Reset toàn bộ state email (khi user sửa lại email)
+function _resetEmailState() {
+  _pendingMatch.email = null;
+  // Chỉ xóa customer_id nếu nó được set từ email (không đụng nếu đã link qua phone)
+  const linkedPhone = !document.getElementById('customerLinkedBadgePhone')?.classList.contains('d-none');
+  if (!linkedPhone) document.getElementById('selectedCustomerId').value = '';
+  document.getElementById('customerMatchBadgeEmail')?.classList.add('d-none');
+  document.getElementById('customerLinkedBadgeEmail')?.classList.add('d-none');
+  document.getElementById('customerWarnBadgeEmail')?.classList.add('d-none');
+}
+
+// Reset toàn bộ khi mở modal tạo mới
+function _resetAllCustomerState() {
+  _pendingMatch = { phone: null, email: null };
+  document.getElementById('selectedCustomerId').value = '';
+  ['customerMatchBadgePhone','customerLinkedBadgePhone','customerWarnBadgePhone',
+   'customerMatchBadgeEmail','customerLinkedBadgeEmail','customerWarnBadgeEmail']
+    .forEach(id => document.getElementById(id)?.classList.add('d-none'));
 }
 
 // Escape HTML để tránh XSS
@@ -603,9 +686,8 @@ function openCreateModal(prefill={}){
   const btnSaveText = document.getElementById("btnSaveText");
   if (btnSaveText) btnSaveText.textContent = "Tạo lịch hẹn";
 
-  // Reset customer match badge
-  document.getElementById('selectedCustomerId').value = '';
-  _clearMatchBadge();
+  // Reset toàn bộ customer state khi mở modal tạo mới
+  _resetAllCustomerState();
 
   // Luôn lấy instance hiện tại hoặc tạo mới — tránh instance bị stale
   if (modalEl) {
@@ -677,7 +759,7 @@ function openEditModalWithData(a){
   if (btnSaveText) btnSaveText.textContent = "Lưu lịch hẹn";
 
   // Ẩn badge nhận diện khi edit (không lookup lại)
-  _clearMatchBadge();
+  _resetAllCustomerState();
   document.getElementById('selectedCustomerId').value = a.customerId || '';
   
   // Customer info
@@ -869,9 +951,18 @@ btnDelete.addEventListener("click", async ()=>{
 
   // ===== MỞ MODAL XÁC NHẬN =====
   const customerNameVal = customerName.value.trim();
+  const timeVal = time.value || '';
+  const dateVal = date.value || '';
 
-  // Hiển thị thông tin lịch hẹn trong modal
-  document.getElementById('deleteAppointmentCode').textContent = id;
+  // Hiển thị tên khách + giờ hẹn (không hiện mã kỹ thuật)
+  const infoEl = document.getElementById('deleteAppointmentInfo');
+  if (infoEl) {
+    const parts = [];
+    if (customerNameVal) parts.push(customerNameVal);
+    if (timeVal) parts.push(timeVal);
+    infoEl.textContent = parts.join(' · ');
+    infoEl.style.display = parts.length ? '' : 'none';
+  }
 
   const deleteModal = new bootstrap.Modal(document.getElementById('deleteAppointmentModal'));
   const confirmDeleteBtn = document.getElementById('confirmDeleteAppointmentBtn');
@@ -1030,18 +1121,23 @@ document.addEventListener("DOMContentLoaded", async ()=>{
     renderWebRequests(),
   ]);
 
-  // ===== REAL-TIME BOOKING COUNT UPDATE (WebSocket badge dispatcher) =====
-  let previousPendingCount = null;
-  window.addEventListener('booking-pending-count:update', async function(event){
-    const currentPendingCount = Number(event?.detail?.count || 0);
-
-    if(previousPendingCount !== null && currentPendingCount !== previousPendingCount){
-      console.log('🔄 Pending count changed from', previousPendingCount, 'to', currentPendingCount, '- refreshing web requests table');
-      await renderWebRequests();
-    }
-
-    previousPendingCount = currentPendingCount;
-  });
+  // ===== POLLING: cập nhật badge pending count mỗi 15 giây =====
+  setInterval(async () => {
+    try {
+      const res = await apiGet(`${API_BASE}/booking/pending-count/`);
+      if (res.success && typeof res.count === 'number') {
+        if (webCount) {
+          if (res.count === 0) {
+            webCount.textContent = '';
+            webCount.classList.add('d-none');
+          } else {
+            webCount.textContent = String(res.count);
+            webCount.classList.remove('d-none');
+          }
+        }
+      }
+    } catch(e) { /* silent */ }
+  }, 15000);
 
   if(btnToday) btnToday.addEventListener("click", ()=> setDay(todayISO()));
   if(btnPrev) btnPrev.addEventListener("click", ()=> shiftDay(-1));
