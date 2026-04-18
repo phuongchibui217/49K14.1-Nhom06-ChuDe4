@@ -5,156 +5,114 @@
 
 {% block extra_css %}
 <style>
-    .page-header {
-        background: linear-gradient(135deg, rgba(30, 58, 95, 0.9), rgba(44, 82, 130, 0.9)),
-                    url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920') center/cover;
-        padding: 6rem 0 3rem;
-        text-align: center;
-        color: white;
-    }
-
     .services-section {
         padding: 4rem 0;
+        background: var(--bg-white);
     }
 
-    .service-card {
-        background: white;
-        border-radius: 20px;
-        overflow: hidden;
-        box-shadow: 0 10px 30px rgba(39, 119, 42, 0.08);
-        transition: all 0.3s ease;
-        height: 100%;
-        border: 1px solid #e2e8f0;
-        display: flex;
-        flex-direction: column;
+    .services-header {
+        text-align: center;
+        margin-bottom: 3rem;
     }
 
-    .service-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 10px 30px rgba(212, 168, 53, 0.2);
-        border-color: #d4a835;
-    }
-
-    .service-image {
-        height: 200px;
-        overflow: hidden;
-        position: relative;
-    }
-
-    .service-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.5s ease;
-    }
-
-    .service-card:hover .service-image img {
-        transform: scale(1.1);
-    }
-
-    .service-overlay {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
-        padding: 1rem 1.5rem;
-        color: white;
-    }
-
-    .service-info {
-        padding: 1.5rem;
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-    }
-
-    .service-description {
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        line-height: 1.6;
-        min-height: 4.8em;
-        flex: 1;
-    }
-
-    .service-price {
-        color: #d4a835;
+    .services-eyebrow {
+        display: inline-block;
+        font-size: .68rem;
         font-weight: 700;
-        font-size: 1.25rem;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+        color: var(--gold);
+        margin-bottom: .6rem;
     }
 
-    .category-badge {
-        position: absolute;
-        top: 15px;
-        left: 15px;
-        background: linear-gradient(135deg, #d4a835, #f1c40f);
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
+    .services-rule {
+        width: 36px;
+        height: 1px;
+        background: var(--gold);
+        margin: 0 auto .9rem;
+    }
+
+    .services-title {
+        font-size: clamp(1.5rem, 3vw, 2rem);
         font-weight: 600;
+        letter-spacing: -.01em;
+        color: var(--text-primary);
+        margin: 0 0 .5rem;
+    }
+
+    .services-subtitle {
+        font-size: .95rem;
+        color: var(--text-secondary);
+        margin: 0;
+        max-width: 520px;
+        margin: 0 auto;
+    }
+
+    /* Filter buttons */
+    .filter-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: .75rem;
+        margin-bottom: 3rem;
+    }
+
+    .filter-btn {
+        padding: .5rem 1.25rem;
+        border: 1.5px solid var(--border);
+        background: var(--bg-white);
+        color: var(--text-secondary);
+        border-radius: var(--r-pill);
+        font-size: .85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--ease);
+    }
+
+    .filter-btn:hover {
+        border-color: var(--gold-border);
+        color: var(--text-primary);
+        background: var(--gold-muted);
+    }
+
+    .filter-btn.active {
+        background: var(--gold);
+        border-color: var(--gold);
+        color: #fff;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- Page Header -->
-<section class="page-header">
-    <div class="container">
-        <h1>Dịch Vụ Của Chúng Tôi</h1>
-        <p class="lead mb-0">Khám phá các dịch vụ thư giãn và chăm sóc sắc đẹp chất lượng cao tại Spa ANA</p>
-    </div>
-</section>
-
 <!-- Services Section -->
 <section class="services-section">
     <div class="container">
-        <!-- Filter -->
-        <div class="row mb-5">
-            <div class="col-12">
-                <div class="d-flex flex-wrap justify-content-center gap-2">
-                    <button class="btn btn-warning active" onclick="filterServices('all')">Tất cả</button>
-                    <button class="btn btn-outline-warning" onclick="filterServices('skincare')">Chăm sóc da</button>
-                    <button class="btn btn-outline-warning" onclick="filterServices('massage')">Massage</button>
-                    <button class="btn btn-outline-warning" onclick="filterServices('tattoo')">Phun thêu</button>
-                    <button class="btn btn-outline-warning" onclick="filterServices('hair')">Triệt lông</button>
-                </div>
-            </div>
+        <!-- Header -->
+        <div class="services-header">
+            <span class="services-eyebrow">Dịch vụ của chúng tôi</span>
+            <div class="services-rule"></div>
+            <h1 class="services-title">Khám Phá Các Dịch Vụ Spa</h1>
+            <p class="services-subtitle">Trải nghiệm các liệu trình chăm sóc sắc đẹp và thư giãn cao cấp tại Spa ANA</p>
+        </div>
+
+        <!-- Filter Buttons -->
+        <div class="filter-buttons">
+            <button class="filter-btn active" data-category="all">Tất cả</button>
+            {% for category in categories %}
+            <button class="filter-btn" data-category="{{ category.code }}">{{ category.name }}</button>
+            {% endfor %}
         </div>
 
         <!-- Services Grid -->
-        <div class="row" id="servicesGrid">
+        <div class="row g-4" id="servicesGrid">
             {% for service in services %}
-            <div class="col-md-6 col-lg-4 mb-4 service-item" data-category="{{ service.category.code|default:'skincare' }}">
-                <div class="service-card">
-                    <div class="service-image">
-                        <span class="category-badge">{{ service.category_name|default:'Chăm sóc da' }}</span>
-                        {% if service.image %}
-                        <img src="{{ service.image.url }}" alt="{{ service.name }}">
-                        {% else %}
-                        <img src="https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400" alt="{{ service.name }}">
-                        {% endif %}
-                        <div class="service-overlay">
-                            <span class="badge bg-warning">{% with service.variants.all|first as v %}{% if v %}{{ v.duration_minutes }}{% else %}--{% endif %}{% endwith %} phút</span>
-                        </div>
-                    </div>
-                    <div class="service-info">
-                        <h5 class="card-title">{{ service.name }}</h5>
-                        <p class="card-text text-muted small service-description">{{ service.description }}</p>
-                        <div class="d-flex justify-content-between align-items-center mt-auto">
-                            <span class="service-price">{% with service.variants.all|first as v %}{% if v %}{{ v.price|vnd }}{% else %}Liên hệ{% endif %}{% endwith %}</span>
-                            <a href="{% url 'appointments:booking' %}?service_id={{ service.id }}" class="btn btn-outline-warning btn-sm">
-                                Đặt lịch ngay
-                            </a>
-                        </div>
-                    </div>
-                </div>
+            <div class="col-sm-6 col-lg-4 service-item" data-category="{{ service.category.code }}">
+                {% include 'spa/includes/_service_card.html' with service=service %}
             </div>
             {% empty %}
-            <div class="col-12 text-center">
-                <p class="text-muted">Chưa có dịch vụ nào.</p>
+            <div class="col-12 text-center" style="color:var(--text-muted);padding:3rem 0;">
+                <i class="fas fa-spa" style="font-size:2rem;margin-bottom:1rem;display:block;"></i>
+                Chưa có dịch vụ nào.
             </div>
             {% endfor %}
         </div>
@@ -164,32 +122,28 @@
 
 {% block extra_js %}
 <script>
-function filterServices(category) {
-    const items = document.querySelectorAll('.service-item');
-    const buttons = document.querySelectorAll('[onclick^="filterServices"]');
+document.addEventListener('DOMContentLoaded', function() {
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const serviceItems = document.querySelectorAll('.service-item');
 
-    // Update active button
-    buttons.forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.textContent.trim().toLowerCase().includes(
-            category === 'all' ? 'tất cả' :
-            category === 'skincare' ? 'chăm sóc da' :
-            category === 'massage' ? 'massage' :
-            category === 'tattoo' ? 'phun thêu' :
-            category === 'hair' ? 'triệt lông' : ''
-        )) {
-            btn.classList.add('active');
-        }
-    });
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const category = this.getAttribute('data-category');
 
-    // Filter items
-    items.forEach(item => {
-        if (category === 'all' || item.dataset.category === category) {
-            item.style.display = 'block';
-        } else {
-            item.style.display = 'none';
-        }
+            // Update active button
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+
+            // Filter services
+            serviceItems.forEach(item => {
+                if (category === 'all' || item.getAttribute('data-category') === category) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
     });
-}
+});
 </script>
 {% endblock %}

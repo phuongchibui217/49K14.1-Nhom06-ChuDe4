@@ -32,7 +32,7 @@ def home(request):
         [:6]
     )
 
-    return render(request, 'pages/home.html', {'services': services})
+    return render(request, 'spa/pages/home.html', {'services': services})
 
 
 def about(request):
@@ -45,4 +45,4 @@ def about(request):
     Returns:
         HttpResponse: Render template spa/pages/about.html
     """
-    return render(request, 'pages/about.html')
+    return render(request, 'spa/pages/about.html')

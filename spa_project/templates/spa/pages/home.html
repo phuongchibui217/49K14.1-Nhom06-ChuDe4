@@ -1,83 +1,242 @@
 {% extends 'spa/base.html' %}
+{% load static %}
 {% load spa_filters %}
 
 {% block title %}Spa ANA — Trải nghiệm thư giãn cao cấp{% endblock %}
 
 {% block extra_css %}
 <style>
-/* ── HOME PAGE ─────────────────────────────────────── */
+/* ── LUXURY VIDEO HERO — Six Senses Inspired ─────────────── */
 
-/* Hero carousel */
-.home-hero { margin-top: 68px; }
-.home-hero .carousel,
-.home-hero .carousel-item { height: 600px; }
-@media (max-width: 991px) { .home-hero .carousel, .home-hero .carousel-item { height: 460px; } }
-@media (max-width: 767px)  { .home-hero .carousel, .home-hero .carousel-item { height: 380px; } }
+/* Hero container - reduced height for better content visibility */
+.hero-luxury {
+  position: relative;
+  min-height: 82vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-.home-hero .carousel-item {
-  background-size: cover;
-  background-position: center;
-  transition: transform .8s ease-in-out;
-}
-.home-hero .carousel-item::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(to bottom, rgba(28,25,23,.3) 0%, rgba(28,25,23,.6) 100%);
-}
-.home-hero .carousel-caption {
-  bottom: 50%; transform: translateY(50%);
+/* Video background */
+.hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 1.5s ease-in-out;
   z-index: 1;
 }
-.home-hero .carousel-caption h1 {
-  font-size: clamp(1.8rem, 4.5vw, 3.2rem);
-  font-weight: 300;
-  letter-spacing: .04em;
-  margin-bottom: .875rem;
+
+.hero-video.active {
+  opacity: 1;
+}
+
+/* Overlay for text readability - lighter for natural video colors */
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(12,16,22,0.15), rgba(12,16,22,0.28));
+  z-index: 2;
+}
+
+/* Content container - narrower, more airy */
+.hero-content {
+  position: relative;
+  z-index: 3;
+  text-align: center;
   color: #fff;
+  max-width: 580px;
+  padding: 3rem 1.5rem;
+  animation: fadeInUp 1.4s ease-out;
 }
-.home-hero .carousel-caption .lead {
-  font-size: clamp(.9rem, 1.8vw, 1.1rem);
-  color: rgba(255,255,255,.8);
-  margin-bottom: 2rem;
-  font-weight: 300;
-  letter-spacing: .03em;
-}
+
+/* Eyebrow text - smaller, more spaced, subtle */
 .hero-eyebrow {
   display: inline-block;
-  font-size: .65rem; font-weight: 700;
-  letter-spacing: .22em; text-transform: uppercase;
-  color: var(--gold-light);
-  margin-bottom: .75rem;
+  font-size: .58rem;
+  font-weight: 400;
+  letter-spacing: .38em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.68);
+  margin-bottom: 2.25rem;
+  text-shadow: 0 1px 4px rgba(0,0,0,.1);
 }
-.hero-cta {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: .875rem 2rem;
-  background: var(--gold);
+
+/* Main heading - lighter, smaller, more elegant */
+.hero-content h1 {
+  font-size: clamp(1.75rem, 4.5vw, 3.2rem);
+  font-weight: 300;
+  letter-spacing: .02em;
+  line-height: 1.35;
+  margin-bottom: 2.5rem;
   color: #fff;
-  border-radius: var(--r-md);
-  font-size: .9rem; font-weight: 600;
-  letter-spacing: .04em;
-  text-decoration: none;
-  transition: var(--ease);
-  border: none;
+  text-shadow: 0 2px 12px rgba(0,0,0,.18);
 }
-.hero-cta:hover {
-  background: var(--gold-hover);
+
+/* Description - lighter, more breathing space */
+.hero-content p {
+  font-size: clamp(.9rem, 1.8vw, 1.02rem);
+  line-height: 1.85;
+  color: rgba(255,255,255,.82);
+  margin-bottom: 3.5rem;
+  font-weight: 300;
+  letter-spacing: .015em;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+  text-shadow: 0 1px 8px rgba(0,0,0,.15);
+}
+
+/* CTA Button - minimal, pill-shaped, champagne tone */
+.btn-hero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: .75rem 2rem;
+  background: rgba(201,169,110,.75);
+  color: #fff;
+  border-radius: 50px;
+  font-size: .8rem;
+  font-weight: 400;
+  letter-spacing: .12em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: all .3s ease;
+  border: 1px solid rgba(255,255,255,.2);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+}
+
+.btn-hero:hover {
+  background: rgba(201,169,110,.88);
   color: #fff;
   transform: translateY(-2px);
-  box-shadow: var(--shadow-gold);
+  box-shadow: 0 6px 20px rgba(201,169,110,.25);
+  border-color: rgba(255,255,255,.28);
 }
-.hero-cta-outline {
-  background: transparent;
-  border: 1.5px solid rgba(255,255,255,.6);
-  color: #fff;
-  margin-left: .75rem;
+
+/* Navbar styling - always visible and readable */
+.header-fixed {
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  transition: background .3s ease, border-color .3s ease, box-shadow .3s ease;
 }
-.hero-cta-outline:hover {
-  background: rgba(255,255,255,.12);
-  border-color: #fff;
+
+.header-fixed.scrolled {
+  background: rgba(255,255,255,0.98);
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+}
+
+.header-fixed .navbar-brand,
+.header-fixed .nav-link {
+  color: var(--text-primary) !important;
+}
+
+.header-fixed .nav-link:hover {
+  background: var(--bg-subtle);
+  color: var(--text-primary) !important;
+}
+
+.header-fixed .nav-link.active::after {
+  background: var(--gold);
+}
+
+.header-fixed .avatar-circle {
+  background: var(--bg-subtle);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+.header-fixed .btn-lux-sm {
+  background: var(--gold);
+  border-color: var(--gold);
   color: #fff;
-  box-shadow: none;
+}
+
+.header-fixed .btn-lux-sm:hover {
+  background: var(--gold-dark);
+  border-color: var(--gold-dark);
+}
+
+.header-fixed .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(44, 44, 44, 0.85)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* Animation - slower, more elegant */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive - maintain elegance on smaller screens */
+@media (max-width: 991px) {
+  .hero-luxury {
+    min-height: 72vh;
+  }
+  
+  .hero-content {
+    max-width: 520px;
+    padding: 2.5rem 1.5rem;
+  }
+  
+  .hero-eyebrow {
+    margin-bottom: 1.75rem;
+  }
+  
+  .hero-content h1 {
+    margin-bottom: 2rem;
+  }
+  
+  .hero-content p {
+    margin-bottom: 3rem;
+  }
+  
+  .btn-hero {
+    padding: .7rem 1.75rem;
+    font-size: .75rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .hero-luxury {
+    min-height: 62vh;
+  }
+  
+  .hero-content {
+    padding: 2rem 1.25rem;
+    max-width: 100%;
+  }
+  
+  .hero-eyebrow {
+    font-size: .55rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .hero-content h1 {
+    margin-bottom: 1.75rem;
+  }
+  
+  .hero-content p {
+    margin-bottom: 2.5rem;
+  }
+  
+  .btn-hero {
+    padding: .65rem 1.5rem;
+    font-size: .72rem;
+    gap: 6px;
+  }
 }
 
 /* Section wrapper */
@@ -88,7 +247,206 @@
   color: #fff;
 }
 
+/* ── SERVICES SECTION (shared with services page) ── */
+.sl-section { 
+  padding: 3.5rem 0 5rem; 
+  background: var(--bg-page); 
+}
+
 /* Section header */
+.sl-section-header { 
+  text-align: center; 
+  margin-bottom: 3.5rem; 
+}
+.sl-section-eyebrow {
+  display: inline-block;
+  font-size: .68rem; 
+  font-weight: 700;
+  letter-spacing: .2em; 
+  text-transform: uppercase;
+  color: var(--gold); 
+  margin-bottom: .6rem;
+}
+.sl-section-rule {
+  width: 36px; 
+  height: 1px;
+  background: var(--gold);
+  margin: 0 auto .9rem;
+}
+.sl-section-title {
+  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-weight: 600; 
+  letter-spacing: -.01em;
+  color: var(--text-primary); 
+  margin: 0 0 .5rem;
+}
+.sl-section-sub { 
+  font-size: .95rem; 
+  color: var(--text-secondary);
+  margin: 0; 
+  max-width: 520px; 
+  margin: 0 auto;
+}
+
+/* Service card — luxury minimal */
+.sl-card {
+  background: var(--bg-white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  display: flex; 
+  flex-direction: column;
+  height: 100%;
+  transition: box-shadow .22s, transform .22s, border-color .22s;
+}
+.sl-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 40px rgba(28,25,23,.1);
+  border-color: var(--gold-border);
+}
+
+/* Image */
+.sl-card__img-wrap {
+  position: relative;
+  height: 210px; 
+  overflow: hidden;
+}
+.sl-card__img {
+  width: 100%; 
+  height: 100%;
+  object-fit: cover;
+  transition: transform .5s ease;
+  display: block;
+}
+.sl-card:hover .sl-card__img { 
+  transform: scale(1.06); 
+}
+
+.sl-card__cat {
+  position: absolute; 
+  top: 12px; 
+  left: 12px;
+  background: rgba(28,25,23,.62);
+  backdrop-filter: blur(6px);
+  color: var(--gold-light);
+  font-size: .65rem; 
+  font-weight: 700;
+  letter-spacing: .14em; 
+  text-transform: uppercase;
+  padding: .3rem .75rem;
+  border-radius: var(--r-pill);
+}
+.sl-card__duration {
+  position: absolute; 
+  bottom: 12px; 
+  right: 12px;
+  background: rgba(28,25,23,.55);
+  backdrop-filter: blur(6px);
+  color: rgba(255,255,255,.9);
+  font-size: .72rem; 
+  font-weight: 600;
+  padding: .25rem .65rem;
+  border-radius: var(--r-pill);
+}
+
+/* Body */
+.sl-card__body {
+  padding: 1.25rem 1.35rem 1.4rem;
+  display: flex; 
+  flex-direction: column; 
+  flex: 1;
+}
+.sl-card__name {
+  font-size: 1rem; 
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 .5rem;
+  line-height: 1.35;
+}
+.sl-card__desc {
+  font-size: .83rem;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0 0 1rem;
+}
+.sl-card__meta {
+  font-size: .75rem;
+  color: var(--text-muted);
+  margin-bottom: .875rem;
+  display: flex; 
+  align-items: center; 
+  gap: .35rem;
+}
+.sl-card__meta i { 
+  color: var(--gold); 
+}
+
+.sl-card__footer {
+  display: flex; 
+  align-items: center;
+  justify-content: space-between;
+  padding-top: .875rem;
+  border-top: 1px solid var(--bg-subtle);
+  margin-top: auto;
+}
+.sl-card__price {
+  font-size: .97rem; 
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1.2;
+}
+.sl-card__price-label {
+  font-size: .68rem; 
+  font-weight: 400;
+  color: var(--text-muted);
+  display: block; 
+  margin-bottom: 1px;
+}
+.sl-card__cta {
+  display: inline-flex; 
+  align-items: center; 
+  gap: 5px;
+  padding: .45rem 1rem;
+  border: 1.5px solid var(--text-primary);
+  border-radius: var(--r-sm);
+  font-size: .78rem; 
+  font-weight: 600;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: var(--ease);
+  white-space: nowrap;
+}
+.sl-card__cta:hover {
+  background: var(--text-primary);
+  color: #fff;
+}
+
+/* Empty state */
+.sl-empty {
+  text-align: center; 
+  padding: 5rem 2rem;
+  color: var(--text-muted);
+}
+.sl-empty i { 
+  font-size: 2.5rem; 
+  margin-bottom: 1rem; 
+  display: block; 
+}
+
+/* ── WHY CHOOSE US & OTHER SECTIONS ── */
+.home-section--dark {
+  background: #1f2937;
+  color: #fff;
+}
+.home-section--dark .home-section-title { color: #fff; }
+.home-section--dark .home-section-sub { color: rgba(255,255,255,.6); }
+
+/* Section header for other sections */
 .home-section-header { text-align: center; margin-bottom: 3.5rem; }
 .home-section-eyebrow {
   display: inline-block;
@@ -106,68 +464,10 @@
   font-weight: 600; letter-spacing: -.01em;
   color: var(--text-primary); margin: 0 0 .5rem;
 }
-.home-section--dark .home-section-title { color: #fff; }
 .home-section-sub {
   font-size: .95rem; color: var(--text-secondary);
   margin: 0; max-width: 520px; margin: 0 auto;
 }
-.home-section--dark .home-section-sub { color: rgba(255,255,255,.6); }
-
-/* Service card — dùng chung với trang /services/ */
-.sl-card {
-  background: var(--bg-white);
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  overflow: hidden;
-  display: flex; flex-direction: column;
-  height: 100%;
-  transition: box-shadow .22s, transform .22s, border-color .22s;
-}
-.sl-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 16px 40px rgba(28,25,23,.1);
-  border-color: var(--gold-border);
-}
-.sl-card__img-wrap { position: relative; height: 210px; overflow: hidden; }
-.sl-card__img { width: 100%; height: 100%; object-fit: cover; transition: transform .5s ease; display: block; }
-.sl-card:hover .sl-card__img { transform: scale(1.06); }
-.sl-card__cat {
-  position: absolute; top: 12px; left: 12px;
-  background: rgba(28,25,23,.62); backdrop-filter: blur(6px);
-  color: var(--gold-light);
-  font-size: .65rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
-  padding: .3rem .75rem; border-radius: var(--r-pill);
-}
-.sl-card__duration {
-  position: absolute; bottom: 12px; right: 12px;
-  background: rgba(28,25,23,.55); backdrop-filter: blur(6px);
-  color: rgba(255,255,255,.9);
-  font-size: .72rem; font-weight: 600;
-  padding: .25rem .65rem; border-radius: var(--r-pill);
-}
-.sl-card__body { padding: 1.25rem 1.35rem 1.4rem; display: flex; flex-direction: column; flex: 1; }
-.sl-card__name { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin: 0 0 .5rem; line-height: 1.35; }
-.sl-card__desc {
-  font-size: .83rem; color: var(--text-secondary); line-height: 1.65; flex: 1;
-  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
-  margin: 0 0 1rem;
-}
-.sl-card__meta { font-size: .75rem; color: var(--text-muted); margin-bottom: .875rem; display: flex; align-items: center; gap: .35rem; }
-.sl-card__meta i { color: var(--gold); }
-.sl-card__footer {
-  display: flex; align-items: center; justify-content: space-between;
-  padding-top: .875rem; border-top: 1px solid var(--bg-subtle); margin-top: auto;
-}
-.sl-card__price { font-size: .97rem; font-weight: 700; color: var(--gold); line-height: 1.2; }
-.sl-card__price-label { font-size: .68rem; font-weight: 400; color: var(--text-muted); display: block; margin-bottom: 1px; }
-.sl-card__cta {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: .45rem 1rem;
-  border: 1.5px solid var(--text-primary); border-radius: var(--r-sm);
-  font-size: .78rem; font-weight: 600; color: var(--text-primary);
-  text-decoration: none; transition: var(--ease); white-space: nowrap;
-}
-.sl-card__cta:hover { background: var(--text-primary); color: #fff; }
 
 /* Feature boxes */
 .home-feature {
@@ -227,129 +527,49 @@
 
 {% block content %}
 
-{# ── HERO CAROUSEL ── #}
-<section class="home-hero">
-  <div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel">
-    <div class="carousel-indicators">
-      <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active"></button>
-      <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1"></button>
-      <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2"></button>
-    </div>
-    <div class="carousel-inner">
-      <div class="carousel-item active"
-           style="background:url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920') center/cover;">
-        <div class="carousel-caption">
-          <span class="hero-eyebrow">Spa ANA</span>
-          <h1>Trải Nghiệm Thư Giãn Tuyệt Đối</h1>
-          <p class="lead">Tận hưởng những liệu trình spa cao cấp, tái tạo năng lượng và vẻ đẹp tự nhiên</p>
-          <a href="{% url 'appointments:booking' %}" class="hero-cta">
-            <i class="fas fa-calendar-check"></i> Đặt lịch ngay
-          </a>
-          <a href="{% url 'spa_services:service_list' %}" class="hero-cta hero-cta-outline">
-            Khám phá dịch vụ
-          </a>
-        </div>
-      </div>
-      <div class="carousel-item"
-           style="background:url('https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=1920') center/cover;">
-        <div class="carousel-caption">
-          <span class="hero-eyebrow">Ưu đãi tháng này</span>
-          <h1>Ưu Đãi Đặc Biệt</h1>
-          <p class="lead">Giảm ngay 30% cho liệu trình chăm sóc da trong tháng này</p>
-          <a href="{% url 'spa_services:service_list' %}" class="hero-cta">
-            <i class="fas fa-tags"></i> Xem chi tiết
-          </a>
-        </div>
-      </div>
-      <div class="carousel-item"
-           style="background:url('https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=1920') center/cover;">
-        <div class="carousel-caption">
-          <span class="hero-eyebrow">Đội ngũ chuyên gia</span>
-          <h1>Kỹ Thuật Viên Chuyên Nghiệp</h1>
-          <p class="lead">Được đào tạo bài bản, tận tâm mang lại trải nghiệm hoàn hảo</p>
-          <a href="{% url 'pages:about' %}" class="hero-cta">
-            Tìm hiểu thêm
-          </a>
-        </div>
-      </div>
-    </div>
-    <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
-      <span class="carousel-control-prev-icon"></span>
-    </button>
-    <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
-      <span class="carousel-control-next-icon"></span>
-    </button>
+{# ── LUXURY VIDEO HERO ── #}
+<section class="hero-luxury">
+  <video class="hero-video active" autoplay muted loop playsinline preload="auto">
+    <source src="{% static 'videos/spa1.mp4' %}" type="video/mp4">
+  </video>
+  <video class="hero-video" autoplay muted loop playsinline preload="none">
+    <source src="{% static 'videos/spa2.mp4' %}" type="video/mp4">
+  </video>
+  <video class="hero-video" autoplay muted loop playsinline preload="none">
+    <source src="{% static 'videos/spa3.mp4' %}" type="video/mp4">
+  </video>
+  
+  <div class="hero-overlay"></div>
+  
+  <div class="container hero-content">
+    <span class="hero-eyebrow">Spa ANA</span>
+    <h1>Trải Nghiệm Thư Giãn Tuyệt Đối</h1>
+    <p>Tận hưởng không gian chăm sóc sắc đẹp và phục hồi năng lượng theo phong cách tinh tế, thư thái và riêng tư.</p>
+    <a href="{% url 'appointments:booking' %}" class="btn-hero">
+      <i class="fas fa-calendar-check"></i> Đặt lịch ngay
+    </a>
   </div>
 </section>
 
 {# ── FEATURED SERVICES ── #}
-<section class="home-section home-section--alt">
+<section class="sl-section">
   <div class="container">
-    <div class="home-section-header">
-      <span class="home-section-eyebrow">Dịch vụ nổi bật</span>
-      <div class="home-section-rule"></div>
-      <h2 class="home-section-title">Liệu Trình Được Yêu Thích Nhất</h2>
-      <p class="home-section-sub">Những liệu trình chăm sóc cao cấp, được thiết kế riêng cho bạn</p>
+    <div class="sl-section-header">
+      <span class="sl-section-eyebrow">Dịch vụ nổi bật</span>
+      <div class="sl-section-rule"></div>
+      <h2 class="sl-section-title">Liệu Trình Được Yêu Thích Nhất</h2>
+      <p class="sl-section-sub">Những liệu trình chăm sóc cao cấp, được thiết kế riêng cho bạn</p>
     </div>
 
     <div class="row g-4">
       {% for service in services %}
       <div class="col-sm-6 col-lg-4">
-        <div class="sl-card">
-
-          <div class="sl-card__img-wrap">
-            <span class="sl-card__cat">{{ service.category.name }}</span>
-            <img class="sl-card__img"
-                 src="{{ service.get_image_url }}"
-                 alt="{{ service.name }}"
-                 loading="lazy">
-            {% if service.min_duration %}
-            <span class="sl-card__duration">
-              {% if service.min_duration == service.max_duration %}
-                {{ service.min_duration }} phút
-              {% else %}
-                {{ service.min_duration }}–{{ service.max_duration }} phút
-              {% endif %}
-            </span>
-            {% endif %}
-          </div>
-
-          <div class="sl-card__body">
-            <h3 class="sl-card__name">{{ service.name }}</h3>
-            <p class="sl-card__desc">{{ service.short_description|default:service.description }}</p>
-
-            {% if service.variant_count %}
-            <p class="sl-card__meta">
-              <i class="fas fa-layer-group"></i>
-              {{ service.variant_count }} gói dịch vụ
-            </p>
-            {% endif %}
-
-            <div class="sl-card__footer">
-              <div class="sl-card__price">
-                <span class="sl-card__price-label">Từ</span>
-                {% if service.min_price %}
-                  {% if service.min_price == service.max_price %}
-                    {{ service.min_price|vnd }}
-                  {% else %}
-                    {{ service.min_price|vnd }} – {{ service.max_price|vnd }}
-                  {% endif %}
-                {% else %}
-                  Liên hệ
-                {% endif %}
-              </div>
-              <a href="{% url 'spa_services:service_detail' service.id %}" class="sl-card__cta">
-                Xem chi tiết <i class="fas fa-arrow-right" style="font-size:.65rem;"></i>
-              </a>
-            </div>
-          </div>
-
-        </div>
+        {% include 'spa/includes/_service_card.html' with service=service %}
       </div>
       {% empty %}
-      <div class="col-12 text-center" style="color:var(--text-muted);padding:3rem 0;">
-        <i class="fas fa-spa" style="font-size:2rem;margin-bottom:1rem;display:block;"></i>
-        Chưa có dịch vụ nào.
+      <div class="col-12 sl-empty">
+        <i class="fas fa-spa"></i>
+        <p>Chưa có dịch vụ nào.</p>
       </div>
       {% endfor %}
     </div>
@@ -461,4 +681,51 @@
   </div>
 </div>
 
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── VIDEO ROTATION SCRIPT ──
+(function() {
+  const videos = document.querySelectorAll('.hero-video');
+  const header = document.querySelector('.header-fixed');
+  let currentIndex = 0;
+  const rotationInterval = 14000; // 14 seconds per video
+  
+  // Preload videos
+  videos.forEach((video, index) => {
+    if (index > 0) {
+      // Delay loading of subsequent videos
+      setTimeout(() => {
+        video.setAttribute('preload', 'auto');
+        video.load();
+      }, 2000);
+    }
+  });
+  
+  // Rotate videos
+  function rotateVideo() {
+    videos[currentIndex].classList.remove('active');
+    currentIndex = (currentIndex + 1) % videos.length;
+    videos[currentIndex].classList.add('active');
+  }
+  
+  // Start rotation
+  setInterval(rotateVideo, rotationInterval);
+  
+  // ── NAVBAR SCROLL EFFECT ──
+  function updateNavbar() {
+    const scrollY = window.scrollY || window.pageYOffset;
+    
+    if (scrollY > 50) {
+      header.classList.add('scrolled');
+    } else {
+      header.classList.remove('scrolled');
+    }
+  }
+  
+  // Update on scroll
+  window.addEventListener('scroll', updateNavbar, { passive: true });
+})();
+</script>
 {% endblock %}
