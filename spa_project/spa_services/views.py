@@ -14,7 +14,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Min, Max, Count
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
 import json
@@ -83,10 +83,19 @@ def service_detail(request, service_id):
     service = get_object_or_404(Service, id=service_id, status='ACTIVE')
 
     # Lấy các dịch vụ liên quan (cùng category)
-    related_services = Service.objects.filter(
-        category=service.category,
-        status='ACTIVE'
-    ).exclude(id=service_id)[:4]
+    related_services = (
+        Service.objects
+        .filter(category=service.category, status='ACTIVE')
+        .exclude(id=service_id)
+        .prefetch_related('variants')
+        .annotate(
+            min_price=Min('variants__price', filter=Q(variants__is_active=True)),
+            max_price=Max('variants__price', filter=Q(variants__is_active=True)),
+            min_duration=Min('variants__duration_minutes', filter=Q(variants__is_active=True)),
+            max_duration=Max('variants__duration_minutes', filter=Q(variants__is_active=True)),
+            variant_count=Count('variants', filter=Q(variants__is_active=True)),
+        )[:4]
+    )
 
     return render(request, 'spa_services/service_detail.html', {
         'service': service,

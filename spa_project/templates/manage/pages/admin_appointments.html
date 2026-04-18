@@ -192,119 +192,176 @@
   </div>
 </div>
 
-<!-- Appointment Modal (Create/Edit) -  Tạo và sửa lịch bằng cách click vào Ô-->
+<!-- Appointment Modal (Create/Edit) -->
 <div class="modal fade" id="apptModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header" style="background:linear-gradient(135deg,#1f3a5f 0%,#1f3a5f 100%);color:#fff;">
         <h5 class="modal-title">
           <i class="fas fa-calendar-plus me-2"></i>
           <span id="modalTitle">Tạo lịch hẹn</span>
         </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button> <!-- dấu X để hủy tạo lịch--> 
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
 
-      <div class="modal-body" style="max-height:70vh;overflow:auto;">
+      <div class="modal-body p-4">
         <div class="alert alert-danger d-none" id="modalError"></div>
 
         <form id="apptForm" class="needs-validation" novalidate>
           <input type="hidden" id="apptId" />
+          <input type="hidden" id="selectedCustomerId" />
 
-          <div class="row g-3">
+          <div class="row g-4">
+            
+            {# LEFT COLUMN #}
+            <div class="col-lg-6">
 
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">
-                Họ tên khách hàng <span class="text-danger">*</span>
-              </label>
-              <input class="form-control" id="customerName" required placeholder="Nhập họ tên khách hàng" />
-              <div class="invalid-feedback">Vui lòng nhập họ tên khách hàng</div>
+              <h6 class="text-muted mb-3 pb-2 border-bottom">
+                <i class="fas fa-user me-2"></i>Thông tin khách hàng
+              </h6>
+              
+              <div class="mb-3">
+                <label class="form-label fw-semibold">
+                  Họ tên <span class="text-danger">*</span>
+                </label>
+                <input class="form-control" id="customerName" required placeholder="Nhập họ tên khách hàng" />
+                <div class="invalid-feedback">Vui lòng nhập họ tên</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">
+                  Số điện thoại <span class="text-danger">*</span>
+                </label>
+                <input class="form-control" id="phone" required placeholder="Nhập số điện thoại" inputmode="numeric" autocomplete="off" />
+                <div class="invalid-feedback">Số điện thoại không hợp lệ</div>
+                <div id="customerMatchBadgePhone" class="d-none mt-1 d-flex align-items-center gap-2 px-2 py-1 rounded-2"
+                     style="background:#e8f5e9;border:1px solid #a5d6a7;font-size:.8rem;">
+                  <i class="fas fa-user-check" style="color:#2e7d32;"></i>
+                  <span id="customerMatchLabelPhone" style="font-weight:600;color:#1b5e20;flex:1;"></span>
+                  <button type="button" class="btn-close" id="clearCustomerMatchBtnPhone"
+                          title="Bỏ liên kết hồ sơ" style="font-size:.55rem;"></button>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Email</label>
+                <input type="email" class="form-control" id="email" placeholder="Nhập email" autocomplete="off" />
+                <div id="customerMatchBadgeEmail" class="d-none mt-1 d-flex align-items-center gap-2 px-2 py-1 rounded-2"
+                     style="background:#e8f5e9;border:1px solid #a5d6a7;font-size:.8rem;">
+                  <i class="fas fa-user-check" style="color:#2e7d32;"></i>
+                  <span id="customerMatchLabelEmail" style="font-weight:600;color:#1b5e20;flex:1;"></span>
+                  <button type="button" class="btn-close" id="clearCustomerMatchBtnEmail"
+                          title="Bỏ liên kết hồ sơ" style="font-size:.55rem;"></button>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">
+                  Số khách <span class="text-danger">*</span>
+                </label>
+                <input type="number" class="form-control" id="guests" required min="1" value="1" />
+                <div class="invalid-feedback">Số khách phải >= 1</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Ghi chú của khách</label>
+                <textarea class="form-control" id="note" rows="3" placeholder="Ghi chú từ khách hàng..."></textarea>
+              </div>
             </div>
 
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">
-                Số điện thoại <span class="text-danger">*</span>
-              </label>
-              <input class="form-control" id="phone" required placeholder="Nhập số điện thoại" inputmode="numeric" />
-              <div class="invalid-feedback">Số điện thoại không hợp lệ</div>
+            {# RIGHT COLUMN #}
+            <div class="col-lg-6">
+              <h6 class="text-muted mb-3 pb-2 border-bottom">
+                <i class="fas fa-calendar-alt me-2"></i>Thông tin lịch hẹn
+              </h6>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">
+                  Dịch vụ <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" id="service" required>
+                  <option value="">-- Chọn dịch vụ --</option>
+                </select>
+                <div class="invalid-feedback">Vui lòng chọn dịch vụ</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">
+                  Gói dịch vụ <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" id="variant" required disabled>
+                  <option value="">-- Chọn dịch vụ trước --</option>
+                </select>
+                <div class="invalid-feedback">Vui lòng chọn gói dịch vụ</div>
+                <small class="text-muted d-none" id="variantInfo"></small>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">
+                  Phòng <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" id="room" required></select>
+                <div class="invalid-feedback">Vui lòng chọn phòng</div>
+              </div>
+
+              <div class="row g-3 mb-3">
+                <div class="col-6">
+                  <label class="form-label fw-semibold">
+                    Ngày hẹn <span class="text-danger">*</span>
+                  </label>
+                  <input type="date" class="form-control" id="date" required />
+                  <div class="invalid-feedback">Ngày hẹn không hợp lệ</div>
+                </div>
+
+                <div class="col-6">
+                  <label class="form-label fw-semibold">
+                    Giờ hẹn <span class="text-danger">*</span>
+                  </label>
+                  <input type="time" class="form-control" id="time" required min="09:00" max="21:00" />
+                  <div class="invalid-feedback">Giờ hẹn không hợp lệ</div>
+                </div>
+              </div>
+
+              <div class="row g-3 mb-3">
+                <div class="col-6">
+                  <label class="form-label fw-semibold">Trạng thái lịch</label>
+                  <select class="form-select" id="apptStatus">
+                    <option value="PENDING">Chờ xác nhận</option>
+                    <option value="NOT_ARRIVED">Chưa đến</option>
+                    <option value="ARRIVED">Đã đến</option>
+                    <option value="COMPLETED">Hoàn thành</option>
+                    <option value="CANCELLED">Đã hủy</option>
+                  </select>
+                </div>
+
+                <div class="col-6">
+                  <label class="form-label fw-semibold">Thanh toán</label>
+                  <select class="form-select" id="payStatus">
+                    <option value="UNPAID">Chưa thanh toán</option>
+                    <option value="PARTIAL">Thanh toán một phần</option>
+                    <option value="PAID">Đã thanh toán</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Nguồn đặt lịch</label>
+                <select class="form-select" id="source">
+                  <option value="DIRECT">Trực tiếp</option>
+                  <option value="ONLINE">Đặt online</option>
+                  <option value="PHONE">Điện thoại</option>
+                  <option value="FACEBOOK">Facebook</option>
+                  <option value="ZALO">Zalo</option>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Ghi chú nội bộ</label>
+                <textarea class="form-control" id="staffNote" rows="3" placeholder="Ghi chú cho nhân viên..."></textarea>
+                <small class="text-muted">Ghi chú này chỉ nhân viên nhìn thấy</small>
+              </div>
             </div>
 
-            <!-- email (đã sửa trong UC4 nhưng BE API chưa làm) -->
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">Email</label>
-              <input class="form-control" id="email" placeholder="Nhập email (nếu có)" />
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">
-                Dịch vụ <span class="text-danger">*</span>
-              </label>
-              <select class="form-select" id="service" required>
-                <option value="">-- Chọn dịch vụ --</option>
-                <!--<option>Chăm sóc da</option>-->
-                <!-- Cách option sẽ được load lên từ DB(tự động load khi mở trang) -->
-              </select> <!--Nếu không chọn DV sẽ thông báo lỗi - invalid-feedback -->
-              <div class="invalid-feedback">Vui lòng chọn dịch vụ</div>
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">
-                Phòng <span class="text-danger">*</span>
-              </label>
-              <select class="form-select" id="room" required></select>
-              <div class="invalid-feedback">Vui lòng chọn phòng</div>
-            </div>
-
-            <div class="col-md-6">
-              <label class="form-label fw-semibold">
-                Số khách <span class="text-danger">*</span>
-              </label>
-              <input type="number" class="form-control" id="guests" required min="1" />
-              <div class="invalid-feedback">Số khách không hợp lệ</div>
-            </div>
-
-            <div class="col-md-4">
-              <label class="form-label fw-semibold">
-                Ngày hẹn <span class="text-danger">*</span>
-              </label>
-              <input type="date" class="form-control" id="date" required />
-              <div class="invalid-feedback">Ngày hẹn không hợp lệ</div>
-            </div>
-
-            <div class="col-md-4">
-              <label class="form-label fw-semibold">
-                Giờ hẹn <span class="text-danger">*</span>
-              </label>
-              <input type="time" class="form-control" id="time" required min="09:00" max="21:00" />
-              <div class="invalid-feedback">Giờ hẹn không hợp lệ</div>
-            </div>
-
-            <!-- THỜI LƯỢNG - Tự động lấy từ dịch vụ (hidden input) -->
-            <input type="hidden" id="duration" value="60" />
-
-            <div class="col-md-4">
-              <label class="form-label fw-semibold">Trạng thái lịch hẹn</label>
-              <select class="form-select" id="apptStatus">
-                <option value="PENDING">Chờ xác nhận</option>
-                <option value="NOT_ARRIVED">Chưa đến</option>
-                <option value="ARRIVED">Đã đến</option>
-                <option value="COMPLETED">Hoàn thành</option>
-                <option value="CANCELLED">Đã hủy</option>
-              </select>
-            </div>
-
-            <div class="col-md-4">
-              <label class="form-label fw-semibold">Trạng thái thanh toán</label>
-              <select class="form-select" id="payStatus">
-                <option value="UNPAID">Chưa thanh toán</option>
-                <option value="PARTIAL">Đã thanh toán một phần</option>
-                <option value="PAID">Đã thanh toán</option>
-              </select>
-            </div>
-
-            <div class="col-12">
-              <label class="form-label fw-semibold">Ghi chú</label>
-              <textarea class="form-control" id="note" rows="3"></textarea>
-            </div>
           </div>
         </form>
       </div>
@@ -317,7 +374,7 @@
           <i class="fas fa-times me-2"></i>Hủy
         </button>
         <button type="button" class="btn btn-warning" id="btnSave">
-          <i class="fas fa-save me-2"></i>Lưu lịch hẹn
+          <i class="fas fa-save me-2"></i><span id="btnSaveText">Lưu lịch hẹn</span>
         </button>
       </div>
     </div>

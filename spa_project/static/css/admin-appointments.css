@@ -169,6 +169,7 @@
   flex: 1;      /* chiếm toàn bộ phần còn lại sau cột Phòng */
   min-width: 0; /* không đặt min-width cứng → không gây scroll ngang */
   background: #fff;
+  cursor: pointer; /* click ô trống → tạo lịch */
 }
 
 /* grid nhẹ: line giờ (mỗi 60p = 2 slot) — dùng % thay vì px cố định */

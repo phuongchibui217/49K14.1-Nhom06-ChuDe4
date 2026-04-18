@@ -30,6 +30,7 @@ def serialize_appointment(appointment):
 
     return {
         'id': appointment.appointment_code,
+        'customerId': appointment.customer_id,
         'customerName': customer_name,
         'phone': customer_phone,
         'email': customer_email,
@@ -53,6 +54,7 @@ def serialize_appointment(appointment):
         'apptStatus': appointment.status,
         'payStatus': appointment.payment_status,
         'source': appointment.source,
+        'staffNotes': appointment.staff_notes or '',
     }
 
 

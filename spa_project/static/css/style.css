@@ -69,6 +69,9 @@
 
   /* Transitions */
   --ease: all .2s ease;
+
+  /* Navbar height — single source of truth */
+  --navbar-h: 68px;
 }
 
 /* ── RESET & BASE ───────────────────────────────────────── */
@@ -98,7 +101,12 @@ img { max-width: 100%; }
   border-bottom: 1px solid var(--border);
 }
 
-.navbar { padding: .875rem 0; }
+.navbar {
+  padding: .875rem 0;
+  min-height: var(--navbar-h);
+  display: flex;
+  align-items: center;
+}
 
 .navbar-brand {
   font-size: 1.35rem;

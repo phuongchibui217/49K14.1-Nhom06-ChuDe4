@@ -174,6 +174,43 @@ def api_appointment_detail(request, appointment_code):
 
 
 # =====================================================
+# API: TÌM KIẾM KHÁCH HÀNG
+# =====================================================
+
+@require_http_methods(["GET"])
+def api_customer_search(request):
+    """
+    API: Tìm kiếm khách hàng theo tên / SĐT / email
+
+    FE gọi: GET /api/customers/search/?q=nguyen
+    Trả về: { success: true, customers: [...] }
+    """
+    if not _is_staff(request.user):
+        return _deny()
+
+    q = request.GET.get('q', '').strip()
+    if len(q) < 2:
+        return JsonResponse({'success': True, 'customers': []})
+
+    customers = CustomerProfile.objects.filter(
+        Q(full_name__icontains=q) |
+        Q(phone__icontains=q) |
+        Q(user__email__icontains=q)
+    ).select_related('user')[:10]
+
+    data = [
+        {
+            'id': c.id,
+            'fullName': c.full_name,
+            'phone': c.phone,
+            'email': c.user.email if c.user else '',
+        }
+        for c in customers
+    ]
+    return JsonResponse({'success': True, 'customers': data})
+
+
+# =====================================================
 # API: TẠO LỊCH HẸN MỚI
 # =====================================================
 
@@ -197,6 +234,7 @@ def api_appointment_create(request):
         raw_data = json.loads(request.body)
 
         # Chuẩn bị data để validate
+        customer_id = raw_data.get('customerId') or None
         data = {
             'customer_name': raw_data.get('customerName', '').strip(),
             'phone': raw_data.get('phone', '').strip(),
@@ -219,11 +257,19 @@ def api_appointment_create(request):
 
         cleaned = validation['cleaned_data']
 
-        # Bước 2: Tìm hoặc tạo khách hàng
-        customer = _get_or_create_customer(
-            phone=cleaned['phone'],
-            customer_name=cleaned['customer_name']
-        )
+        # Bước 2: Resolve khách hàng
+        # Nếu FE gửi customerId → dùng profile đó, snapshot lấy từ form (cho phép override)
+        # Nếu không có customerId → tìm/tạo theo SĐT như cũ
+        if customer_id:
+            try:
+                customer = CustomerProfile.objects.get(id=customer_id)
+            except CustomerProfile.DoesNotExist:
+                return JsonResponse({'success': False, 'error': 'Không tìm thấy khách hàng'}, status=404)
+        else:
+            customer = _get_or_create_customer(
+                phone=cleaned['phone'],
+                customer_name=cleaned['customer_name']
+            )
 
         # Bước 3: Tạo lịch hẹn với TRANSACTION LOCK để tránh race condition
         with transaction.atomic():
@@ -260,6 +306,9 @@ def api_appointment_create(request):
                 service=cleaned['service'],
                 service_variant=cleaned.get('service_variant'),
                 room=cleaned.get('room'),
+                customer_name_snapshot=cleaned['customer_name'],
+                customer_phone_snapshot=cleaned['phone'],
+                customer_email_snapshot=raw_data.get('email', '').strip(),
                 appointment_date=cleaned['appointment_date'],
                 appointment_time=cleaned['appointment_time'],
                 duration_minutes=cleaned['duration_minutes'],
@@ -267,7 +316,8 @@ def api_appointment_create(request):
                 notes=cleaned['notes'],
                 status=cleaned['status'],
                 payment_status=cleaned['payment_status'],
-                source='DIRECT',
+                source=raw_data.get('source', 'DIRECT'),
+                staff_notes=raw_data.get('staffNote', '').strip(),
                 created_by=request.user,
             )
 

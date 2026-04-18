@@ -32,8 +32,8 @@
 
     <div class="sl-card__footer">
       <div class="sl-card__price">
-        <span class="sl-card__price-label">Từ</span>
         {% if service.min_price %}
+          <span class="sl-card__price-label">Từ</span>
           {% if service.min_price == service.max_price %}
             {{ service.min_price|vnd }}
           {% else %}

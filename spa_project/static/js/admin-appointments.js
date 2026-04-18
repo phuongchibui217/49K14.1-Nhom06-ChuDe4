@@ -40,7 +40,6 @@ const room = document.getElementById("room");
 const guests = document.getElementById("guests");
 const date = document.getElementById("date");
 const time = document.getElementById("time");
-const duration = document.getElementById("duration");
 const apptStatus = document.getElementById("apptStatus");
 const payStatus = document.getElementById("payStatus");
 const note = document.getElementById("note");
@@ -291,30 +290,17 @@ function capacityOK({roomId, day, start, end, guestsCount, ignoreId}){
   const newS = minutesFromStart(start), newE = minutesFromStart(end);
   let sum = 0;
 
-  // ===== DEBUG LOG =====
-  console.log('=== CAPACITY CHECK DEBUG ===');
-  console.log(`Room: ${roomInfo.name}, Capacity: ${roomInfo.capacity}`);
-  console.log(`New booking: ${start}-${end}, Guests: ${guestsCount}`);
-
   const overlappingAppts = APPOINTMENTS.filter(
     a => a.roomCode===roomId && a.date===day && (a.apptStatus||'').toLowerCase()!=="cancelled" && a.id!==ignoreId
   );
-
-  console.log(`Found ${overlappingAppts.length} overlapping appointments:`);
 
   overlappingAppts.forEach(a => {
     const s = minutesFromStart(a.start);
     const e = minutesFromStart(a.end);
     if(overlaps(newS, newE, s, e)) {
-      console.log(`  - ${a.appointment_code}: ${a.start}-${a.end}, ${a.guests} khách → TRÙNG`);
       sum += Number(a.guests) || 0;
     }
   });
-
-  console.log(`Total overlapping guests: ${sum}`);
-  console.log(`New booking guests: ${guestsCount}`);
-  console.log(`Total: ${sum + guestsCount} <= ${roomInfo.capacity} ? '✅ OK' : '❌ FULL'`);
-  console.log('========================');
 
   return (sum + guestsCount) <= roomInfo.capacity;
 }
@@ -393,7 +379,12 @@ function renderGrid(){
       const slotsEl = laneRow.querySelector(".slots");
 
       // click vào ô trống ==> tạo lịch
+      // Dùng event delegation: chỉ xử lý khi click trực tiếp vào slotsEl
+      // (click vào .appt block sẽ bị stopPropagation trước khi bubble lên đây)
       slotsEl.addEventListener("click", (e)=>{
+        // Bỏ qua nếu click xuất phát từ bên trong một appointment block
+        if (e.target.closest('.appt')) return;
+
         const rect = slotsEl.getBoundingClientRect();
         const x = e.clientX - rect.left;
         // Tính theo tỉ lệ % → phút → giờ:phút
@@ -403,7 +394,9 @@ function renderGrid(){
         const rawMin = ratio * totalMin;
         const minutes = Math.floor(rawMin / SLOT_MIN) * SLOT_MIN;
         const clickedTime = `${pad2(START_HOUR + Math.floor(minutes/60))}:${pad2(minutes%60)}`;
-        openCreateModal({ roomId: r.id, day, time: clickedTime });
+        // Lấy ngày hiện tại từ dayPicker (không dùng closure day để luôn đúng ngày đang chọn)
+        const currentDay = dayPicker.value;
+        openCreateModal({ roomId: r.id, day: currentDay, time: clickedTime });
       });
 
       // vẽ block lịch hẹn
@@ -486,22 +479,185 @@ function fillServiceFilter(){
     SERVICES.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
 }
 
+// ===== CUSTOMER INLINE LOOKUP =====
+// Nhận diện khách qua phone/email — không có search box riêng
+let _phoneTimer = null;
+let _emailTimer = null;
+
+function initCustomerSearch() {
+  const phoneEl       = document.getElementById('phone');
+  const emailEl       = document.getElementById('email');
+  const clearBtnPhone = document.getElementById('clearCustomerMatchBtnPhone');
+  const clearBtnEmail = document.getElementById('clearCustomerMatchBtnEmail');
+  if (!phoneEl) return;
+
+  // Lookup khi nhập phone (debounce 500ms)
+  phoneEl.addEventListener('input', () => {
+    clearTimeout(_phoneTimer);
+    _clearMatchBadge();
+    const val = phoneEl.value.replace(/\D/g, '');
+    if (val.length >= 9) {
+      _phoneTimer = setTimeout(() => _lookupByPhone(val), 500);
+    }
+  });
+
+  // Lookup khi nhập email (debounce 600ms)
+  if (emailEl) {
+    emailEl.addEventListener('input', () => {
+      clearTimeout(_emailTimer);
+      _clearMatchBadge();
+      const val = emailEl.value.trim();
+      if (val.includes('@') && val.length >= 6) {
+        _emailTimer = setTimeout(() => _lookupByEmail(val), 600);
+      }
+    });
+  }
+
+  // Nhấn X → xóa liên kết + xóa toàn bộ thông tin khách
+  if (clearBtnPhone) clearBtnPhone.addEventListener('click', () => _clearMatchBadge(true));
+  if (clearBtnEmail) clearBtnEmail.addEventListener('click', () => _clearMatchBadge(true));
+}
+
+async function _lookupByPhone(phone) {
+  if (document.getElementById('apptId').value.trim()) return; // chỉ lookup khi tạo mới
+  try {
+    const res = await apiGet(`${API_BASE}/customers/search/?q=${encodeURIComponent(phone)}`);
+    if (!res.success) return;
+    const match = res.customers.find(c => c.phone.replace(/\D/g, '') === phone);
+    if (match) _applyMatch(match, 'phone');
+  } catch(e) { /* silent */ }
+}
+
+async function _lookupByEmail(email) {
+  if (document.getElementById('apptId').value.trim()) return;
+  try {
+    const res = await apiGet(`${API_BASE}/customers/search/?q=${encodeURIComponent(email)}`);
+    if (!res.success) return;
+    const match = res.customers.find(c => c.email && c.email.toLowerCase() === email.toLowerCase());
+    if (match) _applyMatch(match, 'email');
+  } catch(e) { /* silent */ }
+}
+
+function _applyMatch(c, via) {
+  document.getElementById('selectedCustomerId').value = c.id;
+
+  // Autofill chỉ các field còn trống
+  const nameEl  = document.getElementById('customerName');
+  const phoneEl = document.getElementById('phone');
+  const emailEl = document.getElementById('email');
+  if (nameEl  && !nameEl.value.trim())  nameEl.value  = c.fullName;
+  if (phoneEl && !phoneEl.value.trim()) phoneEl.value = c.phone;
+  if (emailEl && !emailEl.value.trim()) emailEl.value = c.email || '';
+
+  // Hiện đúng badge theo field trigger
+  const badgePhone = document.getElementById('customerMatchBadgePhone');
+  const labelPhone = document.getElementById('customerMatchLabelPhone');
+  const badgeEmail = document.getElementById('customerMatchBadgeEmail');
+  const labelEmail = document.getElementById('customerMatchLabelEmail');
+
+  if (via === 'email') {
+    if (badgeEmail && labelEmail) {
+      labelEmail.textContent = `Khách đã có hồ sơ: ${c.fullName}`;
+      badgeEmail.classList.remove('d-none');
+    }
+    if (badgePhone) badgePhone.classList.add('d-none');
+  } else {
+    if (badgePhone && labelPhone) {
+      labelPhone.textContent = `Khách đã có hồ sơ: ${c.fullName}`;
+      badgePhone.classList.remove('d-none');
+    }
+    if (badgeEmail) badgeEmail.classList.add('d-none');
+  }
+}
+
+// clearFields=true khi nhấn X → xóa luôn thông tin khách đã fill
+function _clearMatchBadge(clearFields = false) {
+  document.getElementById('selectedCustomerId').value = '';
+  const badgePhone = document.getElementById('customerMatchBadgePhone');
+  const badgeEmail = document.getElementById('customerMatchBadgeEmail');
+  if (badgePhone) badgePhone.classList.add('d-none');
+  if (badgeEmail) badgeEmail.classList.add('d-none');
+
+  if (clearFields) {
+    const nameEl  = document.getElementById('customerName');
+    const phoneEl = document.getElementById('phone');
+    const emailEl = document.getElementById('email');
+    if (nameEl)  nameEl.value  = '';
+    if (phoneEl) phoneEl.value = '';
+    if (emailEl) emailEl.value = '';
+  }
+}
+
+// Escape HTML để tránh XSS
+function _esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 function openCreateModal(prefill={}){
   resetModalError();
   modalTitle.textContent = "Tạo lịch hẹn";
   apptId.value = "";
   btnDelete.classList.add("d-none");
-  customerName.value = ""; phone.value = ""; email.value = ""; service.value = "";
-  room.value = prefill.roomId || (ROOMS[0]?.id || "");
+
+  // Đổi text nút save theo trạng thái tạo mới
+  const btnSaveText = document.getElementById("btnSaveText");
+  if (btnSaveText) btnSaveText.textContent = "Tạo lịch hẹn";
+
+  // Reset customer match badge
+  document.getElementById('selectedCustomerId').value = '';
+  _clearMatchBadge();
+
+  // Luôn lấy instance hiện tại hoặc tạo mới — tránh instance bị stale
+  if (modalEl) {
+    const existing = bootstrap.Modal.getInstance(modalEl);
+    if (existing) {
+      modal = existing;
+    } else {
+      modal = new bootstrap.Modal(modalEl);
+    }
+  }
+
+  // Nếu vẫn không có modal → báo lỗi rõ ràng
+  if (!modal) {
+    console.error('[openCreateModal] Không thể khởi tạo modal. modalEl:', modalEl, 'bootstrap:', typeof bootstrap);
+    return;
+  }
+
+  // Reset customer info
+  customerName.value = "";
+  phone.value = "";
+  email.value = "";
   guests.value = 1;
+  note.value = "";
+
+  // Reset appointment info
+  service.value = "";
+  const variantSelect = document.getElementById("variant");
+  if (variantSelect) {
+    variantSelect.innerHTML = '<option value="">-- Chọn dịch vụ trước --</option>';
+    variantSelect.disabled = true;
+  }
+  const variantInfo = document.getElementById("variantInfo");
+  if (variantInfo) variantInfo.classList.add("d-none");
+
+  room.value = prefill.roomId || (ROOMS[0]?.id || "");
   date.value = prefill.day || dayPicker.value;
   time.value = prefill.time || "09:00";
-  duration.value = "60";
   apptStatus.value = "NOT_ARRIVED";
   payStatus.value = "UNPAID";
-  note.value = "";
+
+  // Reset new fields
+  const sourceSelect = document.getElementById("source");
+  if (sourceSelect) sourceSelect.value = "DIRECT";
+  const staffNoteTextarea = document.getElementById("staffNote");
+  if (staffNoteTextarea) staffNoteTextarea.value = "";
+
   form.classList.remove("was-validated");
-  if (modal) modal.show();
+  if (modal) {
+    modal.show();
+  } else {
+    console.error('[openCreateModal] modal chưa được khởi tạo — kiểm tra lại #apptModal trong HTML');
+  }
 }
 
 async function openEditModal(id){
@@ -515,23 +671,60 @@ function openEditModalWithData(a){
   modalTitle.textContent = `Chỉnh sửa • ${a.id}`;
   apptId.value = a.id;
   btnDelete.classList.remove("d-none");
+
+  // Đổi text nút save theo trạng thái chỉnh sửa
+  const btnSaveText = document.getElementById("btnSaveText");
+  if (btnSaveText) btnSaveText.textContent = "Lưu lịch hẹn";
+
+  // Ẩn badge nhận diện khi edit (không lookup lại)
+  _clearMatchBadge();
+  document.getElementById('selectedCustomerId').value = a.customerId || '';
+  
+  // Customer info
   customerName.value = a.customerName;
   phone.value = a.phone;
   email.value = a.email || "";
-  service.value = a.serviceId || "";
-  room.value = a.roomCode || a.roomId || (ROOMS[0]?.id || "");
   guests.value = a.guests;
+  note.value = a.note || "";
+  
+  // Appointment info
+  service.value = a.serviceId || "";
+  
+  // Trigger service change to load variants
+  const serviceSelect = document.getElementById("service");
+  if (serviceSelect && a.serviceId) {
+    serviceSelect.dispatchEvent(new Event('change'));
+    // Đợi variants load xong rồi chọn đúng variant
+    // Serializer trả về field 'variantId' (không phải serviceVariantId)
+    const variantIdToSelect = a.variantId || a.serviceVariantId || null;
+    if (variantIdToSelect) {
+      setTimeout(() => {
+        const variantSelect = document.getElementById("variant");
+        if (variantSelect) {
+          variantSelect.value = variantIdToSelect;
+          variantSelect.dispatchEvent(new Event('change'));
+        }
+      }, 300);
+    }
+  }
+  
+  room.value = a.roomCode || a.roomId || (ROOMS[0]?.id || "");
   date.value = a.date;
   time.value = a.start;
-  duration.value = String(a.durationMin || 60);
   apptStatus.value = a.apptStatus || "NOT_ARRIVED";
   payStatus.value = a.payStatus || "UNPAID";
-  note.value = a.note || "";
+  
+  // New fields
+  const sourceSelect = document.getElementById("source");
+  if (sourceSelect) sourceSelect.value = a.source || "DIRECT";
+  const staffNoteTextarea = document.getElementById("staffNote");
+  if (staffNoteTextarea) staffNoteTextarea.value = a.staffNotes || "";
+  
   form.classList.remove("was-validated");
-
-  // KHÔNG dispatch change event khi edit - duration đã được set đúng từ data
-  // Change event chỉ nên trigger khi USER tự đổi service (không phải khi load data)
-
+  if (modalEl) {
+    const existing = bootstrap.Modal.getInstance(modalEl);
+    modal = existing || new bootstrap.Modal(modalEl);
+  }
   if (modal) modal.show();
 }
 
@@ -559,22 +752,39 @@ form.addEventListener("submit", async (e)=>{
   const guestsVal = Number(guests.value);
   const dayVal = date.value;
   const startVal = time.value;
-  const durationVal = Number(duration.value);
+  
+  // Get duration from selected variant
+  const variantSelect = document.getElementById("variant");
+  const variantVal = variantSelect ? variantSelect.value : "";
+  let durationVal = 60; // default
+  
+  if (variantSelect && variantVal) {
+    const selectedOption = variantSelect.options[variantSelect.selectedIndex];
+    if (selectedOption && selectedOption.dataset.duration) {
+      durationVal = Number(selectedOption.dataset.duration);
+    }
+  }
 
   // ===== BƯỚC 1: VALIDATE =====
   customerName.setCustomValidity(nameVal ? "" : "invalid");
   phone.setCustomValidity((phoneVal && isValidPhone(phoneVal)) ? "" : "invalid");
   service.setCustomValidity(serviceVal ? "" : "invalid");
+  
+  // Validate variant is selected
+  if (variantSelect) {
+    variantSelect.setCustomValidity(variantVal ? "" : "invalid");
+  }
+  
   room.setCustomValidity(roomVal ? "" : "invalid");
   guests.setCustomValidity((Number.isFinite(guestsVal) && guestsVal>0) ? "" : "invalid");
   date.setCustomValidity(dayVal ? "" : "invalid");
   time.setCustomValidity(startVal ? "" : "invalid");
-  duration.setCustomValidity((Number.isFinite(durationVal) && durationVal>0) ? "" : "invalid");
 
   if(!form.checkValidity()){
     if(!nameVal) modalError.textContent = "Vui lòng nhập họ tên khách hàng";
     else if(!phoneVal || !isValidPhone(phoneVal)) modalError.textContent = "Số điện thoại không hợp lệ";
     else if(!serviceVal) modalError.textContent = "Vui lòng chọn dịch vụ";
+    else if(!variantVal) modalError.textContent = "Vui lòng chọn gói dịch vụ";
     else if(!roomVal) modalError.textContent = "Vui lòng chọn phòng";
     else modalError.textContent = "Vui lòng điền đầy đủ thông tin";
     modalError.classList.remove("d-none");
@@ -596,7 +806,25 @@ form.addEventListener("submit", async (e)=>{
     return;
   }
   // ===== BƯỚC 4: GỌI API =====
-  const payload = { customerName: nameVal, phone: phoneVal.replace(/\D/g,""), email: email.value.trim(), serviceId: serviceVal, roomId: roomVal, guests: guestsVal, date: dayVal, time: startVal, duration: durationVal, note: note.value.trim(), apptStatus: apptStatus.value, payStatus: payStatus.value };
+  const selectedCustId = document.getElementById("selectedCustomerId")?.value || "";
+  const payload = { 
+    customerId: selectedCustId ? Number(selectedCustId) : null,
+    customerName: nameVal, 
+    phone: phoneVal.replace(/\D/g,""), 
+    email: email.value.trim(), 
+    serviceId: serviceVal,
+    variantId: variantVal,
+    roomId: roomVal, 
+    guests: guestsVal, 
+    date: dayVal, 
+    time: startVal, 
+    duration: durationVal, 
+    note: note.value.trim(), 
+    apptStatus: apptStatus.value, 
+    payStatus: payStatus.value,
+    source: document.getElementById("source") ? document.getElementById("source").value : "DIRECT",
+    staffNote: document.getElementById("staffNote") ? document.getElementById("staffNote").value.trim() : ""
+  };
 
   // ===== BẬT LOADING STATE =====
   isSubmitting = true;
@@ -717,10 +945,69 @@ document.addEventListener("DOMContentLoaded", async ()=>{
   if (modalEl) modal = new bootstrap.Modal(modalEl);
   if (toastEl) toast = new bootstrap.Toast(toastEl);
 
+  // Initialize customer search
+  initCustomerSearch();
+
   // Initialize delete modal
   const deleteModalEl = document.getElementById('deleteAppointmentModal');
   if (deleteModalEl) {
     window.deleteAppointmentModal = new bootstrap.Modal(deleteModalEl);
+  }
+
+  // ===== SERVICE VARIANT LOADING =====
+  const serviceSelect = document.getElementById('service');
+  const variantSelect = document.getElementById('variant');
+  const variantInfo = document.getElementById('variantInfo');
+  
+  if (serviceSelect && variantSelect) {
+    serviceSelect.addEventListener('change', async function() {
+      const serviceId = this.value;
+      
+      // Reset variant select
+      variantSelect.innerHTML = '<option value="">-- Chọn gói dịch vụ --</option>';
+      variantSelect.disabled = !serviceId;
+      if (variantInfo) variantInfo.classList.add('d-none');
+      
+      if (!serviceId) return;
+      
+      // Find service in SERVICES array
+      const service = SERVICES.find(s => s.id == serviceId);
+      if (!service || !service.variants || service.variants.length === 0) {
+        variantSelect.innerHTML = '<option value="">Dịch vụ này chưa có gói</option>';
+        return;
+      }
+      
+      // Load variants
+      service.variants.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.id;
+        opt.textContent = `${v.label} - ${v.duration_minutes} phút`;
+        opt.dataset.duration = v.duration_minutes;
+        opt.dataset.price = v.price;
+        variantSelect.appendChild(opt);
+      });
+      
+      // Auto select first if only one
+      if (service.variants.length === 1) {
+        variantSelect.value = service.variants[0].id;
+        variantSelect.dispatchEvent(new Event('change'));
+      }
+    });
+    
+    // Show variant info when selected
+    variantSelect.addEventListener('change', function() {
+      if (!variantInfo) return;
+      
+      const selected = this.options[this.selectedIndex];
+      if (this.value && selected.dataset.duration) {
+        const duration = selected.dataset.duration;
+        const price = parseFloat(selected.dataset.price).toLocaleString('vi-VN');
+        variantInfo.textContent = `${duration} phút • ${price}đ`;
+        variantInfo.classList.remove('d-none');
+      } else {
+        variantInfo.classList.add('d-none');
+      }
+    });
   }
 
   if(sidebarToggle) sidebarToggle.addEventListener("click", ()=> sidebar.classList.toggle("show"));
@@ -824,20 +1111,6 @@ document.addEventListener("DOMContentLoaded", async ()=>{
     });
   }
   if(webStatusFilter) webStatusFilter.addEventListener("change", ()=> updateWebFilterBtn());
-
-  // Auto-fill duration khi chọn service (lấy từ variant đầu tiên)
-  if(service) {
-    service.addEventListener("change", function() {
-      const serviceId = parseInt(this.value);
-      const selectedService = SERVICES.find(s => s.id === serviceId);
-
-      if (selectedService && selectedService.variants && selectedService.variants.length > 0) {
-        duration.value = selectedService.variants[0].duration_minutes;
-      } else {
-        duration.value = 60; // default
-      }
-    });
-  }
 
   window.openEditModal = openEditModal;
   window.renderWebRequests = renderWebRequests;

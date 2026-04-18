@@ -30,7 +30,7 @@ class AppointmentForm(forms.ModelForm):
     appointment_date = forms.DateField(
         label='Ngày hẹn',
         widget=forms.DateInput(attrs={
-            'class': 'form-control',
+            'class': 'lux-input',
             'type': 'date'
         })
     )
@@ -38,7 +38,7 @@ class AppointmentForm(forms.ModelForm):
     appointment_time = forms.TimeField(
         label='Giờ hẹn',
         widget=forms.TimeInput(attrs={
-            'class': 'form-control',
+            'class': 'lux-input',
             'type': 'time'
         })
     )
@@ -48,18 +48,18 @@ class AppointmentForm(forms.ModelForm):
         required=False,
         empty_label='-- Chọn gói (nếu có) --',
         label='Gói dịch vụ',
-        widget=forms.Select(attrs={'class': 'form-select'})
+        widget=forms.Select(attrs={'class': 'lux-select'})
     )
 
     class Meta:
         model = Appointment
         fields = ['service', 'service_variant', 'appointment_date', 'appointment_time', 'notes']
         widgets = {
-            'service': forms.Select(attrs={'class': 'form-select'}),
+            'service': forms.Select(attrs={'class': 'lux-select'}),
             'notes': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3,
-                'placeholder': 'Ghi chú thêm (nếu có)'
+                'class': 'lux-textarea',
+                'rows': 4,
+                'placeholder': 'Ghi chú thêm về yêu cầu đặc biệt, dị ứng, hoặc thông tin khác...'
             })
         }
 

@@ -34,11 +34,11 @@
   opacity: 1;
 }
 
-/* Overlay for text readability - lighter for natural video colors */
+/* Overlay for text readability - enhanced contrast */
 .hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(12,16,22,0.15), rgba(12,16,22,0.28));
+  background: linear-gradient(to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.5));
   z-index: 2;
 }
 
@@ -53,70 +53,70 @@
   animation: fadeInUp 1.4s ease-out;
 }
 
-/* Eyebrow text - smaller, more spaced, subtle */
+/* Eyebrow text - luxury spa style */
 .hero-eyebrow {
   display: inline-block;
-  font-size: .58rem;
+  font-size: 15px;
   font-weight: 400;
-  letter-spacing: .38em;
+  letter-spacing: 3px;
   text-transform: uppercase;
-  color: rgba(255,255,255,.68);
-  margin-bottom: 2.25rem;
-  text-shadow: 0 1px 4px rgba(0,0,0,.1);
+  color: rgba(255,255,255,0.8);
+  margin-bottom: 16px;
+  text-shadow: 0 1px 4px rgba(0,0,0,.15);
 }
 
-/* Main heading - lighter, smaller, more elegant */
+/* Main heading - light and elegant */
 .hero-content h1 {
-  font-size: clamp(1.75rem, 4.5vw, 3.2rem);
+  font-size: clamp(32px, 4.5vw, 44px);
   font-weight: 300;
-  letter-spacing: .02em;
+  letter-spacing: 0.02em;
   line-height: 1.35;
-  margin-bottom: 2.5rem;
+  margin-bottom: 20px;
   color: #fff;
-  text-shadow: 0 2px 12px rgba(0,0,0,.18);
+  text-shadow: 0 2px 14px rgba(0,0,0,.2);
 }
 
-/* Description - lighter, more breathing space */
+/* Description - concise and readable */
 .hero-content p {
-  font-size: clamp(.9rem, 1.8vw, 1.02rem);
-  line-height: 1.85;
-  color: rgba(255,255,255,.82);
-  margin-bottom: 3.5rem;
-  font-weight: 300;
-  letter-spacing: .015em;
-  max-width: 520px;
+  font-size: clamp(15px, 2vw, 17px);
+  line-height: 1.6;
+  color: rgba(255,255,255,0.85);
+  margin-bottom: 32px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  max-width: 560px;
   margin-left: auto;
   margin-right: auto;
-  text-shadow: 0 1px 8px rgba(0,0,0,.15);
+  text-shadow: 0 2px 10px rgba(0,0,0,.2);
 }
 
-/* CTA Button - minimal, pill-shaped, champagne tone */
+/* CTA Button - prominent and inviting */
 .btn-hero {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: .75rem 2rem;
-  background: rgba(201,169,110,.75);
+  gap: 10px;
+  padding: 16px 40px;
+  background: rgba(218,185,135,0.9);
   color: #fff;
   border-radius: 50px;
-  font-size: .8rem;
-  font-weight: 400;
-  letter-spacing: .12em;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
   text-decoration: none;
   text-transform: uppercase;
   transition: all .3s ease;
-  border: 1px solid rgba(255,255,255,.2);
-  backdrop-filter: blur(6px);
-  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  border: 1.5px solid rgba(255,255,255,.25);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 6px 20px rgba(0,0,0,.2);
 }
 
 .btn-hero:hover {
-  background: rgba(201,169,110,.88);
+  background: rgba(218,185,135,1);
   color: #fff;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(201,169,110,.25);
-  border-color: rgba(255,255,255,.28);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(218,185,135,.4);
+  border-color: rgba(255,255,255,.35);
 }
 
 /* Navbar styling - always visible and readable */
@@ -192,20 +192,22 @@
   }
   
   .hero-eyebrow {
-    margin-bottom: 1.75rem;
+    font-size: 14px;
+    letter-spacing: 2.5px;
+    margin-bottom: 14px;
   }
   
   .hero-content h1 {
-    margin-bottom: 2rem;
+    margin-bottom: 18px;
   }
   
   .hero-content p {
-    margin-bottom: 3rem;
+    margin-bottom: 28px;
   }
   
   .btn-hero {
-    padding: .7rem 1.75rem;
-    font-size: .75rem;
+    padding: 14px 32px;
+    font-size: 13px;
   }
 }
 
@@ -220,22 +222,24 @@
   }
   
   .hero-eyebrow {
-    font-size: .55rem;
-    margin-bottom: 1.5rem;
+    font-size: 13px;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
   }
   
   .hero-content h1 {
-    margin-bottom: 1.75rem;
+    margin-bottom: 16px;
   }
   
   .hero-content p {
-    margin-bottom: 2.5rem;
+    font-size: 15px;
+    margin-bottom: 24px;
   }
   
   .btn-hero {
-    padding: .65rem 1.5rem;
-    font-size: .72rem;
-    gap: 6px;
+    padding: 13px 28px;
+    font-size: 12px;
+    gap: 8px;
   }
 }
 
@@ -542,7 +546,7 @@
   <div class="hero-overlay"></div>
   
   <div class="container hero-content">
-    <span class="hero-eyebrow">Spa ANA</span>
+    <span class="hero-eyebrow">SPA ANA</span>
     <h1>Trải Nghiệm Thư Giãn Tuyệt Đối</h1>
     <p>Tận hưởng không gian chăm sóc sắc đẹp và phục hồi năng lượng theo phong cách tinh tế, thư thái và riêng tư.</p>
     <a href="{% url 'appointments:booking' %}" class="btn-hero">
