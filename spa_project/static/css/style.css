@@ -174,7 +174,8 @@ img { max-width: 100%; }
 .avatar-circle:hover { background: var(--gold-light); }
 
 /* ── HERO ───────────────────────────────────────────────── */
-.hero-section { margin-top: 68px; }
+/* margin-top: 0 — main-content padding-top da bu navbar fixed */
+.hero-section { margin-top: 0; }
 
 .hero-section .carousel,
 .carousel-item { height: 580px; }
@@ -217,7 +218,7 @@ img { max-width: 100%; }
   padding: 3.5rem 0 2.5rem;
   text-align: center;
   color: #fff;
-  margin-top: 68px;
+  margin-top: 0;
 }
 
 .page-header h1 {
@@ -968,7 +969,6 @@ input[type="time"] {
 @media (max-width: 991px) {
   .hero-section .carousel, .carousel-item { height: 460px; }
   .carousel-caption h1 { font-size: 2.25rem; }
-  .page-header { margin-top: 60px; }
 }
 
 @media (max-width: 767px) {
@@ -1100,7 +1100,7 @@ input[type="time"] {
   padding: 3.5rem 0 2.5rem;
   text-align: center;
   color: #fff;
-  margin-top: 68px;
+  margin-top: 0;
 }
 .page-header h1 {
   font-size: 1.75rem; font-weight: 300;
@@ -1128,3 +1128,40 @@ input[type="time"] {
 
 /* Remove old spa-gradient-bg orange tint */
 .spa-gradient-bg { background: var(--bg-subtle) !important; }
+
+/* ── MESSAGES TOAST (fixed, không ảnh hưởng layout) ────── */
+.messages-toast-container {
+  position: fixed;
+  top: calc(var(--navbar-h) + 12px);
+  right: 16px;
+  z-index: 1050;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 360px;
+  width: calc(100vw - 32px);
+  pointer-events: none;
+}
+
+.messages-toast {
+  pointer-events: auto;
+  box-shadow: var(--shadow-md);
+  border: none;
+  border-radius: var(--r-md);
+  font-size: .875rem;
+  animation: fadeInRight .25s ease-out;
+}
+
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@media (max-width: 575px) {
+  .messages-toast-container {
+    right: 8px;
+    left: 8px;
+    max-width: 100%;
+    width: auto;
+  }
+}

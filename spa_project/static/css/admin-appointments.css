@@ -337,27 +337,27 @@
   outline: none;
 }
 
-/* ===== Modal Form - Đồng bộ chiều cao input ===== */
-#apptModal .form-control,
-#apptModal .form-select {
+/* ===== Modal Form - Edit mode only — đồng bộ chiều cao input ===== */
+#editModeBody .form-control,
+#editModeBody .form-select {
   min-height: 38px;
   padding: 0.375rem 0.75rem;
   font-size: 0.95rem;
   line-height: 1.5;
 }
 
-/* Đặc biệt cho date/time input */
-#apptModal input[type="date"],
-#apptModal input[type="time"],
-#apptModal input[type="number"] {
+/* Đặc biệt cho date/time input trong edit mode */
+#editModeBody input[type="date"],
+#editModeBody input[type="time"],
+#editModeBody input[type="number"] {
   min-height: 38px;
   padding: 0.375rem 0.75rem;
 }
 
-/* Select dropdown */
-#apptModal .form-select {
+/* Select dropdown trong edit mode */
+#editModeBody .form-select {
   min-height: 38px;
-  padding: 0.375rem 1.75rem 0.375rem 0.75rem; /* padding-right lớn hơn cho dropdown arrow */
+  padding: 0.375rem 1.75rem 0.375rem 0.75rem;
 }
 
 /* ===================================================
@@ -416,35 +416,32 @@
 }
 
 .appt-pending:hover {
-  background: rgba(37, 99, 235, 0.16);
+  background: rgba(37, 99, 235, 0.20);
   border-color: #1d4ed8;
 }
 
-/* Nút xóa (×) góc trên phải */
-.appt-pending .pb-remove {
+/* Tooltip hint khi hover — "Click để bỏ chọn" */
+.appt-pending::after {
+  content: "✕ Bỏ chọn";
   position: absolute;
-  top: 6px;
-  right: 5px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #2563eb;
-  border: none;
-  color: #fff;
-  font-size: .55rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: .62rem;
+  font-weight: 700;
+  color: #1d4ed8;
   opacity: 0;
   transition: opacity .15s;
-  z-index: 2;
+  pointer-events: none;
+  white-space: nowrap;
 }
 
-.appt-pending:hover .pb-remove {
+.appt-pending:hover::after {
   opacity: 1;
 }
+
+/* Nút xóa (×) — đã bỏ, giữ lại selector rỗng để tránh lỗi nếu còn reference cũ */
+.appt-pending .pb-remove { display: none; }
 
 /* Slot bị block bởi lịch đã tồn tại — highlight khi hover */
 .lane-row .slots.conflict-flash {
@@ -538,4 +535,409 @@
   background: linear-gradient(135deg, #1d4ed8, #2563eb);
   box-shadow: 0 4px 14px rgba(37,99,235,.5);
   transform: translateY(-1px);
+}
+
+
+
+
+
+/* ===================================================
+   CREATE MODE — table-style quick-entry layout
+   =================================================== */
+
+/* ── Booker panel ── */
+.cm-booker-panel {
+  flex-shrink: 0;
+  padding: 12px 20px 10px;
+  background: #f8fafc;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.cm-section-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 700;
+  font-size: .8rem;
+  color: #374151;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.cm-section-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: .62rem;
+  flex-shrink: 0;
+}
+
+.cm-label {
+  font-size: .7rem;
+  font-weight: 600;
+  color: #9ca3af;
+  display: block;
+  margin-bottom: 2px;
+}
+
+/* ── Scroll area ── */
+.cm-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Apply-all bar ── */
+.cm-apply-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 7px 16px;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.cm-apply-label {
+  font-size: .72rem;
+  font-weight: 700;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.cm-apply-select {
+  font-size: .78rem !important;
+  padding: 3px 6px !important;
+  min-height: 28px !important;
+  height: 28px;
+  border-radius: 6px !important;
+}
+
+.cm-btn-apply {
+  background: #1f3a5f;
+  border: none;
+  color: #fff;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: .75rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s;
+  height: 28px;
+}
+
+.cm-btn-apply:hover { background: #162d4a; }
+
+.cm-progress-label {
+  font-size: .72rem;
+  font-weight: 600;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.cm-progress-bar-bg {
+  width: 60px;
+  height: 5px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.cm-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  border-radius: 999px;
+  transition: width .3s ease;
+}
+
+.cm-btn-add-guest {
+  background: #fff;
+  border: 1.5px dashed #d1d5db;
+  color: #6b7280;
+  border-radius: 6px;
+  padding: 3px 10px;
+  font-size: .72rem;
+  font-weight: 600;
+  cursor: pointer;
+  height: 28px;
+  white-space: nowrap;
+  transition: all .15s;
+}
+
+.cm-btn-add-guest:hover {
+  border-color: #c9a96e;
+  color: #92711e;
+  background: #fffbf0;
+}
+
+/* ── Guest table wrapper ── */
+.cm-guest-table-wrap {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* ── Column header row ── */
+.cgt-header {
+  display: grid;
+  grid-template-columns: 28px 130px 1fr 110px 140px 150px 36px;
+  gap: 0;
+  padding: 5px 16px;
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.cgt-header > div {
+  font-size: .67rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+}
+
+/* ── Guest row (main inline row) ── */
+.gc-item {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background .1s;
+}
+
+.gc-item:last-child { border-bottom: none; }
+
+.gc-item.has-error .gc-row { background: #fffbf0; }
+
+.gc-row {
+  display: grid;
+  grid-template-columns: 28px 130px 1fr 110px 140px 150px 36px;
+  gap: 0;
+  padding: 5px 16px;
+  align-items: center;
+  min-height: 44px;
+  transition: background .1s;
+}
+
+.gc-row:hover { background: #f8fafc; }
+
+/* ── Row cells ── */
+.gc-cell {
+  padding: 0 4px;
+  min-width: 0;
+}
+
+.gc-cell-num {
+  font-size: .72rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-align: center;
+}
+
+/* Slot badge (phòng + giờ) — readonly */
+.gc-cell-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.gc-slot-room {
+  font-size: .72rem;
+  font-weight: 700;
+  color: #1d4ed8;
+  white-space: nowrap;
+}
+
+.gc-slot-time {
+  font-size: .68rem;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+/* Inline inputs */
+.gc-row input.form-control,
+.gc-row select.form-select {
+  font-size: .78rem;
+  padding: 3px 7px;
+  height: 30px;
+  min-height: 30px;
+  border-radius: 6px;
+  border-color: #e5e7eb;
+  background: #fff;
+  width: 100%;
+}
+
+.gc-row input.form-control:focus,
+.gc-row select.form-select:focus {
+  border-color: #c9a96e;
+  box-shadow: 0 0 0 2px rgba(201,169,110,.15);
+  outline: none;
+}
+
+.gc-row input.form-control.is-missing,
+.gc-row select.form-select.is-missing {
+  border-color: #fbbf24;
+  background: #fffbeb;
+}
+
+/* Expand toggle button */
+.gc-expand-btn {
+  background: none;
+  border: none;
+  color: #cbd5e1;
+  font-size: .65rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color .15s, background .15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.gc-expand-btn:hover { color: #64748b; background: #f1f5f9; }
+.gc-item.open .gc-expand-btn { color: #c9a96e; }
+.gc-item.open .gc-expand-btn i { transform: rotate(180deg); }
+.gc-expand-btn i { transition: transform .2s; }
+
+/* ── Expanded detail panel ── */
+.gc-detail {
+  display: none;
+  padding: 8px 16px 10px 16px;
+  background: #fafafa;
+  border-top: 1px dashed #e5e7eb;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.gc-item.open .gc-detail { display: flex; }
+
+.gc-detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.gc-detail-field label {
+  font-size: .67rem;
+  font-weight: 600;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.gc-detail-field input,
+.gc-detail-field select {
+  font-size: .75rem;
+  padding: 3px 7px;
+  height: 28px;
+  min-height: 28px;
+  border-radius: 5px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.gc-detail-field input:focus,
+.gc-detail-field select:focus {
+  border-color: #c9a96e;
+  box-shadow: 0 0 0 2px rgba(201,169,110,.12);
+  outline: none;
+}
+
+.gc-detail-actions {
+  display: flex;
+  gap: 5px;
+  align-items: flex-end;
+  padding-bottom: 1px;
+}
+
+.gc-btn-fill {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  border-radius: 5px;
+  padding: 3px 8px;
+  font-size: .68rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  height: 28px;
+  transition: background .15s;
+}
+
+.gc-btn-fill:hover { background: #dbeafe; }
+
+.gc-btn-del {
+  background: #fff;
+  border: 1px solid #fecaca;
+  color: #ef4444;
+  border-radius: 5px;
+  padding: 3px 8px;
+  font-size: .68rem;
+  cursor: pointer;
+  height: 28px;
+  transition: all .15s;
+}
+
+.gc-btn-del:hover { background: #fef2f2; }
+
+/* ── Scoped Bootstrap reset for create mode inputs ──
+   Bootstrap .form-control và .form-select có min-height mặc định 38px,
+   style.css global set padding: 11px 14px — cần override xuống 30px cho bảng khách */
+#createModeBody .form-control,
+#createModeBody .form-select {
+  min-height: 30px !important;
+  height: 30px !important;
+  padding: 3px 8px !important;
+  font-size: .78rem !important;
+  line-height: 1.4 !important;
+}
+
+#createModeBody .form-select {
+  padding-right: 1.5rem !important;
+  background-size: 12px !important;
+}
+
+/* Booker panel inputs — hơi cao hơn một chút */
+.cm-booker-panel .form-control,
+.cm-booker-panel .form-select {
+  min-height: 32px !important;
+  height: 32px !important;
+  padding: 4px 8px !important;
+  font-size: .82rem !important;
+}
+
+.cm-booker-panel .form-select {
+  padding-right: 1.5rem !important;
+}
+
+/* Apply bar selects */
+.cm-apply-bar .form-select {
+  min-height: 28px !important;
+  height: 28px !important;
+  padding: 2px 6px !important;
+  font-size: .78rem !important;
+  padding-right: 1.4rem !important;
+}
+
+/* gc-detail inputs — không dùng Bootstrap class, style trực tiếp */
+.gc-detail-field input,
+.gc-detail-field select {
+  min-height: 28px !important;
+  height: 28px !important;
 }

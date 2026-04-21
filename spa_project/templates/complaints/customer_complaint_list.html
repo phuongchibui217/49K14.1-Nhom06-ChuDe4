@@ -5,49 +5,10 @@
 
 {% block extra_css %}
 <style>
-    /* Page Header - Đồng bộ với các trang khác */
-    .page-header {
-        background: linear-gradient(135deg, rgba(30, 58, 95, 0.9), rgba(44, 82, 130, 0.9)),
-                    url('https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920') center/cover;
-        padding: 4rem 0 3rem;
-        text-align: center;
-        color: white;
-        margin-bottom: 3rem;
-    }
+    /* page-header: dung global style.css */
+    .page-header { margin-bottom: 2.5rem; }
 
-    /* Main Section */
-    .complaints-section {
-        padding: 0 0 4rem;
-    }
-
-    /* Breadcrumb Style */
-    .breadcrumb-wrapper {
-        background: white;
-        border-radius: 12px;
-        padding: 1rem 1.5rem;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-        margin-bottom: 2rem;
-    }
-
-    .breadcrumb {
-        margin-bottom: 0;
-        background: transparent;
-        padding: 0;
-    }
-
-    .breadcrumb-item a {
-        color: #1e3a5f;
-        text-decoration: none;
-        transition: color 0.3s ease;
-    }
-
-    .breadcrumb-item a:hover {
-        color: #d4a835;
-    }
-
-    .breadcrumb-item.active {
-        color: #64748b;
-    }
+    .complaints-section { padding: 0 0 4rem; }
 
     /* Header Actions */
     .header-actions {
@@ -56,299 +17,153 @@
         align-items: center;
         flex-wrap: wrap;
         gap: 1rem;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
     }
-
-    .section-title {
-        color: #1e3a5f;
-        font-weight: 600;
-        margin-bottom: 0;
+    .header-actions .section-title {
+        font-size: .75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .07em;
+        color: var(--text-secondary);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: .5rem;
     }
+    .header-actions .section-title i { color: var(--gold); }
 
-    /* Button Primary - Style Spa ANA */
-    .btn-spa-primary {
-        background: linear-gradient(135deg, #d4a835, #f1c40f);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 0.45rem 1.1rem;
-        font-size: 0.875rem;
-        font-weight: 500;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 8px rgba(212, 168, 53, 0.25);
-    }
-
-    .btn-spa-primary:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(212, 168, 53, 0.35);
-        color: white;
-    }
-
-    .btn-spa-outline {
-        background: transparent;
-        color: #d4a835;
-        border: 2px solid #d4a835;
-        border-radius: 50px;
-        padding: 0.5rem 1rem;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-
-    .btn-spa-outline:hover {
-        background: linear-gradient(135deg, #d4a835, #f1c40f);
-        color: white;
-        transform: translateY(-2px);
-    }
-
-    /* Complaint Card - Compact & Space Efficient */
+    /* Complaint Card */
     .complaint-card {
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+        background: var(--bg-white);
+        border-radius: var(--r-lg);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--gold);
         margin-bottom: 1rem;
-        border-left: 3px solid #d4a835;
-        transition: all 0.3s ease;
         overflow: hidden;
+        transition: box-shadow .2s, transform .2s;
     }
-
     .complaint-card:hover {
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+        box-shadow: var(--shadow-md);
         transform: translateY(-1px);
     }
-
     .complaint-card-header {
-        padding: 0.75rem 1rem;
-        border-bottom: 1px solid #f1f5f9;
+        padding: .75rem 1.25rem;
+        border-bottom: 1px solid var(--border);
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 0.5rem;
-        background: linear-gradient(135deg, rgba(30, 58, 95, 0.02), rgba(212, 168, 53, 0.02));
+        gap: .5rem;
+        background: var(--gold-muted);
     }
-
     .complaint-code {
-        font-weight: 600;
-        color: #1e3a5f;
-        font-size: 0.8rem;
-        flex-shrink: 0;
+        font-weight: 700;
+        color: var(--text-primary);
+        font-size: .8rem;
     }
-
     .complaint-date {
-        color: #64748b;
-        font-size: 0.75rem;
+        color: var(--text-muted);
+        font-size: .75rem;
         white-space: nowrap;
     }
-
-    .complaint-card-body {
-        padding: 0.875rem 1rem;
-    }
-
+    .complaint-card-body { padding: 1rem 1.25rem; }
     .complaint-title {
-        color: #1e3a5f;
+        color: var(--text-primary);
         font-weight: 600;
-        margin-bottom: 0.5rem;
-        font-size: 1rem;
+        margin-bottom: .4rem;
+        font-size: .975rem;
         line-height: 1.4;
     }
-
     .complaint-preview {
-        color: #64748b;
-        font-size: 0.85rem;
+        color: var(--text-secondary);
+        font-size: .85rem;
         line-height: 1.5;
-        margin-bottom: 0.75rem;
+        margin-bottom: .75rem;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
-        text-overflow: ellipsis;
     }
-
-    .complaint-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.375rem;
-        margin-bottom: 0.75rem;
-    }
-
-    .meta-badge {
-        background: #f8fafc;
-        color: #475569;
-        padding: 0.25rem 0.625rem;
-        border-radius: 12px;
-        font-size: 0.7rem;
-        font-weight: 500;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
-    }
-
-    .meta-badge i {
-        color: #d4a835;
-        font-size: 0.65rem;
-    }
-
     .complaint-actions {
         display: flex;
         justify-content: flex-end;
-        align-items: center;
-        margin-top: 0.75rem;
-        padding-top: 0.75rem;
-        border-top: 1px dashed #e2e8f0;
-        min-height: 50px;
+        padding-top: .75rem;
+        border-top: 1px solid var(--border);
     }
 
-    /* Center button style */
-    .btn-spa-outline.btn-center {
-        padding: 0.75rem 2rem;
-        font-size: 0.95rem;
-        font-weight: 500;
-        min-width: 160px;
-    }
-
-    /* Status Badge - Compact */
+    /* Status badges — dung design tokens */
     .status-badge {
-        padding: 0.25rem 0.625rem;
-        border-radius: 12px;
-        font-size: 0.7rem;
+        padding: .25rem .625rem;
+        border-radius: var(--r-pill);
+        font-size: .7rem;
         font-weight: 600;
         display: inline-flex;
         align-items: center;
-        gap: 0.25rem;
+        gap: .25rem;
     }
+    .status-badge i { font-size: .5rem; }
+    .status-new            { background: var(--status-confirm-bg);  color: var(--status-confirm-text); }
+    .status-pending        { background: var(--status-pending-bg);  color: var(--status-pending-text); }
+    .status-assigned       { background: var(--status-done-bg);     color: var(--status-done-text); }
+    .status-processing     { background: var(--status-confirm-bg);  color: var(--status-confirm-text); }
+    .status-waiting_customer { background: var(--warning-light);    color: var(--warning-text); }
+    .status-resolved       { background: var(--status-done-bg);     color: var(--status-done-text); }
+    .status-closed         { background: var(--bg-subtle);          color: var(--text-secondary); }
 
-    .status-badge i {
-        font-size: 0.5rem;
-    }
-
-    .status-new {
-        background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-        color: #1e40af;
-    }
-
-    .status-pending {
-        background: linear-gradient(135deg, #fef3c7, #fde68a);
-        color: #92400e;
-    }
-
-    .status-assigned {
-        background: linear-gradient(135deg, #d1fae5, #a7f3d0);
-        color: #065f46;
-    }
-
-    .status-processing {
-        background: linear-gradient(135deg, #cffafe, #a5f3fc);
-        color: #0e7490;
-    }
-
-    .status-waiting_customer {
-        background: linear-gradient(135deg, #fef9c3, #fef08a);
-        color: #a16207;
-    }
-
-    .status-resolved {
-        background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-        color: #166534;
-    }
-
-    .status-closed {
-        background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-        color: #475569;
-    }
-
-    /* Priority Badge */
-    .priority-low { color: #64748b; }
-    .priority-medium { color: #d4a835; }
-    .priority-high { color: #dc2626; }
-    .priority-urgent { color: #dc2626; font-weight: 700; }
-
-    /* Empty State - Đồng bộ style */
+    /* Empty state */
     .empty-state {
         text-align: center;
         padding: 4rem 2rem;
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        background: var(--bg-white);
+        border-radius: var(--r-xl);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border);
     }
+    .empty-state i { font-size: 3.5rem; color: var(--text-muted); margin-bottom: 1.25rem; opacity: .5; }
+    .empty-state h4 { color: var(--text-primary); font-weight: 600; margin-bottom: .5rem; }
+    .empty-state p  { color: var(--text-secondary); margin-bottom: 1.5rem; }
 
-    .empty-state i {
-        font-size: 4rem;
-        color: #cbd5e1;
-        margin-bottom: 1.5rem;
+    /* Buttons */
+    .btn-cp-save {
+        padding: 8px 20px;
+        border-radius: var(--r-pill);
+        border: none;
+        background: var(--gold);
+        color: #fff;
+        font-size: .82rem;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: var(--font-ui);
+        transition: background .18s, box-shadow .18s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
     }
-
-    .empty-state h4 {
-        color: #1e3a5f;
-        margin-bottom: 0.75rem;
+    .btn-cp-save:hover { background: var(--gold-hover); color: #fff; box-shadow: var(--shadow-gold); }
+    .btn-cp-outline {
+        padding: 8px 20px;
+        border-radius: var(--r-pill);
+        border: 1.5px solid var(--gold);
+        background: transparent;
+        color: var(--gold-hover);
+        font-size: .82rem;
+        font-weight: 600;
+        font-family: var(--font-ui);
+        transition: background .18s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: .4rem;
     }
+    .btn-cp-outline:hover { background: var(--gold-muted); color: var(--gold-hover); }
 
-    .empty-state p {
-        color: #64748b;
-        margin-bottom: 1.5rem;
-    }
-
-    /* Responsive */
     @media (max-width: 768px) {
-        .page-header {
-            padding: 3rem 0 2rem;
-        }
-
-        .header-actions {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        .btn-spa-primary {
-            width: 100%;
-            text-align: center;
-        }
-
-        .complaint-card-header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.375rem;
-        }
-
-        .complaint-card-header > div {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .complaint-date {
-            text-align: right;
-        }
-
-        .complaint-actions {
-            justify-content: center;
-            min-height: auto;
-        }
-
-        .complaint-actions .btn-spa-outline {
-            width: 100%;
-            min-width: auto;
-        }
-    }
-
-    @media (max-width: 576px) {
-        .complaint-meta {
-            flex-direction: column;
-        }
-
-        .meta-badge {
-            width: fit-content;
-        }
-
-        .complaint-card-header > div {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.375rem;
-        }
-
-        .complaint-date {
-            text-align: left;
-        }
+        .header-actions { flex-direction: column; align-items: stretch; }
+        .complaint-card-header { flex-direction: column; align-items: flex-start; }
+        .complaint-actions { justify-content: center; }
+        .complaint-actions .btn-cp-outline { width: 100%; justify-content: center; }
     }
 </style>
 {% endblock %}
@@ -357,38 +172,22 @@
 <!-- Page Header -->
 <section class="page-header">
     <div class="container">
-        <h1><i class="fas fa-headset me-3"></i>Khiếu Nại Của Tôi</h1>
-        <p class="lead mb-0">Theo dõi và quản lý các khiếu nại của bạn tại Spa ANA</p>
+        <h1>Khiếu nại của tôi</h1>
+        <p class="subtitle mb-0">Theo dõi và quản lý các khiếu nại của bạn tại Spa ANA</p>
     </div>
 </section>
 
 <!-- Complaints Section -->
 <section class="complaints-section">
     <div class="container">
-        <!-- Breadcrumb -->
-        <div class="breadcrumb-wrapper">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item">
-                        <a href="{% url 'pages:home' %}">
-                            <i class="fas fa-home me-1"></i>Trang chủ
-                        </a>
-                    </li>
-                    <li class="breadcrumb-item active" aria-current="page">
-                        <i class="fas fa-headset me-1"></i>Khiếu nại của tôi
-                    </li>
-                </ol>
-            </nav>
-        </div>
 
         <!-- Header Actions -->
         <div class="header-actions">
-            <h4 class="section-title">
-                <i class="fas fa-list-ul me-2 text-warning"></i>
-                Danh sách khiếu nại
-            </h4>
-            <a href="{% url 'complaints:customer_complaint_create' %}" class="btn btn-spa-primary">
-                Gửi khiếu nại mới
+            <div class="section-title">
+                <i class="fas fa-list-ul"></i>Danh sách khiếu nại
+            </div>
+            <a href="{% url 'complaints:customer_complaint_create' %}" class="btn-cp-save">
+                <i class="fas fa-plus"></i>Gửi khiếu nại mới
             </a>
         </div>
 
@@ -397,37 +196,20 @@
             {% for complaint in complaints %}
             <div class="complaint-card">
                 <div class="complaint-card-header">
-                    <div>
-                        <span class="complaint-code">
-                            <i class="fas fa-hashtag me-1"></i>{{ complaint.code }}
-                        </span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="complaint-code"><i class="fas fa-hashtag me-1"></i>{{ complaint.code }}</span>
                         <span class="status-badge status-{{ complaint.status }}">
-                            <i class="fas fa-circle fa-xs"></i>
-                            {{ complaint.get_status_display }}
+                            <i class="fas fa-circle"></i>{{ complaint.get_status_display }}
                         </span>
                     </div>
-                    <span class="complaint-date">
-                        <i class="far fa-clock me-1"></i>
-                        {{ complaint.created_at|date:"d/m/Y H:i" }}
-                    </span>
+                    <span class="complaint-date"><i class="far fa-clock me-1"></i>{{ complaint.created_at|date:"d/m/Y H:i" }}</span>
                 </div>
                 <div class="complaint-card-body">
                     <h5 class="complaint-title">{{ complaint.title }}</h5>
                     <p class="complaint-preview">{{ complaint.content|truncatewords:40 }}</p>
-
-                    <div class="complaint-meta">
-                        {% if complaint.assigned_to %}
-                        <span class="meta-badge">
-                            <i class="fas fa-user-check"></i>
-                            {{ complaint.assigned_to.get_full_name|default:complaint.assigned_to.username }}
-                        </span>
-                        {% endif %}
-                    </div>
-
                     <div class="complaint-actions">
-                        <a href="{% url 'complaints:customer_complaint_detail' complaint.id %}"
-                           class="btn btn-spa-outline btn-center">
-                            <i class="fas fa-eye me-2"></i>Xem chi tiết
+                        <a href="{% url 'complaints:customer_complaint_detail' complaint.id %}" class="btn-cp-outline">
+                            <i class="fas fa-eye"></i>Xem chi tiết
                         </a>
                     </div>
                 </div>
@@ -437,9 +219,9 @@
         <div class="empty-state">
             <i class="fas fa-inbox"></i>
             <h4>Bạn chưa có khiếu nại nào</h4>
-            <p>Nếu bạn có vấn đề cần khiếu nại, hãy gửi khiếu nại mới để được chúng tôi giải đáp.</p>
-            <a href="{% url 'complaints:customer_complaint_create' %}" class="btn btn-spa-primary">
-                Gửi khiếu nại
+            <p>Nếu bạn có vấn đề cần phản ánh, hãy gửi khiếu nại để được chúng tôi hỗ trợ.</p>
+            <a href="{% url 'complaints:customer_complaint_create' %}" class="btn-cp-save">
+                <i class="fas fa-plus"></i>Gửi khiếu nại
             </a>
         </div>
         {% endif %}

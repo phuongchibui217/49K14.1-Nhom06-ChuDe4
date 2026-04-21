@@ -93,11 +93,12 @@ def admin_customers(request):
 
 @customer_required()
 def customer_profile(request):
-    """Tài khoản cá nhân của khách hàng"""
+    """Tài khoản cá nhân của khách hàng (UC 9.1, 9.2, 9.3)"""
     profile = request.user.customer_profile
 
-    profile_form = CustomerProfileForm(instance=profile)
+    profile_form = None
     password_form = None
+    edit_mode = False
 
     if request.method == 'POST':
         action = request.POST.get('action', '')
@@ -109,7 +110,8 @@ def customer_profile(request):
                 messages.success(request, 'Cập nhật thông tin thành công!')
                 return redirect('customers:customer_profile')
             else:
-                messages.error(request, 'Vui lòng kiểm tra lại thông tin.')
+                # Giữ edit mode khi có lỗi
+                edit_mode = True
 
         elif action == 'change_password':
             password_form = ChangePasswordForm(request.user, request.POST)
@@ -118,18 +120,17 @@ def customer_profile(request):
                 messages.success(request, 'Đổi mật khẩu thành công! Vui lòng đăng nhập lại.')
                 logout(request)
                 return redirect('accounts:login')
-            else:
-                messages.error(request, 'Đổi mật khẩu thất bại. Vui lòng kiểm tra lại.')
+            # Giữ form mở khi có lỗi — không cần set flag vì template dùng password_form errors
 
-    appointments_count = profile.appointments.count()
-    completed_appointments = profile.appointments.filter(status='COMPLETED').count()
-    pending_appointments = profile.appointments.filter(status='PENDING').count()
+    # Khởi tạo form nếu chưa có (view mode hoặc sau redirect)
+    if profile_form is None:
+        profile_form = CustomerProfileForm(instance=profile)
+    if password_form is None:
+        password_form = ChangePasswordForm(request.user)
 
     return render(request, 'accounts/customer_profile.html', {
         'customer_profile': profile,
         'profile_form': profile_form,
-        'password_form': password_form or ChangePasswordForm(request.user),
-        'appointments_count': appointments_count,
-        'completed_appointments': completed_appointments,
-        'pending_appointments': pending_appointments,
+        'password_form': password_form,
+        'edit_mode': edit_mode,
     })

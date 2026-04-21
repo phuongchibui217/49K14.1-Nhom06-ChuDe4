@@ -210,8 +210,7 @@
 
     <script>
         window.adminSidebarBookingBadgeConfig = {
-            countUrl: "{% url 'appointments:api_booking_pending_count' %}",
-            countSocketPath: "/ws/admin/booking/pending-count/"
+            countUrl: "{% url 'appointments:api_booking_pending_count' %}"
         };
     </script>
     <script src="{% static 'js/admin-sidebar-booking-badge.js' %}?v={% now 'His' %}"></script>

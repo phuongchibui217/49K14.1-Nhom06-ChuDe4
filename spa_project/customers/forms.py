@@ -5,11 +5,22 @@ import re
 
 
 class CustomerProfileForm(forms.ModelForm):
-    """Form cập nhật thông tin profile khách hàng"""
+    """Form cập nhật thông tin profile khách hàng (UC 9.2)"""
+
+    # email nằm trên User, không phải CustomerProfile — xử lý thủ công
+    email = forms.EmailField(
+        label='Email',
+        required=False,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Địa chỉ email (không bắt buộc)',
+            'autocomplete': 'email',
+        })
+    )
 
     class Meta:
         model = CustomerProfile
-        fields = ['full_name', 'phone', 'gender', 'dob', 'address','contact_channel', 'notes']
+        fields = ['full_name', 'phone', 'gender', 'dob', 'address']
         widgets = {
             'full_name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -18,8 +29,6 @@ class CustomerProfileForm(forms.ModelForm):
             'phone': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Số điện thoại',
-                'pattern': '[0-9]{10,11}',
-                'title': 'Số điện thoại 10-11 số'
             }),
             'gender': forms.Select(attrs={
                 'class': 'form-select'
@@ -28,17 +37,17 @@ class CustomerProfileForm(forms.ModelForm):
                 'class': 'form-control',
                 'type': 'date'
             }),
-            'address': forms.Textarea(attrs={
+            'address': forms.TextInput(attrs={
                 'class': 'form-control',
-                'rows': 3,
                 'placeholder': 'Địa chỉ của bạn'
             }),
-            'notes': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3,
-                'placeholder': 'Ghi chú thêm (nếu có)'
-            })
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Điền sẵn email từ User nếu có
+        if self.instance and self.instance.user:
+            self.fields['email'].initial = self.instance.user.email
 
     def clean_full_name(self):
         full_name = self.cleaned_data.get('full_name', '').strip()
@@ -50,17 +59,39 @@ class CustomerProfileForm(forms.ModelForm):
 
     def clean_phone(self):
         phone = self.cleaned_data.get('phone', '').strip()
-
         if not phone:
             raise forms.ValidationError('Vui lòng nhập số điện thoại.')
-
         if not re.fullmatch(r'0\d{9}', phone):
-            raise forms.ValidationError('Số điện thoại phải gồm 10 chữ số.')
-
+            raise forms.ValidationError('Số điện thoại phải gồm 10 chữ số bắt đầu bằng 0.')
         if CustomerProfile.objects.filter(phone=phone).exclude(pk=self.instance.pk).exists():
             raise forms.ValidationError('Số điện thoại này đã được sử dụng.')
-
         return phone
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').strip().lower()
+        if not email:
+            return email
+        # Kiểm tra trùng email với user khác
+        if self.instance and self.instance.user:
+            if User.objects.filter(email=email).exclude(pk=self.instance.user.pk).exists():
+                raise forms.ValidationError('Địa chỉ email này đã được sử dụng.')
+        return email
+
+    def clean_dob(self):
+        dob = self.cleaned_data.get('dob')
+        if dob:
+            from django.utils import timezone
+            if dob > timezone.now().date():
+                raise forms.ValidationError('Ngày sinh không được lớn hơn ngày hiện tại.')
+        return dob
+
+    def save(self, commit=True):
+        profile = super().save(commit=commit)
+        # Lưu email vào User
+        if commit and profile.user:
+            profile.user.email = self.cleaned_data.get('email', '')
+            profile.user.save(update_fields=['email'])
+        return profile
 
 class ChangePasswordForm(forms.Form):
     """Form đổi mật khẩu khách hàng"""

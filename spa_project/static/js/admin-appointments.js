@@ -1,4 +1,5 @@
-// ===== 1. SETTINGS - cấu hình =====
+﻿// ===== 1. SETTINGS - cấu hình =====
+console.log("ADMIN APPOINTMENTS JS LOADED - NEW TOGGLE VERSION v20260422-003");
 const START_HOUR = 9;  // Giờ mở cửa (9:00 sáng)
 const END_HOUR = 21;   // Giờ đóng cửa (21:00 tối)
 const SLOT_MIN = 30; // 1 ô lịch = 30 phút
@@ -18,88 +19,74 @@ function _nextPendingId() {
   return ++_pendingIdCounter;
 }
 
-function addPendingBlock({ roomId, laneIndex, day, time }) {
+/**
+ * Toggle slot: click ô trống → chọn, click lại block xanh → bỏ chọn.
+ * Đây là hàm duy nhất xử lý add/remove pending block.
+ */
+function handleToggleSlot({ roomId, laneIndex, day, time, slotsEl }) {
+  console.log("slot clicked", `${roomId}|lane${laneIndex}|${day}|${time}`);
+  console.log("toggle path running");
   const duration = DEFAULT_DURATION;
-  const endTime = addMinutesToTime(time, duration);
-
+  const endTime  = addMinutesToTime(time, duration);
   const startMin = minutesFromStart(time);
-  const endMin = minutesFromStart(endTime);
+  const endMin   = minutesFromStart(endTime);
 
+  // Kiểm tra ngoài giờ
   if (startMin < 0 || endMin > totalTimelineMinutes()) {
-    showToast(
-      "warning",
-      "Ngoài giờ hoạt động",
-      `Spa hoạt động từ ${START_HOUR}:00 đến ${END_HOUR}:00`
-    );
-    return null;
+    showToast("warning", "Ngoài giờ hoạt động", `Spa hoạt động từ ${START_HOUR}:00 đến ${END_HOUR}:00`);
+    return;
   }
 
-  // Conflict với appointment đã có: chỉ check cùng lane (laneIndex)
-  // Dùng allocateRoomLanes để biết appointment nào đang ở lane nào
+  // Tìm pending block trùng slot này (cùng room + lane + day + time)
+  const existing = pendingBlocks.find(pb =>
+    pb.roomId === roomId &&
+    pb.laneIndex === laneIndex &&
+    pb.day === day &&
+    pb.time === time
+  );
+
+  if (existing) {
+    // ── TOGGLE OFF: bỏ chọn ──
+    pendingBlocks = pendingBlocks.filter(pb => pb.id !== existing.id);
+    document.querySelectorAll(`.appt-pending[data-pending-id="${existing.id}"]`).forEach(el => el.remove());
+    _syncActionBar();
+    return;
+  }
+
+  // ── TOGGLE ON: kiểm tra conflict rồi thêm ──
+
+  // Conflict với appointment đã có
   const dayAppts = APPOINTMENTS.filter(a =>
-    a.roomCode === roomId &&
-    a.date === day &&
-    (a.apptStatus || "").toUpperCase() !== "CANCELLED"
+    a.roomCode === roomId && a.date === day && (a.apptStatus || "").toUpperCase() !== "CANCELLED"
   );
   const { placements } = allocateRoomLanes(roomId, day, dayAppts);
   const laneAppts = placements.filter(p => p.laneIndex === laneIndex).map(p => p.appt);
-
   const conflictAppt = laneAppts.find(a =>
     overlaps(startMin, endMin, minutesFromStart(a.start), minutesFromStart(a.end))
   );
-
   if (conflictAppt) {
-    showToast(
-      "warning",
-      "Slot đã có lịch",
-      `Lane này đã có lịch hẹn lúc ${conflictAppt.start}–${conflictAppt.end}`
-    );
-    const slotsEl = document.querySelector(
-      `.lane-row[data-room-id="${roomId}"] .slots[data-room="${roomId}"][data-lane="${laneIndex}"]`
-    );
+    showToast("warning", "Slot đã có lịch", `Lane này đã có lịch hẹn lúc ${conflictAppt.start}–${conflictAppt.end}`);
     if (slotsEl) {
       slotsEl.classList.add("conflict-flash");
       setTimeout(() => slotsEl.classList.remove("conflict-flash"), 450);
     }
-    return null;
+    return;
   }
 
-  // Conflict với pending block khác: chỉ check cùng roomId + laneIndex
+  // Conflict với pending block khác trong cùng lane
   const conflictPending = pendingBlocks.find(pb =>
-    pb.roomId === roomId &&
-    pb.laneIndex === laneIndex &&
-    pb.day === day &&
+    pb.roomId === roomId && pb.laneIndex === laneIndex && pb.day === day &&
     overlaps(startMin, endMin, minutesFromStart(pb.time), minutesFromStart(pb.endTime))
   );
-
   if (conflictPending) {
-    showToast(
-      "warning",
-      "Trùng với slot đang chọn",
-      `Lane này đã có slot đang chọn lúc ${conflictPending.time}–${conflictPending.endTime}`
-    );
-    return null;
+    showToast("warning", "Trùng với slot đang chọn", `Lane này đã có slot đang chọn lúc ${conflictPending.time}–${conflictPending.endTime}`);
+    return;
   }
 
-  const block = {
-    id: _nextPendingId(),
-    roomId,
-    laneIndex,
-    day,
-    time,
-    endTime,
-    duration,
-  };
-
+  const block = { id: _nextPendingId(), roomId, laneIndex, day, time, endTime, duration };
   pendingBlocks.push(block);
   _syncActionBar();
-  return block;
-}
-
-function removePendingBlock(id) {
-  pendingBlocks = pendingBlocks.filter(pb => pb.id !== id);
-  document.querySelectorAll(`.appt-pending[data-pending-id="${id}"]`).forEach(el => el.remove());
-  _syncActionBar();
+  if (slotsEl) _mountPendingBlock(block, slotsEl);
 }
 
 function clearPendingBlocks() {
@@ -109,14 +96,12 @@ function clearPendingBlocks() {
 }
 
 function _syncActionBar() {
-  const bar = document.getElementById("pendingActionBar");
+  const bar   = document.getElementById("pendingActionBar");
   const badge = document.getElementById("pbCountBadge");
   const label = document.getElementById("pbCountLabel");
-
   if (!bar) return;
 
   const count = pendingBlocks.length;
-
   if (badge) badge.textContent = String(count);
   if (label) label.textContent = count === 1 ? "1 khách đã chọn" : `${count} khách đã chọn`;
 
@@ -125,51 +110,45 @@ function _syncActionBar() {
     requestAnimationFrame(() => bar.classList.add("visible"));
   } else {
     bar.classList.remove("visible");
-    setTimeout(() => {
-      if (!pendingBlocks.length) bar.style.display = "none";
-    }, 180);
+    setTimeout(() => { if (!pendingBlocks.length) bar.style.display = "none"; }, 180);
   }
 }
 
 function _mountPendingBlock(pb, slotsEl) {
   if (!slotsEl) return null;
 
-  const existed = slotsEl.querySelector(`.appt-pending[data-pending-id="${pb.id}"]`);
-  if (existed) existed.remove();
+  // Xóa block cũ nếu đã tồn tại
+  slotsEl.querySelector(`.appt-pending[data-pending-id="${pb.id}"]`)?.remove();
 
   const block = document.createElement("div");
   block.className = "appt appt-pending";
   block.dataset.pendingId = String(pb.id);
 
-  // Selection block: chỉ có top-bar xanh + nền translucent + nút xóa
+  // Chỉ có top-bar xanh + hint giờ — không có nút X
   block.innerHTML = `
     <div class="pb-selection-bar"></div>
     <div class="pb-time-hint">${pb.time} – ${pb.endTime}</div>
-    <button type="button" class="pb-remove" title="Xóa slot này">
-      <i class="fas fa-times"></i>
-    </button>
   `;
 
-  block.style.position = "absolute";
-  block.style.top = "0";
-  block.style.height = "var(--rowH)";
-  block.style.zIndex = "30";
-  block.style.display = "block";
+  block.style.cssText = "position:absolute;top:0;height:var(--rowH);z-index:30;cursor:pointer;";
 
   const leftMin = minutesFromStart(pb.time);
-  const durMin = Math.max(SLOT_MIN, minutesFromStart(pb.endTime) - leftMin);
-
-  block.style.left = `calc(${minutesToPercent(leftMin)}% + 1px)`;
+  const durMin  = Math.max(SLOT_MIN, minutesFromStart(pb.endTime) - leftMin);
+  block.style.left  = `calc(${minutesToPercent(leftMin)}% + 1px)`;
   block.style.width = `calc(${minutesToPercent(durMin)}% - 2px)`;
 
-  const removeBtn = block.querySelector(".pb-remove");
-  if (removeBtn) {
-    removeBtn.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      removePendingBlock(pb.id);
+  // Click vào block xanh → toggle off (bỏ chọn)
+  block.addEventListener("click", (e) => {
+    e.stopPropagation();
+    const sEl = block.closest(".slots");
+    handleToggleSlot({
+      roomId:     pb.roomId,
+      laneIndex:  pb.laneIndex,
+      day:        pb.day,
+      time:       pb.time,
+      slotsEl:    sEl,
     });
-  }
+  });
 
   slotsEl.appendChild(block);
   return block;
@@ -554,21 +533,16 @@ function renderGrid(){
       laneRow.innerHTML = `${lane===0?`<div class="roomcell"><span class="dot"></span>${r.name}</div>`:`<div class="roomcell muted"><span class="dot"></span>${r.name}</div>`}<div class="slots" data-room="${r.id}" data-lane="${lane}"></div>`;
       const slotsEl = laneRow.querySelector(".slots");
 
-      // click vào ô trống ==> tạo pending block (flow 2 bước)
-      slotsEl.addEventListener("click", (e)=>{
+      // click vào ô trống → toggle slot (chọn hoặc bỏ chọn)
+      slotsEl.addEventListener("click", (e) => {
         if (e.target.closest('.appt') || e.target.closest('.appt-pending')) return;
 
-        const rect     = slotsEl.getBoundingClientRect();
-        const x        = e.clientX - rect.left;
-        const ratio    = Math.max(0, Math.min(1, x / rect.width));
-        const rawMin   = ratio * totalTimelineMinutes();
-        const minutes  = Math.floor(rawMin / SLOT_MIN) * SLOT_MIN;
-        const clickedTime = `${pad2(START_HOUR + Math.floor(minutes/60))}:${pad2(minutes%60)}`;
-        const currentDay  = dayPicker.value;
+        const rect        = slotsEl.getBoundingClientRect();
+        const ratio       = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        const minutes     = Math.floor(ratio * totalTimelineMinutes() / SLOT_MIN) * SLOT_MIN;
+        const clickedTime = `${pad2(START_HOUR + Math.floor(minutes / 60))}:${pad2(minutes % 60)}`;
 
-        const newBlock = addPendingBlock({ roomId: r.id, laneIndex: lane, day: currentDay, time: clickedTime });
-        // Inject block trực tiếp vào slotsEl — KHÔNG gọi renderGrid()
-        if (newBlock) _mountPendingBlock(newBlock, slotsEl);
+        handleToggleSlot({ roomId: r.id, laneIndex: lane, day: dayPicker.value, time: clickedTime, slotsEl });
       });
 
       // vẽ block lịch hẹn
@@ -852,146 +826,102 @@ function _esc(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-// ===== CREATE MODE — GUEST CARDS =====
+// ===== CREATE MODE — ACCORDION GUEST CARDS =====
 let _guestCount = 0;
+// Map pendingBlockId → guestIdx để sync slot summary
+let _pendingBlockMap = []; // [{pendingId, guestIdx}]
 
-function _buildGuestCard(idx, prefill = {}) {
-  const n = idx + 1;
-  const roomOpts = ROOMS.map(r =>
-    `<option value="${r.id}"${prefill.roomId && r.id === prefill.roomId ? ' selected' : ''}>${r.name}</option>`
-  ).join('');
-  const svcOpts  = `<option value="">-- Dịch vụ --</option>` +
-                   SERVICES.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-
-  // Badge hiển thị slot đã chọn từ grid
-  const roomName = prefill.roomId ? (ROOMS.find(r => r.id === prefill.roomId)?.name || prefill.roomId) : '';
-  const slotBadge = (prefill.time && prefill.roomId) ? `
-    <span style="display:inline-flex;align-items:center;gap:5px;background:#eff6ff;border:1px solid #bfdbfe;
-                 color:#1d4ed8;border-radius:6px;padding:2px 8px;font-size:.72rem;font-weight:600;">
-      <i class="fas fa-map-marker-alt" style="font-size:.6rem;"></i>Phòng ${_esc(roomName)}
-      &nbsp;·&nbsp;
-      <i class="fas fa-clock" style="font-size:.6rem;"></i>${prefill.time}
-      ${prefill.pendingDuration ? `&nbsp;·&nbsp;${prefill.pendingDuration}'` : ''}
-    </span>` : '';
-
-  return `
-  <div class="guest-card" data-idx="${idx}"
-       style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
-    <div style="background:#f8fafc;padding:.6rem 1rem;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f0f0f0;gap:8px;flex-wrap:wrap;">
-      <span style="font-weight:600;font-size:.82rem;color:#374151;">
-        <i class="fas fa-user-circle me-1" style="color:#c9a96e;"></i>Khách ${n}
-      </span>
-      ${slotBadge}
-      <button type="button" class="btn-remove-guest"
-              style="background:none;border:none;color:#9ca3af;font-size:.75rem;cursor:pointer;padding:0 4px;"
-              onclick="removeGuestCard(${idx})">
-        <i class="fas fa-times"></i> Xóa
-      </button>
-    </div>
-    <div style="padding:.85rem 1rem;">
-      <div class="row g-2">
-        <div class="col-md-4">
-          <label style="font-size:.72rem;font-weight:600;color:#6b7280;display:block;margin-bottom:3px;">Họ tên khách</label>
-          <input class="form-control form-control-sm gc-name" placeholder="Để trống = dùng tên người đặt"
-                 value="${prefill.name || ''}" />
-        </div>
-        <div class="col-md-3">
-          <label style="font-size:.72rem;font-weight:600;color:#6b7280;display:block;margin-bottom:3px;">SĐT khách</label>
-          <input class="form-control form-control-sm gc-phone" placeholder="Để trống = dùng SĐT người đặt"
-                 inputmode="numeric" value="${prefill.phone || ''}" />
-        </div>
-        <div class="col-md-5">
-          <label style="font-size:.72rem;font-weight:600;color:#6b7280;display:block;margin-bottom:3px;">Email khách</label>
-          <input type="email" class="form-control form-control-sm gc-email" placeholder="Email (nếu có)"
-                 value="${prefill.email || ''}" />
-        </div>
-
-        <div class="col-md-4">
-          <label style="font-size:.72rem;font-weight:600;color:#6b7280;display:block;margin-bottom:3px;">Dịch vụ <span class="text-danger">*</span></label>
-          <select class="form-select form-select-sm gc-service" onchange="onGuestServiceChange(this, ${idx})">${svcOpts}</select>
-        </div>
-        <div class="col-md-4">
-          <label style="font-size:.72rem;font-weight:600;color:#6b7280;display:block;margin-bottom:3px;">Gói dịch vụ <span class="text-danger">*</span></label>
-          <select class="form-select form-select-sm gc-variant" disabled>
-            <option value="">-- Chọn dịch vụ trước --</option>
-          </select>
-        </div>
-        <div class="col-md-4">
-          <label style="font-size:.72rem;font-weight:600;color:#6b7280;display:block;margin-bottom:3px;">Phòng <span class="text-danger">*</span></label>
-          <select class="form-select form-select-sm gc-room">${roomOpts}</select>
-        </div>
-
-        <div class="col-md-3">
-          <label style="font-size:.72rem;font-weight:600;color:#6b7280;display:block;margin-bottom:3px;">Ngày hẹn <span class="text-danger">*</span></label>
-          <input type="date" class="form-control form-control-sm gc-date" value="${prefill.date || dayPicker.value}" />
-        </div>
-        <div class="col-md-2">
-          <label style="font-size:.72rem;font-weight:600;color:#6b7280;display:block;margin-bottom:3px;">Giờ hẹn <span class="text-danger">*</span></label>
-          <input type="time" class="form-control form-control-sm gc-time" value="${prefill.time || '09:00'}" min="09:00" max="21:00" />
-        </div>
-        <div class="col-md-3">
-          <label style="font-size:.72rem;font-weight:600;color:#6b7280;display:block;margin-bottom:3px;">Trạng thái</label>
-          <select class="form-select form-select-sm gc-status">
-            <option value="NOT_ARRIVED">Chưa đến</option>
-            <option value="PENDING">Chờ xác nhận</option>
-            <option value="ARRIVED">Đã đến</option>
-            <option value="COMPLETED">Hoàn thành</option>
-          </select>
-        </div>
-        <div class="col-md-4">
-          <label style="font-size:.72rem;font-weight:600;color:#6b7280;display:block;margin-bottom:3px;">Thanh toán</label>
-          <select class="form-select form-select-sm gc-pay">
-            <option value="UNPAID">Chưa thanh toán</option>
-            <option value="PARTIAL">Một phần</option>
-            <option value="PAID">Đã thanh toán</option>
-          </select>
-        </div>
-
-        <div class="col-md-6">
-          <label style="font-size:.72rem;font-weight:600;color:#6b7280;display:block;margin-bottom:3px;">Ghi chú khách</label>
-          <input class="form-control form-control-sm gc-note" placeholder="Ghi chú từ khách..." value="${prefill.note || ''}" />
-        </div>
-        <div class="col-md-6">
-          <label style="font-size:.72rem;font-weight:600;color:#6b7280;display:block;margin-bottom:3px;">Ghi chú nội bộ</label>
-          <input class="form-control form-control-sm gc-staff-note" placeholder="Chỉ nhân viên thấy..." value="${prefill.staffNote || ''}" />
-        </div>
-      </div>
-    </div>
-  </div>`;
+// ── Helpers ──
+function _getGuestItems() {
+  return Array.from(document.querySelectorAll('#guestList .gc-item'));
 }
 
-function addGuestCard(prefill = {}) {
-  const list = document.getElementById('guestList');
-  if (!list) return;
-  const idx = _guestCount++;
-  const div = document.createElement('div');
-  div.innerHTML = _buildGuestCard(idx, prefill);
-  list.appendChild(div.firstElementChild);
-  // Renumber headings
-  _renumberGuests();
+function _getGuestItem(idx) {
+  return document.querySelector(`#guestList .gc-item[data-idx="${idx}"]`);
 }
 
-window.removeGuestCard = function(idx) {
-  const card = document.querySelector(`#guestList .guest-card[data-idx="${idx}"]`);
-  if (card) card.remove();
-  _renumberGuests();
+/** Kiểm tra 1 guest row đã đủ trường bắt buộc chưa */
+function _isGuestComplete(item) {
+  if (!item) return false;
+  const svc  = item.querySelector('.gc-service')?.value;
+  const vari = item.querySelector('.gc-variant')?.value;
+  const room = item.dataset.slotRoom || item.querySelector('.gc-room')?.value;
+  const date = item.dataset.slotDate || item.querySelector('.gc-date')?.value;
+  const time = item.dataset.slotTime || item.querySelector('.gc-time')?.value;
+  return !!(svc && vari && room && date && time);
+}
+
+/** Highlight ô thiếu trong 1 row */
+function _markRowValidity(item) {
+  if (!item) return;
+  const svcSel = item.querySelector('.gc-service');
+  const varSel = item.querySelector('.gc-variant');
+  [svcSel, varSel].forEach(el => {
+    if (!el) return;
+    el.style.borderColor = el.value ? '#e5e7eb' : '#fbbf24';
+    el.style.background  = el.value ? '#fff' : '#fffbeb';
+  });
+  const row = item.querySelector('.gc-row');
+  if (row) {
+    const complete = _isGuestComplete(item);
+    row.style.background   = '#fff';
+    row.style.borderLeftColor = complete ? '#86efac' : '#fca5a5';
+  }
+}
+
+/** Cập nhật progress bar */
+function _updateGuestProgress() {
+  const items   = _getGuestItems();
+  const total   = items.length;
+  const done    = items.filter(it => _isGuestComplete(it)).length;
+  const labelEl = document.getElementById('guestProgressLabel');
+  const fillEl  = document.getElementById('guestProgressFill');
+  if (labelEl) labelEl.textContent = `${done}/${total} đã đủ`;
+  if (fillEl)  fillEl.style.width  = total ? `${Math.round(done / total * 100)}%` : '0%';
+}
+
+/** Không còn dùng slot summary panel riêng — slot info nằm trong từng row */
+function _updateSlotSummary() { /* no-op — slot info is inline in each row */ }
+
+/** Toggle expand detail panel của 1 row */
+window.toggleGuestCard = function(idx) {
+  const item = _getGuestItem(idx);
+  if (!item) return;
+  const wrap   = item.querySelector('.gc-detail-wrap');
+  const detail = item.querySelector('.gc-detail');
+  const icon   = item.querySelector('.gc-expand-btn i');
+  if (!wrap || !detail) return;
+  const isOpen = wrap.style.maxHeight && wrap.style.maxHeight !== '0px' && wrap.style.maxHeight !== '0';
+  if (isOpen) {
+    wrap.style.maxHeight = '0';
+    detail.style.display = 'none';
+    if (icon) icon.style.transform = '';
+    item.classList.remove('open');
+  } else {
+    detail.style.display = 'flex';
+    wrap.style.maxHeight = '300px';
+    if (icon) icon.style.transform = 'rotate(90deg)';
+    item.classList.add('open');
+  }
 };
 
-function _renumberGuests() {
-  document.querySelectorAll('#guestList .guest-card').forEach((card, i) => {
-    const title = card.querySelector('.btn-remove-guest')?.previousElementSibling;
-    if (title) title.innerHTML = `<i class="fas fa-user-circle me-1" style="color:#c9a96e;"></i>Khách ${i + 1}`;
-  });
-}
+/** Focus 1 row (scroll vào view) */
+window.focusGuestCard = function(idx) {
+  const item = _getGuestItem(idx);
+  if (item) item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+};
 
-window.onGuestServiceChange = function(sel, idx) {
-  const card = document.querySelector(`#guestList .guest-card[data-idx="${idx}"]`);
-  if (!card) return;
-  const variantSel = card.querySelector('.gc-variant');
-  variantSel.innerHTML = '<option value="">-- Chọn gói --</option>';
-  variantSel.disabled = true;
+/** Không còn dùng header summary */
+function _refreshGuestHeader(item) { /* no-op */ }
 
-  const svc = SERVICES.find(s => s.id == sel.value);
+/** Load variants cho 1 guest card */
+function _loadGuestVariants(item, serviceId, selectedVariantId) {
+  const varSel = item.querySelector('.gc-variant');
+  if (!varSel) return;
+  varSel.innerHTML = '<option value="">-- Chọn gói --</option>';
+  varSel.disabled  = true;
+
+  const svc = SERVICES.find(s => s.id == serviceId);
   if (!svc || !svc.variants?.length) return;
 
   svc.variants.forEach(v => {
@@ -999,32 +929,312 @@ window.onGuestServiceChange = function(sel, idx) {
     opt.value = v.id;
     opt.textContent = `${v.label} — ${v.duration_minutes} phút`;
     opt.dataset.duration = v.duration_minutes;
-    variantSel.appendChild(opt);
+    if (selectedVariantId && v.id == selectedVariantId) opt.selected = true;
+    varSel.appendChild(opt);
   });
-  variantSel.disabled = false;
-  if (svc.variants.length === 1) variantSel.value = svc.variants[0].id;
+  varSel.disabled = false;
+  if (!selectedVariantId && svc.variants.length === 1) {
+    varSel.value = svc.variants[0].id;
+  }
+  // Cập nhật end_time khi variant thay đổi
+  _updateGuestEndTime(item);
+}
+
+/** Tính và lưu end_time vào dataset */
+function _updateGuestEndTime(item) {
+  const varSel = item.querySelector('.gc-variant');
+  const timeVal = item.dataset.slotTime;
+  if (!varSel || !timeVal) return;
+  const opt = varSel.options[varSel.selectedIndex];
+  const dur = opt?.dataset?.duration ? Number(opt.dataset.duration) : 60;
+  item.dataset.endTime = addMinutesToTime(timeVal, dur);
+  const endEl = item.querySelector('.gc-slot-time');
+  if (endEl && item.dataset.slotTime) {
+    endEl.textContent = `${item.dataset.slotTime}–${item.dataset.endTime}`;
+  }
+}
+
+/** Build 1 compact guest row — detail panel ẩn mặc định, toggle bằng JS */
+function _buildGuestItem(idx, prefill) {
+  prefill = prefill || {};
+  var roomName = prefill.roomId ? (ROOMS.find(function(r){ return r.id === prefill.roomId; }) || {}).name || prefill.roomId : '';
+  var dateVal  = prefill.date || dayPicker.value;
+  var timeVal  = prefill.time || '';
+  var endTime  = (timeVal && prefill.pendingDuration) ? addMinutesToTime(timeVal, prefill.pendingDuration) : '';
+  var hasSlot  = !!(timeVal && prefill.roomId);
+
+  var svcOpts = '<option value="">-- Dịch vụ --</option>' +
+    SERVICES.map(function(s){ return '<option value="' + s.id + '">' + s.name + '</option>'; }).join('');
+
+  var inp = 'width:100%;height:30px;padding:0 8px;font-size:.8rem;border:1px solid #d1d5db;border-radius:5px;outline:none;background:#fff;box-sizing:border-box;font-family:inherit;color:#111827;display:block;';
+  var sel = 'width:100%;height:30px;padding:0 4px;font-size:.8rem;border:1px solid #d1d5db;border-radius:5px;outline:none;background:#fff;box-sizing:border-box;font-family:inherit;color:#111827;display:block;';
+  var sInp = 'width:100%;height:26px;padding:0 6px;font-size:.75rem;border:1px solid #e5e7eb;border-radius:4px;outline:none;background:#fff;box-sizing:border-box;font-family:inherit;color:#374151;display:block;';
+  var lbl  = 'font-size:.65rem;font-weight:600;color:#9ca3af;display:block;margin-bottom:2px;white-space:nowrap;';
+
+  var slotBadge = hasSlot
+    ? '<div style="text-align:center;line-height:1.3;">'
+      + '<div style="font-size:.78rem;font-weight:700;color:#1d4ed8;white-space:nowrap;">P.' + _esc(roomName) + '</div>'
+      + '<div class="gc-slot-time" style="font-size:.7rem;color:#6b7280;white-space:nowrap;">' + timeVal + (endTime ? '\u2013' + endTime : '') + '</div>'
+      + '</div>'
+    : '<span style="font-size:.72rem;color:#9ca3af;font-style:italic;display:block;text-align:center;">—</span>';
+
+  var item = document.createElement('div');
+  item.className = 'gc-item';
+  item.dataset.idx      = idx;
+  item.dataset.slotTime = timeVal;
+  item.dataset.slotDate = dateVal;
+  item.dataset.slotRoom = prefill.roomId || '';
+  item.dataset.endTime  = endTime;
+  item.dataset.detailOpen = '0';
+  item.style.cssText = 'border-bottom:1px solid #eef0f3;';
+
+  item.innerHTML =
+    '<input type="hidden" class="gc-room" value="' + _esc(prefill.roomId || '') + '" />'
+  + '<input type="hidden" class="gc-date" value="' + _esc(dateVal) + '" />'
+  + '<input type="hidden" class="gc-time" value="' + _esc(timeVal) + '" />'
+
+  // ── COMPACT ROW ──
+  + '<div class="gc-row" style="display:grid;grid-template-columns:28px 110px 30% 15% 1fr 1fr 32px;gap:0;padding:4px 12px;align-items:center;height:44px;box-sizing:border-box;background:#fff;border-left:3px solid transparent;transition:border-color .15s;">'
+    + '<div class="gc-num" style="text-align:center;font-size:.72rem;font-weight:700;color:#94a3b8;padding:0 2px;">—</div>'
+    + '<div style="padding:0 6px;display:flex;align-items:center;justify-content:center;">' + slotBadge + '</div>'
+    + '<div style="padding:0 4px;"><input class="gc-name" style="' + inp + '" placeholder="Tên khách" value="' + _esc(prefill.name || '') + '" /></div>'
+    + '<div style="padding:0 4px;"><input class="gc-phone" style="' + inp + '" placeholder="SĐT" inputmode="numeric" value="' + _esc(prefill.phone || '') + '" /></div>'
+    + '<div style="padding:0 4px;"><select class="gc-service" style="' + sel + '">' + svcOpts + '</select></div>'
+    + '<div style="padding:0 4px;"><select class="gc-variant" style="' + sel + 'background:#f9fafb;" disabled><option value="">-- Chọn dịch vụ --</option></select></div>'
+    + '<div style="padding:0 2px;display:flex;align-items:center;justify-content:center;">'
+      + '<button type="button" class="gc-expand-btn" onclick="toggleGuestCard(' + idx + ')" title="Chi tiết"'
+      + ' style="height:28px;width:28px;padding:0;font-size:.75rem;background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:background .15s,color .15s;">'
+      + '<i class="fas fa-ellipsis-h"></i></button>'
+    + '</div>'
+  + '</div>'
+
+  // ── DETAIL PANEL (hidden, toggled by JS via visibility wrapper) ──
+  + '<div class="gc-detail-wrap" style="overflow:hidden;max-height:0;transition:max-height .2s ease;">'
+    + '<div class="gc-detail" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;padding:8px 14px 10px 158px;background:#f8fafc;border-top:1px dashed #e5e7eb;box-sizing:border-box;">'
+      + '<div style="display:flex;flex-direction:column;gap:2px;min-width:150px;flex:1;">'
+        + '<label style="' + lbl + '">Email</label>'
+        + '<input type="email" class="gc-email" style="' + sInp + '" placeholder="Email (nếu có)" value="' + _esc(prefill.email || '') + '" />'
+      + '</div>'
+      + '<div style="display:flex;flex-direction:column;gap:2px;width:115px;">'
+        + '<label style="' + lbl + '">Trạng thái</label>'
+        + '<select class="gc-status" style="' + sInp + '">'
+          + '<option value="NOT_ARRIVED" selected>Chưa đến</option>'
+          + '<option value="PENDING">Chờ xác nhận</option>'
+          + '<option value="ARRIVED">Đã đến</option>'
+          + '<option value="COMPLETED">Hoàn thành</option>'
+        + '</select>'
+      + '</div>'
+      + '<div style="display:flex;flex-direction:column;gap:2px;width:130px;">'
+        + '<label style="' + lbl + '">Thanh toán</label>'
+        + '<select class="gc-pay" style="' + sInp + '">'
+          + '<option value="UNPAID" selected>Chưa thanh toán</option>'
+          + '<option value="PARTIAL">Một phần</option>'
+          + '<option value="PAID">Đã thanh toán</option>'
+        + '</select>'
+      + '</div>'
+      + '<div style="display:flex;flex-direction:column;gap:2px;flex:2;min-width:140px;">'
+        + '<label style="' + lbl + '">Ghi chú khách</label>'
+        + '<input class="gc-note" style="' + sInp + '" placeholder="Ghi chú từ khách..." value="' + _esc(prefill.note || '') + '" />'
+      + '</div>'
+      + '<div style="display:flex;flex-direction:column;gap:2px;flex:2;min-width:140px;">'
+        + '<label style="' + lbl + '">Ghi chú nội bộ</label>'
+        + '<input class="gc-staff-note" style="' + sInp + '" placeholder="Chỉ nhân viên thấy..." value="' + _esc(prefill.staffNote || '') + '" />'
+      + '</div>'
+      + '<div style="display:flex;gap:5px;align-items:flex-end;">'
+        + '<button type="button" onclick="fillGuestFromBooker(' + idx + ')"'
+        + ' style="height:26px;padding:0 8px;font-size:.68rem;font-weight:600;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;border-radius:5px;cursor:pointer;white-space:nowrap;">'
+        + '<i class="fas fa-user" style="font-size:.6rem;margin-right:2px;"></i>Từ người đặt</button>'
+      + '</div>'
+    + '</div>'
+  + '</div>';
+
+  // Bind events
+  var svcSel = item.querySelector('.gc-service');
+  var varSel = item.querySelector('.gc-variant');
+  if (svcSel) {
+    svcSel.addEventListener('change', function() {
+      _loadGuestVariants(item, svcSel.value, null);
+      _markRowValidity(item);
+      _updateGuestProgress();
+    });
+  }
+  if (varSel) {
+    varSel.addEventListener('change', function() {
+      _updateGuestEndTime(item);
+      _markRowValidity(item);
+      _updateGuestProgress();
+    });
+  }
+  var nameInp = item.querySelector('.gc-name');
+  if (nameInp) nameInp.addEventListener('input', function() { _updateGuestProgress(); });
+
+  return item;
+}
+
+function addGuestCard(prefill = {}) {
+  const list = document.getElementById('guestList');
+  if (!list) return;
+  const idx  = _guestCount++;
+  const item = _buildGuestItem(idx, prefill);
+  list.appendChild(item);
+
+  if (prefill.serviceId) {
+    const svcSel = item.querySelector('.gc-service');
+    if (svcSel) {
+      svcSel.value = prefill.serviceId;
+      _loadGuestVariants(item, prefill.serviceId, prefill.variantId);
+    }
+  }
+
+  _renumberGuests();
+  _markRowValidity(item);
+  _updateGuestProgress();
+}
+
+window.removeGuestCard = function(idx) {
+  const item = _getGuestItem(idx);
+  if (item) item.remove();
+  _renumberGuests();
+  _updateGuestProgress();
+};
+
+/** Điền thông tin từ người đặt vào 1 guest row */
+window.fillGuestFromBooker = function(idx) {
+  const item = _getGuestItem(idx);
+  if (!item) return;
+  const bookerName  = document.getElementById('bookerName')?.value.trim() || '';
+  const bookerPhone = document.getElementById('bookerPhone')?.value.trim() || '';
+  const bookerEmail = document.getElementById('bookerEmail')?.value.trim() || '';
+  const nameInp  = item.querySelector('.gc-name');
+  const phoneInp = item.querySelector('.gc-phone');
+  const emailInp = item.querySelector('.gc-email');
+  if (nameInp)  nameInp.value  = bookerName;
+  if (phoneInp) phoneInp.value = bookerPhone;
+  if (emailInp) emailInp.value = bookerEmail;
+};
+
+/** Xóa thông tin cá nhân của 1 guest row */
+window.clearGuestInfo = function(idx) {
+  const item = _getGuestItem(idx);
+  if (!item) return;
+  const nameInp  = item.querySelector('.gc-name');
+  const phoneInp = item.querySelector('.gc-phone');
+  const emailInp = item.querySelector('.gc-email');
+  if (nameInp)  nameInp.value  = '';
+  if (phoneInp) phoneInp.value = '';
+  if (emailInp) emailInp.value = '';
+};
+
+function _renumberGuests() {
+  _getGuestItems().forEach((item, i) => {
+    const numEl = item.querySelector('.gc-num');
+    if (numEl) numEl.textContent = i + 1;
+  });
+}
+
+// Deprecated — kept for compatibility, now handled by event listeners on each item
+window.onGuestServiceChange = function(sel, idx) {
+  const item = _getGuestItem(idx);
+  if (!item) return;
+  _loadGuestVariants(item, sel.value, null);
+  _refreshGuestHeader(item);
+  _updateGuestProgress();
+  _updateSlotSummary();
 };
 
 function _collectGuestCards() {
-  const cards = document.querySelectorAll('#guestList .guest-card');
-  return Array.from(cards).map(card => {
-    const variantSel = card.querySelector('.gc-variant');
+  const bookerNote = document.getElementById('bookerNote')?.value.trim() || '';
+  return _getGuestItems().map(item => {
+    const variantSel = item.querySelector('.gc-variant');
     const selectedVariantOpt = variantSel?.options[variantSel.selectedIndex];
+    const guestNote      = item.querySelector('.gc-note')?.value.trim() || '';
+    const guestStaffNote = item.querySelector('.gc-staff-note')?.value.trim() || '';
     return {
-      name:       card.querySelector('.gc-name')?.value.trim() || '',
-      phone:      card.querySelector('.gc-phone')?.value.trim() || '',
-      email:      card.querySelector('.gc-email')?.value.trim() || '',
-      serviceId:  card.querySelector('.gc-service')?.value || '',
+      name:       item.querySelector('.gc-name')?.value.trim() || '',
+      phone:      item.querySelector('.gc-phone')?.value.trim() || '',
+      email:      item.querySelector('.gc-email')?.value.trim() || '',
+      serviceId:  item.querySelector('.gc-service')?.value || '',
       variantId:  variantSel?.value || '',
-      roomId:     card.querySelector('.gc-room')?.value || '',
-      date:       card.querySelector('.gc-date')?.value || '',
-      time:       card.querySelector('.gc-time')?.value || '',
-      apptStatus: card.querySelector('.gc-status')?.value || 'NOT_ARRIVED',
-      payStatus:  card.querySelector('.gc-pay')?.value || 'UNPAID',
-      note:       card.querySelector('.gc-note')?.value.trim() || '',
-      staffNote:  card.querySelector('.gc-staff-note')?.value.trim() || '',
+      roomId:     item.dataset.slotRoom || item.querySelector('.gc-room')?.value || '',
+      date:       item.dataset.slotDate || item.querySelector('.gc-date')?.value || '',
+      time:       item.dataset.slotTime || item.querySelector('.gc-time')?.value || '',
+      apptStatus: item.querySelector('.gc-status')?.value || 'NOT_ARRIVED',
+      payStatus:  item.querySelector('.gc-pay')?.value || 'UNPAID',
+      note:       guestNote || bookerNote,
+      staffNote:  guestStaffNote,
       _duration:  selectedVariantOpt?.dataset?.duration || 60,
     };
+  });
+}
+
+/** Áp dụng service/variant cho tất cả guest rows */
+function _initApplyAllBar() {
+  const applyAllSvc = document.getElementById('applyAllService');
+  if (applyAllSvc) {
+    applyAllSvc.innerHTML = '<option value="">-- Dịch vụ --</option>' +
+      SERVICES.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  }
+
+  if (applyAllSvc) {
+    applyAllSvc.onchange = function() {
+      const varSel = document.getElementById('applyAllVariant');
+      if (!varSel) return;
+      varSel.innerHTML = '<option value="">-- Gói --</option>';
+      varSel.disabled  = true;
+      const svc = SERVICES.find(s => s.id == this.value);
+      if (!svc || !svc.variants?.length) return;
+      svc.variants.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.id;
+        opt.textContent = `${v.label} — ${v.duration_minutes} phút`;
+        opt.dataset.duration = v.duration_minutes;
+        varSel.appendChild(opt);
+      });
+      varSel.disabled = false;
+      if (svc.variants.length === 1) varSel.value = svc.variants[0].id;
+    };
+  }
+
+  const btnApply = document.getElementById('btnApplyAll');
+  if (btnApply) {
+    btnApply.onclick = function() {
+      const svcVal = document.getElementById('applyAllService')?.value;
+      const varVal = document.getElementById('applyAllVariant')?.value;
+      if (!svcVal) return;
+      _getGuestItems().forEach(item => {
+        const svcSel = item.querySelector('.gc-service');
+        if (svcSel) {
+          svcSel.value = svcVal;
+          _loadGuestVariants(item, svcVal, varVal || null);
+        }
+        _markRowValidity(item);
+      });
+      _updateGuestProgress();
+    };
+  }
+
+  const btnAdd = document.getElementById('btnAddGuest');
+  if (btnAdd) {
+    btnAdd.onclick = function() {
+      addGuestCard({ date: dayPicker.value });
+    };
+  }
+
+  // Auto-fill khi booker thay đổi
+  ['bookerName','bookerPhone','bookerEmail'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', () => {
+      _getGuestItems().forEach(it => {
+        const nameInp = it.querySelector('.gc-name');
+        const phoneInp = it.querySelector('.gc-phone');
+        // Chỉ fill nếu đang trống
+        if (nameInp && !nameInp.value.trim()) {
+          nameInp.value = document.getElementById('bookerName')?.value.trim() || '';
+        }
+        if (phoneInp && !phoneInp.value.trim()) {
+          phoneInp.value = document.getElementById('bookerPhone')?.value.trim() || '';
+        }
+      });
+    });
   });
 }
 
@@ -1035,7 +1245,7 @@ function openCreateModal(prefill={}) {
   btnDelete.classList.add("d-none");
 
   const btnSaveText = document.getElementById("btnSaveText");
-  if (btnSaveText) btnSaveText.textContent = "Lưu lịch hẹn";
+  if (btnSaveText) btnSaveText.textContent = "Tạo lịch hẹn";
 
   // Chuyển sang create mode
   document.getElementById('editModeBody').classList.add('d-none');
@@ -1047,28 +1257,32 @@ function openCreateModal(prefill={}) {
   document.getElementById('bookerPhone').value  = '';
   document.getElementById('bookerEmail').value  = '';
   document.getElementById('bookerSource').value = 'DIRECT';
+  const bookerNoteEl = document.getElementById('bookerNote');
+  if (bookerNoteEl) bookerNoteEl.value = '';
 
-  // Reset danh sách khách — sinh từ pendingBlocks nếu có, fallback về prefill
+  // Reset danh sách khách
   _guestCount = 0;
+  _pendingBlockMap = [];
   document.getElementById('guestList').innerHTML = '';
 
   if (prefill._fromPending && prefill._blocks && prefill._blocks.length > 0) {
-    // Sinh guest card từ mỗi pending block — truyền đủ date/time/roomId/duration
     prefill._blocks.forEach(pb => {
       addGuestCard({ date: pb.day, time: pb.time, roomId: pb.roomId, pendingDuration: pb.duration });
     });
   } else {
-    addGuestCard({ date: prefill.day || dayPicker.value, time: prefill.time || '09:00' });
-    // Set phòng cho card đầu nếu có prefill
+    addGuestCard({ date: prefill.day || dayPicker.value, time: prefill.time || '' });
     if (prefill.roomId) {
-      const firstCard = document.querySelector('#guestList .guest-card');
-      if (firstCard) {
-        const roomSel = firstCard.querySelector('.gc-room');
+      const firstItem = _getGuestItems()[0];
+      if (firstItem) {
+        const roomSel = firstItem.querySelector('.gc-room');
         if (roomSel) roomSel.value = prefill.roomId;
       }
     }
   }
 
+  _initApplyAllBar();
+  _updateGuestProgress();
+  _updateSlotSummary();
   _resetAllCustomerState();
 
   if (modalEl) {

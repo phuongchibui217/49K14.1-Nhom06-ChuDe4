@@ -79,26 +79,47 @@ def admin_profile(request):
         messages.error(request, 'Bạn không có quyền truy cập trang này.')
         return redirect('pages:home')
 
+    # Load StaffProfile if exists
+    try:
+        from staff.models import StaffProfile
+        staff_profile = StaffProfile.objects.get(user=request.user)
+    except Exception:
+        staff_profile = None
+
+    ctx = {'staff_profile': staff_profile}
+
     if request.method == 'POST':
         action = request.POST.get('action')
 
         if action == 'update_profile':
             full_name = request.POST.get('full_name', '').strip()
             email = request.POST.get('email', '').strip()
+            phone = request.POST.get('phone', '').strip()
+            gender = request.POST.get('gender', '').strip()
+            dob = request.POST.get('dob', '').strip() or None
+            address = request.POST.get('address', '').strip()
 
             if not full_name:
-                messages.error(request, 'Vui lòng nhập họ tên.')
-                return redirect('admin_panel:admin_profile')
+                ctx['profile_error'] = 'Vui lòng nhập họ tên.'
+                return render(request, 'admin_panel/admin_profile.html', ctx)
 
-            if not email:
-                messages.error(request, 'Vui lòng nhập email.')
-                return redirect('admin_panel:admin_profile')
-
+            # Update User
             parts = full_name.split(None, 1)
             request.user.first_name = parts[0]
             request.user.last_name = parts[1] if len(parts) > 1 else ''
-            request.user.email = email
+            if email:
+                request.user.email = email
             request.user.save()
+
+            # Update StaffProfile
+            if staff_profile:
+                staff_profile.full_name = full_name
+                if phone:
+                    staff_profile.phone = phone
+                staff_profile.gender = gender or None
+                staff_profile.dob = dob
+                staff_profile.address = address
+                staff_profile.save()
 
             messages.success(request, 'Cập nhật thông tin thành công.')
             return redirect('admin_panel:admin_profile')
@@ -117,12 +138,13 @@ def admin_profile(request):
                 pw_error = 'Xác nhận mật khẩu không khớp.'
 
             if pw_error:
-                return render(request, 'admin_panel/admin_profile.html', {'pw_error': pw_error})
+                ctx['pw_error'] = pw_error
+                return render(request, 'admin_panel/admin_profile.html', ctx)
 
             request.user.set_password(new_password)
             request.user.save()
             update_session_auth_hash(request, request.user)
+            ctx['pw_success'] = 'Đổi mật khẩu thành công.'
+            return render(request, 'admin_panel/admin_profile.html', ctx)
 
-            return render(request, 'admin_panel/admin_profile.html', {'pw_success': 'Đổi mật khẩu thành công.'})
-
-    return render(request, 'admin_panel/admin_profile.html')
+    return render(request, 'admin_panel/admin_profile.html', ctx)
