@@ -96,7 +96,7 @@ def generate_service_description(service) -> str:
     # --- Thu thập thông tin variants ---
     variants_info = []
     try:
-        for v in service.variants.filter(is_active=True).order_by('sort_order', 'duration_minutes'):
+        for v in service.variants.order_by('sort_order', 'duration_minutes'):
             label = v.label or f'{v.duration_minutes} phút'
             price_fmt = f'{int(v.price):,}'.replace(',', '.') + 'đ'
             variants_info.append((label, v.duration_minutes, price_fmt))

@@ -46,8 +46,8 @@ def serialize_appointment(appointment):
         'end': end_str,
         'durationMin': appointment.duration_minutes or (
             appointment.service_variant.duration_minutes if appointment.service_variant else (
-                appointment.service.variants.filter(is_active=True).order_by('sort_order').first().duration_minutes
-                if appointment.service and appointment.service.variants.filter(is_active=True).exists() else 60
+                appointment.service.variants.order_by('sort_order').first().duration_minutes
+                if appointment.service and appointment.service.variants.exists() else 60
             )
         ),
         'note': appointment.notes or '',

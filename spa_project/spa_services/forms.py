@@ -43,10 +43,10 @@ class ServiceForm(forms.ModelForm):
     code = forms.CharField(
         label='Mã dịch vụ',
         max_length=30,
-        required=False,
+        required=True,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': 'VD: DV0001'
+            'placeholder': 'Nhập mã dịch vụ'
         }),
     )
 
@@ -121,10 +121,10 @@ class ServiceForm(forms.ModelForm):
         ]
 
     def clean_code(self):
-        """Validate mã dịch vụ — unique, tự sinh nếu để trống"""
+        """Validate mã dịch vụ — bắt buộc, unique"""
         code = self.cleaned_data.get('code', '').strip().upper()
         if not code:
-            return ''  # sẽ tự sinh trong save()
+            raise forms.ValidationError('Vui lòng nhập mã dịch vụ')
         qs = Service.objects.filter(code=code)
         if self.instance and self.instance.pk:
             qs = qs.exclude(pk=self.instance.pk)
@@ -211,9 +211,7 @@ class ServiceForm(forms.ModelForm):
             raise forms.ValidationError('Danh mục không tồn tại trong hệ thống')
 
     def save(self, commit=True):
-        """Override save để xử lý mapping, sinh mã, và auto-generate description"""
-        from .description_helpers import generate_service_description, should_generate_description
-
+        """Override save để xử lý mapping và sinh mã dịch vụ"""
         service = super().save(commit=False)
 
         # Map category_number to ServiceCategory object
@@ -237,10 +235,7 @@ class ServiceForm(forms.ModelForm):
         # Nếu short_description trống, fallback sang detail_description cắt ngắn
         service.short_description = short_desc or (detail_desc[:255] if detail_desc else '')
 
-        # Auto-generate description nếu để trống
         service.description = detail_desc
-        if should_generate_description(service):
-            service.description = generate_service_description(service)
 
         if commit:
             service.save()

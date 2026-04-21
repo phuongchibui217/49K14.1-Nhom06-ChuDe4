@@ -52,10 +52,13 @@
                             <div class="col-md-8">
                                 <div class="search-box">
                                     <i class="fas fa-search"></i>
-                                    <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm theo tên hoặc số điện thoại..." onkeyup="searchCustomers()">
+                                    <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm theo tên hoặc số điện thoại...">
                                 </div>
                             </div>
                             <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                                <button class="btn btn-secondary me-2" id="searchBtn" type="button">
+                                    <i class="fas fa-filter me-1"></i>Lọc
+                                </button>
                                 <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
                                     <i class="fas fa-plus me-2"></i>Thêm khách hàng
                                 </button>
@@ -160,6 +163,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/filter-manager.js' %}"></script>
     <script>
         let customers = [
             {id:'KH001',name:'Nguyễn Thị Mai',phone:'0912345678',dob:'1990-05-15',channel:'Zalo',allergies:'Không',skinCondition:'Da dầu, mụn nhẹ',notes:'Khách VIP',totalAppointments:24,createdAt:'2024-01-15'},
@@ -167,7 +171,20 @@
             {id:'KH003',name:'Lê Thu Thảo',phone:'0345678901',dob:'1995-11-30',channel:'Điện thoại',allergies:'Không',skinCondition:'Da khô',notes:'Khách mới',totalAppointments:3,createdAt:'2024-06-20'},
             {id:'KH004',name:'Phạm Minh Đức',phone:'0789012345',dob:'1992-03-18',channel:'Zalo',allergies:'Dị ứng cà phê',skinCondition:'Da hỗn hợp',notes:'Đến theo giới thiệu',totalAppointments:8,createdAt:'2024-04-05'}
         ];
-        document.addEventListener('DOMContentLoaded',function(){loadCustomers();});
+        document.addEventListener('DOMContentLoaded',function(){
+            loadCustomers();
+
+            function doSearch() { searchCustomers(); }
+            function doClear()  { loadCustomers(); }
+
+            new FilterManager({
+                fields:   ['searchInput'],
+                btnId:    'searchBtn',
+                searchId: 'searchInput',
+                onApply:  () => doSearch(),
+                onClear:  () => doClear(),
+            });
+        });
         function loadCustomers(){
             const tbody=document.getElementById('customerTableBody');tbody.innerHTML='';
             customers.forEach(c=>{const row=document.createElement('tr');row.innerHTML=`<td><strong>${c.id}</strong></td><td>${c.name}</td><td>${c.phone}</td><td><span class="badge bg-info">${c.channel}</span></td><td>${c.totalAppointments}</td><td><button class="action-btn view" onclick="viewCustomer('${c.id}')" title="Xem"><i class="fas fa-eye"></i></button><button class="action-btn edit" onclick="editCustomer('${c.id}')" title="Sửa"><i class="fas fa-edit"></i></button><button class="action-btn delete" onclick="deleteCustomer('${c.id}')" title="Xóa"><i class="fas fa-trash"></i></button></td>`;tbody.appendChild(row);});

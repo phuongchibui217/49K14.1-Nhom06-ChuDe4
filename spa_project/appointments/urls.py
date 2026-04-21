@@ -22,6 +22,7 @@ urlpatterns = [
     path('api/rooms/', api.api_rooms_list, name='api_rooms_list'),
     path('api/appointments/', api.api_appointments_list, name='api_appointments_list'),
     path('api/appointments/create/', api.api_appointment_create, name='api_appointment_create'),
+    path('api/appointments/create-batch/', api.api_appointment_create_batch, name='api_appointment_create_batch'),
     path('api/appointments/<str:appointment_code>/', api.api_appointment_detail, name='api_appointment_detail'),
     path('api/appointments/<str:appointment_code>/update/', api.api_appointment_update, name='api_appointment_update'),
     path('api/appointments/<str:appointment_code>/status/', api.api_appointment_status, name='api_appointment_status'),

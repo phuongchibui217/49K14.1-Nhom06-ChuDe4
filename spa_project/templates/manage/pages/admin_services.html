@@ -18,17 +18,40 @@
 <style>
 /* ── Variant rows ── */
 .variant-row {
-    display: grid;
-    grid-template-columns: 1fr 1.5fr auto;
-    gap: 8px;
-    align-items: center;
-    padding: 6px 10px;
+    padding: 8px 10px;
     background: #f8fafc;
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     margin-bottom: 6px;
 }
-.variant-row input { font-size: 0.875rem; }
+.variant-row .variant-label-row {
+    margin-bottom: 6px;
+}
+.variant-row .variant-label-row label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 3px;
+    display: block;
+}
+.variant-row .variant-bottom-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 6px;
+    align-items: end;
+}
+.variant-row .variant-bottom-row .sub-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 3px;
+    display: block;
+}
+.variant-row input { font-size: 0.875rem; min-width: 0; }
 .variant-row .btn-remove-variant {
     color: #dc3545;
     background: none;
@@ -37,19 +60,10 @@
     cursor: pointer;
     border-radius: 6px;
     transition: background 0.15s;
+    margin-bottom: 1px;
 }
 .variant-row .btn-remove-variant:hover { background: #fee2e2; }
-.variant-header {
-    display: grid;
-    grid-template-columns: 1fr 1.5fr auto;
-    gap: 8px;
-    padding: 0 10px 4px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
+.variant-header { display: none; }
 
 /* ── Form section blocks ── */
 .form-section {
@@ -106,6 +120,177 @@
     border-left: 1px solid #e9ecef;
 }
 @media (max-width: 767px) { .col-divider { border-left: none; border-top: 1px solid #e9ecef; padding-top: 1rem; } }
+
+/* ══════════════════════════════════════════
+   DELETE SERVICE MODAL — Luxury Spa Style
+══════════════════════════════════════════ */
+
+/* Overlay blur */
+#deleteServiceModal.modal {
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+}
+#deleteServiceModal .modal-backdrop,
+#deleteServiceModal ~ .modal-backdrop {
+    backdrop-filter: blur(3px);
+}
+
+.delete-modal-dialog {
+    max-width: 400px;
+}
+
+.delete-modal-content {
+    position: relative;
+    background: #fff;
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 24px 60px rgba(30, 20, 10, 0.18), 0 4px 16px rgba(0,0,0,0.08);
+    overflow: visible;
+    animation: deleteModalIn 0.25s cubic-bezier(0.34, 1.3, 0.64, 1) both;
+}
+
+@keyframes deleteModalIn {
+    from { opacity: 0; transform: scale(0.88) translateY(12px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Close button */
+.delete-modal-close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: #f1f0ee;
+    color: #9a8f85;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s, transform 0.18s;
+    z-index: 10;
+    line-height: 1;
+}
+.delete-modal-close:hover {
+    background: #e8e4e0;
+    color: #5a4a3a;
+    transform: rotate(90deg);
+}
+
+/* Body */
+.delete-modal-body {
+    padding: 2.5rem 2rem 1.5rem;
+    text-align: center;
+}
+
+/* Icon circle */
+.delete-modal-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #fdf0f0;
+    border: 1.5px solid #f5d0d0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.25rem;
+}
+.delete-modal-icon i {
+    font-size: 1.2rem;
+    color: #b84040;
+}
+
+/* Title */
+.delete-modal-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #b0a090;
+    margin-bottom: 0.85rem;
+}
+
+/* Main question */
+.delete-modal-question {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #1e2a38;
+    margin-bottom: 0.4rem;
+    line-height: 1.45;
+}
+
+/* Hint */
+.delete-modal-hint {
+    font-size: 0.85rem;
+    color: #a09080;
+    margin-bottom: 0;
+    letter-spacing: 0.01em;
+}
+
+/* Footer */
+.delete-modal-footer {
+    display: flex;
+    gap: 0.65rem;
+    padding: 0 2rem 2rem;
+    justify-content: center;
+}
+
+/* Cancel button */
+.delete-btn-cancel {
+    flex: 1;
+    padding: 0.6rem 1rem;
+    border-radius: 10px;
+    border: 1.5px solid #e0d8d0;
+    background: #faf9f7;
+    color: #6b5e52;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.18s, border-color 0.18s, color 0.18s;
+    letter-spacing: 0.01em;
+}
+.delete-btn-cancel:hover {
+    background: #f0ece7;
+    border-color: #c8bdb0;
+    color: #3d2e22;
+}
+
+/* Confirm / Delete button */
+.delete-btn-confirm {
+    flex: 1;
+    padding: 0.6rem 1rem;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #9b2c2c, #7b1d1d);
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s, box-shadow 0.18s, transform 0.15s;
+    letter-spacing: 0.01em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+}
+.delete-btn-confirm:hover {
+    background: linear-gradient(135deg, #822525, #621818);
+    box-shadow: 0 4px 16px rgba(120, 30, 30, 0.35);
+    transform: translateY(-1px);
+}
+.delete-btn-confirm:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+@media (max-width: 480px) {
+    .delete-modal-dialog { max-width: calc(100vw - 2rem); margin: 1rem; }
+    .delete-modal-body { padding: 2rem 1.5rem 1.25rem; }
+    .delete-modal-footer { padding: 0 1.5rem 1.75rem; }
+}
 </style>
 {% endblock %}
 
@@ -113,18 +298,21 @@
 <!-- Search & Filter -->
 <div class="card">
     <div class="card-body">
-        <form method="get" action="{% url 'spa_services:admin_services' %}">
-            <div class="row">
+        <form method="get" action="{% url 'spa_services:admin_services' %}" id="searchFilterForm">
+            <div class="row g-2">
                 <div class="col-md-4">
                     <div class="input-group">
                         <span class="input-group-text">
                             <i class="fas fa-search"></i>
                         </span>
-                        <input type="text" class="form-control" name="search" placeholder="Tìm kiếm dịch vụ..." value="{{ search_query }}">
+                        <input type="text" class="form-control" id="searchInput"
+                               name="search" placeholder="Tìm kiếm dịch vụ..."
+                               value="{{ search_query }}"
+                               autocomplete="off">
                     </div>
                 </div>
                 <div class="col-md-3">
-                    <select class="form-select" name="category">
+                    <select class="form-select" id="categoryFilter" name="category">
                         <option value="">Tất cả danh mục</option>
                         {% for cat in categories %}
                         <option value="{{ cat.code }}" {% if category_filter == cat.code %}selected{% endif %}>{{ cat.name }}</option>
@@ -132,22 +320,18 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <select class="form-select" name="status">
+                    <select class="form-select" id="statusFilter" name="status">
                         <option value="">Tất cả trạng thái</option>
                         <option value="ACTIVE" {% if status_filter == 'ACTIVE' %}selected{% endif %}>Đang hoạt động</option>
                         <option value="INACTIVE" {% if status_filter == 'INACTIVE' %}selected{% endif %}>Ngừng hoạt động</option>
                     </select>
                 </div>
                 <div class="col-md-2">
-                    {% if search_query or category_filter or status_filter %}
-                    <a href="{% url 'spa_services:admin_services' %}" class="btn btn-outline-secondary w-100">
-                        <i class="fas fa-rotate-left me-1"></i>Bỏ lọc
-                    </a>
-                    {% else %}
-                    <button type="submit" class="btn btn-secondary w-100">
-                        <i class="fas fa-filter me-2"></i>Lọc
-                    </button>
-                    {% endif %}
+                    <div class="d-flex gap-1">
+                        <button type="button" class="btn btn-secondary flex-fill" id="servicesFilterBtn">
+                            <i class="fas fa-filter me-1"></i>Lọc
+                        </button>
+                    </div>
                 </div>
             </div>
         </form>
@@ -234,7 +418,11 @@
                         <tr>
                             <td colspan="7" class="text-center py-5">
                                 <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                {% if is_filtered %}
+                                <p class="mb-0 text-muted">Không tìm thấy dịch vụ phù hợp.</p>
+                                {% else %}
                                 <p class="mb-0 text-muted">Chưa có dịch vụ nào trong hệ thống</p>
+                                {% endif %}
                             </td>
                         </tr>
                     {% endif %}
@@ -370,13 +558,9 @@
                                               id="shortDescInput"
                                               rows="2"
                                               maxlength="255"
-                                              placeholder="Một câu mô tả súc tích về dịch vụ, hiển thị trên card danh sách..."
+                                              placeholder="Mô tả ngắn gọn về dịch vụ, hiển thị trên card danh sách..."
                                               oninput="updateCounter('shortDescInput','shortDescCounter',255)"></textarea>
                                     <span class="desc-counter" id="shortDescCounter">0 / 255</span>
-                                </div>
-                                <div class="field-hint mt-1">
-                                    <i class="fas fa-lightbulb"></i>
-                                    Nên viết 1–2 câu, tối đa 255 ký tự. Nếu để trống sẽ lấy từ mô tả chi tiết.
                                 </div>
                             </div>
 
@@ -392,10 +576,6 @@
                                           name="description"
                                           rows="5"
                                           placeholder="Mô tả đầy đủ về dịch vụ: công dụng, lợi ích, quy trình thực hiện..."></textarea>
-                                <div class="field-hint auto-note mt-1">
-                                    <i class="fas fa-magic"></i>
-                                    Nếu để trống, hệ thống sẽ tự tạo mô tả chi tiết dựa trên tên, danh mục và gói dịch vụ.
-                                </div>
                             </div>
 
                         </div>
@@ -410,20 +590,11 @@
                                 <div class="form-section-title">
                                     <i class="fas fa-boxes"></i> Gói dịch vụ
                                 </div>
-                                <div class="variant-header">
-                                    <span>Tên gói</span>
-                                    <span>Thời lượng / Giá</span>
-                                    <span></span>
-                                </div>
                                 <div id="variantList" class="mb-2"></div>
                                 <button type="button" class="btn btn-outline-secondary btn-sm w-100"
                                         onclick="addVariantRow()">
                                     <i class="fas fa-plus me-1"></i> Thêm gói
                                 </button>
-                                <div class="field-hint mt-2">
-                                    <i class="fas fa-info-circle"></i>
-                                    Thêm các gói thời lượng khác nhau (phút) và mức giá tương ứng (VNĐ).
-                                </div>
                             </div>
 
                             <!-- Block: Hình ảnh -->
@@ -467,27 +638,28 @@
 
 <!-- Modal xác nhận xóa dịch vụ -->
 <div class="modal fade" id="deleteServiceModal" tabindex="-1" aria-labelledby="deleteServiceModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 16px; border: none; overflow: hidden;">
-            <div class="modal-header bg-danger text-white border-0 py-3">
-                <h5 class="modal-title">
-                    <i class="fas fa-trash-alt me-2"></i>
-                    Xác nhận xóa dịch vụ
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4 text-center">
-                <div class="mb-3">
-                    <i class="fas fa-exclamation-circle fa-4x text-danger mb-3"></i>
+    <div class="modal-dialog modal-dialog-centered delete-modal-dialog">
+        <div class="modal-content delete-modal-content">
+            <!-- Nút đóng góc phải -->
+            <button type="button" class="delete-modal-close" data-bs-dismiss="modal" aria-label="Close">
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="delete-modal-body">
+                <!-- Icon -->
+                <div class="delete-modal-icon">
+                    <i class="fas fa-trash-alt"></i>
                 </div>
-                <p class="mb-2 fs-5 fw-semibold">Bạn có chắc chắn muốn xóa dịch vụ này?</p>
-                <p class="text-muted mb-0">Dữ liệu sẽ bị xóa vĩnh viễn và không thể khôi phục.</p>
+
+                <!-- Text -->
+                <p class="delete-modal-question">Bạn có chắc muốn xóa dịch vụ này?</p>
             </div>
-            <div class="modal-footer border-0 pt-0 pb-4">
-                <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">
-                    <i class="fas fa-times me-2"></i>Hủy
+
+            <div class="delete-modal-footer">
+                <button type="button" class="delete-btn-cancel" data-bs-dismiss="modal">
+                    Hủy
                 </button>
-                <button type="button" class="btn btn-danger px-4" id="confirmDeleteServiceBtn">
+                <button type="button" class="delete-btn-confirm" id="confirmDeleteServiceBtn">
                     <i class="fas fa-trash-alt me-2"></i>Xóa dịch vụ
                 </button>
             </div>
@@ -525,5 +697,14 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/admin-services.js' %}"></script>
+<script src="{% static 'js/admin-services.js' %}?v={% now "U" %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    FilterManager.initFormPage({
+        formId:  'searchFilterForm',
+        btnId:   'servicesFilterBtn',
+        fields:  ['searchInput', 'categoryFilter', 'statusFilter'],
+    });
+});
+</script>
 {% endblock %}

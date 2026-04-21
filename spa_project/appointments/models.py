@@ -175,7 +175,7 @@ class Appointment(models.Model):
             if self.service_variant:
                 self.duration_minutes = self.service_variant.duration_minutes
             else:
-                first_variant = self.service.variants.filter(is_active=True).order_by('sort_order', 'duration_minutes').first()
+                first_variant = self.service.variants.order_by('sort_order', 'duration_minutes').first()
                 self.duration_minutes = first_variant.duration_minutes if first_variant else 60
         if self.appointment_time and self.duration_minutes and not self.end_time:
             from datetime import datetime, timedelta

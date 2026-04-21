@@ -1,6 +1,6 @@
 {% load spa_filters %}
 
-<div class="sl-card">
+<div class="sl-card" onclick="window.location='{% url 'spa_services:service_detail' service.id %}'" style="cursor:pointer">
 
   <div class="sl-card__img-wrap">
     <span class="sl-card__cat">{{ service.category.name }}</span>

@@ -59,11 +59,13 @@
                 <div class="search-box">
                     <i class="fas fa-search"></i>
                     <input type="text" class="form-control" id="searchInput"
-                           placeholder="Tìm kiếm theo tên, tên đăng nhập hoặc số điện thoại..."
-                           onkeyup="searchStaff()">
+                           placeholder="Tìm kiếm theo tên, tên đăng nhập hoặc số điện thoại...">
                 </div>
             </div>
             <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <button class="btn btn-secondary me-2" id="searchBtn" type="button">
+                    <i class="fas fa-filter me-1"></i>Lọc
+                </button>
                 <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#addStaffModal">
                     <i class="fas fa-plus me-2"></i>Thêm nhân viên
                 </button>
@@ -338,6 +340,22 @@ function searchStaff() {
         row.style.display = text.includes(term) ? '' : 'none';
     });
 }
+
+function clearStaffFilter() {
+    document.querySelectorAll('#staffTable tbody tr[data-id]').forEach(row => {
+        row.style.display = '';
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    new FilterManager({
+        fields:   ['searchInput'],
+        btnId:    'searchBtn',
+        searchId: 'searchInput',
+        onApply:  () => searchStaff(),
+        onClear:  () => clearStaffFilter(),
+    });
+});
 
 function editStaff(id) {
     const row = document.querySelector(`tr[data-id="${id}"]`);

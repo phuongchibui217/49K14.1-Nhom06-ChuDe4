@@ -345,6 +345,143 @@ def api_appointment_create(request):
 
 
 # =====================================================
+# API: TẠO NHIỀU LỊCH HẸN (BATCH CREATE)
+# =====================================================
+
+@require_http_methods(["POST"])
+@staff_api
+def api_appointment_create_batch(request):
+    """
+    API: Tạo nhiều lịch hẹn cùng lúc (1 người đặt, nhiều khách)
+
+    FE gọi: POST /api/appointments/create-batch/
+    Body: {
+        booker: { name, phone, email, source },
+        guests: [
+            { name, phone, email, customerId,
+              serviceId, variantId, roomId, date, time,
+              apptStatus, payStatus, note, staffNote },
+            ...
+        ]
+    }
+    """
+    try:
+        raw = json.loads(request.body)
+        booker = raw.get('booker', {})
+        guests = raw.get('guests', [])
+
+        if not guests:
+            return JsonResponse({'success': False, 'error': 'Cần ít nhất 1 khách'}, status=400)
+
+        booker_name  = booker.get('name', '').strip()
+        booker_phone = ''.join(filter(str.isdigit, booker.get('phone', '')))
+        booker_email = booker.get('email', '').strip()
+        source       = booker.get('source', 'DIRECT')
+
+        if not booker_name:
+            return JsonResponse({'success': False, 'error': 'Vui lòng nhập tên người đặt'}, status=400)
+        if not booker_phone or len(booker_phone) < 9:
+            return JsonResponse({'success': False, 'error': 'Số điện thoại người đặt không hợp lệ'}, status=400)
+
+        created = []
+        errors  = []
+
+        for idx, g in enumerate(guests):
+            label = f"Khách {idx + 1}"
+            data = {
+                'customer_name': (g.get('name') or booker_name).strip(),
+                'phone':         ''.join(filter(str.isdigit, g.get('phone') or booker_phone)),
+                'service_id':    g.get('serviceId'),
+                'variant_id':    g.get('variantId'),
+                'room_id':       g.get('roomId'),
+                'date_str':      g.get('date', ''),
+                'time_str':      g.get('time', ''),
+                'duration':      None,
+                'guests':        1,
+                'notes':         g.get('note', ''),
+                'status':        g.get('apptStatus', 'NOT_ARRIVED'),
+                'pay_status':    g.get('payStatus', 'UNPAID'),
+            }
+
+            validation = _validate_appointment_data(data)
+            if not validation['valid']:
+                errors.append(f"{label}: {validation['errors'][0]}")
+                continue
+
+            cleaned = validation['cleaned_data']
+            customer_id = g.get('customerId')
+
+            try:
+                if customer_id:
+                    customer = CustomerProfile.objects.get(id=customer_id)
+                else:
+                    phone_digits = cleaned['phone']
+                    try:
+                        customer = CustomerProfile.objects.get(phone=phone_digits)
+                    except CustomerProfile.DoesNotExist:
+                        customer = _get_or_create_customer(
+                            phone=phone_digits,
+                            customer_name=cleaned['customer_name']
+                        )
+            except CustomerProfile.DoesNotExist:
+                errors.append(f"{label}: Không tìm thấy khách hàng")
+                continue
+
+            try:
+                with transaction.atomic():
+                    room_code = cleaned['room'].code if cleaned.get('room') else None
+                    if room_code:
+                        check = validate_appointment_create(
+                            appointment_date=cleaned['appointment_date'],
+                            appointment_time=cleaned['appointment_time'],
+                            duration_minutes=cleaned['duration_minutes'],
+                            room_code=room_code,
+                            exclude_appointment_code=None,
+                            guests=1,
+                        )
+                        if not check['valid']:
+                            errors.append(f"{label}: {check['errors'][0]}")
+                            continue
+
+                    appt = Appointment.objects.create(
+                        customer=customer,
+                        service=cleaned['service'],
+                        service_variant=cleaned.get('service_variant'),
+                        room=cleaned.get('room'),
+                        customer_name_snapshot=cleaned['customer_name'],
+                        customer_phone_snapshot=cleaned['phone'],
+                        customer_email_snapshot=g.get('email', '').strip(),
+                        appointment_date=cleaned['appointment_date'],
+                        appointment_time=cleaned['appointment_time'],
+                        duration_minutes=cleaned['duration_minutes'],
+                        guests=1,
+                        notes=cleaned['notes'],
+                        status=cleaned['status'],
+                        payment_status=cleaned['payment_status'],
+                        source=source,
+                        staff_notes=g.get('staffNote', '').strip(),
+                        created_by=request.user,
+                    )
+                    created.append(serialize_appointment(appt))
+            except Exception as e:
+                errors.append(f"{label}: {str(e)}")
+
+        if not created:
+            return JsonResponse({'success': False, 'error': '; '.join(errors) or 'Không tạo được lịch hẹn nào'}, status=400)
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Đã tạo {len(created)} lịch hẹn' + (f' ({len(errors)} lỗi)' if errors else ''),
+            'appointments': created,
+            'errors': errors,
+        })
+
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return JsonResponse({'success': False, 'error': f'Lỗi: {str(e)}'}, status=400)
+
+
+# =====================================================
 # API: CẬP NHẬT LỊCH HẸN
 # =====================================================
 
@@ -393,7 +530,7 @@ def api_appointment_update(request, appointment_code):
             'appointment_time': appointment.appointment_time,
             'duration_minutes': appointment.duration_minutes or (
                 appointment.service_variant.duration_minutes if appointment.service_variant else (
-                    appointment.service.variants.filter(is_active=True).order_by('sort_order').first().duration_minutes
+                    appointment.service.variants.order_by('sort_order').first().duration_minutes
                     if appointment.service else 60
                 )
             ),
@@ -795,7 +932,7 @@ def _validate_appointment_data(data):
     elif 'service_variant' in cleaned_data:
         cleaned_data['duration_minutes'] = cleaned_data['service_variant'].duration_minutes
     elif 'service' in cleaned_data:
-        first_variant = cleaned_data['service'].variants.filter(is_active=True).order_by('sort_order', 'duration_minutes').first()
+        first_variant = cleaned_data['service'].variants.order_by('sort_order', 'duration_minutes').first()
         cleaned_data['duration_minutes'] = first_variant.duration_minutes if first_variant else 60
     else:
         cleaned_data['duration_minutes'] = 60

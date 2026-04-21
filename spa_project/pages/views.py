@@ -23,11 +23,11 @@ def home(request):
         .select_related('category')
         .prefetch_related('variants')
         .annotate(
-            min_price=Min('variants__price', filter=Q(variants__is_active=True)),
-            max_price=Max('variants__price', filter=Q(variants__is_active=True)),
-            min_duration=Min('variants__duration_minutes', filter=Q(variants__is_active=True)),
-            max_duration=Max('variants__duration_minutes', filter=Q(variants__is_active=True)),
-            variant_count=Count('variants', filter=Q(variants__is_active=True)),
+            min_price=Min('variants__price'),
+            max_price=Max('variants__price'),
+            min_duration=Min('variants__duration_minutes'),
+            max_duration=Max('variants__duration_minutes'),
+            variant_count=Count('variants'),
         )
         [:6]
     )

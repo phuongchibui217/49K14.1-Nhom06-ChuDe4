@@ -339,6 +339,6 @@ def serialize_service(service):
         'image': service.image.url if service.image else 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=100',
         'variants': [
             {'id': v.id, 'label': v.label, 'duration_minutes': v.duration_minutes, 'price': float(v.price)}
-            for v in service.variants.filter(is_active=True).order_by('sort_order', 'duration_minutes')
+            for v in service.variants.order_by('sort_order', 'duration_minutes')
         ] if hasattr(service, 'variants') else [],
     }

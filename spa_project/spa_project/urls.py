@@ -5,8 +5,11 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import HttpResponse
 
 urlpatterns = [
+    # Suppress favicon 404
+    path('favicon.ico', lambda request: HttpResponse(status=204)),
     # Django Admin mặc định (tách biệt với Admin Panel custom)
     path('admin/', admin.site.urls),
     # Phase 3: Pages app (static pages: home, about)

@@ -65,8 +65,9 @@ class Service(models.Model):
     # KHÔNG dùng CharField để lưu path thủ công — sẽ mất khả năng .url và validation
     image = models.ImageField(
         upload_to='services/',
-        blank=True,
-        null=True,
+        blank=False,
+        null=False,
+        default='',
         verbose_name='Hình ảnh dịch vụ'
     )
     created_by = models.ForeignKey(
@@ -161,9 +162,7 @@ class ServiceVariant(models.Model):
         validators=[MinValueValidator(0)],
         verbose_name='Giá (VNĐ)'
     )
-    is_active = models.BooleanField(default=True, verbose_name='Đang hoạt động')
     sort_order = models.PositiveIntegerField(default=0, verbose_name='Thứ tự hiển thị')
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'service_variants'

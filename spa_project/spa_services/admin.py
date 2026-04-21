@@ -5,7 +5,7 @@ from .models import Service, ServiceVariant
 class ServiceVariantInline(admin.TabularInline):
     model = ServiceVariant
     extra = 1
-    fields = ['label', 'duration_minutes', 'price', 'sort_order', 'is_active']
+    fields = ['label', 'duration_minutes', 'price', 'sort_order']
     ordering = ['sort_order', 'duration_minutes']
 
 
@@ -43,8 +43,8 @@ class ServiceAdmin(admin.ModelAdmin):
 
 @admin.register(ServiceVariant)
 class ServiceVariantAdmin(admin.ModelAdmin):
-    list_display = ['service', 'label', 'duration_minutes', 'price', 'sort_order', 'is_active']
-    list_filter = ['service', 'is_active']
+    list_display = ['service', 'label', 'duration_minutes', 'price', 'sort_order']
+    list_filter = ['service']
     search_fields = ['service__name', 'label']
-    list_editable = ['price', 'sort_order', 'is_active']
+    list_editable = ['price', 'sort_order']
     ordering = ['service', 'sort_order', 'duration_minutes']

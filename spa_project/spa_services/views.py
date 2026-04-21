@@ -14,7 +14,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q, Min, Max, Count
+from django.db.models import Q, Min, Max, Count, Case, When, IntegerField
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
 import json
@@ -63,11 +63,11 @@ def service_list(request):
         .select_related('category')
         .prefetch_related('variants')
         .annotate(
-            min_price=Min('variants__price', filter=Q(variants__is_active=True)),
-            max_price=Max('variants__price', filter=Q(variants__is_active=True)),
-            min_duration=Min('variants__duration_minutes', filter=Q(variants__is_active=True)),
-            max_duration=Max('variants__duration_minutes', filter=Q(variants__is_active=True)),
-            variant_count=Count('variants', filter=Q(variants__is_active=True)),
+            min_price=Min('variants__price'),
+            max_price=Max('variants__price'),
+            min_duration=Min('variants__duration_minutes'),
+            max_duration=Max('variants__duration_minutes'),
+            variant_count=Count('variants'),
         )
         .order_by('-created_at')
     )
@@ -89,11 +89,11 @@ def service_detail(request, service_id):
         .exclude(id=service_id)
         .prefetch_related('variants')
         .annotate(
-            min_price=Min('variants__price', filter=Q(variants__is_active=True)),
-            max_price=Max('variants__price', filter=Q(variants__is_active=True)),
-            min_duration=Min('variants__duration_minutes', filter=Q(variants__is_active=True)),
-            max_duration=Max('variants__duration_minutes', filter=Q(variants__is_active=True)),
-            variant_count=Count('variants', filter=Q(variants__is_active=True)),
+            min_price=Min('variants__price'),
+            max_price=Max('variants__price'),
+            min_duration=Min('variants__duration_minutes'),
+            max_duration=Max('variants__duration_minutes'),
+            variant_count=Count('variants'),
         )[:4]
     )
 
@@ -121,28 +121,51 @@ def admin_services(request):
 
     # GET request - hiển thị danh sách
     if request.method == 'GET':
-        services_list = Service.objects.all().prefetch_related('variants').order_by('-created_at')
-
         # Search functionality
-        search_query = request.GET.get('search', '')
-        category_filter = request.GET.get('category', '')
-        status_filter = request.GET.get('status', '')
+        search_query = request.GET.get('search', '').strip()
+        category_filter = request.GET.get('category', '').strip()
+        status_filter = request.GET.get('status', '').strip()
+        is_filtered = bool(search_query or category_filter or status_filter)
 
-        if search_query:
-            services_list = services_list.filter(
-                Q(name__icontains=search_query) | Q(code__icontains=search_query)
+        try:
+            services_list = Service.objects.all().prefetch_related('variants')
+
+            # BR-UC12-16: Tìm kiếm không phân biệt hoa thường (icontains)
+            # Tìm trên name, code, short_description — hợp lý với màn quản lý
+            if search_query:
+                services_list = services_list.filter(
+                    Q(name__icontains=search_query) |
+                    Q(code__icontains=search_query) |
+                    Q(short_description__icontains=search_query)
+                )
+
+            # BR-UC12-17: Kết hợp điều kiện AND
+            if category_filter:
+                services_list = services_list.filter(category__code=category_filter)
+
+            if status_filter:
+                services_list = services_list.filter(status=status_filter)
+
+            # Sort: ACTIVE trước, INACTIVE sau (UC 12.4 step 9), rồi mới đến created_at
+            services_list = services_list.order_by(
+                Case(
+                    When(status='ACTIVE', then=0),
+                    default=1,
+                    output_field=IntegerField(),
+                ),
+                '-created_at',
             )
 
-        if category_filter:
-            services_list = services_list.filter(category__code=category_filter)
+            paginator = Paginator(services_list, 10)
+            page_number = request.GET.get('page', 1)
+            services = paginator.get_page(page_number)
 
-        if status_filter:
-            services_list = services_list.filter(status=status_filter)
-
-        # Pagination
-        paginator = Paginator(services_list, 10)
-        page_number = request.GET.get('page', 1)
-        services = paginator.get_page(page_number)
+        except Exception:
+            import traceback
+            traceback.print_exc()
+            messages.error(request, 'Không thể tải danh sách dịch vụ, vui lòng thử lại.')
+            services = []
+            is_filtered = False
 
         # Get next service code
         next_code = Service._generate_code()
@@ -158,6 +181,7 @@ def admin_services(request):
             'search_query': search_query,
             'category_filter': category_filter,
             'status_filter': status_filter,
+            'is_filtered': is_filtered,   # UC 7a: phân biệt "không có dữ liệu" vs "không tìm thấy"
         }
         return render(request, 'manage/pages/admin_services.html', context)
 
@@ -234,28 +258,20 @@ def admin_service_edit(request, service_id):
 
 @login_required(login_url='accounts:login')
 def admin_service_delete(request, service_id):
-    """
-    Xóa dịch vụ
-    """
+    """Soft delete dịch vụ — UC 12.4"""
     if not (request.user.is_staff or request.user.is_superuser):
         messages.error(request, 'Bạn không có quyền truy cập trang này.')
         return redirect('pages:home')
 
     if request.method == 'POST':
         service = get_object_or_404(Service, id=service_id)
-
         try:
-            service_name = service.name
-            service.delete()
-            messages.success(
-                request,
-                f'Đã xóa dịch vụ: {service_name}'
-            )
-        except Exception as e:
-            messages.error(
-                request,
-                'Có lỗi khi xóa dịch vụ, vui lòng thử lại'
-            )
+            service.status = 'INACTIVE'
+            service.updated_by = request.user
+            service.save(update_fields=['status', 'updated_by', 'updated_at'])
+            messages.success(request, 'Xóa dịch vụ thành công')
+        except Exception:
+            messages.error(request, 'Có lỗi xảy ra, vui lòng thử lại')
 
     return redirect('spa_services:admin_services')
 
@@ -307,7 +323,7 @@ def api_services_list(request):
                     'price': float(v.price),
                     'sort_order': v.sort_order,
                 }
-                for v in s.variants.filter(is_active=True).order_by('sort_order', 'duration_minutes')
+                for v in s.variants.order_by('sort_order', 'duration_minutes')
             ],
         }
         for s in services
@@ -319,13 +335,16 @@ def api_services_list(request):
 @staff_api
 def api_service_create(request):
     """API: Thêm dịch vụ mới"""
+    from django.db import transaction as db_transaction
+    from .models import ServiceCategory, ServiceVariant
+
     try:
         if request.content_type and 'multipart/form-data' in request.content_type:
             name = request.POST.get('name', '').strip()
             category = request.POST.get('category_number', '').strip()
             short_description = request.POST.get('short_description', '').strip()
             description = request.POST.get('description', '').strip()
-            status = (request.POST.get('status', 'ACTIVE') or 'ACTIVE').upper()
+            status = (request.POST.get('status', '') or '').strip().upper()
             code = request.POST.get('code', '').strip().upper()
             image_file = request.FILES.get('image')
         else:
@@ -334,127 +353,149 @@ def api_service_create(request):
             category = data.get('category_number', data.get('category', '')).strip()
             short_description = data.get('short_description', '').strip()
             description = data.get('description', '').strip()
-            status = (data.get('status', 'ACTIVE') or 'ACTIVE').upper()
+            status = (data.get('status', '') or '').strip().upper()
             code = data.get('code', '').strip().upper()
             image_file = None
 
-        # Fallback: nếu short_description trống thì dùng description cắt ngắn
-        if not short_description:
-            short_description = description[:255] if description else ''
+        # ── Validate Service fields ────────────────────────────────
+        if not code:
+            return JsonResponse({'error': 'Vui lòng nhập mã dịch vụ', 'field': 'code'}, status=400)
+        if Service.objects.filter(code=code).exists():
+            return JsonResponse({'error': 'Mã dịch vụ đã tồn tại', 'field': 'code'}, status=400)
+
+        if not category:
+            return JsonResponse({'error': 'Vui lòng chọn danh mục', 'field': 'category_number'}, status=400)
 
         if not name:
-            return JsonResponse({'error': 'Vui lòng nhập tên dịch vụ!'}, status=400)
-        if len(name) < 5:
-            return JsonResponse({'error': 'Tên dịch vụ phải có ít nhất 5 ký tự!'}, status=400)
-        if len(name) > 200:
-            return JsonResponse({'error': 'Tên dịch vụ không được quá 200 ký tự!'}, status=400)
+            return JsonResponse({'error': 'Tên dịch vụ không hợp lệ', 'field': 'name'}, status=400)
+        if len(name) < 5 or len(name) > 200 or name.isdigit():
+            return JsonResponse({'error': 'Tên dịch vụ không hợp lệ', 'field': 'name'}, status=400)
         if Service.objects.filter(name__iexact=name).exists():
-            return JsonResponse({'error': f'Dịch vụ "{name}" đã tồn tại!'}, status=400)
+            return JsonResponse({'error': 'Dịch vụ đã tồn tại', 'field': 'name'}, status=400)
 
-        from .models import ServiceCategory
+        if not status:
+            return JsonResponse({'error': 'Vui lòng chọn trạng thái dịch vụ', 'field': 'status'}, status=400)
+        if status not in ('ACTIVE', 'INACTIVE'):
+            return JsonResponse({'error': 'Vui lòng chọn trạng thái dịch vụ', 'field': 'status'}, status=400)
+
+        if short_description and len(short_description) > 255:
+            return JsonResponse({'error': 'Mô tả ngắn không được quá 255 ký tự', 'field': 'short_description'}, status=400)
+
+        # ── Validate Image ─────────────────────────────────────────
+        if not image_file:
+            return JsonResponse({'error': 'Vui lòng chọn hình ảnh dịch vụ', 'field': 'image'}, status=400)
+        if image_file.size > 5 * 1024 * 1024:
+            return JsonResponse({'error': 'Hình ảnh không được quá 5MB', 'field': 'image'}, status=400)
+        allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+        if image_file.content_type not in allowed_types:
+            return JsonResponse({'error': 'Hình ảnh không đúng định dạng', 'field': 'image'}, status=400)
+
+        # ── Validate Danh mục ──────────────────────────────────────
         try:
-            category_obj = ServiceCategory.objects.get(code=str(category))
+            category_obj = ServiceCategory.objects.get(code=str(category), status='ACTIVE')
         except ServiceCategory.DoesNotExist:
-            category_obj = ServiceCategory.objects.filter(status='ACTIVE').first()
-            if not category_obj:
-                return JsonResponse({'error': 'Không tìm thấy danh mục dịch vụ.'}, status=400)
+            return JsonResponse({'error': 'Vui lòng chọn danh mục', 'field': 'category_number'}, status=400)
 
-        status = status if status in ('ACTIVE', 'INACTIVE') else 'ACTIVE'
-
-        # Auto-generate description nếu để trống / quá ngắn
-        from .description_helpers import generate_service_description, should_generate_description
-        _tmp = Service(name=name, category=category_obj, short_description=short_description, description=description)
-        if should_generate_description(_tmp):
-            description = generate_service_description(_tmp)
-
-        service = Service.objects.create(
-            name=name,
-            category=category_obj,
-            short_description=short_description,
-            description=description,
-            status=status,
-            image='',
-            created_by=request.user,
-            updated_by=request.user,
-        )
-        if code:
-            if Service.objects.filter(code=code).exclude(id=service.id).exists():
-                service.delete()
-                return JsonResponse({'error': f'Mã dịch vụ "{code}" đã tồn tại!'}, status=400)
-            service.code = code
-            service.save(update_fields=['code'])
-
-        if image_file:
-            if image_file.size > 5 * 1024 * 1024:
-                service.delete()
-                return JsonResponse({'error': 'Hình ảnh không được quá 5MB!'}, status=400)
-            allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
-            if image_file.content_type not in allowed_types:
-                service.delete()
-                return JsonResponse({'error': 'Chỉ chấp nhận file ảnh (JPG, PNG, GIF, WebP)!'}, status=400)
-            _save_service_image(service, image_file)
-
-        # Tạo variants nếu có
-        from .models import ServiceVariant
-        from django.db import transaction as db_transaction
+        # ── Validate Variants ──────────────────────────────────────
         variants_json = request.POST.get('variants_json', '[]')
         try:
             variants_data = json.loads(variants_json)
         except (json.JSONDecodeError, TypeError):
             variants_data = []
 
-        variant_errors = []
-        with db_transaction.atomic():
-            for i, v in enumerate(variants_data):
-                label = str(v.get('label', '')).strip()
-                try:
-                    duration = int(v.get('duration_minutes', 0))
-                    price = float(v.get('price', 0))
-                except (ValueError, TypeError):
-                    variant_errors.append(f'Gói {i+1}: thời lượng hoặc giá không hợp lệ')
-                    continue
-                if not label:
-                    variant_errors.append(f'Gói {i+1}: thiếu tên gói')
-                    continue
-                if duration <= 0:
-                    variant_errors.append(f'Gói {i+1}: thời lượng phải > 0')
-                    continue
-                if price < 0:
-                    variant_errors.append(f'Gói {i+1}: giá không hợp lệ')
-                    continue
-                ServiceVariant.objects.create(
-                    service=service,
-                    label=label,
-                    duration_minutes=duration,
-                    price=price,
-                    sort_order=i,
+        if not variants_data:
+            return JsonResponse({'error': 'Vui lòng nhập đầy đủ thông tin gói', 'field': 'variants'}, status=400)
+
+        # Validate từng variant trước khi lưu
+        validated_variants = []
+        for i, v in enumerate(variants_data):
+            label = str(v.get('label', '')).strip()
+            duration_raw = v.get('duration_minutes', '')
+            price_raw = v.get('price', '')
+
+            if duration_raw == '' or price_raw == '':
+                return JsonResponse({'error': 'Vui lòng nhập đầy đủ thông tin gói', 'field': 'variants'}, status=400)
+
+            try:
+                duration = int(duration_raw)
+            except (ValueError, TypeError):
+                return JsonResponse({'error': 'Thời lượng không hợp lệ', 'field': 'variants'}, status=400)
+            try:
+                price = float(price_raw)
+            except (ValueError, TypeError):
+                return JsonResponse({'error': 'Giá dịch vụ không hợp lệ', 'field': 'variants'}, status=400)
+
+            if duration <= 0:
+                return JsonResponse({'error': 'Thời lượng không hợp lệ', 'field': 'variants'}, status=400)
+            if price <= 0:
+                return JsonResponse({'error': 'Giá dịch vụ không hợp lệ', 'field': 'variants'}, status=400)
+
+            if not label:
+                label = f'{duration} phút'
+            validated_variants.append({'label': label, 'duration_minutes': duration, 'price': price, 'sort_order': i})
+
+        # ── Lưu toàn bộ trong 1 transaction ───────────────────────
+        try:
+            with db_transaction.atomic():
+                if not short_description:
+                    short_description = description[:255] if description else ''
+
+                service = Service.objects.create(
+                    code=code,
+                    name=name,
+                    category=category_obj,
+                    short_description=short_description,
+                    description=description,
+                    status=status,
+                    image='',
+                    created_by=request.user,
+                    updated_by=None,
                 )
+
+                _save_service_image(service, image_file)
+
+                for v in validated_variants:
+                    ServiceVariant.objects.create(
+                        service=service,
+                        label=v['label'],
+                        duration_minutes=v['duration_minutes'],
+                        price=v['price'],
+                        sort_order=v['sort_order'],
+                    )
+
+        except Exception:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'error': 'Có lỗi khi lưu dữ liệu, vui lòng thử lại'}, status=500)
 
         return JsonResponse({
             'success': True,
-            'message': f'Đã thêm dịch vụ: {service.name}' + (f' ({len(variants_data) - len(variant_errors)} gói)' if variants_data else ''),
-            'variant_errors': variant_errors,
+            'message': 'Thêm mới dịch vụ thành công',
             'service': {
                 'id': service.id,
-                'code': service.code or '',
+                'code': service.code,
                 'name': service.name,
                 'categoryName': service.get_category_name(),
-                'image': service.image.url if service.image else 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=100'
+                'image': service.image.url if service.image else '',
             }
         })
+
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return JsonResponse({'error': f'Lỗi: {str(e)}'}, status=400)
+        return JsonResponse({'error': 'Có lỗi khi lưu dữ liệu, vui lòng thử lại'}, status=500)
 
 
 @require_http_methods(["POST", "PUT"])
 @staff_api
 def api_service_update(request, service_id):
-    """API: Cập nhật dịch vụ"""
+    """API: Cập nhật dịch vụ — UC 12.3"""
     service, error = get_or_404(Service, id=service_id)
     if error:
         return error
+
+    from .models import ServiceCategory, ServiceVariant
+    from django.db import transaction as db_transaction
 
     try:
         if request.content_type and 'multipart/form-data' in request.content_type:
@@ -462,7 +503,7 @@ def api_service_update(request, service_id):
             category = request.POST.get('category_number', '').strip()
             short_description = request.POST.get('short_description', '').strip()
             description = request.POST.get('description', '').strip()
-            status = (request.POST.get('status', 'ACTIVE') or 'ACTIVE').upper()
+            status = (request.POST.get('status', '') or '').strip().upper()
             code = request.POST.get('code', '').strip().upper()
             image_file = request.FILES.get('image')
         else:
@@ -471,108 +512,145 @@ def api_service_update(request, service_id):
             category = data.get('category_number', data.get('category', '')).strip()
             short_description = data.get('short_description', '').strip()
             description = data.get('description', '').strip()
-            status = (data.get('status', 'ACTIVE') or 'ACTIVE').upper()
+            status = (data.get('status', '') or '').strip().upper()
             code = data.get('code', '').strip().upper()
             image_file = None
 
-        # Fallback: nếu short_description trống thì dùng description cắt ngắn
-        if not short_description:
-            short_description = description[:255] if description else ''
+        # ── 5a: Mã dịch vụ ────────────────────────────────────────
+        if not code:
+            return JsonResponse({'error': 'Vui lòng nhập mã dịch vụ', 'field': 'code'}, status=400)
+        # ── 5b: Mã trùng (trừ chính nó) ───────────────────────────
+        if Service.objects.filter(code=code).exclude(id=service_id).exists():
+            return JsonResponse({'error': 'Mã dịch vụ đã tồn tại', 'field': 'code'}, status=400)
 
-        if not name:
-            return JsonResponse({'error': 'Vui lòng nhập tên dịch vụ!'}, status=400)
-        if len(name) < 5:
-            return JsonResponse({'error': 'Tên dịch vụ phải có ít nhất 5 ký tự!'}, status=400)
-        if len(name) > 200:
-            return JsonResponse({'error': 'Tên dịch vụ không được quá 200 ký tự!'}, status=400)
+        # ── 6a: Danh mục ──────────────────────────────────────────
+        if not category:
+            return JsonResponse({'error': 'Vui lòng chọn danh mục', 'field': 'category_number'}, status=400)
+        try:
+            category_obj = ServiceCategory.objects.get(code=category, status='ACTIVE')
+        except ServiceCategory.DoesNotExist:
+            return JsonResponse({'error': 'Vui lòng chọn danh mục', 'field': 'category_number'}, status=400)
+
+        # ── 7a / 7b: Tên dịch vụ ──────────────────────────────────
+        if not name or len(name) < 5 or len(name) > 200 or name.isdigit():
+            return JsonResponse({'error': 'Tên dịch vụ không hợp lệ', 'field': 'name'}, status=400)
         if Service.objects.filter(name__iexact=name).exclude(id=service_id).exists():
-            return JsonResponse({'error': f'Dịch vụ "{name}" đã tồn tại!'}, status=400)
+            return JsonResponse({'error': 'Dịch vụ đã tồn tại', 'field': 'name'}, status=400)
 
-        from .models import ServiceCategory
-        if category:
-            try:
-                service.category = ServiceCategory.objects.get(code=category)
-            except ServiceCategory.DoesNotExist:
-                pass
+        # ── 8a: Trạng thái ────────────────────────────────────────
+        if not status or status not in ('ACTIVE', 'INACTIVE'):
+            return JsonResponse({'error': 'Vui lòng chọn trạng thái dịch vụ', 'field': 'status'}, status=400)
 
-        if code and code != service.code:
-            if Service.objects.filter(code=code).exclude(id=service_id).exists():
-                return JsonResponse({'error': f'Mã dịch vụ "{code}" đã tồn tại!'}, status=400)
-            service.code = code
-
-        status = status if status in ('ACTIVE', 'INACTIVE') else 'ACTIVE'
-        service.name = name
-        service.short_description = short_description
-
-        # Auto-generate description nếu để trống / quá ngắn
-        from .description_helpers import generate_service_description, should_generate_description
-        service.description = description
-        if should_generate_description(service):
-            service.description = generate_service_description(service)
-
-        service.status = status
-        service.updated_by = request.user
-
+        # ── 12a: Hình ảnh (chỉ validate nếu có upload mới) ────────
         if image_file:
             if image_file.size > 5 * 1024 * 1024:
-                return JsonResponse({'error': 'Hình ảnh không được quá 5MB!'}, status=400)
-            allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+                return JsonResponse({'error': 'Hình ảnh không đúng định dạng', 'field': 'image'}, status=400)
+            allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
             if image_file.content_type not in allowed_types:
-                return JsonResponse({'error': 'Chỉ chấp nhận file ảnh (JPG, PNG, GIF, WebP)!'}, status=400)
-            _save_service_image(service, image_file)
+                return JsonResponse({'error': 'Hình ảnh không đúng định dạng', 'field': 'image'}, status=400)
 
-        service.save()
-
-        # Cập nhật variants: xóa hết rồi tạo lại từ variants_json
-        from .models import ServiceVariant
-        from django.db import transaction as db_transaction
+        # ── 11a / 11b / 11c: Variants ─────────────────────────────
         variants_json = request.POST.get('variants_json', None)
+        validated_variants = None
         if variants_json is not None:
             try:
                 variants_data = json.loads(variants_json)
             except (json.JSONDecodeError, TypeError):
                 variants_data = []
-            with db_transaction.atomic():
-                service.variants.all().delete()
-                for i, v in enumerate(variants_data):
-                    label = str(v.get('label', '')).strip()
-                    try:
-                        duration = int(v.get('duration_minutes', 0))
-                        price = float(v.get('price', 0))
-                    except (ValueError, TypeError):
-                        continue
-                    if not label or duration <= 0 or price < 0:
-                        continue
-                    ServiceVariant.objects.create(
-                        service=service,
-                        label=label,
-                        duration_minutes=duration,
-                        price=price,
-                        sort_order=i,
-                    )
 
-        return JsonResponse({'success': True, 'message': f'Đã cập nhật dịch vụ: {service.name}'})
+            if not variants_data:
+                return JsonResponse({'error': 'Vui lòng nhập đầy đủ thông tin gói', 'field': 'variants'}, status=400)
+
+            validated_variants = []
+            for i, v in enumerate(variants_data):
+                label = str(v.get('label', '')).strip()
+                duration_raw = v.get('duration_minutes', '')
+                price_raw = v.get('price', '')
+
+                if duration_raw == '' or price_raw == '':
+                    return JsonResponse({'error': 'Vui lòng nhập đầy đủ thông tin gói', 'field': 'variants'}, status=400)
+
+                try:
+                    duration = int(duration_raw)
+                except (ValueError, TypeError):
+                    return JsonResponse({'error': 'Thời lượng không hợp lệ', 'field': 'variants'}, status=400)
+                try:
+                    price = float(price_raw)
+                except (ValueError, TypeError):
+                    return JsonResponse({'error': 'Giá dịch vụ không hợp lệ', 'field': 'variants'}, status=400)
+
+                if duration <= 0:
+                    return JsonResponse({'error': 'Thời lượng không hợp lệ', 'field': 'variants'}, status=400)
+                if price <= 0:
+                    return JsonResponse({'error': 'Giá dịch vụ không hợp lệ', 'field': 'variants'}, status=400)
+
+                if not label:
+                    label = f'{duration} phút'
+                validated_variants.append({'label': label, 'duration_minutes': duration, 'price': price, 'sort_order': i})
+
+        # ── Fallback short_description ─────────────────────────────
+        if not short_description:
+            short_description = description[:255] if description else ''
+
+        # ── 15a: Lưu toàn bộ trong 1 transaction ──────────────────
+        try:
+            with db_transaction.atomic():
+                service.code = code
+                service.name = name
+                service.category = category_obj
+                service.short_description = short_description
+                service.description = description
+                service.status = status
+                service.updated_by = request.user
+                service.save()
+
+                if image_file:
+                    _save_service_image(service, image_file)
+
+                if validated_variants is not None:
+                    service.variants.all().delete()
+                    for v in validated_variants:
+                        ServiceVariant.objects.create(
+                            service=service,
+                            label=v['label'],
+                            duration_minutes=v['duration_minutes'],
+                            price=v['price'],
+                            sort_order=v['sort_order'],
+                        )
+        except Exception:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'error': 'Có lỗi khi lưu dữ liệu, vui lòng thử lại'}, status=500)
+
+        # ── 16: Thành công ─────────────────────────────────────────
+        return JsonResponse({'success': True, 'message': 'Cập nhật dịch vụ thành công'})
+
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return JsonResponse({'error': f'Lỗi: {str(e)}'}, status=400)
+        return JsonResponse({'error': 'Có lỗi khi lưu dữ liệu, vui lòng thử lại'}, status=500)
 
 
 @require_http_methods(["DELETE", "POST"])
 @staff_api
 def api_service_delete(request, service_id):
-    """API: Xóa dịch vụ"""
+    """API: Soft delete dịch vụ — UC 12.4
+    Không xóa vật lý, chỉ cập nhật status → INACTIVE (BR-UC12-13).
+    Lịch sử appointment cũ giữ nguyên (BR-UC12-15).
+    """
     service, error = get_or_404(Service, id=service_id)
     if error:
         return error
 
     try:
-        service_name = service.name
-        service.delete()
-        return JsonResponse({'success': True, 'message': f'Đã xóa dịch vụ: {service_name}'})
-    except Exception as e:
-        from core.api_response import ApiResponse
-        return ApiResponse.error(f'Lỗi khi xóa dịch vụ: {str(e)}')
+        service.status = 'INACTIVE'
+        service.updated_by = request.user
+        service.save(update_fields=['status', 'updated_by', 'updated_at'])
+        return JsonResponse({'success': True, 'message': 'Xóa dịch vụ thành công'})
+    except Exception:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'error': 'Có lỗi xảy ra, vui lòng thử lại'}, status=500)
 
 
 # =====================================================
@@ -598,7 +676,6 @@ def api_variant_list(request, service_id):
             'duration_minutes': v.duration_minutes,
             'price': float(v.price),
             'sort_order': v.sort_order,
-            'is_active': v.is_active,
         }
         for v in variants
     ]
@@ -652,7 +729,6 @@ def api_variant_create(request, service_id):
                 'duration_minutes': variant.duration_minutes,
                 'price': float(variant.price),
                 'sort_order': variant.sort_order,
-                'is_active': variant.is_active,
             }
         })
     except Exception as e:
@@ -674,7 +750,6 @@ def api_variant_update(request, service_id, variant_id):
         duration = data.get('duration_minutes')
         price = data.get('price')
         sort_order = data.get('sort_order')
-        is_active = data.get('is_active')
 
         if label:
             variant.label = label
@@ -696,8 +771,6 @@ def api_variant_update(request, service_id, variant_id):
                 return JsonResponse({'error': 'Giá không hợp lệ'}, status=400)
         if sort_order is not None:
             variant.sort_order = int(sort_order)
-        if is_active is not None:
-            variant.is_active = bool(is_active)
 
         variant.save()
         return JsonResponse({'success': True, 'message': f'Đã cập nhật gói: {variant.label}'})

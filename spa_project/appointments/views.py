@@ -71,7 +71,7 @@ def booking(request):
                 appointment.service_variant = variant
                 appointment.duration_minutes = variant.duration_minutes
             else:
-                first_variant = appointment.service.variants.filter(is_active=True).order_by('sort_order', 'duration_minutes').first()
+                first_variant = appointment.service.variants.order_by('sort_order', 'duration_minutes').first()
                 appointment.duration_minutes = first_variant.duration_minutes if first_variant else 60
 
             # Tính end_time
@@ -105,7 +105,7 @@ def booking(request):
     services_with_variants = {
         str(s.id): [
             {'id': v.id, 'label': v.label, 'duration_minutes': v.duration_minutes, 'price': float(v.price)}
-            for v in s.variants.filter(is_active=True).order_by('sort_order', 'duration_minutes')
+            for v in s.variants.order_by('sort_order', 'duration_minutes')
         ]
         for s in services
     }

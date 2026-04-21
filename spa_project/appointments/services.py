@@ -172,7 +172,7 @@ def check_room_availability(
             existing.appointment_time,
             existing.duration_minutes or (
                 existing.service_variant.duration_minutes if existing.service_variant else (
-                    existing.service.variants.filter(is_active=True).order_by('sort_order').first().duration_minutes
+                    existing.service.variants.order_by('sort_order').first().duration_minutes
                     if existing.service else 60
                 )
             )

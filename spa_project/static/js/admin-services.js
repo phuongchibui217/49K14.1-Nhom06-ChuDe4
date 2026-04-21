@@ -18,55 +18,83 @@ function resetCounters() {
 
 // ===== VARIANT MANAGEMENT =====
 
-const VARIANT_HEADER_HTML = `
-<div class="variant-header" id="variantHeader">
-    <span>Thời lượng (phút)</span><span>Giá (VNĐ)</span><span></span>
-</div>`;
-
 let variantCounter = 0;
 
 function addVariantRow(data = {}) {
     const list = document.getElementById('variantList');
     if (!list) return;
 
-    if (!document.getElementById('variantHeader')) {
-        list.insertAdjacentHTML('beforebegin', VARIANT_HEADER_HTML);
-    }
-
     const id = ++variantCounter;
     const row = document.createElement('div');
     row.className = 'variant-row';
     row.dataset.variantId = id;
     row.innerHTML = `
-        <input type="number" class="form-control form-control-sm" placeholder="VD: 60"
-               data-field="duration_minutes" min="1" max="480" value="${data.duration_minutes || ''}" required>
-        <input type="number" class="form-control form-control-sm" placeholder="VD: 200000"
-               data-field="price" min="0" step="1000" value="${data.price || ''}" required>
-        <button type="button" class="btn-remove-variant" onclick="removeVariantRow(this)" title="Xóa gói">
-            <i class="fas fa-times"></i>
-        </button>`;
+        <div class="variant-label-row">
+            <label>Tên gói</label>
+            <input type="text" class="form-control form-control-sm" placeholder="VD: Gói cơ bản"
+                   data-field="label" value="${escapeHtml(data.label || '')}">
+        </div>
+        <div class="variant-bottom-row">
+            <div>
+                <span class="sub-label">Thời lượng (phút)</span>
+                <input type="number" class="form-control form-control-sm" placeholder="VD: 60"
+                       data-field="duration_minutes" min="1" max="480" value="${data.duration_minutes || ''}" required>
+            </div>
+            <div>
+                <span class="sub-label">Giá (VNĐ)</span>
+                <input type="number" class="form-control form-control-sm" placeholder="VD: 200000"
+                       data-field="price" min="0" step="1000" value="${data.price || ''}" required>
+            </div>
+            <button type="button" class="btn-remove-variant" onclick="removeVariantRow(this)" title="Xóa gói">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>`;
     list.appendChild(row);
 }
 
 function removeVariantRow(btn) {
     const row = btn.closest('.variant-row');
     if (row) row.remove();
-    // Ẩn header nếu không còn row nào
-    const list = document.getElementById('variantList');
-    const header = document.getElementById('variantHeader');
-    if (header && list && list.children.length === 0) header.remove();
 }
 
 function collectVariants() {
     const rows = document.querySelectorAll('#variantList .variant-row');
     const variants = [];
     let valid = true;
+
+    if (rows.length === 0) {
+        showToast('error', 'Vui lòng nhập đầy đủ thông tin gói');
+        return null;
+    }
+
     rows.forEach((row, i) => {
-        const duration = parseInt(row.querySelector('[data-field="duration_minutes"]').value);
-        const price = parseFloat(row.querySelector('[data-field="price"]').value);
-        if (!duration || duration <= 0) { showToast('error', `Gói ${i+1}: thời lượng phải > 0`); valid = false; return; }
-        if (isNaN(price) || price < 0) { showToast('error', `Gói ${i+1}: giá không hợp lệ`); valid = false; return; }
-        variants.push({ label: `${duration} phút`, duration_minutes: duration, price });
+        const labelInput = row.querySelector('[data-field="label"]');
+        const durationInput = row.querySelector('[data-field="duration_minutes"]');
+        const priceInput = row.querySelector('[data-field="price"]');
+
+        const labelVal = labelInput ? labelInput.value.trim() : '';
+        const durationVal = durationInput ? durationInput.value.trim() : '';
+        const priceVal = priceInput ? priceInput.value.trim() : '';
+
+        if (durationVal === '' || priceVal === '') {
+            showToast('error', 'Vui lòng nhập đầy đủ thông tin gói');
+            valid = false; return;
+        }
+
+        const duration = parseInt(durationVal);
+        const price = parseFloat(priceVal);
+
+        if (isNaN(duration) || duration <= 0) {
+            showToast('error', 'Thời lượng không hợp lệ');
+            valid = false; return;
+        }
+        if (isNaN(price) || price <= 0) {
+            showToast('error', 'Giá dịch vụ không hợp lệ');
+            valid = false; return;
+        }
+
+        const label = labelVal || `${duration} phút`;
+        variants.push({ label, duration_minutes: duration, price });
     });
     return valid ? variants : null;
 }
@@ -74,8 +102,6 @@ function collectVariants() {
 function clearVariantRows() {
     const list = document.getElementById('variantList');
     if (list) list.innerHTML = '';
-    const header = document.getElementById('variantHeader');
-    if (header) header.remove();
     variantCounter = 0;
 }
 
@@ -158,17 +184,20 @@ function loadServicesTable() {
     // For now, we use traditional Django rendering
 }
 
-// Setup Filters
+// Setup Filters — UC 12.5
+// Enter trên ô tìm kiếm = nhấn nút Lọc (3a/4a)
+// Dropdown danh mục và trạng thái chỉ submit khi nhấn nút Lọc
 function setupFilters() {
     const searchInput = document.getElementById('searchInput');
-    const categoryFilter = document.getElementById('categoryFilter');
-    const statusFilter = document.getElementById('statusFilter');
+    const form = document.getElementById('searchFilterForm');
 
+    if (!form) return;
+
+    // Enter trên ô tìm kiếm → submit form (UC 3a / 4a)
     if (searchInput) {
-        searchInput.addEventListener('input', function() {
-            // Auto-submit form for instant filtering
-            const form = searchInput.closest('form');
-            if (form) {
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
                 form.submit();
             }
         });
@@ -326,12 +355,12 @@ function validateImage(input) {
 
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-        showFieldError(input, 'Chỉ chấp nhận file ảnh (JPG, PNG, WebP)');
-        if (previewDiv) previewDiv.style.display = 'none';
-        input.value = '';
-        return false;
-    }
+        if (!allowedTypes.includes(file.type)) {
+            showFieldError(input, 'Hình ảnh không đúng định dạng');
+            if (previewDiv) previewDiv.style.display = 'none';
+            input.value = '';
+            return false;
+        }
 
     return true;
 }
@@ -396,21 +425,40 @@ function submitServiceForm(event) {
     const nameInput = form.querySelector('[name="name"]');
     const categoryInput = form.querySelector('[name="category_number"]');
     const imageInput = form.querySelector('[name="image"]');
+    const codeInput = form.querySelector('[name="code"]');
+    const statusInput = form.querySelector('[name="status"]');
 
     let isValid = true;
 
-    isValid = validateServiceName(nameInput) && isValid;
-    isValid = validateCategory(categoryInput) && isValid;
-    isValid = validateImage(imageInput) && isValid;
+    // Validate code
+    if (codeInput && !codeInput.value.trim()) {
+        showFieldError(codeInput, 'Vui lòng nhập mã dịch vụ');
+        isValid = false;
+    }
+
+    // Validate category
+    if (!validateCategory(categoryInput)) isValid = false;
+
+    // Validate name
+    if (!validateServiceName(nameInput)) isValid = false;
+
+    // Validate status
+    if (statusInput && !statusInput.value) {
+        showFieldError(statusInput, 'Vui lòng chọn trạng thái dịch vụ');
+        isValid = false;
+    }
+
+    // Validate image
+    if (!validateImage(imageInput)) isValid = false;
 
     if (!isValid) {
         showToast('error', 'Vui lòng kiểm tra lại các thông tin!');
         return false;
     }
 
-    // Validate variants
+    // Validate variants (phải có ít nhất 1 gói)
     const variants = collectVariants();
-    if (variants === null) return false;  // lỗi đã hiển thị trong collectVariants
+    if (variants === null) return false;
 
     // ===== BẬT LOADING STATE =====
     isSubmitting = true;
@@ -447,12 +495,12 @@ function submitServiceForm(event) {
                 window.location.reload();
             }, 1000);
         } else {
-            showToast('error', data.error || 'Có lỗi xảy ra!');
+            showToast('error', data.error || 'Có lỗi khi lưu dữ liệu, vui lòng thử lại');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        showToast('error', 'Có lỗi xảy ra khi lưu dữ liệu!');
+        showToast('error', 'Có lỗi khi lưu dữ liệu, vui lòng thử lại');
     })
     .finally(() => {
         // ===== TẮT LOADING STATE =====
@@ -667,13 +715,13 @@ function deleteService(serviceId) {
                         window.location.reload();
                     }, 1000);
                 } else {
-                    showToast('error', data.error || 'Có lỗi xảy ra khi xóa!');
+                    showToast('error', data.error || 'Có lỗi xảy ra, vui lòng thử lại');
                     isSubmitting = false; // Reset khi lỗi
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                showToast('error', 'Có lỗi xảy ra khi xóa dịch vụ!');
+                showToast('error', 'Có lỗi xảy ra, vui lòng thử lại');
                 isSubmitting = false; // Reset khi lỗi
             });
         });

@@ -677,7 +677,6 @@
         {% if variants %}
           <div class="sd-variants">
             {% for v in variants %}
-            {% if v.is_active %}
             <label class="sd-variant">
               {% if forloop.counter == 2 and variants|length >= 3 %}
                 <span class="sd-variant__badge">Phổ biến</span>
@@ -695,7 +694,6 @@
               </div>
               <div class="sd-variant__price">{{ v.price|vnd }}</div>
             </label>
-            {% endif %}
             {% endfor %}
           </div>
           
