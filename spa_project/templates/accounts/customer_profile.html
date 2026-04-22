@@ -334,6 +334,11 @@
         {% csrf_token %}<input type="hidden" name="action" value="update_profile">
         <div class="cp-form-grid">
           <div>
+            <label class="cp-label">Tên đăng nhập <span style="color:#ef4444">*</span></label>
+            {{ profile_form.username }}
+            {% for e in profile_form.username.errors %}<div class="cp-field-err"><i class="fas fa-exclamation-circle"></i>{{ e }}</div>{% endfor %}
+          </div>
+          <div>
             <label class="cp-label">Họ và tên <span style="color:#ef4444">*</span></label>
             {{ profile_form.full_name }}
             {% for e in profile_form.full_name.errors %}<div class="cp-field-err"><i class="fas fa-exclamation-circle"></i>{{ e }}</div>{% endfor %}

@@ -98,13 +98,29 @@ def admin_profile(request):
             gender = request.POST.get('gender', '').strip()
             dob = request.POST.get('dob', '').strip() or None
             address = request.POST.get('address', '').strip()
+            username = request.POST.get('username', '').strip()
+
+            errors = {}
+
+            if not username:
+                errors['username_error'] = 'Vui lòng nhập tên đăng nhập.'
+            elif ' ' in username:
+                errors['username_error'] = 'Tên đăng nhập không được chứa khoảng trắng.'
+            elif not username.isascii():
+                errors['username_error'] = 'Tên đăng nhập chỉ được dùng ký tự không dấu.'
+            elif User.objects.filter(username=username).exclude(pk=request.user.pk).exists():
+                errors['username_error'] = 'Tên đăng nhập này đã được sử dụng.'
 
             if not full_name:
-                ctx['profile_error'] = 'Vui lòng nhập họ tên.'
+                errors['profile_error'] = 'Vui lòng nhập họ tên.'
+
+            if errors:
+                ctx.update(errors)
                 return render(request, 'admin_panel/admin_profile.html', ctx)
 
             # Update User
             parts = full_name.split(None, 1)
+            request.user.username = username
             request.user.first_name = parts[0]
             request.user.last_name = parts[1] if len(parts) > 1 else ''
             if email:

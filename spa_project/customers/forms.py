@@ -7,6 +7,17 @@ import re
 class CustomerProfileForm(forms.ModelForm):
     """Form cập nhật thông tin profile khách hàng (UC 9.2)"""
 
+    # username nằm trên User — xử lý thủ công
+    username = forms.CharField(
+        label='Tên đăng nhập',
+        max_length=150,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Tên đăng nhập (không dấu, không khoảng trắng)',
+            'autocomplete': 'username',
+        })
+    )
+
     # email nằm trên User, không phải CustomerProfile — xử lý thủ công
     email = forms.EmailField(
         label='Email',
@@ -45,9 +56,26 @@ class CustomerProfileForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Điền sẵn email từ User nếu có
+        # Điền sẵn username và email từ User nếu có
         if self.instance and self.instance.user:
+            self.fields['username'].initial = self.instance.user.username
             self.fields['email'].initial = self.instance.user.email
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username', '').strip()
+        if not username:
+            raise forms.ValidationError('Vui lòng nhập tên đăng nhập.')
+        if ' ' in username:
+            raise forms.ValidationError('Tên đăng nhập không được chứa khoảng trắng.')
+        if not username.isascii():
+            raise forms.ValidationError('Tên đăng nhập chỉ được dùng ký tự không dấu.')
+        # Loại trừ chính user hiện tại khi kiểm tra trùng
+        qs = User.objects.filter(username=username)
+        if self.instance and self.instance.user:
+            qs = qs.exclude(pk=self.instance.user.pk)
+        if qs.exists():
+            raise forms.ValidationError('Tên đăng nhập này đã được sử dụng.')
+        return username
 
     def clean_full_name(self):
         full_name = self.cleaned_data.get('full_name', '').strip()
@@ -87,10 +115,11 @@ class CustomerProfileForm(forms.ModelForm):
 
     def save(self, commit=True):
         profile = super().save(commit=commit)
-        # Lưu email vào User
+        # Lưu username và email vào User
         if commit and profile.user:
+            profile.user.username = self.cleaned_data.get('username', profile.user.username)
             profile.user.email = self.cleaned_data.get('email', '')
-            profile.user.save(update_fields=['email'])
+            profile.user.save(update_fields=['username', 'email'])
         return profile
 
 class ChangePasswordForm(forms.Form):

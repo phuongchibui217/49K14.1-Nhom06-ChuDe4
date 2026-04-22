@@ -61,8 +61,11 @@ class Appointment(models.Model):
     room = models.ForeignKey(
         Room, on_delete=models.PROTECT, verbose_name='Phòng'
     )
+    booker_name  = models.CharField(max_length=100, blank=True, default='', verbose_name='Tên người đặt')
+    booker_phone = models.CharField(max_length=15,  blank=True, default='', verbose_name='SĐT người đặt')
+    booker_email = models.CharField(max_length=255, blank=True, default='', verbose_name='Email người đặt')
     customer_name_snapshot = models.CharField(max_length=100, verbose_name='Tên khách (snapshot)')
-    customer_phone_snapshot = models.CharField(max_length=15, verbose_name='SĐT khách (snapshot)')
+    customer_phone_snapshot = models.CharField(max_length=15, blank=True, null=True, verbose_name='SĐT khách (snapshot)')
     customer_email_snapshot = models.CharField(max_length=255, blank=True, null=True, verbose_name='Email khách (snapshot)')
     appointment_date = models.DateField(db_index=True, verbose_name='Ngày hẹn')
     appointment_time = models.TimeField(verbose_name='Giờ bắt đầu')
@@ -166,10 +169,6 @@ class Appointment(models.Model):
     def save(self, *args, **kwargs):
         if not self.appointment_code:
             self.appointment_code = self._generate_code()
-        if self.customer and not self.customer_name_snapshot:
-            self.customer_name_snapshot = self.customer.full_name or ''
-        if self.customer and not self.customer_phone_snapshot:
-            self.customer_phone_snapshot = self.customer.phone or ''
         if self.appointment_time and self.service and not self.duration_minutes:
             # Ưu tiên lấy từ variant nếu có, fallback về variant đầu tiên của service
             if self.service_variant:

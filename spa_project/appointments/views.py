@@ -133,7 +133,7 @@ def my_appointments(request):
         customer_profile = request.user.customer_profile
         status_filter = request.GET.get('status', 'all')
 
-        appointments = customer_profile.appointments.all()
+        appointments = customer_profile.appointments.filter(deleted_at__isnull=True)
 
         # Customer-facing filter groups:
         #   pending   → PENDING
@@ -152,7 +152,7 @@ def my_appointments(request):
 
         appointments = appointments.order_by('-created_at')
 
-        base_qs = customer_profile.appointments
+        base_qs = customer_profile.appointments.filter(deleted_at__isnull=True)
         status_counts = {
             'pending':   base_qs.filter(status='PENDING').count(),
             'confirmed': base_qs.filter(status__in=['NOT_ARRIVED', 'ARRIVED']).count(),
@@ -186,7 +186,7 @@ def cancel_appointment(request, appointment_id):
     - Chỉ hủy được khi status = 'pending' hoặc 'confirmed'
     - Chỉ chủ lịch hẹn mới được hủy
     """
-    appointment = get_object_or_404(Appointment, id=appointment_id)
+    appointment = get_object_or_404(Appointment, id=appointment_id, deleted_at__isnull=True)
 
     # Kiểm tra quyền
     if appointment.customer.user != request.user:

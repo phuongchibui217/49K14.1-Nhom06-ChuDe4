@@ -150,10 +150,11 @@ def check_room_availability(
     end_time = calculate_end_time(start_time, duration_minutes)
 
     # Lấy tất cả lịch hẹn của phòng vào ngày đó
-    # Chỉ lấy những lịch có trạng thái không phải 'cancelled'
+    # Chỉ lấy những lịch có trạng thái không phải 'cancelled' và chưa bị xóa mềm
     queryset = Appointment.objects.filter(
         room=room,
         appointment_date=appointment_date,
+        deleted_at__isnull=True,
     ).exclude(
         status='CANCELLED'
     )

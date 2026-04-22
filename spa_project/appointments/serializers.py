@@ -9,14 +9,14 @@ from .models import Appointment
 
 def serialize_appointment(appointment):
     """Chuyển 1 đối tượng Appointment thành dictionary"""
-    customer_name = (
-        appointment.customer_name_snapshot
-        or (appointment.customer.full_name if appointment.customer else '')
-    )
-    customer_phone = (
-        appointment.customer_phone_snapshot
-        or (appointment.customer.phone if appointment.customer else '')
-    )
+    # Booker (người đặt lịch) — lấy đúng từ booker_* fields, không fallback sang snapshot
+    booker_name  = appointment.booker_name  or ''
+    booker_phone = appointment.booker_phone or ''
+    booker_email = appointment.booker_email or ''
+
+    # Customer snapshot (khách sử dụng dịch vụ) — lấy đúng từ snapshot fields
+    customer_name  = appointment.customer_name_snapshot  or ''
+    customer_phone = appointment.customer_phone_snapshot or ''
     customer_email = appointment.customer_email_snapshot or ''
 
     # Tính end_time display
@@ -31,9 +31,14 @@ def serialize_appointment(appointment):
     return {
         'id': appointment.appointment_code,
         'customerId': appointment.customer_id,
+        # Người đặt lịch
+        'bookerName':  booker_name,
+        'bookerPhone': booker_phone,
+        'bookerEmail': booker_email,
+        # Khách sử dụng dịch vụ (snapshot)
         'customerName': customer_name,
-        'phone': customer_phone,
-        'email': customer_email,
+        'phone':        customer_phone,
+        'email':        customer_email,
         'service': appointment.service.name if appointment.service else '',
         'serviceId': appointment.service.id if appointment.service else None,
         'variantId': appointment.service_variant.id if appointment.service_variant else None,

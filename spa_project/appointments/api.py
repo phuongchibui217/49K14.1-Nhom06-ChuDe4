@@ -23,7 +23,9 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count
 from django.db import transaction
 
-from .models import Appointment, Room
+from decimal import Decimal
+
+from .models import Appointment, Room, Invoice, InvoicePayment
 from customers.models import CustomerProfile
 from spa_services.models import Service
 
@@ -49,6 +51,98 @@ def _is_staff(user):
 def _deny():
     """Trả về lỗi 403 (Không có quyền)"""
     return JsonResponse({'success': False, 'error': 'Không có quyền truy cập'}, status=403)
+
+
+# =====================================================
+# HELPER: Tạo Invoice + InvoicePayment
+# =====================================================
+
+def _get_variant_price(service_variant, service):
+    """Lấy giá từ variant hoặc service"""
+    if service_variant and hasattr(service_variant, 'price') and service_variant.price:
+        return Decimal(str(service_variant.price))
+    if service and hasattr(service, 'price') and service.price:
+        return Decimal(str(service.price))
+    return Decimal('0')
+
+
+def _create_invoice_and_payment(appointment, pay_status, payment_data, created_by):
+    """
+    Tạo Invoice và InvoicePayment cho 1 appointment.
+
+    pay_status: 'UNPAID' | 'PARTIAL' | 'PAID'
+    payment_data: {
+        'amount': Decimal (chỉ dùng khi PARTIAL),
+        'payment_method': str,
+        'recorded_no': str (optional),
+        'note': str (optional),
+    }
+
+    Luồng:
+    - Luôn tạo Invoice
+    - UNPAID  → không tạo InvoicePayment
+    - PARTIAL → tạo InvoicePayment với amount từ payment_data
+    - PAID    → tạo InvoicePayment với amount = final_amount
+    """
+    subtotal = _get_variant_price(appointment.service_variant, appointment.service)
+    discount = Decimal('0')
+    final    = subtotal - discount
+
+    invoice = Invoice.objects.create(
+        appointment=appointment,
+        subtotal_amount=subtotal,
+        discount_amount=discount,
+        final_amount=final,
+        status=pay_status,
+        created_by=created_by,
+    )
+
+    if pay_status == 'UNPAID':
+        return invoice
+
+    # PARTIAL hoặc PAID → tạo InvoicePayment
+    if pay_status == 'PAID':
+        pay_amount = final
+    else:  # PARTIAL
+        pay_amount = Decimal(str(payment_data.get('amount', 0)))
+
+    InvoicePayment.objects.create(
+        invoice=invoice,
+        amount=pay_amount,
+        payment_method=payment_data.get('payment_method', 'CASH'),
+        transaction_status='SUCCESS',
+        recorded_by=created_by,
+        recorded_no=payment_data.get('recorded_no', '') or None,
+        note=payment_data.get('note', '') or None,
+    )
+
+    return invoice
+
+
+def _validate_payment_data(pay_status, payment_data, final_amount=None):
+    """
+    Validate payment fields theo pay_status.
+    Trả về (is_valid: bool, error_msg: str)
+    """
+    if pay_status == 'UNPAID':
+        return True, ''
+
+    method = (payment_data.get('payment_method') or '').strip()
+    valid_methods = ['CASH', 'CARD', 'BANK_TRANSFER', 'E_WALLET']
+    if not method or method not in valid_methods:
+        return False, 'Vui lòng chọn phương thức thanh toán'
+
+    if pay_status == 'PARTIAL':
+        try:
+            amount = Decimal(str(payment_data.get('amount', 0)))
+        except Exception:
+            return False, 'Số tiền thanh toán không hợp lệ'
+        if amount <= 0:
+            return False, 'Số tiền thanh toán phải lớn hơn 0'
+        if final_amount is not None and amount >= Decimal(str(final_amount)):
+            return False, 'Số tiền thanh toán một phần phải nhỏ hơn tổng tiền'
+
+    return True, ''
 
 
 # =====================================================
@@ -102,7 +196,10 @@ def api_appointments_list(request):
 
     # Scheduler chỉ hiện lịch đã xác nhận
     # ONLINE + PENDING → thuộc tab "Yêu cầu đặt lịch", không hiện ở đây
-    appointments = Appointment.objects.exclude(
+    # Chỉ lấy lịch chưa bị xóa mềm
+    appointments = Appointment.objects.filter(
+        deleted_at__isnull=True
+    ).exclude(
         source='ONLINE', status='PENDING'
     )
 
@@ -160,12 +257,16 @@ def api_appointment_detail(request, appointment_code):
 
     FE gọi: GET /api/appointments/APT001/
     Trả về: { success: true, appointment: {...} }
+    Không trả về lịch đã bị xóa mềm.
     """
     if not _is_staff(request.user):
         return _deny()
 
     try:
-        appt = Appointment.objects.get(appointment_code=appointment_code)
+        appt = Appointment.objects.get(
+            appointment_code=appointment_code,
+            deleted_at__isnull=True
+        )
     except Appointment.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Không tìm thấy lịch hẹn'}, status=404)
 
@@ -256,12 +357,34 @@ def api_appointment_create(request):
 
         cleaned = validation['cleaned_data']
 
+        # Bước 1b: Validate payment data
+        pay_status = cleaned['payment_status']
+        payment_data = {
+            'payment_method': raw_data.get('paymentMethod', ''),
+            'amount': raw_data.get('paymentAmount', 0),
+            'recorded_no': raw_data.get('paymentRecordedNo', ''),
+            'note': raw_data.get('paymentNote', ''),
+        }
+        # Tính final_amount tạm để validate PARTIAL
+        temp_price = _get_variant_price(
+            cleaned.get('service_variant'), cleaned.get('service')
+        )
+        pay_valid, pay_error = _validate_payment_data(pay_status, payment_data, temp_price)
+        if not pay_valid:
+            return JsonResponse({'success': False, 'error': pay_error}, status=400)
+
         # Bước 2: Resolve khách hàng
         # - Nếu FE gửi customerId → dùng profile đó (đã xác nhận ✓)
         # - Nếu không có customerId → tìm theo SĐT (không tạo mới nếu đã tồn tại)
         #   Nếu SĐT chưa có trong hệ thống → tạo CustomerProfile mới
         #   Nếu SĐT đã có nhưng user chọn ✕ → customerId=null, tạo lịch guest
         #   (appointment.customer vẫn cần FK, dùng profile tìm được hoặc tạo mới)
+        
+        # Lấy thông tin người đặt lịch (booker) từ request
+        booker_name  = raw_data.get('bookerName', '').strip()
+        booker_phone = raw_data.get('bookerPhone', '').strip()
+        booker_email = raw_data.get('bookerEmail', '').strip()
+        
         if customer_id:
             try:
                 customer = CustomerProfile.objects.get(id=customer_id)
@@ -292,7 +415,8 @@ def api_appointment_create(request):
                 Appointment.objects.select_for_update().filter(
                     room__code=room_code,
                     appointment_date=cleaned['appointment_date'],
-                    status__in=['PENDING', 'NOT_ARRIVED', 'ARRIVED', 'COMPLETED']
+                    status__in=['PENDING', 'NOT_ARRIVED', 'ARRIVED', 'COMPLETED'],
+                    deleted_at__isnull=True
                 ).exists()
 
                 # Double-check availability trong transaction
@@ -317,9 +441,12 @@ def api_appointment_create(request):
                 service=cleaned['service'],
                 service_variant=cleaned.get('service_variant'),
                 room=cleaned.get('room'),
+                booker_name=booker_name or cleaned['customer_name'],
+                booker_phone=booker_phone or cleaned['phone'],
+                booker_email=booker_email,
                 customer_name_snapshot=cleaned['customer_name'],
-                customer_phone_snapshot=cleaned['phone'],
-                customer_email_snapshot=raw_data.get('email', '').strip(),
+                customer_phone_snapshot=cleaned.get('phone') or None,
+                customer_email_snapshot=raw_data.get('email', '').strip() or None,
                 appointment_date=cleaned['appointment_date'],
                 appointment_time=cleaned['appointment_time'],
                 duration_minutes=cleaned['duration_minutes'],
@@ -329,6 +456,14 @@ def api_appointment_create(request):
                 payment_status=cleaned['payment_status'],
                 source=raw_data.get('source', 'DIRECT'),
                 staff_notes=raw_data.get('staffNote', '').strip(),
+                created_by=request.user,
+            )
+
+            # Tạo Invoice + InvoicePayment
+            _create_invoice_and_payment(
+                appointment=appointment,
+                pay_status=cleaned['payment_status'],
+                payment_data=payment_data,
                 created_by=request.user,
             )
 
@@ -389,8 +524,8 @@ def api_appointment_create_batch(request):
         for idx, g in enumerate(guests):
             label = f"Khách {idx + 1}"
             data = {
-                'customer_name': (g.get('name') or booker_name).strip(),
-                'phone':         ''.join(filter(str.isdigit, g.get('phone') or booker_phone)),
+                'customer_name': g.get('name', '').strip(),
+                'phone':         ''.join(filter(str.isdigit, g.get('phone', ''))),
                 'service_id':    g.get('serviceId'),
                 'variant_id':    g.get('variantId'),
                 'room_id':       g.get('roomId'),
@@ -409,19 +544,44 @@ def api_appointment_create_batch(request):
                 continue
 
             cleaned = validation['cleaned_data']
+
+            # Validate payment data cho từng guest
+            g_pay_status = cleaned['payment_status']
+            g_payment_data = {
+                'payment_method': g.get('paymentMethod', ''),
+                'amount': g.get('paymentAmount', 0),
+                'recorded_no': g.get('paymentRecordedNo', ''),
+                'note': g.get('paymentNote', ''),
+            }
+            temp_price = _get_variant_price(cleaned.get('service_variant'), cleaned.get('service'))
+            pay_valid, pay_error = _validate_payment_data(g_pay_status, g_payment_data, temp_price)
+            if not pay_valid:
+                errors.append(f"{label}: {pay_error}")
+                continue
+
             customer_id = g.get('customerId')
+            guest_phone = cleaned.get('phone') or ''   # có thể rỗng
+            guest_name  = cleaned.get('customer_name', '')
 
             try:
                 if customer_id:
                     customer = CustomerProfile.objects.get(id=customer_id)
-                else:
-                    phone_digits = cleaned['phone']
+                elif guest_phone:
                     try:
-                        customer = CustomerProfile.objects.get(phone=phone_digits)
+                        customer = CustomerProfile.objects.get(phone=guest_phone)
                     except CustomerProfile.DoesNotExist:
                         customer = _get_or_create_customer(
-                            phone=phone_digits,
-                            customer_name=cleaned['customer_name']
+                            phone=guest_phone,
+                            customer_name=guest_name
+                        )
+                else:
+                    # Không có SĐT → tạo profile tạm bằng SĐT người đặt (chỉ để FK không null)
+                    try:
+                        customer = CustomerProfile.objects.get(phone=booker_phone)
+                    except CustomerProfile.DoesNotExist:
+                        customer = _get_or_create_customer(
+                            phone=booker_phone,
+                            customer_name=guest_name or booker_name
                         )
             except CustomerProfile.DoesNotExist:
                 errors.append(f"{label}: Không tìm thấy khách hàng")
@@ -448,9 +608,12 @@ def api_appointment_create_batch(request):
                         service=cleaned['service'],
                         service_variant=cleaned.get('service_variant'),
                         room=cleaned.get('room'),
+                        booker_name=booker_name,
+                        booker_phone=booker_phone,
+                        booker_email=booker_email,
                         customer_name_snapshot=cleaned['customer_name'],
-                        customer_phone_snapshot=cleaned['phone'],
-                        customer_email_snapshot=g.get('email', '').strip(),
+                        customer_phone_snapshot=cleaned.get('phone') or None,
+                        customer_email_snapshot=g.get('email', '').strip() or None,
                         appointment_date=cleaned['appointment_date'],
                         appointment_time=cleaned['appointment_time'],
                         duration_minutes=cleaned['duration_minutes'],
@@ -460,6 +623,13 @@ def api_appointment_create_batch(request):
                         payment_status=cleaned['payment_status'],
                         source=source,
                         staff_notes=g.get('staffNote', '').strip(),
+                        created_by=request.user,
+                    )
+                    # Tạo Invoice + InvoicePayment cho từng appointment
+                    _create_invoice_and_payment(
+                        appointment=appt,
+                        pay_status=cleaned['payment_status'],
+                        payment_data=g_payment_data,
                         created_by=request.user,
                     )
                     created.append(serialize_appointment(appt))
@@ -501,7 +671,7 @@ def api_appointment_update(request, appointment_code):
     4. Lưu với transaction.atomic() để tránh race condition
     5. Trả kết quả
     """
-    appointment, error = get_or_404(Appointment, appointment_code=appointment_code)
+    appointment, error = get_or_404(Appointment, appointment_code=appointment_code, deleted_at__isnull=True)
     if error:
         return error
 
@@ -509,6 +679,10 @@ def api_appointment_update(request, appointment_code):
         raw_data = json.loads(request.body)
 
         # ===== BƯỚC 1: Thu thập data MỚI (KHÔNG modify appointment object) =====
+        new_booker_name  = raw_data.get('bookerName', '').strip()
+        new_booker_phone = raw_data.get('bookerPhone', '').strip()
+        new_booker_email = raw_data.get('bookerEmail', '').strip()
+
         new_customer_name = raw_data.get('customerName', '').strip()
         new_phone = raw_data.get('phone', '').strip()
         new_service_id = raw_data.get('serviceId') or raw_data.get('service')
@@ -588,19 +762,28 @@ def api_appointment_update(request, appointment_code):
         with transaction.atomic():
             # Lock appointment để tránh concurrent updates
             locked_appointment = Appointment.objects.select_for_update().get(
-                appointment_code=appointment_code
+                appointment_code=appointment_code,
+                deleted_at__isnull=True
             )
 
-            # Cập nhật khách hàng
-            if new_customer_name:
-                locked_appointment.customer.full_name = new_customer_name
-                locked_appointment.customer.save()
+            # Cập nhật booker (người đặt lịch)
+            if new_booker_name:
+                locked_appointment.booker_name = new_booker_name
+            if new_booker_phone:
+                locked_appointment.booker_phone = ''.join(filter(str.isdigit, new_booker_phone))
+            if new_booker_email:
+                locked_appointment.booker_email = new_booker_email
 
-            if new_phone:
+            # Cập nhật customer snapshot (khách sử dụng dịch vụ)
+            # customer_name_snapshot: bắt buộc — chỉ update nếu có giá trị
+            if new_customer_name:
+                locked_appointment.customer_name_snapshot = new_customer_name
+            # customer_phone_snapshot: tuỳ chọn — None nếu rỗng
+            if 'phone' in raw_data:
                 phone_digits = ''.join(filter(str.isdigit, new_phone))
-                if phone_digits:
-                    locked_appointment.customer.phone = phone_digits
-                    locked_appointment.customer.save()
+                locked_appointment.customer_phone_snapshot = phone_digits or None
+            new_customer_email = raw_data.get('email', '').strip()
+            locked_appointment.customer_email_snapshot = new_customer_email or None
 
             # Cập nhật dịch vụ + variant
             new_variant_id = raw_data.get('variantId') or raw_data.get('variant')
@@ -654,6 +837,9 @@ def api_appointment_update(request, appointment_code):
             # Cập nhật các field khác
             if new_notes:
                 locked_appointment.notes = new_notes
+            new_source = raw_data.get('source', '').strip()
+            if new_source:
+                locked_appointment.source = new_source
             if new_status:
                 locked_appointment.status = new_status
             if new_pay_status:
@@ -722,7 +908,7 @@ def api_appointment_status(request, appointment_code):
 
     Các trạng thái hợp lệ: pending, not_arrived, arrived, completed, cancelled
     """
-    appointment, error = get_or_404(Appointment, appointment_code=appointment_code)
+    appointment, error = get_or_404(Appointment, appointment_code=appointment_code, deleted_at__isnull=True)
     if error:
         return error
 
@@ -755,30 +941,38 @@ def api_appointment_status(request, appointment_code):
 @staff_api
 def api_appointment_delete(request, appointment_code):
     """
-    API: Xóa lịch hẹn (HARD DELETE - xóa vĩnh viễn khỏi database)
+    API: Xóa mềm lịch hẹn (SOFT DELETE - chỉ đánh dấu đã xóa, không xóa khỏi DB)
 
     FE gọi: POST /api/appointments/APT001/delete/
 
-    ⚠️ Lưu ý: Xóa thật, không thể khôi phục!
+    Cập nhật: deleted_at, deleted_by_user, updated_at
+    Dữ liệu vẫn còn trong DB để audit.
     """
-    appointment, error = get_or_404(Appointment, appointment_code=appointment_code)
-    if error:
-        return error
+    from django.utils import timezone as _tz
 
     try:
-        # Lưu thông tin trước khi xóa để trả về
-        customer_name = "Khách hàng"
-        if appointment.customer and appointment.customer.user:
-            customer_name = appointment.customer.user.get_full_name() or appointment.customer.user.username
+        appointment = Appointment.objects.get(
+            appointment_code=appointment_code,
+            deleted_at__isnull=True
+        )
+    except Appointment.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Không tìm thấy lịch hẹn'}, status=404)
 
+    if not _is_staff(request.user):
+        return _deny()
+
+    try:
+        customer_name = appointment.customer_name_snapshot or "Khách hàng"
         appointment_id = appointment.id
 
-        # HARD DELETE
-        appointment.delete()
+        # SOFT DELETE
+        appointment.deleted_at = _tz.now()
+        appointment.deleted_by_user = request.user
+        appointment.save(update_fields=['deleted_at', 'deleted_by_user', 'updated_at'])
 
         return JsonResponse({
             'success': True,
-            'message': f'Đã xóa vĩnh viễn lịch hẹn {appointment_code}',
+            'message': f'Đã xóa lịch hẹn {appointment_code}',
             'deleted_id': appointment_id,
             'customer_name': customer_name
         })
@@ -808,9 +1002,11 @@ def api_booking_requests(request):
     # Lấy lịch online + lịch cũ (source=NULL)
     # Chỉ lấy PENDING (chờ xử lý) và CANCELLED (đã từ chối)
     # Lịch đã xác nhận (NOT_ARRIVED trở lên) → thuộc tab "Lịch theo phòng"
+    # Chỉ lấy lịch chưa bị xóa mềm
     appointments = Appointment.objects.filter(
         Q(source='ONLINE') | Q(source__isnull=True),
-        status__in=['PENDING', 'CANCELLED']
+        status__in=['PENDING', 'CANCELLED'],
+        deleted_at__isnull=True
     )
 
     # Lọc theo ngày
@@ -863,21 +1059,19 @@ def _validate_appointment_data(data):
     errors = []
     cleaned_data = {}
 
-    # Validate tên khách hàng
+    # Validate tên khách hàng — bắt buộc
     customer_name = data.get('customer_name', '').strip()
     if not customer_name:
-        errors.append('Vui lòng nhập tên khách hàng')
+        errors.append('Vui lòng nhập tên khách')
     else:
         cleaned_data['customer_name'] = customer_name
 
-    # Validate SĐT
+    # Validate SĐT — tuỳ chọn, nhưng nếu nhập phải đúng định dạng
     phone = ''.join(filter(str.isdigit, data.get('phone', '')))
-    if not phone:
-        errors.append('Vui lòng nhập số điện thoại')
-    elif len(phone) < 10:
-        errors.append('Số điện thoại không hợp lệ')
+    if phone and len(phone) < 10:
+        errors.append('Số điện thoại khách không hợp lệ')
     else:
-        cleaned_data['phone'] = phone
+        cleaned_data['phone'] = phone or None  # None nếu không nhập
 
     # Validate dịch vụ + variant
     service_id = data.get('service_id')
@@ -1052,6 +1246,7 @@ def api_booking_pending_count(request):
         count = Appointment.objects.filter(
             Q(source='ONLINE') | Q(source__isnull=True),
             status='PENDING',
+            deleted_at__isnull=True,
         ).count()
         return JsonResponse({
             'success': True,
