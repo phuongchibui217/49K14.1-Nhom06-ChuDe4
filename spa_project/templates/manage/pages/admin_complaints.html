@@ -209,7 +209,13 @@
                 <ul class="pagination justify-content-center mb-0">
                     {% if complaints.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ complaints.previous_page_number }}&search={{ search }}&status={{ status_filter }}">
+                        <a class="page-link" href="?page={{ complaints.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#">
                             <i class="fas fa-chevron-left"></i>
                         </a>
                     </li>
@@ -227,7 +233,13 @@
                     
                     {% if complaints.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ complaints.next_page_number }}&search={{ search }}&status={{ status_filter }}">
+                        <a class="page-link" href="?page={{ complaints.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#">
                             <i class="fas fa-chevron-right"></i>
                         </a>
                     </li>

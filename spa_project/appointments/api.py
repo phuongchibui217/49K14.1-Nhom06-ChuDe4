@@ -90,7 +90,7 @@ def _create_invoice_and_payment(appointment, pay_status, payment_data, created_b
         created_by=created_by,
     )
 
-    if pay_status == 'UNPAID':
+    if pay_status in ('UNPAID', 'REFUNDED'):
         return invoice
 
     if pay_status == 'PAID':
@@ -113,7 +113,7 @@ def _create_invoice_and_payment(appointment, pay_status, payment_data, created_b
 
 def _validate_payment_data(pay_status, payment_data, final_amount=None):
     """Validate payment fields."""
-    if pay_status == 'UNPAID':
+    if pay_status in ('UNPAID', 'REFUNDED'):
         return True, ''
 
     method = (payment_data.get('payment_method') or '').strip()
@@ -534,19 +534,13 @@ def api_appointment_create_batch(request):
         return JsonResponse({'success': False, 'error': f'Lỗi: {str(e)}'}, status=400)
 
 
-@require_http_methods(["POST"])
+@require_http_methods(["GET", "POST"])
 @staff_api
 def api_appointment_rebook(request, appointment_code):
     """POST /api/appointments/<code>/rebook/ — Tạo lịch mới từ lịch đã hủy/từ chối."""
     appointment, error = get_or_404(Appointment, appointment_code=appointment_code, deleted_at__isnull=True)
     if error:
         return error
-
-    if appointment.status not in ('CANCELLED', 'REJECTED'):
-        return JsonResponse(
-            {'success': False, 'error': 'Chỉ có thể đặt lại lịch đã hủy hoặc đã từ chối'},
-            status=400
-        )
 
     # Trả về thông tin cần thiết để FE pre-fill form tạo mới
     variant_available = False
@@ -609,8 +603,15 @@ def api_appointment_update(request, appointment_code):
         new_date_str = raw_data.get('date', '')
         new_time_str = raw_data.get('time', '')
         new_notes = raw_data.get('note', '')
-        new_status = raw_data.get('apptStatus')
-        new_pay_status = raw_data.get('payStatus')
+        new_status = raw_data.get('apptStatus') or raw_data.get('status')
+        new_pay_status = raw_data.get('payStatus') or raw_data.get('payment_status')
+
+        valid_statuses = {choice[0] for choice in Appointment.STATUS_CHOICES}
+        valid_pay_statuses = {choice[0] for choice in Appointment.PAYMENT_STATUS_CHOICES}
+        if new_status and new_status not in valid_statuses:
+            return JsonResponse({'success': False, 'error': 'Trạng thái không hợp lệ'}, status=400)
+        if new_pay_status and new_pay_status not in valid_pay_statuses:
+            return JsonResponse({'success': False, 'error': 'Trạng thái thanh toán không hợp lệ'}, status=400)
 
         # Validate ngày/giờ/phòng nếu có thay đổi
         needs_validation = False

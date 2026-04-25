@@ -50,15 +50,11 @@
                     <div class="card-body">
                         <div class="row align-items-center">
                             <div class="col-md-8">
-                                <div class="search-box">
+                                <form method="get" action="{% url 'customers:admin_customers' %}" class="search-box mb-0 w-100" id="searchFilterForm">
                                     <i class="fas fa-search"></i>
-                                    <input type="text" class="form-control" id="searchInput" placeholder="Tìm kiếm theo tên hoặc số điện thoại...">
-                                </div>
-                            </div>
-                            <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                                <button class="btn btn-secondary me-2" id="searchBtn" type="button">
-                                    <i class="fas fa-filter me-1"></i>Lọc
-                                </button>
+                                    <input type="text" class="form-control" name="search" id="searchInput" placeholder="Tìm kiếm theo tên hoặc số điện thoại..." value="{{ search_query }}">
+                                    <button type="submit" class="d-none"></button>
+                                </form>
                                 <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#addCustomerModal">
                                     <i class="fas fa-plus me-2"></i>Thêm khách hàng
                                 </button>
@@ -74,15 +70,35 @@
                         </table>
                     </div>
                 </div>
+                {% if customers.has_other_pages %}
                 <nav class="mt-4">
                     <ul class="pagination justify-content-center">
+                        {% if customers.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ customers.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Trước</a>
+                        </li>
+                        {% else %}
                         <li class="page-item disabled"><a class="page-link" href="#">Trước</a></li>
-                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link" href="#">3</a></li>
-                        <li class="page-item"><a class="page-link" href="#">Sau</a></li>
+                        {% endif %}
+
+                        {% for num in customers.paginator.page_range %}
+                            {% if customers.number == num %}
+                            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                            {% elif num > customers.number|add:'-3' and num < customers.number|add:'3' %}
+                            <li class="page-item"><a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if customers.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ customers.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">Sau</a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled"><a class="page-link" href="#">Sau</a></li>
+                        {% endif %}
                     </ul>
                 </nav>
+                {% endif %}
             </main>
         </div>
     </div>
@@ -163,6 +179,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/dialog-modal.js' %}?v={% now 'His' %}"></script>
     <script src="{% static 'js/filter-manager.js' %}"></script>
     <script>
         let customers = [
@@ -220,7 +237,7 @@
         }
         function editCustomerFromDrawer(id){closeDrawer();setTimeout(()=>editCustomer(id),300);}
         function closeDrawer(){document.getElementById('drawerOverlay').style.display='none';document.getElementById('customerDrawer').classList.remove('show');}
-        function deleteCustomer(id){const c=customers.find(x=>x.id===id);if(!c)return;if(confirm(`Xóa khách hàng ${c.name}?`)){customers=customers.filter(x=>x.id!==id);loadCustomers();showToast('success','Xóa thành công');}}
+        async function deleteCustomer(id){const c=customers.find(x=>x.id===id);if(!c)return;if(await window.showConfirm(`Xóa khách hàng ${c.name}?`,{title:'Xác nhận xóa khách hàng',confirmText:'Xóa',cancelText:'Hủy'})){customers=customers.filter(x=>x.id!==id);loadCustomers();showToast('success','Xóa thành công');}}
         function showToast(type,msg){const t=document.getElementById('toastTitle'),m=document.getElementById('toastMessage');t.textContent=type==='success'?'Thành công':'Cảnh báo';m.innerHTML=type==='success'?`<i class="fas fa-check-circle text-success me-2"></i>${msg}`:`<i class="fas fa-exclamation-circle text-warning me-2"></i>${msg}`;new bootstrap.Toast(document.getElementById('toast')).show();}
         document.getElementById('sidebarToggle').addEventListener('click',function(){document.getElementById('sidebar').classList.toggle('show');});
     </script>

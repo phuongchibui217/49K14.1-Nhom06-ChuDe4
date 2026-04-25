@@ -452,8 +452,8 @@
 
                 {% for page_num in services.paginator.page_range %}
                     {% if page_num == services.number %}
-                        <li class="page-item active"><a class="page-link" href="#">{{ page_num }}</a></li>
-                    {% else %}
+                        <li class="page-item active"><span class="page-link">{{ page_num }}</span></li>
+                    {% elif page_num > services.number|add:'-3' and page_num < services.number|add:'3' %}
                         <li class="page-item">
                             <a class="page-link" href="?page={{ page_num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if category_filter %}&category={{ category_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">{{ page_num }}</a>
                         </li>

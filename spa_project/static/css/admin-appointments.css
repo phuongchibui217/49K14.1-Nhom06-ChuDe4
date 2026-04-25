@@ -32,26 +32,184 @@
 
 .topbar{
   min-height: var(--topBarH);
-  padding: 10px 12px;
+  padding: 12px 16px;
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap: 10px;
+  gap: 14px;
   border-bottom: 1px solid var(--line-strong);
   background:#fff;
 }
 
 .topbar .left{
-  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  display:flex;
+  align-items:center;
+  gap:16px;
+  flex-wrap:wrap;
+  min-width: 0;
 }
 
-.pill{
-  display:inline-flex; align-items:center; gap:8px;
-  border:1px solid var(--line-strong);
-  background:#fff;
-  padding:6px 10px;
+.appt-date-toolbar{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px;
+  background:#FFFFFF;
+  border:1px solid #E5E7EB;
+  border-radius:16px;
+  box-shadow:0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+.appt-date-btn{
+  height:36px;
+  min-width:38px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:0 12px;
+  background:#FFFFFF;
+  border:1px solid #D1D5DB;
+  border-radius:10px;
+  color:#374151;
+  font-size:14px;
+  font-weight:600;
+  line-height:1;
+  cursor:pointer;
+  transition:background .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease;
+}
+
+.appt-date-btn:hover,
+.appt-date-btn:focus-visible{
+  background:#F8F5EE;
+  border-color:#D4AF37;
+  color:#1F3F66;
+  box-shadow:0 2px 8px rgba(212, 175, 55, 0.14);
+  outline:none;
+}
+
+.appt-date-icon-btn{
+  width:38px;
+  padding:0;
+}
+
+.appt-date-picker-shell{
+  height:40px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  margin:0;
+  padding:0 12px;
+  background:#F9FAFB;
+  border:1px solid #E5E7EB;
   border-radius:999px;
-  font-size:.9rem;
+  color:#6B7280;
+}
+
+.appt-date-picker-shell i{
+  color:#C9A96E;
+  font-size:13px;
+  line-height:1;
+}
+
+.appt-day-picker{
+  width:132px;
+  height:38px;
+  padding:0;
+  background:transparent;
+  border:0;
+  color:#111827;
+  font-size:14px;
+  font-weight:500;
+  line-height:38px;
+  outline:none;
+}
+
+.appt-day-picker::-webkit-calendar-picker-indicator{
+  cursor:pointer;
+  opacity:.72;
+}
+
+.appt-date-picker-shell:focus-within{
+  border-color:#D4AF37;
+  box-shadow:0 0 0 3px rgba(212, 175, 55, 0.16);
+}
+
+.appt-search-trigger{
+  height:40px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:0 16px;
+  background:transparent;
+  border:1px solid #D4AF37;
+  border-radius:12px;
+  color:#1F3F66;
+  font-size:14px;
+  font-weight:700;
+  line-height:1;
+  white-space:nowrap;
+  cursor:pointer;
+  transition:background .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.appt-search-trigger i{
+  color:currentColor;
+}
+
+.appt-search-trigger:hover,
+.appt-search-trigger:focus-visible{
+  background:#1F3F66;
+  border-color:#1F3F66;
+  color:#FFFFFF;
+  box-shadow:0 8px 18px rgba(31, 63, 102, 0.16);
+  outline:none;
+}
+
+.appt-search-trigger:active{
+  transform:translateY(1px);
+}
+
+@media (max-width: 768px){
+  .topbar{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+
+  .topbar .left{
+    width:100%;
+    gap:12px;
+  }
+
+  .appt-date-toolbar{
+    flex-wrap:wrap;
+    max-width:100%;
+  }
+
+  .appt-search-trigger{
+    width:auto;
+  }
+}
+
+@media (max-width: 520px){
+  .appt-date-toolbar,
+  .appt-search-trigger{
+    width:100%;
+  }
+
+  .appt-date-toolbar{
+    justify-content:center;
+  }
+
+  .appt-date-picker-shell{
+    flex:1 1 100%;
+    justify-content:center;
+  }
+
+  .appt-day-picker{
+    width:150px;
+  }
 }
 
 .scheduler-wrap{
@@ -161,6 +319,114 @@
 .roomcell.muted .dot{
   background:#e6e8ec;
   box-shadow:none;
+}
+
+#pane-web .table th,
+#pane-web .table td {
+  vertical-align: middle;
+}
+
+#pane-web .table th.action-cell,
+#pane-web .table td.action-cell {
+  width: 1%;
+  min-width: 204px;
+  padding: 12px 16px;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+#pane-web .action-buttons {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+#pane-web .web-action-btn {
+  height: 36px;
+  min-width: 92px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .16s ease, border-color .16s ease, color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+#pane-web .web-action-btn i,
+#pane-web .web-action-btn span {
+  line-height: 1;
+}
+
+#pane-web .web-action-btn:hover {
+  transform: translateY(-1px);
+}
+
+#pane-web .web-action-btn-approve {
+  background: #D4AF37;
+  border-color: #D4AF37;
+  color: #111827;
+  box-shadow: 0 3px 10px rgba(212, 175, 55, 0.18);
+}
+
+#pane-web .web-action-btn-approve:hover {
+  background: #C9A96E;
+  border-color: #C9A96E;
+  color: #111827;
+}
+
+#pane-web .web-action-btn-reject {
+  background: #FFFFFF;
+  border-color: #FCA5A5;
+  color: #DC2626;
+}
+
+#pane-web .web-action-btn-reject:hover {
+  background: #FEE2E2;
+  border-color: #DC2626;
+  color: #B91C1C;
+}
+
+#pane-web .web-action-btn-rebook,
+#pane-web .web-action-btn-edit {
+  background: #FFFFFF;
+  border-color: #D4AF37;
+  color: #1F3F66;
+}
+
+#pane-web .web-action-btn-rebook:hover,
+#pane-web .web-action-btn-edit:hover {
+  background: #1F3F66;
+  border-color: #1F3F66;
+  color: #FFFFFF;
+  box-shadow: 0 5px 14px rgba(31, 63, 102, 0.16);
+}
+
+@media (max-width: 768px) {
+  #pane-web .table th.action-cell,
+  #pane-web .table td.action-cell {
+    min-width: 160px;
+    padding: 12px;
+  }
+
+  #pane-web .web-action-btn {
+    min-width: 38px;
+    padding: 0 10px;
+  }
+
+  #pane-web .web-action-btn span {
+    display: none;
+  }
 }
 
 .lane-row .slots{
@@ -1062,11 +1328,6 @@
   z-index: 8;
 }
 
-/* Nút mở search modal */
-#btnOpenSearch {
-  white-space: nowrap;
-}
-
 /* ===== CURRENT TIME LINE ===== */
 .current-time-line {
   position: absolute;
@@ -1116,134 +1377,177 @@
    =================================================== */
 
 /* Wrapper toàn bộ cột Phòng·Giờ */
-.gc-slot-badge {
+#apptModal .gc-slot-badge {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 3px;
-  padding: 0 4px;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
 }
 
-/* Tên phòng */
-.gc-slot-room-label {
-  font-size: .68rem;
-  font-weight: 700;
-  color: #1d4ed8;
-  white-space: nowrap;
-  letter-spacing: .01em;
-}
-
-.gc-slot-room-empty {
-  color: #9ca3af;
-  font-weight: 500;
+#apptModal .gc-room-select {
+  width: 112px;
+  min-width: 90px;
+  max-width: 120px;
+  text-align: center;
 }
 
 /* Cụm time-range — hiển thị dạng "07:30 – 08:30" */
-.gc-time-range-field {
+#apptModal .gc-time-range-field {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  height: 28px;
-  padding: 0 9px 0 7px;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  max-width: 156px;
+  height: 36px;
+  padding: 0 8px;
   background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #dbe3ec;
   border-radius: 7px;
   cursor: pointer;
   transition: border-color .15s, background .15s, box-shadow .15s;
   white-space: nowrap;
-  min-width: 110px;
-  max-width: 130px;
+  min-width: 0;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
-.gc-time-range-field:hover {
+#apptModal .gc-time-range-field:hover {
   border-color: #93c5fd;
   background: #eff6ff;
-  box-shadow: 0 0 0 2px rgba(147,197,253,.25);
+  box-shadow: 0 0 0 2px rgba(147,197,253,.22);
 }
 
-.gc-time-range-field.is-editing {
+#apptModal .gc-time-range-field.is-editing {
   border-color: #3b82f6;
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+  box-shadow: 0 0 0 3px rgba(59,130,246,.14);
 }
 
 /* Icon đồng hồ nhỏ */
-.gc-time-range-icon {
-  font-size: .62rem;
+#apptModal .gc-time-range-icon {
+  font-size: 12px;
   color: #94a3b8;
   flex-shrink: 0;
   transition: color .15s;
 }
 
-.gc-time-range-field:hover .gc-time-range-icon {
+#apptModal .gc-time-range-field:hover .gc-time-range-icon {
   color: #3b82f6;
 }
 
 /* Text hiển thị giờ */
-.gc-time-range-display {
-  font-size: .78rem;
+#apptModal .gc-time-range-display {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1;
   font-weight: 600;
   color: #374151;
-  letter-spacing: .01em;
-  flex: 1;
-  min-width: 0;
 }
 
-.gc-time-range-sep {
+#apptModal .gc-time-range-sep {
   color: #94a3b8;
-  font-weight: 400;
+  font-weight: 500;
+  padding: 0 3px;
 }
 
 /* 2 input time ẩn — chỉ hiện khi editing */
-.gc-time-range-inputs {
+#apptModal .gc-time-range-inputs {
   display: none;
   position: absolute;
   inset: 0;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 4px;
+  min-width: 0;
+  padding: 0 6px;
   background: #fff;
   border-radius: 7px;
-  padding: 0 5px;
+  box-sizing: border-box;
 }
 
-.gc-time-range-field.is-editing .gc-time-range-inputs {
+#apptModal .gc-time-range-field.is-editing .gc-time-range-inputs {
   display: flex;
 }
 
-.gc-time-range-field.is-editing .gc-time-range-display,
-.gc-time-range-field.is-editing .gc-time-range-icon {
+#apptModal .gc-time-range-field.is-editing .gc-time-range-display,
+#apptModal .gc-time-range-field.is-editing .gc-time-range-icon {
   visibility: hidden;
 }
 
-.gc-time-range-inputs input[type="time"] {
-  width: 52px !important;
-  height: 22px !important;
-  padding: 0 3px !important;
-  font-size: .72rem !important;
-  font-weight: 600 !important;
-  border: 1px solid #bfdbfe !important;
-  border-radius: 4px !important;
-  outline: none !important;
-  background: #eff6ff !important;
-  color: #1d4ed8 !important;
-  text-align: center !important;
-  box-sizing: border-box !important;
-  min-height: unset !important;
-  line-height: 1 !important;
-  box-shadow: none !important;
+#apptModal .gc-time-range-inputs input[type="time"] {
+  flex: 1 1 0;
+  width: auto;
+  min-width: 0;
+  max-width: 66px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0 2px 0 4px;
+  font-size: 14px;
+  line-height: 30px;
+  font-weight: 600;
+  border: 1px solid #bfdbfe;
+  border-radius: 5px;
+  outline: none;
+  background: #eff6ff;
+  color: #1d4ed8;
+  text-align: center;
+  box-sizing: border-box;
+  box-shadow: none;
 }
 
-.gc-time-range-inputs input[type="time"]:focus {
-  border-color: #3b82f6 !important;
-  background: #fff !important;
-  box-shadow: none !important;
+#apptModal .gc-time-range-inputs input[type="time"]::-webkit-calendar-picker-indicator {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  padding: 0;
 }
 
-.gc-time-range-sep-inner {
-  font-size: .65rem;
+#apptModal .gc-time-range-inputs input[type="time"]:focus {
+  border-color: #3b82f6;
+  background: #fff;
+  box-shadow: 0 0 0 2px rgba(59,130,246,.12);
+}
+
+#apptModal .gc-time-range-sep-inner {
+  font-size: 14px;
   color: #94a3b8;
-  flex-shrink: 0;
+  flex: 0 0 auto;
+}
+
+#apptModal .gc-detail-wrap {
+  overflow: hidden;
+  max-height: 0;
+  transition: max-height .2s ease;
+}
+
+#apptModal .gc-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+  padding: 8px 14px 10px 226px;
+  background: #f0f4f8;
+  border-top: 1px dashed #e5e7eb;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1280px) {
+  #apptModal .gc-detail {
+    padding-left: 224px;
+  }
+}
+
+@media (max-width: 840px) {
+  #apptModal .gc-detail {
+    padding: 8px 12px 10px;
+  }
 }

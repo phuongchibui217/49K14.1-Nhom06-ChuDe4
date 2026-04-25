@@ -79,32 +79,39 @@
   display: flex; align-items: center; gap: .5rem;
 }
 .ap-card-title i { color: var(--gold); font-size: .8rem; }
-.ap-card-body { padding: 1.5rem; }
+.ap-card-body { padding: 1.25rem; }
 
 /* ── INFO GRID (view mode) ──────────────────────────── */
 .ap-info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px 40px;
+  gap: 16px 24px;
+  max-width: 1000px;
+  margin: 0 auto;
 }
-.ap-field-label {
-  font-size: .68rem;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  font-weight: 600;
-  margin-bottom: 3px;
+.profile-item {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  background: rgba(0, 0, 0, 0.01);
+  border-radius: 6px;
 }
-.ap-field-value {
-  font-size: .9rem;
+.profile-item .label {
+  font-size: .75rem;
+  color: #888;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.profile-item .value {
+  font-size: .95rem;
   font-weight: 600;
   color: var(--text-primary);
   line-height: 1.4;
 }
-.ap-field-value.empty {
-  color: var(--text-muted);
+.profile-item .value.empty {
+  color: #aaa;
   font-style: italic;
   font-weight: 400;
+  opacity: 0.8;
 }
 
 /* ── STATUS / ROLE INLINE BADGES ────────────────────── */
@@ -116,14 +123,16 @@
 }
 .ap-badge-active  { background: var(--status-done-bg);    color: var(--status-done-text); }
 .ap-badge-locked  { background: var(--status-cancel-bg);  color: var(--status-cancel-text); }
-.ap-badge-super   { background: var(--gold-muted);        color: var(--gold-hover); border: 1px solid var(--gold-border); }
+.ap-badge-super   { background: var(--gold);        color: #fff; border: 1px solid var(--gold); }
 .ap-badge-staff   { background: var(--bg-subtle);         color: var(--text-secondary); }
 
 /* ── FORM GRID (edit mode) ──────────────────────────── */
 .ap-form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px 28px;
+  gap: 16px 24px;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 .ap-form-full { grid-column: 1 / -1; }
 
@@ -283,29 +292,29 @@
     <!-- View mode -->
     <div id="viewMode">
       <div class="ap-info-grid">
-        <div>
-          <div class="ap-field-label">Tên đăng nhập</div>
-          <div class="ap-field-value">{{ user.username }}</div>
+        <div class="profile-item">
+          <div class="label">Tên đăng nhập</div>
+          <div class="value">{{ user.username }}</div>
         </div>
-        <div>
-          <div class="ap-field-label">Họ và tên</div>
+        <div class="profile-item">
+          <div class="label">Họ và tên</div>
           {% with full_name=staff_profile.full_name|default:user.get_full_name %}
-          <div class="ap-field-value {% if not full_name %}empty{% endif %}">
+          <div class="value {% if not full_name %}empty{% endif %}">
             {{ full_name|default:"Chưa cập nhật" }}
           </div>
           {% endwith %}
         </div>
-        <div>
-          <div class="ap-field-label">Email</div>
-          <div class="ap-field-value {% if not user.email %}empty{% endif %}">{{ user.email|default:"Chưa cập nhật" }}</div>
+        <div class="profile-item">
+          <div class="label">Email</div>
+          <div class="value {% if not user.email %}empty{% endif %}">{{ user.email|default:"Chưa cập nhật" }}</div>
         </div>
-        <div>
-          <div class="ap-field-label">Số điện thoại</div>
-          <div class="ap-field-value {% if not staff_profile.phone %}empty{% endif %}">{{ staff_profile.phone|default:"Chưa cập nhật" }}</div>
+        <div class="profile-item">
+          <div class="label">Số điện thoại</div>
+          <div class="value {% if not staff_profile.phone %}empty{% endif %}">{{ staff_profile.phone|default:"Chưa cập nhật" }}</div>
         </div>
-        <div>
-          <div class="ap-field-label">Vai trò</div>
-          <div class="ap-field-value">
+        <div class="profile-item">
+          <div class="label">Vai trò</div>
+          <div class="value">
             {% if user.is_superuser %}
               <span class="ap-badge ap-badge-super"><i class="fas fa-crown" style="font-size:.55rem"></i>Super Administrator</span>
             {% elif user.is_staff %}
@@ -315,9 +324,9 @@
             {% endif %}
           </div>
         </div>
-        <div>
-          <div class="ap-field-label">Trạng thái</div>
-          <div class="ap-field-value">
+        <div class="profile-item">
+          <div class="label">Trạng thái</div>
+          <div class="value">
             {% if user.is_active %}
               <span class="ap-badge ap-badge-active"><i class="fas fa-circle" style="font-size:.4rem"></i>Hoạt động</span>
             {% else %}
@@ -325,38 +334,38 @@
             {% endif %}
           </div>
         </div>
-        <div>
-          <div class="ap-field-label">Giới tính</div>
-          <div class="ap-field-value {% if not staff_profile.gender %}empty{% endif %}">
+        <div class="profile-item">
+          <div class="label">Giới tính</div>
+          <div class="value {% if not staff_profile.gender %}empty{% endif %}">
             {{ staff_profile.get_gender_display|default:"Chưa cập nhật" }}
           </div>
         </div>
-        <div>
-          <div class="ap-field-label">Ngày sinh</div>
-          <div class="ap-field-value {% if not staff_profile.dob %}empty{% endif %}">
+        <div class="profile-item">
+          <div class="label">Ngày sinh</div>
+          <div class="value {% if not staff_profile.dob %}empty{% endif %}">
             {{ staff_profile.dob|date:"d/m/Y"|default:"Chưa cập nhật" }}
           </div>
         </div>
-        <div>
-          <div class="ap-field-label">Ngày tham gia</div>
-          <div class="ap-field-value">{{ user.date_joined|date:"d/m/Y H:i" }}</div>
+        <div class="profile-item">
+          <div class="label">Ngày tham gia</div>
+          <div class="value">{{ user.date_joined|date:"d/m/Y H:i" }}</div>
         </div>
-        <div>
-          <div class="ap-field-label">Đăng nhập gần nhất</div>
-          <div class="ap-field-value {% if not user.last_login %}empty{% endif %}">
+        <div class="profile-item">
+          <div class="label">Đăng nhập gần nhất</div>
+          <div class="value {% if not user.last_login %}empty{% endif %}">
             {{ user.last_login|date:"d/m/Y H:i"|default:"Chưa có dữ liệu" }}
           </div>
         </div>
-        <div style="grid-column:1/-1">
-          <div class="ap-field-label">Địa chỉ</div>
-          <div class="ap-field-value {% if not staff_profile.address %}empty{% endif %}">
+        <div class="profile-item" style="grid-column:1/-1">
+          <div class="label">Địa chỉ</div>
+          <div class="value {% if not staff_profile.address %}empty{% endif %}">
             {{ staff_profile.address|default:"Chưa cập nhật" }}
           </div>
         </div>
         {% if staff_profile.notes %}
-        <div style="grid-column:1/-1">
-          <div class="ap-field-label">Ghi chú</div>
-          <div class="ap-field-value">{{ staff_profile.notes }}</div>
+        <div class="profile-item" style="grid-column:1/-1">
+          <div class="label">Ghi chú</div>
+          <div class="value">{{ staff_profile.notes }}</div>
         </div>
         {% endif %}
       </div>

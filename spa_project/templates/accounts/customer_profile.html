@@ -70,27 +70,33 @@
 .cp-info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 24px 40px;
-  margin-bottom: 28px;
+  gap: 16px 24px;
+  max-width: 1000px;
+  margin: 0 auto 28px auto;
 }
-.cp-field-label {
-  font-size: .72rem;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: #9ca3af;
-  font-weight: 600;
+.profile-item {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  background: rgba(249, 250, 251, 0.5);
+  border-radius: 6px;
+}
+.profile-item .label {
+  font-size: .75rem;
+  color: #888;
+  font-weight: 500;
   margin-bottom: 4px;
 }
-.cp-field-value {
+.profile-item .value {
   font-size: .95rem;
   font-weight: 600;
   color: #111827;
   line-height: 1.4;
 }
-.cp-field-value.empty {
-  color: #d1d5db;
+.profile-item .value.empty {
+  color: #aaa;
   font-style: italic;
   font-weight: 400;
+  opacity: 0.8;
 }
 
 /* ── EDIT BUTTON ─────────────────────────────────── */
@@ -116,7 +122,7 @@
   background: #fff;
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
-  padding: 28px 32px;
+  padding: 20px 24px;
   box-shadow: var(--shadow-xs);
   margin-bottom: 20px;
 }
@@ -125,7 +131,9 @@
 .cp-form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 18px 28px;
+  gap: 16px 24px;
+  max-width: 1000px;
+  margin: 0 auto;
 }
 .cp-form-full { grid-column: 1 / -1; }
 
@@ -293,37 +301,37 @@
 
     <div id="cp-view" {% if edit_mode %}style="display:none"{% endif %}>
       <div class="cp-info-grid">
-        <div>
-          <div class="cp-field-label">Tên đăng nhập</div>
-          <div class="cp-field-value">{{ request.user.username }}</div>
+        <div class="profile-item">
+          <div class="label">Tên đăng nhập</div>
+          <div class="value">{{ request.user.username }}</div>
         </div>
-        <div>
-          <div class="cp-field-label">Họ và tên</div>
-          <div class="cp-field-value {% if not customer_profile.full_name %}empty{% endif %}">{{ customer_profile.full_name|default:"Chưa cập nhật" }}</div>
+        <div class="profile-item">
+          <div class="label">Họ và tên</div>
+          <div class="value {% if not customer_profile.full_name %}empty{% endif %}">{{ customer_profile.full_name|default:"Chưa cập nhật" }}</div>
         </div>
-        <div>
-          <div class="cp-field-label">Số điện thoại</div>
-          <div class="cp-field-value">{{ customer_profile.phone }}</div>
+        <div class="profile-item">
+          <div class="label">Số điện thoại</div>
+          <div class="value">{{ customer_profile.phone }}</div>
         </div>
-        <div>
-          <div class="cp-field-label">Email</div>
-          <div class="cp-field-value {% if not request.user.email %}empty{% endif %}">{{ request.user.email|default:"Chưa cập nhật" }}</div>
+        <div class="profile-item">
+          <div class="label">Email</div>
+          <div class="value {% if not request.user.email %}empty{% endif %}">{{ request.user.email|default:"Chưa cập nhật" }}</div>
         </div>
-        <div>
-          <div class="cp-field-label">Giới tính</div>
-          <div class="cp-field-value {% if not customer_profile.get_gender_display %}empty{% endif %}">{{ customer_profile.get_gender_display|default:"Chưa cập nhật" }}</div>
+        <div class="profile-item">
+          <div class="label">Giới tính</div>
+          <div class="value {% if not customer_profile.get_gender_display %}empty{% endif %}">{{ customer_profile.get_gender_display|default:"Chưa cập nhật" }}</div>
         </div>
-        <div>
-          <div class="cp-field-label">Ngày sinh</div>
-          <div class="cp-field-value {% if not customer_profile.dob %}empty{% endif %}">{{ customer_profile.dob|date:"d/m/Y"|default:"Chưa cập nhật" }}</div>
+        <div class="profile-item">
+          <div class="label">Ngày sinh</div>
+          <div class="value {% if not customer_profile.dob %}empty{% endif %}">{{ customer_profile.dob|date:"d/m/Y"|default:"Chưa cập nhật" }}</div>
         </div>
-        <div>
-          <div class="cp-field-label">Địa chỉ</div>
-          <div class="cp-field-value {% if not customer_profile.address %}empty{% endif %}">{{ customer_profile.address|default:"Chưa cập nhật" }}</div>
+        <div class="profile-item">
+          <div class="label">Địa chỉ</div>
+          <div class="value {% if not customer_profile.address %}empty{% endif %}">{{ customer_profile.address|default:"Chưa cập nhật" }}</div>
         </div>
-        <div>
-          <div class="cp-field-label">Ngày tham gia</div>
-          <div class="cp-field-value">{{ request.user.date_joined|date:"d/m/Y" }}</div>
+        <div class="profile-item">
+          <div class="label">Ngày tham gia</div>
+          <div class="value">{{ request.user.date_joined|date:"d/m/Y" }}</div>
         </div>
       </div>
       <button type="button" class="btn-cp-edit" id="btn-open-edit"><i class="fas fa-pen"></i> Chỉnh sửa thông tin</button>

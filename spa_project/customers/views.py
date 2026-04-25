@@ -85,10 +85,37 @@ def admin_customers(request):
             messages.error(request, 'Thao tác không hợp lệ.')
             return redirect('customers:admin_customers')
 
-    customers = CustomerProfile.objects.select_related('user').filter(
+    # Lấy query parameter
+    search_query = request.GET.get('search', '').strip()
+
+    customers_qs = CustomerProfile.objects.select_related('user').filter(
         Q(user__isnull=True) | Q(user__is_staff=False, user__is_superuser=False)
     )
-    return render(request, 'customers/admin_customers.html', {'customers': customers})
+
+    if search_query:
+        customers_qs = customers_qs.filter(
+            Q(full_name__icontains=search_query) |
+            Q(phone__icontains=search_query)
+        )
+        
+    customers_qs = customers_qs.order_by('-created_at')
+
+    # Phân trang
+    from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+    paginator = Paginator(customers_qs, 10) # 10 items per page
+    page_number = request.GET.get('page', 1)
+    
+    try:
+        customers = paginator.get_page(page_number)
+    except PageNotAnInteger:
+        customers = paginator.get_page(1)
+    except EmptyPage:
+        customers = paginator.get_page(paginator.num_pages)
+
+    return render(request, 'customers/admin_customers.html', {
+        'customers': customers,
+        'search_query': search_query,
+    })
 
 
 @customer_required()

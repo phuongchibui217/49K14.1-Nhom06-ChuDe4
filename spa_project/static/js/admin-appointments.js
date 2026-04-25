@@ -1,4 +1,4 @@
-﻿// ===== 1. SETTINGS - cấu hình =====
+// ===== 1. SETTINGS - cấu hình =====
 console.log("ADMIN APPOINTMENTS JS LOADED v20260422-012");
 const START_HOUR = 9;  // Giờ mở cửa (9:00 sáng)
 const END_HOUR = 21;   // Giờ đóng cửa (21:00 tối)
@@ -294,25 +294,36 @@ function resetButton(btn) {
 }
 
 /**
- * Hiển thị confirm dialog rõ ràng hơn
+ * Hiển thị modal xác nhận đồng bộ giao diện hệ thống
  * @param {string} title - Tiêu đề
  * @param {string} message - Nội dung xác nhận
  * @param {string} confirmText - Text nút xác nhận
  * @param {string} cancelText - Text nút hủy
- * @returns {boolean} - true nếu người dùng xác nhận
+ * @returns {Promise<boolean>} - true nếu người dùng xác nhận
  */
-function confirmAction(title, message, confirmText = 'Xác nhận', cancelText = 'Hủy') {
-  // Sử dụng confirm mặc định của browser (đơn giản, không cần thêm thư viện)
-  // Có thể nâng cấp lên modal đẹp hơn sau
-  const fullMessage = `${title}\n\n${message}`;
-  return confirm(fullMessage);
+async function confirmAction(title, message, confirmText = 'Xác nhận', cancelText = 'Hủy') {
+  if (window.showConfirm) {
+    return window.showConfirm(message, { title, confirmText, cancelText });
+  }
+  return false;
 }
 
 // ===== API CALLS =====
 async function apiGet(url) {
   try {
     const response = await fetch(url);
-    return await response.json();
+    const text = await response.text();
+    if (!text) {
+      if (!response.ok) return { success: false, error: `HTTP error ${response.status}` };
+      return { success: true };
+    }
+    try {
+      const data = JSON.parse(text);
+      if (!response.ok && !data.error) data.error = `HTTP error ${response.status}`;
+      return data;
+    } catch (e) {
+      return { success: false, error: !response.ok ? `HTTP error ${response.status}: ${text}` : 'Invalid JSON response' };
+    }
   } catch (error) {
     console.error('API GET error:', error);
     return { success: false, error: error.message };
@@ -326,7 +337,18 @@ async function apiPost(url, payload) {
       headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
       body: JSON.stringify(payload),
     });
-    return await response.json();
+    const text = await response.text();
+    if (!text) {
+      if (!response.ok) return { success: false, error: `HTTP error ${response.status}` };
+      return { success: true };
+    }
+    try {
+      const data = JSON.parse(text);
+      if (!response.ok && !data.error) data.error = `HTTP error ${response.status}`;
+      return data;
+    } catch (e) {
+      return { success: false, error: !response.ok ? `HTTP error ${response.status}: ${text}` : 'Invalid JSON response' };
+    }
   } catch (error) {
     console.error('API POST error:', error);
     return { success: false, error: error.message };
@@ -701,14 +723,14 @@ async function renderWebRequests(){
     const st = (a.apptStatus || '').toUpperCase();
     let actionBtn = '';
     if (st === 'PENDING') {
-      actionBtn = `<div class="btn-group btn-group-sm">
-        <button class="btn btn-warning px-2" data-id="${a.id}" onclick="approveWeb('${a.id}')"><i class="fas fa-check"></i><span class="d-none d-md-inline ms-1">Xác nhận</span></button>
-        <button class="btn btn-outline-danger px-2" data-id="${a.id}" onclick="rejectWeb('${a.id}')"><i class="fas fa-xmark"></i><span class="d-none d-md-inline ms-1">Từ chối</span></button>
+      actionBtn = `<div class="action-buttons">
+        <button type="button" class="web-action-btn web-action-btn-approve" data-id="${a.id}" onclick="approveWeb('${a.id}')"><i class="fas fa-check"></i><span>Xác nhận</span></button>
+        <button type="button" class="web-action-btn web-action-btn-reject" data-id="${a.id}" onclick="rejectWeb('${a.id}')"><i class="fas fa-xmark"></i><span>Từ chối</span></button>
       </div>`;
     } else if (st === 'CANCELLED' || st === 'REJECTED') {
-      actionBtn = `<button class="btn btn-sm btn-outline-primary" data-id="${a.id}" onclick="rebookAppointment('${a.id}')"><i class="fas fa-redo me-1"></i>Đặt lại</button>`;
+      actionBtn = `<div class="action-buttons"><button type="button" class="web-action-btn web-action-btn-rebook" data-id="${a.id}" onclick="rebookAppointment('${a.id}')"><i class="fas fa-redo"></i><span>Đặt lại</span></button></div>`;
     } else {
-      actionBtn = `<button class="btn btn-sm btn-outline-secondary" data-id="${a.id}" onclick="openEditModal('${a.id}')"><i class="fas fa-pen me-1"></i>Xem/Sửa</button>`;
+      actionBtn = `<div class="action-buttons"><button type="button" class="web-action-btn web-action-btn-edit" data-id="${a.id}" onclick="openEditModal('${a.id}')"><i class="fas fa-pen"></i><span>Xem/Sửa</span></button></div>`;
     }
     const badgeClass = st === 'PENDING' ? 'bg-warning text-dark'
       : (st === 'REJECTED' ? 'bg-danger' : (st === 'CANCELLED' ? 'bg-secondary' : 'bg-success'));
@@ -716,7 +738,7 @@ async function renderWebRequests(){
       <td class="fw-semibold">${a.id}</td><td>${a.customerName}</td><td>${a.phone}</td><td>${a.service}</td>
       <td>${a.date}</td><td>${a.start} - ${a.end}</td><td>${a.durationMin||""} phút</td>
       <td><span class="badge ${badgeClass} text-white">${statusLabel(a.apptStatus)}</span></td>
-      <td class="text-end">${actionBtn}</td>
+      <td class="action-cell">${actionBtn}</td>
     </tr>`;
   }).join("");
 }
@@ -742,6 +764,12 @@ window.rejectWeb = async function(id){
   if (infoEl) infoEl.textContent = info;
 
   const modalEl = document.getElementById('rejectWebModal');
+  modalEl.addEventListener('shown.bs.modal', () => {
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.classList.add('reject-web-backdrop'));
+  }, { once: true });
+  modalEl.addEventListener('hidden.bs.modal', () => {
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.classList.remove('reject-web-backdrop'));
+  }, { once: true });
   const modal = new bootstrap.Modal(modalEl);
 
   // Gắn handler một lần, tránh duplicate
@@ -797,7 +825,7 @@ window.rebookAppointment = async function(id) {
     const icon   = firstItem.querySelector('.gc-expand-btn i');
     if (wrap && detail) {
       detail.style.display = 'flex';
-      wrap.style.maxHeight = '80px';
+      wrap.style.maxHeight = detail.scrollHeight + 'px';
       if (icon) icon.style.transform = 'rotate(90deg)';
       firstItem.classList.add('open');
     }
@@ -819,6 +847,10 @@ window.rebookAppointment = async function(id) {
     _markRowValidity(firstItem);
     _updateGuestProgress();
   }
+
+  // Set shared status to PENDING
+  const sharedStatusSel = document.getElementById('sharedApptStatus');
+  if (sharedStatusSel) sharedStatusSel.value = 'PENDING';
 
   // Hiện banner cảnh báo trong modal
   const errEl = document.getElementById('modalError');
@@ -896,6 +928,15 @@ function _resetAllCustomerState() {
 // Escape HTML để tránh XSS
 function _esc(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function _roomShortLabel(room) {
+  var raw = String(room?.id || room?.code || room?.name || '').trim();
+  if (!raw) return 'P?';
+  var pCode = raw.match(/^P0*(\d+)$/i);
+  if (pCode) return 'P' + Number(pCode[1]);
+  if (/^\d+$/.test(raw)) return 'P' + Number(raw);
+  return raw;
 }
 
 // ===== CREATE MODE — ACCORDION GUEST CARDS =====
@@ -981,7 +1022,7 @@ window.toggleGuestCard = function(idx) {
     item.classList.remove('open');
   } else {
     detail.style.display = 'flex';
-    wrap.style.maxHeight = '80px';
+    wrap.style.maxHeight = detail.scrollHeight + 'px';
     if (icon) icon.style.transform = 'rotate(90deg)';
     item.classList.add('open');
   }
@@ -1105,6 +1146,28 @@ function _syncSharedPayFields(val) {
   if (amountWrap) amountWrap.style.display = (val === 'PARTIAL') ? 'flex' : 'none';
 }
 
+function _setSelectValue(sel, value, fallback) {
+  if (!sel) return;
+  const wanted = value || fallback || '';
+  const hasOption = Array.from(sel.options).some(opt => opt.value === wanted);
+  sel.value = hasOption ? wanted : (fallback || '');
+}
+
+function _showSharedStatusBlock(statusValue, payValue) {
+  const sharedBlock = document.getElementById('sharedStatusBlock');
+  if (sharedBlock) sharedBlock.style.display = 'block';
+
+  const sharedStatusSel = document.getElementById('sharedApptStatus');
+  const sharedPaySel = document.getElementById('sharedPayStatus');
+  _setSelectValue(sharedStatusSel, statusValue, 'NOT_ARRIVED');
+  _setSelectValue(sharedPaySel, payValue, 'UNPAID');
+
+  if (sharedPaySel) {
+    _syncSharedPayFields(sharedPaySel.value);
+    sharedPaySel.onchange = function() { _syncSharedPayFields(this.value); };
+  }
+}
+
 /** Build 1 compact guest row — detail panel ẩn mặc định, toggle bằng JS */
 function _buildGuestItem(idx, prefill) {
   prefill = prefill || {};
@@ -1117,14 +1180,26 @@ function _buildGuestItem(idx, prefill) {
   var svcOpts = '<option value="">-- Dịch vụ --</option>' +
     SERVICES.map(function(s){ return '<option value="' + s.id + '">' + s.name + '</option>'; }).join('');
 
-  var inp = 'width:100%;height:30px;padding:0 8px;font-size:.8rem;border:1px solid #d1d5db;border-radius:5px;outline:none;background:#fff;box-sizing:border-box;font-family:inherit;color:#111827;display:block;';
-  var sel = 'width:100%;height:30px;padding:0 6px;font-size:.8rem;border:1px solid #d1d5db;border-radius:5px;outline:none;background:#fff;box-sizing:border-box;font-family:inherit;color:#111827;display:block;appearance:auto;';
-  var sInp = 'width:100%;height:26px;padding:0 6px;font-size:.75rem;border:1px solid #e5e7eb;border-radius:4px;outline:none;background:#fff;box-sizing:border-box;font-family:inherit;color:#374151;display:block;';
-  var lbl  = 'font-size:.65rem;font-weight:600;color:#9ca3af;display:block;margin-bottom:2px;white-space:nowrap;';
+  var inp = 'width:100%;height:36px;padding:0 12px;font-size:14px;border:1px solid #d1d5db;border-radius:6px;outline:none;background:#fff;box-sizing:border-box;font-family:inherit;color:#111827;display:block;';
+  var sel = 'width:100%;height:36px;padding:0 10px;font-size:14px;border:1px solid #d1d5db;border-radius:6px;outline:none;background:#fff;box-sizing:border-box;font-family:inherit;color:#111827;display:block;appearance:auto;';
+  var roomSelectCss = sel.replace('width:100%;', 'width:112px;max-width:100%;');
+  var sInp = 'width:100%;height:32px;padding:0 10px;font-size:13px;border:1px solid #e5e7eb;border-radius:5px;outline:none;background:#fff;box-sizing:border-box;font-family:inherit;color:#374151;display:block;';
+  var lbl  = 'font-size:13px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;white-space:nowrap;';
+  var selectedRoomId = prefill.roomId || '';
 
-  // Slot badge: phòng + time-range field gọn đẹp
+  // Slot badge: phòng dropdown + time-range field gọn đẹp
+  var roomOpts = '<option value="" disabled' + (selectedRoomId ? '' : ' selected') + ' hidden>Chọn phòng</option>' +
+    ROOMS.map(function(r){
+      var roomId = r.id || r.code || '';
+      var isSel = (roomId == selectedRoomId) ? ' selected' : '';
+      var label = _roomShortLabel(r);
+      var capacity = r.capacity || '';
+      var title = label + (capacity ? ' - ' + capacity + ' giường' : '');
+      return '<option value="' + _esc(roomId) + '"' + isSel + ' data-capacity="' + _esc(capacity) + '" title="' + _esc(title) + '">' + _esc(label) + '</option>';
+    }).join('');
+
   var slotBadge = '<div class="gc-slot-badge">'
-    + (roomName ? '<div class="gc-slot-room-label">P.' + _esc(roomName) + '</div>' : '<div class="gc-slot-room-label gc-slot-room-empty">Chọn phòng</div>')
+    + '<select class="gc-room-select" required style="' + roomSelectCss + '">' + roomOpts + '</select>'
     + '<div class="gc-time-range-field" title="Click để chỉnh giờ">'
       + '<i class="far fa-clock gc-time-range-icon"></i>'
       + '<span class="gc-time-range-display">'
@@ -1145,54 +1220,54 @@ function _buildGuestItem(idx, prefill) {
   item.dataset.idx      = idx;
   item.dataset.slotTime = timeVal;
   item.dataset.slotDate = dateVal;
-  item.dataset.slotRoom = prefill.roomId || '';
+  item.dataset.slotRoom = selectedRoomId;
   item.dataset.endTime  = endTime;
   item.dataset.detailOpen = '0';
   item.style.cssText = 'border-bottom:1px solid #eef0f3;';
 
   item.innerHTML =
-    '<input type="hidden" class="gc-room" value="' + _esc(prefill.roomId || '') + '" />'
+    '<input type="hidden" class="gc-room" value="' + _esc(selectedRoomId) + '" />'
   + '<input type="hidden" class="gc-date" value="' + _esc(dateVal) + '" />'
   + '<input type="hidden" class="gc-time" value="' + _esc(timeVal) + '" />'
   + '<input type="hidden" class="gc-time-end" value="' + _esc(endTime) + '" />'
 
   // ── DÒNG CHÍNH ──
   // Grid: # | Phòng·Giờ | Tên khách (+ checkbox) | SĐT | Dịch vụ | Gói | Actions
-  + '<div class="gc-row" style="display:grid;grid-template-columns:24px 150px 1fr 130px 1fr 1fr 60px;gap:6px;padding:5px 12px;align-items:center;min-height:46px;box-sizing:border-box;background:#fff;border-left:3px solid transparent;transition:border-color .15s;">'
+  + '<div class="gc-row gc-row-grid">'
 
     // Col 1 — số thứ tự
-    + '<div class="gc-num" style="text-align:center;font-size:.72rem;font-weight:700;color:#94a3b8;">—</div>'
+    + '<div class="gc-num" style="text-align:center;font-size:13px;font-weight:700;color:#94a3b8;">—</div>'
 
     // Col 2 — phòng · giờ
-    + '<div style="display:flex;align-items:center;justify-content:center;">' + slotBadge + '</div>'
+    + '<div class="gc-slot-cell">' + slotBadge + '</div>'
 
     // Col 3 — tên khách + checkbox "= người đặt"
-    + '<div style="display:flex;flex-direction:column;gap:2px;">'
-      + '<div style="display:flex;align-items:center;gap:5px;">'
-        + '<input class="gc-name" style="' + inp + 'flex:1;min-width:0;" placeholder="Tên khách *" value="' + _esc(prefill.name || '') + '" />'
-        + '<label style="display:inline-flex;align-items:center;gap:3px;white-space:nowrap;cursor:pointer;padding:0 5px;height:30px;border:1px solid #e5e7eb;border-radius:5px;background:#f8fafc;font-size:.65rem;color:#6b7280;flex-shrink:0;" title="Điền từ người đặt">'
-          + '<input type="checkbox" class="gc-same-as-booker" style="width:11px;height:11px;cursor:pointer;accent-color:#1d4ed8;margin:0;" />'
+    + '<div class="gc-name-cell">'
+      + '<div class="gc-name-inline">'
+        + '<input class="gc-name" style="' + inp + 'flex:1 1 220px;min-width:0;" placeholder="Tên khách *" value="' + _esc(prefill.name || '') + '" />'
+        + '<label class="gc-same-booker-label" title="Điền từ người đặt">'
+          + '<input type="checkbox" class="gc-same-as-booker" style="width:14px;height:14px;cursor:pointer;accent-color:#1d4ed8;margin:0;" />'
           + '<span>= người đặt</span>'
         + '</label>'
       + '</div>'
     + '</div>'
 
     // Col 4 — SĐT
-    + '<div><input class="gc-phone" style="' + inp + '" placeholder="SĐT" inputmode="numeric" value="' + _esc(prefill.phone || '') + '" /></div>'
+    + '<div class="gc-phone-cell"><input class="gc-phone" style="' + inp + '" placeholder="SĐT" inputmode="numeric" value="' + _esc(prefill.phone || '') + '" /></div>'
 
     // Col 5 — dịch vụ
-    + '<div><select class="gc-service" style="' + sel + '">' + svcOpts + '</select></div>'
+    + '<div class="gc-service-cell"><select class="gc-service" style="' + sel + '">' + svcOpts + '</select></div>'
 
     // Col 6 — gói
-    + '<div><select class="gc-variant" style="' + sel + '" disabled><option value="">-- Chọn dịch vụ trước --</option></select></div>'
+    + '<div class="gc-variant-cell"><select class="gc-variant" style="' + sel + '" disabled><option value="">-- Chọn dịch vụ trước --</option></select></div>'
 
     // Col 7 — actions
-    + '<div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;">'
+    + '<div class="gc-actions-cell" style="display:flex;align-items:center;justify-content:center;gap:6px;">'
       + '<button type="button" class="gc-expand-btn" onclick="toggleGuestCard(' + idx + ')" title="Email & ghi chú"'
-      + ' style="height:28px;width:28px;padding:0;font-size:.72rem;background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;">'
+      + ' style="height:36px;width:36px;padding:0;font-size:15px;background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;">'
       + '<i class="fas fa-ellipsis-h"></i></button>'
       + '<button type="button" class="gc-delete-btn" onclick="removeGuestCard(' + idx + ')" title="Xóa khách"'
-      + ' style="height:28px;width:28px;padding:0;font-size:.7rem;background:#fff5f5;border:1px solid #fecaca;color:#ef4444;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,opacity .15s;">'
+      + ' style="height:36px;width:36px;padding:0;font-size:15px;background:#fff5f5;border:1px solid #fecaca;color:#ef4444;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,opacity .15s;">'
       + '<i class="fas fa-trash-alt"></i></button>'
     + '</div>'
 
@@ -1201,8 +1276,8 @@ function _buildGuestItem(idx, prefill) {
   // gc-sub-row đã chuyển thành block chung ở footer — không render per-guest nữa
 
   // ── PHẦN MỞ RỘNG — Email + Ghi chú (toggle bằng dấu 3 chấm) ──
-  + '<div class="gc-detail-wrap" style="overflow:hidden;max-height:0;transition:max-height .2s ease;">'
-    + '<div class="gc-detail" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;padding:6px 14px 8px 158px;background:#f0f4f8;border-top:1px dashed #e5e7eb;box-sizing:border-box;">'
+  + '<div class="gc-detail-wrap">'
+    + '<div class="gc-detail">'
       + '<div style="display:flex;flex-direction:column;gap:2px;min-width:150px;flex:1;">'
         + '<label style="' + lbl + '">Email</label>'
         + '<input type="email" class="gc-email" style="' + sInp + '" placeholder="Email (nếu có)" value="' + _esc(prefill.email || '') + '" />'
@@ -1224,6 +1299,17 @@ function _buildGuestItem(idx, prefill) {
   + '</div>';
 
   // Bind events
+  var roomSel = item.querySelector('.gc-room-select');
+  if (roomSel) {
+    roomSel.addEventListener('change', function() {
+      item.dataset.slotRoom = roomSel.value;
+      var roomInp = item.querySelector('.gc-room');
+      if (roomInp) roomInp.value = roomSel.value;
+      _markRowValidity(item);
+      _updateGuestProgress();
+    });
+  }
+
   var svcSel = item.querySelector('.gc-service');
   var varSel = item.querySelector('.gc-variant');
   if (svcSel) {
@@ -1394,10 +1480,9 @@ function addGuestCard(prefill = {}) {
     item.dataset.slotRoom = prefill.roomId;
     const roomInp = item.querySelector('.gc-room');
     if (roomInp) roomInp.value = prefill.roomId;
-    // Cập nhật tên phòng trong badge
-    const roomName = (ROOMS.find(r => r.id === prefill.roomId) || {}).name || prefill.roomId;
-    const roomLabel = item.querySelector('.gc-row > div:nth-child(2) div[style*="font-weight:700"]');
-    if (roomLabel) roomLabel.textContent = 'P.' + roomName;
+    // Cập nhật select phòng
+    const roomSel = item.querySelector('.gc-room-select');
+    if (roomSel) roomSel.value = prefill.roomId;
   }
   if (prefill.date) {
     item.dataset.slotDate = prefill.date;
@@ -1654,14 +1739,11 @@ function openCreateModal(prefill={}) {
       addGuestCard({ date: pb.day, time: pb.time, roomId: pb.roomId, pendingDuration: pb.duration });
     });
   } else {
-    addGuestCard({ date: prefill.day || dayPicker.value, time: prefill.time || '' });
-    if (prefill.roomId) {
-      const firstItem = _getGuestItems()[0];
-      if (firstItem) {
-        const roomSel = firstItem.querySelector('.gc-room');
-        if (roomSel) roomSel.value = prefill.roomId;
-      }
-    }
+    addGuestCard({ 
+      date: prefill.day || dayPicker.value, 
+      time: prefill.time || '', 
+      roomId: prefill.roomId || '' 
+    });
   }
 
   _initApplyAllBar();
@@ -1670,16 +1752,7 @@ function openCreateModal(prefill={}) {
   _resetAllCustomerState();
 
   // Hiện block trạng thái & thanh toán, reset về mặc định
-  const sharedBlock = document.getElementById('sharedStatusBlock');
-  if (sharedBlock) sharedBlock.style.display = 'block';
-  const sharedPaySel = document.getElementById('sharedPayStatus');
-  const sharedStatusSel = document.getElementById('sharedApptStatus');
-  if (sharedStatusSel) sharedStatusSel.value = 'NOT_ARRIVED';
-  if (sharedPaySel) {
-    sharedPaySel.value = 'UNPAID';
-    _syncSharedPayFields(sharedPaySel.value);
-    sharedPaySel.onchange = function() { _syncSharedPayFields(this.value); };
-  }
+  _showSharedStatusBlock('NOT_ARRIVED', 'UNPAID');
 
   if (modalEl) {
     const existing = bootstrap.Modal.getInstance(modalEl);
@@ -1726,9 +1799,8 @@ function openEditModalWithData(a){
   _showSharedForm();
   _setCreateOnlyVisible(false);
 
-  // Ẩn block trạng thái & thanh toán (chỉ dùng ở create mode)
-  const sharedBlock = document.getElementById('sharedStatusBlock');
-  if (sharedBlock) sharedBlock.style.display = 'none';
+  // Dùng chung block trạng thái & thanh toán với create mode, nhưng load đúng dữ liệu hiện tại.
+  _showSharedStatusBlock(a.apptStatus || 'NOT_ARRIVED', a.payStatus || 'UNPAID');
 
   // Label panel
   const lbl = document.getElementById('bookerPanelLabel');
@@ -1832,6 +1904,12 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
       note:         document.getElementById('bookerNote')?.value.trim() || '',
       apptStatus:   g.apptStatus,
       payStatus:    g.payStatus,
+      status:       g.apptStatus,
+      payment_status: g.payStatus,
+      paymentData:  {
+        payment_method: g.paymentMethod || 'CASH',
+        amount: g.paymentAmount || 0,
+      },
       source:       sourceVal,
       staffNote:    g.staffNote || '',
     };
@@ -2150,38 +2228,15 @@ function initSearchModal() {
   if (!searchModalEl) return;
 
   const searchModal = new bootstrap.Modal(searchModalEl);
+  const resetSearchModal = () => _resetSearchModalState(searchModalEl);
 
-  // Lưu state khi đóng modal, restore khi mở lại
-  let _savedInputs = {};
-  let _savedResults = null;
-
-  searchModalEl.addEventListener('hide.bs.modal', () => {
-    // Lưu giá trị các input
-    ['srchName','srchPhone','srchEmail','srchService','srchStatus','srchSource','srchDateFrom','srchDateTo'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) _savedInputs[id] = el.value;
-    });
-    // Lưu HTML kết quả
-    const results = document.getElementById('srchResults');
-    if (results) _savedResults = results.innerHTML;
-  });
+  searchModalEl.addEventListener('hidden.bs.modal', resetSearchModal);
 
   // Nút mở modal
   const btnOpen = document.getElementById('btnOpenSearch');
   if (btnOpen) {
     btnOpen.addEventListener('click', () => {
       _fillSearchDropdowns();
-      // Restore state trước khi show
-      if (Object.keys(_savedInputs).length) {
-        ['srchName','srchPhone','srchEmail','srchService','srchStatus','srchSource','srchDateFrom','srchDateTo'].forEach(id => {
-          const el = document.getElementById(id);
-          if (el && _savedInputs[id] !== undefined) el.value = _savedInputs[id];
-        });
-      }
-      if (_savedResults !== null) {
-        const results = document.getElementById('srchResults');
-        if (results) results.innerHTML = _savedResults;
-      }
       searchModal.show();
     });
   }
@@ -2193,27 +2248,7 @@ function initSearchModal() {
   // Nút Đặt lại
   const btnReset = document.getElementById('btnResetSearch');
   if (btnReset) {
-    btnReset.addEventListener('click', () => {
-      ['srchName','srchPhone','srchEmail'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-      });
-      ['srchService','srchStatus','srchSource'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-      });
-      ['srchDateFrom','srchDateTo'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-      });
-      _setSearchWarning(false);
-      const results = document.getElementById('srchResults');
-      if (results) results.innerHTML = `
-        <div class="text-center text-muted py-5" id="srchPlaceholder">
-          <i class="fas fa-search fa-2x mb-2 d-block opacity-25"></i>
-          Nhập điều kiện và bấm Tìm kiếm
-        </div>`;
-    });
+    btnReset.addEventListener('click', resetSearchModal);
   }
 
   // Enter trong các input → trigger search
@@ -2221,6 +2256,32 @@ function initSearchModal() {
     const el = document.getElementById(id);
     if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') _doSearch(); });
   });
+}
+
+function _resetSearchModalState(searchModalEl) {
+  const root = searchModalEl || document.getElementById('searchModal');
+  if (!root) return;
+
+  root.querySelectorAll('input').forEach(input => {
+    if (input.type === 'checkbox' || input.type === 'radio') input.checked = false;
+    else input.value = '';
+  });
+
+  root.querySelectorAll('select').forEach(select => {
+    select.selectedIndex = 0;
+  });
+
+  delete root.dataset.currentFilters;
+  _setSearchWarning(false);
+
+  const results = root.querySelector('#srchResults');
+  if (results) {
+    results.innerHTML = `
+      <div class="text-center text-muted py-5" id="srchPlaceholder">
+        <i class="fas fa-search fa-2x mb-2 d-block opacity-25"></i>
+        Nhập điều kiện và bấm Tìm kiếm
+      </div>`;
+  }
 }
 
 function _fillSearchDropdowns() {
@@ -2293,6 +2354,9 @@ async function _doSearch() {
   if (room)     params.append('room', room);
   if (dateFrom) params.append('date_from', dateFrom);
   if (dateTo)   params.append('date_to', dateTo);
+
+  const searchModalEl = document.getElementById('searchModal');
+  if (searchModalEl) searchModalEl.dataset.currentFilters = params.toString();
 
   const result = await apiGet(`${API_BASE}/appointments/search/?${params.toString()}`);
 
