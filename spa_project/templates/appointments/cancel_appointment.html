@@ -57,7 +57,13 @@
             </p>
 
             <div class="appointment-summary text-start">
-                <h5 class="mb-3">{{ appointment.service.name }}</h5>
+                <h5 class="mb-3">
+                    {% if appointment.service_variant %}
+                        {{ appointment.service_variant.service.name }} — {{ appointment.service_variant.label }}
+                    {% else %}
+                        Chưa chọn dịch vụ
+                    {% endif %}
+                </h5>
 
                 <div class="row mb-2">
                     <div class="col-6">

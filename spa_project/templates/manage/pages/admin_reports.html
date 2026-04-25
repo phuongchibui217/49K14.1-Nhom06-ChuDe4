@@ -318,7 +318,7 @@
                 {{ forloop.counter }}
               </span>
             </td>
-            <td>{{ s.service__name|default:"—" }}</td>
+            <td>{{ s.service_variant__service__name|default:"—" }}</td>
             <td class="text-end fw-bold">{{ s.booking_count }}</td>
           </tr>
           {% endfor %}

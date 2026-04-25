@@ -358,22 +358,35 @@
   </div>
   {% endif %}
 
+  {% if form.errors %}
+  <div class="alert-danger-ana">
+    <i class="fas fa-exclamation-circle"></i>
+    <span>
+      Vui lòng kiểm tra lại thông tin:
+      {% for field in form %}{% for e in field.errors %}{{ field.label }}: {{ e }} {% endfor %}{% endfor %}
+    </span>
+  </div>
+  {% endif %}
+
   <form method="post" action="{% url 'appointments:booking' %}" id="bookingForm" novalidate>
     {% csrf_token %}
+    {# booker = người đang đăng nhập — hidden, không cho sửa #}
+    {{ form.booker_name }}
+    {{ form.booker_phone }}
     <div class="booking-grid">
 
-      <!-- ═══ LEFT: Thông tin khách hàng ═══ -->
+      <!-- ═══ LEFT: Thông tin khách sử dụng dịch vụ ═══ -->
       <div class="customer-sidebar">
         <div class="bk-card">
           <h4 class="bk-section-title">
             <i class="fas fa-user"></i>
-            Thông tin khách hàng
+            Thông tin khách sử dụng dịch vụ
           </h4>
-
           <div class="bk-field">
             <label class="bk-label">Họ và tên <span class="req">*</span></label>
             <input type="text"
-                   name="customer_name"
+                   name="customer_name_snapshot"
+                   id="customerNameSnapshot"
                    class="bk-input"
                    value="{{ customer_profile.full_name|default:request.user.get_full_name|default:request.user.username }}"
                    placeholder="Nhập họ và tên"
@@ -381,21 +394,22 @@
           </div>
 
           <div class="bk-field">
-            <label class="bk-label">Số điện thoại <span class="req">*</span></label>
+            <label class="bk-label">Số điện thoại</label>
             <input type="tel"
-                   name="customer_phone"
+                   name="customer_phone_snapshot"
+                   id="customerPhoneSnapshot"
                    class="bk-input"
-                   value="{{ customer_profile.phone|default:request.user.username }}"
-                   placeholder="Nhập số điện thoại"
-                   required>
+                   value="{{ customer_profile.phone|default:'' }}"
+                   placeholder="Nhập số điện thoại">
           </div>
 
           <div class="bk-field">
             <label class="bk-label">Email</label>
             <input type="email"
-                   name="customer_email"
+                   name="customer_email_snapshot"
+                   id="customerEmailSnapshot"
                    class="bk-input"
-                   value="{{ customer_profile.email|default:request.user.email }}"
+                   value="{{ customer_profile.user.email|default:'' }}"
                    placeholder="Nhập email">
           </div>
         </div>
@@ -584,6 +598,54 @@ document.addEventListener('DOMContentLoaded', function () {
     updateSummary();
   }
 
+  // ── Constants ──
+  const SPA_CLOSE_HOUR = 21;
+  const SPA_CLOSE_MINUTES = 0;
+  const DEFAULT_DURATION = 60;
+
+  // ── Tính giờ kết thúc và validate ──
+  function getSelectedDuration() {
+    if (!variantSelect) return DEFAULT_DURATION;
+    const opt = variantSelect.options[variantSelect.selectedIndex];
+    return (opt && opt.value && opt.dataset.duration) ? parseInt(opt.dataset.duration) : DEFAULT_DURATION;
+  }
+
+  function validateEndTime() {
+    if (!timeInput || !timeInput.value) return;
+    const [h, m] = timeInput.value.split(':').map(Number);
+    const duration = getSelectedDuration();
+    const startMins = h * 60 + m;
+    const endMins   = startMins + duration;
+    const closeMins = SPA_CLOSE_HOUR * 60 + SPA_CLOSE_MINUTES;
+
+    // Tính giờ bắt đầu trễ nhất hợp lệ
+    const latestStartMins = closeMins - duration;
+    const latestH = Math.floor(latestStartMins / 60);
+    const latestM = latestStartMins % 60;
+    const latestStr = `${String(latestH).padStart(2,'0')}:${String(latestM).padStart(2,'0')}`;
+
+    // Cập nhật max của input
+    timeInput.setAttribute('max', latestStr);
+
+    let errEl = document.getElementById('timeEndError');
+    if (!errEl) {
+      errEl = document.createElement('div');
+      errEl.id = 'timeEndError';
+      errEl.className = 'bk-error';
+      errEl.style.display = 'none';
+      timeInput.parentNode.appendChild(errEl);
+    }
+
+    if (endMins > closeMins) {
+      errEl.textContent = `Spa đóng cửa lúc 21:00. Với gói ${duration} phút, giờ bắt đầu trễ nhất là ${latestStr}.`;
+      errEl.style.display = 'block';
+      return false;
+    } else {
+      errEl.style.display = 'none';
+      return true;
+    }
+  }
+
   // ── Update service info box ──
   function updateServiceInfo() {
     if (!variantSelect) return;
@@ -627,15 +689,27 @@ document.addEventListener('DOMContentLoaded', function () {
     serviceSelect.addEventListener('change', updateVariants);
     setTimeout(updateVariants, 50);
   }
-  if (variantSelect) variantSelect.addEventListener('change', function () { updateServiceInfo(); updateSummary(); });
+  if (variantSelect) variantSelect.addEventListener('change', function () { updateServiceInfo(); updateSummary(); validateEndTime(); });
   if (dateInput)     dateInput.addEventListener('change', updateSummary);
   if (timeInput) {
     timeInput.setAttribute('min', '09:00');
     timeInput.setAttribute('max', '21:00');
-    timeInput.addEventListener('change', updateSummary);
+    timeInput.addEventListener('change', function() { updateSummary(); validateEndTime(); });
+  }
+
+  // Chặn submit nếu end-time vượt giờ đóng cửa
+  const bookingForm = timeInput ? timeInput.closest('form') : null;
+  if (bookingForm) {
+    bookingForm.addEventListener('submit', function(e) {
+      if (!validateEndTime()) {
+        e.preventDefault();
+        timeInput.focus();
+      }
+    });
   }
 
   setTimeout(updateSummary, 100);
+  setTimeout(validateEndTime, 150);
 });
 </script>
 {% endblock %}

@@ -58,10 +58,6 @@ def login_view(request):
 def _redirect_by_role(request, user, show_welcome=False):
     """Helper function redirect theo role"""
     if user.is_staff or user.is_superuser:
-        if show_welcome:
-            full_name = user.get_full_name() or user.username
-            role = "Quản trị viên" if user.is_superuser else "Nhân viên"
-            messages.success(request, f'Chào mừng {full_name}! ({role})')
         # Chủ Spa (superuser) → trang báo cáo thống kê
         if user.is_superuser:
             return redirect('reports:admin_reports')
@@ -69,9 +65,6 @@ def _redirect_by_role(request, user, show_welcome=False):
 
     try:
         profile = user.customer_profile
-        if show_welcome:
-            full_name = profile.full_name or user.username
-            messages.success(request, f'Chào mừng {full_name}!')
         return redirect('appointments:my_appointments')
     except CustomerProfile.DoesNotExist:
         pass
@@ -125,5 +118,4 @@ def register(request):
 def logout_view(request):
     """Đăng xuất"""
     logout(request)
-    messages.info(request, 'Đã đăng xuất!')
     return redirect('pages:home')

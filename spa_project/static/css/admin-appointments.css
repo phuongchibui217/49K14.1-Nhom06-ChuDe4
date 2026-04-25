@@ -187,40 +187,84 @@
     );
   pointer-events:none;
   opacity:.5;
+  z-index: 1;  /* nằm dưới card */
 }
 
 /* appointment blocks */
-.appt{
-  position:absolute;
+.appt {
+  position: absolute;
   top: 5px;
   height: calc(var(--rowH) - 10px);
   min-height: 48px;
   border-radius: 12px;
-  padding: 7px 10px;
-  color:#0b1220;
-  overflow:hidden;
-  cursor:pointer;
+  color: #0b1220;
+  overflow: hidden;
+  cursor: pointer;
   box-shadow: 0 6px 14px rgba(0,0,0,.10);
   border: 1px solid rgba(255,255,255,.55);
-  user-select:none;
+  user-select: none;
+  display: block;
+  z-index: 5;
 }
-.appt .t1{
-  font-weight:800;
-  font-size:.82rem;
-  line-height:1.2;
-  display:-webkit-box;
-  -webkit-line-clamp:2;
-  -webkit-box-orient:vertical;
-  overflow:hidden;
+
+/* Content: fill toàn bộ card, padding đều trái/phải */
+.appt .appt-content {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  padding: 5px 12px 5px 10px;  /* trái 10 / phải 12 — gần đối xứng */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
-.appt .t2{
-  font-size:.73rem;
-  opacity:.9;
-  margin-top:4px;
-  line-height:1.15;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
+
+/* Title: block thường, fill full width, clamp 2 dòng bằng max-height */
+.appt .t1 {
+  display: block;
+  width: 100%;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+  max-height: calc(1.3em * 2);   /* tối đa 2 dòng */
+  overflow: hidden;
+  white-space: normal;
+  word-break: break-word;
+  flex-shrink: 1;
+  flex-grow: 0;
+}
+
+/* Time: stick xuống đáy, không bao giờ bị cắt */
+.appt .t2 {
+  display: block;
+  width: 100%;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: rgba(11, 18, 32, 0.78);
+  margin-top: auto;
+  padding-top: 2px;
+  white-space: nowrap;
+  overflow: visible;
+  flex-shrink: 0;
+}
+
+/* Icon paid: absolute góc phải dưới, không ảnh hưởng layout text */
+.appt-paid-icon {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.1);
+  border-radius: 3px;
+  pointer-events: none;
+}
+.appt-paid-icon i {
+  font-size: .6rem;
+  color: #1f2937;
 }
 
 .status-pending{ background: #fff3cd; }
@@ -940,4 +984,266 @@
 .gc-detail-field select {
   min-height: 28px !important;
   height: 28px !important;
+}
+
+/* ── Guest card: select gói — không bị mờ khi enabled ── */
+.gc-item .gc-variant:not([disabled]),
+.gc-item .gc-service:not([disabled]) {
+  color: #111827 !important;
+  background: #fff !important;
+  opacity: 1 !important;
+}
+.gc-item .gc-variant[disabled] {
+  color: #9ca3af;
+  background: #f9fafb;
+  cursor: not-allowed;
+}
+
+/* ===== SEARCH MODAL ===== */
+
+/* modal-content: flex column, chiều cao giới hạn trong viewport */
+#searchModal .modal-content {
+  display: flex !important;
+  flex-direction: column !important;
+  max-height: 88vh !important;
+  overflow: hidden !important;
+  /* border-radius từ style.css vẫn áp dụng */
+}
+
+/* modal-header: cố định, không co */
+#searchModal .modal-header {
+  flex-shrink: 0;
+  border-radius: 0;
+}
+
+/* modal-body: flex column, chiếm phần còn lại, không scroll toàn bộ */
+#searchModal .modal-body {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+/* Form filter: cố định chiều cao, không co giãn */
+#searchFormArea {
+  flex-shrink: 0;
+}
+
+/* Vùng kết quả: chiếm phần còn lại, chỉ vùng này scroll */
+#searchResultsArea {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* scrollbar sát nội dung, không dính mép */
+  padding-right: 2px;
+}
+
+/* Container kết quả bên trong không có padding thừa */
+#srchResults {
+  min-height: 100%;
+}
+
+.srch-result-item:last-child {
+  border-bottom: none !important;
+}
+
+/* Highlight animation khi click kết quả tìm kiếm */
+@keyframes apptHighlight {
+  0%   { box-shadow: 0 0 0 3px rgba(59,130,246,.8), inset 0 0 0 2px rgba(59,130,246,.4); }
+  50%  { box-shadow: 0 0 0 6px rgba(59,130,246,.4), inset 0 0 0 2px rgba(59,130,246,.2); }
+  100% { box-shadow: 0 0 0 3px rgba(59,130,246,.8), inset 0 0 0 2px rgba(59,130,246,.4); }
+}
+
+.appt.appt-highlight {
+  animation: apptHighlight .6s ease-in-out 3;
+  z-index: 8;
+}
+
+/* Nút mở search modal */
+#btnOpenSearch {
+  white-space: nowrap;
+}
+
+/* ===== CURRENT TIME LINE ===== */
+.current-time-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #ef4444;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.current-time-line::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: repeating-linear-gradient(
+    to bottom,
+    #ef4444 0,
+    #ef4444 4px,
+    transparent 4px,
+    transparent 8px
+  );
+}
+
+.current-time-line span {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ef4444;
+  color: #fff;
+  font-size: .6rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+  line-height: 1.5;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.3);
+}
+
+
+/* ===================================================
+   TIME-RANGE FIELD — cụm giờ gọn đẹp trong bảng khách
+   =================================================== */
+
+/* Wrapper toàn bộ cột Phòng·Giờ */
+.gc-slot-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 0 4px;
+}
+
+/* Tên phòng */
+.gc-slot-room-label {
+  font-size: .68rem;
+  font-weight: 700;
+  color: #1d4ed8;
+  white-space: nowrap;
+  letter-spacing: .01em;
+}
+
+.gc-slot-room-empty {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+/* Cụm time-range — hiển thị dạng "07:30 – 08:30" */
+.gc-time-range-field {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 9px 0 7px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, box-shadow .15s;
+  white-space: nowrap;
+  min-width: 110px;
+  max-width: 130px;
+  overflow: hidden;
+}
+
+.gc-time-range-field:hover {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  box-shadow: 0 0 0 2px rgba(147,197,253,.25);
+}
+
+.gc-time-range-field.is-editing {
+  border-color: #3b82f6;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.15);
+}
+
+/* Icon đồng hồ nhỏ */
+.gc-time-range-icon {
+  font-size: .62rem;
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: color .15s;
+}
+
+.gc-time-range-field:hover .gc-time-range-icon {
+  color: #3b82f6;
+}
+
+/* Text hiển thị giờ */
+.gc-time-range-display {
+  font-size: .78rem;
+  font-weight: 600;
+  color: #374151;
+  letter-spacing: .01em;
+  flex: 1;
+  min-width: 0;
+}
+
+.gc-time-range-sep {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+/* 2 input time ẩn — chỉ hiện khi editing */
+.gc-time-range-inputs {
+  display: none;
+  position: absolute;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: #fff;
+  border-radius: 7px;
+  padding: 0 5px;
+}
+
+.gc-time-range-field.is-editing .gc-time-range-inputs {
+  display: flex;
+}
+
+.gc-time-range-field.is-editing .gc-time-range-display,
+.gc-time-range-field.is-editing .gc-time-range-icon {
+  visibility: hidden;
+}
+
+.gc-time-range-inputs input[type="time"] {
+  width: 52px !important;
+  height: 22px !important;
+  padding: 0 3px !important;
+  font-size: .72rem !important;
+  font-weight: 600 !important;
+  border: 1px solid #bfdbfe !important;
+  border-radius: 4px !important;
+  outline: none !important;
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+  min-height: unset !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+}
+
+.gc-time-range-inputs input[type="time"]:focus {
+  border-color: #3b82f6 !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+.gc-time-range-sep-inner {
+  font-size: .65rem;
+  color: #94a3b8;
+  flex-shrink: 0;
 }

@@ -303,7 +303,14 @@
                     <!-- Header: tên dịch vụ + mã | status -->
                     <div class="card-header-section">
                         <div class="service-info">
-                            <h5>{{ appointment.service.name }}</h5>
+                            <h5>
+                                {% if appointment.service_variant %}
+                                    {{ appointment.service_variant.service.name }}
+                                    <span style="font-size:.85rem;font-weight:400;color:#64748b;">— {{ appointment.service_variant.label }}</span>
+                                {% else %}
+                                    <span style="color:#94a3b8;font-style:italic;">Chưa chọn dịch vụ</span>
+                                {% endif %}
+                            </h5>
                             <div class="code">
                                 <i class="fas fa-hashtag me-1"></i>{{ appointment.appointment_code }}
                             </div>

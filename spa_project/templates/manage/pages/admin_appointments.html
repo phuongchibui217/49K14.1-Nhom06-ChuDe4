@@ -7,7 +7,7 @@
 {% block page_title %}Lịch hẹn{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{% static 'css/admin-appointments.css' %}">
+<link rel="stylesheet" href="{% static 'css/admin-appointments.css' %}?v={% now 'His' %}">
 {% endblock %}
 
 {% block content %}
@@ -39,23 +39,11 @@
     <!-- TAB-Header: Lịch theo phòng -->
     <div class="tab-pane fade show active" id="pane-room" role="tabpanel">
 
-      <!-- Combined Topbar with Search and Date Controls -->
+      <!-- Topbar: điều hướng ngày + nút Tìm kiếm -->
       <div class="topbar">
         <div class="left">
-          <!-- Search Bar -->
-          <div class="appointment-search me-3">
-            <i class="fas fa-search"></i>
-            <input
-              type="text"
-              class="form-control"
-              id="searchInput"
-              placeholder="Tìm theo tên, SĐT, email, ghi chú..."
-            />
-          </div>
-
           <!-- Điều khiển ngày xem Lịch -->
           <div class="pill">
-            <i class="fas fa-calendar-day"></i>
             <button class="btn btn-sm btn-outline-secondary" id="btnPrev" title="Ngày trước">
               <i class="fas fa-chevron-left"></i>
             </button>
@@ -65,48 +53,16 @@
             </button>
             <input type="date" class="form-control form-control-sm" id="dayPicker" style="width: 150px;" />
           </div>
+
+          <!-- Nút mở modal tìm kiếm -->
+          <button type="button" class="btn btn-sm btn-outline-primary ms-2" id="btnOpenSearch">
+            <i class="fas fa-search me-1"></i>Tìm kiếm
+          </button>
         </div>
 
         <div class="hint">
           <i class="fas fa-mouse-pointer me-1"></i>
           Click ô trống để chọn slot • Click lịch để sửa
-        </div>
-      </div>
-
-      <!-- Filter Bar — đồng bộ style trang dịch vụ -->
-      <div class="px-3 pt-3 pb-1" style="background:#fff; border-bottom:1px solid #eef1f4;">
-        <div class="row g-2 align-items-center">
-          <div class="col-md-3">
-            <select class="form-select" id="statusFilter">
-              <option value="">Tất cả trạng thái</option>
-              <option value="PENDING">Chờ xác nhận</option>
-              <option value="NOT_ARRIVED">Chưa đến</option>
-              <option value="ARRIVED">Đã đến</option>
-              <option value="COMPLETED">Hoàn thành</option>
-              <option value="CANCELLED">Đã hủy</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <select class="form-select" id="serviceFilter">
-              <option value="">Tất cả dịch vụ</option>
-              <!-- load bằng JS sau khi SERVICES sẵn sàng -->
-            </select>
-          </div>
-          <div class="col-md-3">
-            <select class="form-select" id="sourceFilter">
-              <option value="">Tất cả kênh liên hệ</option>
-              <option value="DIRECT">Trực tiếp</option>
-              <option value="ONLINE">Đặt online</option>
-              <option value="PHONE">Điện thoại</option>
-              <option value="FACEBOOK">Facebook</option>
-              <option value="ZALO">Zalo</option>
-            </select>
-          </div>
-          <div class="col-md-2">
-            <button type="button" class="btn btn-secondary w-100" id="schedFilterBtn">
-              <i class="fas fa-filter me-2"></i>Lọc
-            </button>
-          </div>
         </div>
       </div>
       <!-- HTML chỉ là container rỗng -->
@@ -122,7 +78,7 @@
     <div class="tab-pane fade" id="pane-web" role="tabpanel">
       <div class="p-3" style="background:#fff;">
 
-        <!-- Filter Bar — đồng bộ style trang dịch vụ -->
+        <!-- Filter Bar -->
         <div class="card mb-3 border-0 shadow-sm">
           <div class="card-body py-2">
             <div class="row g-2 align-items-center">
@@ -133,14 +89,19 @@
                   </span>
                   <input type="text" class="form-control border-start-0"
                          id="webSearchInput"
-                         placeholder="Tìm tên, SĐT, dịch vụ, mã lịch...">
+                         placeholder="Tìm tên khách, SĐT hoặc mã lịch...">
                 </div>
               </div>
-              <div class="col-md-3">
+              <div class="col-md-2">
                 <select class="form-select" id="webStatusFilter">
                   <option value="">Tất cả trạng thái</option>
                   <option value="PENDING">Chờ xác nhận</option>
                   <option value="CANCELLED">Đã hủy</option>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <select class="form-select" id="webServiceFilter">
+                  <option value="">Tất cả dịch vụ</option>
                 </select>
               </div>
               <div class="col-md-2">
@@ -184,6 +145,108 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- Modal Tìm kiếm lịch hẹn -->
+<div class="modal fade" id="searchModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:960px;width:95vw;margin:auto;height:88vh;">
+    <div class="modal-content" style="display:flex;flex-direction:column;height:100%;max-height:88vh;overflow:hidden;">
+
+      <div class="modal-header py-2 px-3" style="background:linear-gradient(135deg,#1f3a5f,#1f3a5f);color:#fff;flex-shrink:0;border-radius:0;">
+        <h6 class="modal-title mb-0"><i class="fas fa-search me-2"></i>Tìm kiếm lịch hẹn</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <!-- body: flex column, chiếm phần còn lại -->
+      <div class="modal-body p-0" style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
+
+        <!-- Form filter: cố định, không scroll -->
+        <div class="px-3 pt-3 pb-2 border-bottom" id="searchFormArea" style="background:#f8fafc;flex-shrink:0;">
+          <!-- Hàng 1: Tên / SĐT / Email -->
+          <div class="row g-2 mb-2">
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label mb-1" style="font-size:.72rem;font-weight:600;color:#374151;">Tên khách / người đặt</label>
+              <input type="text" class="form-control form-control-sm" id="srchName" placeholder="Nhập tên...">
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label mb-1" style="font-size:.72rem;font-weight:600;color:#374151;">Số điện thoại</label>
+              <input type="text" class="form-control form-control-sm" id="srchPhone" placeholder="Nhập SĐT...">
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label mb-1" style="font-size:.72rem;font-weight:600;color:#374151;">Email</label>
+              <input type="text" class="form-control form-control-sm" id="srchEmail" placeholder="Nhập email...">
+            </div>
+          </div>
+          <!-- Hàng 2: Dịch vụ / Trạng thái / Nguồn -->
+          <div class="row g-2 mb-2">
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label mb-1" style="font-size:.72rem;font-weight:600;color:#374151;">Dịch vụ / gói</label>
+              <select class="form-select form-select-sm" id="srchService">
+                <option value="">Tất cả dịch vụ</option>
+              </select>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label mb-1" style="font-size:.72rem;font-weight:600;color:#374151;">Trạng thái</label>
+              <select class="form-select form-select-sm" id="srchStatus">
+                <option value="">Tất cả trạng thái</option>
+                <option value="PENDING">Chờ xác nhận</option>
+                <option value="NOT_ARRIVED">Chưa đến</option>
+                <option value="ARRIVED">Đã đến</option>
+                <option value="COMPLETED">Hoàn thành</option>
+                <option value="CANCELLED">Đã hủy</option>
+              </select>
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label mb-1" style="font-size:.72rem;font-weight:600;color:#374151;">Nguồn</label>
+              <select class="form-select form-select-sm" id="srchSource">
+                <option value="">Tất cả nguồn</option>
+                <option value="DIRECT">Trực tiếp</option>
+                <option value="ONLINE">Đặt online</option>
+                <option value="PHONE">Điện thoại</option>
+                <option value="FACEBOOK">Facebook</option>
+                <option value="ZALO">Zalo</option>
+              </select>
+            </div>
+          </div>
+          <!-- Hàng 3: Từ ngày / Đến ngày / Nút hành động -->
+          <div class="row g-2 align-items-end">
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label mb-1" style="font-size:.72rem;font-weight:600;color:#374151;">Từ ngày</label>
+              <input type="date" class="form-control form-control-sm" id="srchDateFrom">
+            </div>
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label mb-1" style="font-size:.72rem;font-weight:600;color:#374151;">Đến ngày</label>
+              <input type="date" class="form-control form-control-sm" id="srchDateTo">
+            </div>
+            <div class="col-12 col-md-4 d-flex justify-content-md-end gap-2">
+              <button type="button" class="btn btn-outline-secondary btn-sm px-3" id="btnResetSearch">
+                <i class="fas fa-undo me-1"></i>Đặt lại
+              </button>
+              <button type="button" class="btn btn-sm px-4 fw-semibold" id="btnDoSearch"
+                      style="background:#1f3a5f;color:#fff;border:none;">
+                <i class="fas fa-search me-1"></i>Tìm kiếm
+              </button>
+            </div>
+          </div>
+          <div class="alert alert-warning py-1 px-2 mt-2 mb-0 d-none" style="font-size:.78rem;" id="srchWarning">
+            <i class="fas fa-exclamation-triangle me-1"></i>
+            <span id="srchWarningText">Vui lòng nhập ít nhất 1 điều kiện tìm kiếm.</span>
+          </div>
+        </div>
+
+        <!-- Vùng kết quả: chiếm phần còn lại, chỉ vùng này scroll -->
+        <div style="flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;">
+          <div id="srchResults">
+            <div class="text-center text-muted py-5" id="srchPlaceholder">
+              <i class="fas fa-search fa-2x mb-2 d-block opacity-25"></i>
+              Nhập điều kiện và bấm Tìm kiếm
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
   </div>
 </div>
 
@@ -299,6 +362,51 @@
       </form>
 
       <div class="modal-footer" style="flex-shrink:0;">
+        <!-- Block trạng thái & thanh toán  — chỉ hiện ở create mode -->
+        <div id="sharedStatusBlock" style="display:none;width:100%;padding:10px 14px;background:#f8fafc;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;margin-bottom:4px;">
+          <div style="font-size:.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">
+            <i class="fas fa-sliders-h me-1" style="color:#c9a96e;"></i>Trạng thái &amp; Thanh toán 
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+            <!-- Trạng thái -->
+            <div style="display:flex;flex-direction:column;gap:3px;">
+              <label style="font-size:.68rem;font-weight:600;color:#9ca3af;">Trạng thái</label>
+              <select id="sharedApptStatus" style="height:30px;padding:0 8px;font-size:.8rem;border:1px solid #d1d5db;border-radius:6px;background:#fff;outline:none;min-width:140px;">
+                <option value="NOT_ARRIVED" selected>Chưa đến</option>
+                <option value="PENDING">Chờ xác nhận</option>
+                <option value="ARRIVED">Đã đến</option>
+                <option value="COMPLETED">Hoàn thành</option>
+                <option value="CANCELLED">Đã hủy</option>
+              </select>
+            </div>
+            <!-- Thanh toán -->
+            <div style="display:flex;flex-direction:column;gap:3px;">
+              <label style="font-size:.68rem;font-weight:600;color:#9ca3af;">Thanh toán</label>
+              <select id="sharedPayStatus" style="height:30px;padding:0 8px;font-size:.8rem;border:1px solid #d1d5db;border-radius:6px;background:#fff;outline:none;min-width:150px;">
+                <option value="UNPAID" selected>Chưa thanh toán</option>
+                <option value="PARTIAL">Một phần</option>
+                <option value="PAID">Đã thanh toán</option>
+              </select>
+            </div>
+            <!-- Phương thức — chỉ hiện khi PAID hoặc PARTIAL -->
+            <div id="sharedPayMethodWrap" style="display:none;flex-direction:column;gap:3px;">
+              <label style="font-size:.68rem;font-weight:600;color:#9ca3af;">Phương thức <span style="color:#ef4444;">*</span></label>
+              <select id="sharedPayMethod" style="height:30px;padding:0 8px;font-size:.8rem;border:1px solid #d1d5db;border-radius:6px;background:#fff;outline:none;min-width:150px;">
+                <option value="">-- Chọn --</option>
+                <option value="CASH">Tiền mặt</option>
+                <option value="CARD">Thẻ</option>
+                <option value="BANK_TRANSFER">Chuyển khoản</option>
+                <option value="E_WALLET">Ví điện tử</option>
+              </select>
+            </div>
+            <!-- Số tiền — chỉ hiện khi PARTIAL -->
+            <div id="sharedPayAmountWrap" style="display:none;flex-direction:column;gap:3px;">
+              <label style="font-size:.68rem;font-weight:600;color:#9ca3af;">Số tiền đã trả <span style="color:#ef4444;">*</span></label>
+              <input type="number" id="sharedPayAmount" style="height:30px;padding:0 8px;font-size:.8rem;border:1px solid #d1d5db;border-radius:6px;background:#fff;outline:none;width:130px;" placeholder="0" min="1" step="1000" />
+            </div>
+          </div>
+        </div>
+
         <button type="button" class="btn btn-outline-danger d-none" id="btnDelete">
           <i class="fas fa-trash me-2"></i>Xóa
         </button>
@@ -313,7 +421,29 @@
   </div>
 </div>
 
-<!-- Modal xác nhận xóa lịch hẹn — Luxury Spa Style -->
+<!-- Modal xác nhận Từ chối yêu cầu đặt lịch -->
+<div class="modal fade" id="rejectWebModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:380px;">
+    <div class="modal-content border-0" style="border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.15);overflow:hidden;">
+      <div class="del-modal-body">
+        <div class="del-modal-icon" style="background:#fff7ed;border-color:#fed7aa;">
+          <i class="fas fa-ban" style="color:#ea580c;"></i>
+        </div>
+        <div class="del-modal-title">Từ chối yêu cầu?</div>
+        <div class="del-modal-info" id="rejectWebInfo"></div>
+      </div>
+      <div class="del-modal-footer">
+        <button type="button" class="del-btn-cancel" data-bs-dismiss="modal">Hủy</button>
+        <button type="button" class="del-btn-confirm" id="confirmRejectWebBtn"
+                style="background:#ea580c;box-shadow:0 2px 10px rgba(234,88,12,.25);">
+          Từ chối
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal xác nhận xóa lịch hẹn-->
 <div class="modal fade" id="deleteAppointmentModal" tabindex="-1" aria-labelledby="deleteAppointmentModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" style="max-width:380px;">
     <div class="modal-content border-0" style="border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.15);overflow:hidden;">
@@ -406,5 +536,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/admin-appointments.js' %}?v=20260422-003"></script>
+<script src="{% static 'js/admin-appointments.js' %}?v=20260425-001"></script>
 {% endblock %}

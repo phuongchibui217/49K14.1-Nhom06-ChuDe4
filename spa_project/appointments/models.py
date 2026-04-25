@@ -30,6 +30,7 @@ class Appointment(models.Model):
         ('ARRIVED', 'Đã đến'),
         ('COMPLETED', 'Đã hoàn thành'),
         ('CANCELLED', 'Đã hủy'),
+        ('REJECTED', 'Đã từ chối'),
     ]
     PAYMENT_STATUS_CHOICES = [
         ('UNPAID', 'Chưa thanh toán'),
@@ -45,52 +46,101 @@ class Appointment(models.Model):
         ('ZALO', 'Zalo'),
     ]
 
-    appointment_code = models.CharField(max_length=10, unique=True, blank=True, verbose_name='Mã lịch hẹn')
+    # ── Mã lịch hẹn ──────────────────────────────────────────────────────────
+    appointment_code = models.CharField(
+        max_length=30, unique=True, blank=True, verbose_name='Mã lịch hẹn'
+    )
+
+    # ── Khách hàng (FK bắt buộc — hệ thống tự tạo nếu chưa có) ──────────────
     customer = models.ForeignKey(
         'customers.CustomerProfile', on_delete=models.CASCADE,
         related_name='appointments', verbose_name='Khách hàng'
     )
-    service = models.ForeignKey(
-        'spa_services.Service', on_delete=models.CASCADE, verbose_name='Dịch vụ'
-    )
+
+    # ── Gói dịch vụ (nullable — khách có thể chọn sau khi tới) ───────────────
     service_variant = models.ForeignKey(
         'spa_services.ServiceVariant', on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='appointments', verbose_name='Gói dịch vụ'
     )
+
+    # ── Phòng (NOT NULL — bắt buộc khi tạo lịch từ slot phòng) ──────────────
     room = models.ForeignKey(
-        Room, on_delete=models.PROTECT, verbose_name='Phòng'
+        Room, on_delete=models.PROTECT,
+        verbose_name='Phòng'
     )
-    booker_name  = models.CharField(max_length=100, blank=True, default='', verbose_name='Tên người đặt')
-    booker_phone = models.CharField(max_length=15,  blank=True, default='', verbose_name='SĐT người đặt')
-    booker_email = models.CharField(max_length=255, blank=True, default='', verbose_name='Email người đặt')
-    customer_name_snapshot = models.CharField(max_length=100, verbose_name='Tên khách (snapshot)')
-    customer_phone_snapshot = models.CharField(max_length=15, blank=True, null=True, verbose_name='SĐT khách (snapshot)')
-    customer_email_snapshot = models.CharField(max_length=255, blank=True, null=True, verbose_name='Email khách (snapshot)')
+
+    # ── Người đặt lịch (booker) ───────────────────────────────────────────────
+    booker_name = models.CharField(max_length=100, verbose_name='Tên người đặt')
+    booker_phone = models.CharField(max_length=15, verbose_name='SĐT người đặt')
+    booker_email = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name='Email người đặt'
+    )
+
+    # ── Snapshot thông tin khách tại thời điểm đặt ───────────────────────────
+    customer_name_snapshot = models.CharField(
+        max_length=100, verbose_name='Tên khách (snapshot)'
+    )
+    customer_phone_snapshot = models.CharField(
+        max_length=15, blank=True, null=True, verbose_name='SĐT khách (snapshot)'
+    )
+    customer_email_snapshot = models.CharField(
+        max_length=255, blank=True, null=True, verbose_name='Email khách (snapshot)'
+    )
+
+    # ── Ngày giờ ─────────────────────────────────────────────────────────────
     appointment_date = models.DateField(db_index=True, verbose_name='Ngày hẹn')
     appointment_time = models.TimeField(verbose_name='Giờ bắt đầu')
-    end_time = models.TimeField(verbose_name='Giờ kết thúc')
-    duration_minutes = models.PositiveIntegerField(verbose_name='Thời lượng (phút)')
-    guests = models.PositiveIntegerField(default=1, verbose_name='Số khách')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='NOT_ARRIVED', db_index=True, verbose_name='Trạng thái')
-    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='UNPAID', verbose_name='Trạng thái thanh toán')
-    source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='DIRECT', verbose_name='Nguồn đặt lịch')
-    notes = models.CharField(max_length=1000, blank=True, null=True, verbose_name='Ghi chú của khách')
-    staff_notes = models.CharField(max_length=1000, blank=True, null=True, verbose_name='Ghi chú nội bộ')
+
+    # ── Trạng thái ────────────────────────────────────────────────────────────
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default='NOT_ARRIVED',
+        db_index=True, verbose_name='Trạng thái'
+    )
+    payment_status = models.CharField(
+        max_length=20, choices=PAYMENT_STATUS_CHOICES, default='UNPAID',
+        verbose_name='Trạng thái thanh toán'
+    )
+    source = models.CharField(
+        max_length=20, choices=SOURCE_CHOICES, default='DIRECT',
+        verbose_name='Nguồn đặt lịch'
+    )
+
+    # ── Ghi chú ───────────────────────────────────────────────────────────────
+    notes = models.CharField(
+        max_length=1000, blank=True, null=True, verbose_name='Ghi chú của khách'
+    )
+    staff_notes = models.CharField(
+        max_length=1000, blank=True, null=True, verbose_name='Ghi chú nội bộ'
+    )
+
+    # ── Audit ─────────────────────────────────────────────────────────────────
     created_by = models.ForeignKey(
         User, on_delete=models.PROTECT,
         related_name='appointments_created', verbose_name='Người tạo'
     )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Thời điểm tạo')
-    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True, verbose_name='Thời điểm cập nhật')
-    deleted_at = models.DateTimeField(null=True, blank=True, verbose_name='Thời điểm xóa')
+    updated_at = models.DateTimeField(
+        auto_now=True, null=True, blank=True, verbose_name='Thời điểm cập nhật'
+    )
+
+    # ── Soft delete ───────────────────────────────────────────────────────────
+    deleted_at = models.DateTimeField(
+        null=True, blank=True, verbose_name='Thời điểm xóa'
+    )
     deleted_by_user = models.ForeignKey(
         User, on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='appointments_deleted', verbose_name='Người xóa'
     )
-    check_in_at = models.DateTimeField(null=True, blank=True, verbose_name='Thời điểm check-in')
-    check_out_at = models.DateTimeField(null=True, blank=True, verbose_name='Thời điểm check-out')
+
+    # ── Check-in / Check-out ──────────────────────────────────────────────────
+    check_in_at = models.DateTimeField(
+        null=True, blank=True, verbose_name='Thời điểm check-in'
+    )
+    check_out_at = models.DateTimeField(
+        null=True, blank=True, verbose_name='Thời điểm check-out'
+    )
 
     class Meta:
         db_table = 'appointments'
@@ -106,18 +156,12 @@ class Appointment(models.Model):
             models.Index(fields=['appointment_date', 'appointment_time'], name='appt_datetime_idx'),
         ]
         constraints = [
-            models.CheckConstraint(check=models.Q(guests__gte=1), name='appointment_guests_positive'),
-            models.CheckConstraint(check=models.Q(duration_minutes__gt=0), name='appointment_duration_positive'),
-            models.CheckConstraint(
-                check=models.Q(end_time__gt=models.F('appointment_time')),
-                name='appointment_end_time_after_start'
-            ),
             models.CheckConstraint(
                 check=models.Q(check_out_at__isnull=True) | models.Q(check_in_at__isnull=True) | models.Q(check_out_at__gte=models.F('check_in_at')),
                 name='appointment_checkout_after_checkin'
             ),
             models.CheckConstraint(
-                check=models.Q(status__in=['PENDING', 'NOT_ARRIVED', 'ARRIVED', 'COMPLETED', 'CANCELLED']),
+                check=models.Q(status__in=['PENDING', 'NOT_ARRIVED', 'ARRIVED', 'COMPLETED', 'CANCELLED', 'REJECTED']),
                 name='appointment_status_valid'
             ),
             models.CheckConstraint(
@@ -130,56 +174,53 @@ class Appointment(models.Model):
             ),
         ]
 
-    # ------------------------------------------------------------------
-    # Customer-facing status (khác với staff/internal status)
-    # NOT_ARRIVED / ARRIVED → "Đã xác nhận" (spa đã xác nhận lịch)
-    # PENDING               → "Chờ xác nhận"
-    # COMPLETED             → "Hoàn thành"
-    # CANCELLED             → "Đã hủy"
-    # ------------------------------------------------------------------
+    # ── Customer-facing status labels ─────────────────────────────────────────
     CUSTOMER_STATUS_LABELS = {
         'PENDING':     'Chờ xác nhận',
         'NOT_ARRIVED': 'Đã xác nhận',
         'ARRIVED':     'Đã xác nhận',
         'COMPLETED':   'Hoàn thành',
         'CANCELLED':   'Đã hủy',
+        'REJECTED':    'Đã từ chối',
     }
-    # CSS key dùng trong template (class="status-badge status-<key>")
     CUSTOMER_STATUS_CSS = {
         'PENDING':     'pending',
         'NOT_ARRIVED': 'confirmed',
         'ARRIVED':     'confirmed',
         'COMPLETED':   'completed',
         'CANCELLED':   'cancelled',
+        'REJECTED':    'cancelled',
     }
 
     @property
     def customer_status_label(self):
-        """Label hiển thị cho khách hàng (không lộ trạng thái vận hành nội bộ)."""
         return self.CUSTOMER_STATUS_LABELS.get(self.status, self.get_status_display())
 
     @property
     def customer_status_css(self):
-        """CSS key cho badge ở trang khách hàng."""
         return self.CUSTOMER_STATUS_CSS.get(self.status, 'pending')
+
+    @property
+    def duration_minutes(self):
+        """Lấy thời lượng từ service_variant nếu có, không lưu vào DB."""
+        if self.service_variant_id:
+            try:
+                return self.service_variant.duration_minutes
+            except Exception:
+                pass
+        return None
 
     def __str__(self):
         return f"{self.appointment_code} - {self.customer_name_snapshot}"
 
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.status == 'COMPLETED' and not self.service_variant_id:
+            raise ValidationError('Phải chọn gói dịch vụ trước khi hoàn tất lịch hẹn.')
+
     def save(self, *args, **kwargs):
         if not self.appointment_code:
             self.appointment_code = self._generate_code()
-        if self.appointment_time and self.service and not self.duration_minutes:
-            # Ưu tiên lấy từ variant nếu có, fallback về variant đầu tiên của service
-            if self.service_variant:
-                self.duration_minutes = self.service_variant.duration_minutes
-            else:
-                first_variant = self.service.variants.order_by('sort_order', 'duration_minutes').first()
-                self.duration_minutes = first_variant.duration_minutes if first_variant else 60
-        if self.appointment_time and self.duration_minutes and not self.end_time:
-            from datetime import datetime, timedelta
-            start_dt = datetime.combine(datetime.today(), self.appointment_time)
-            self.end_time = (start_dt + timedelta(minutes=self.duration_minutes)).time()
         super().save(*args, **kwargs)
 
     @classmethod

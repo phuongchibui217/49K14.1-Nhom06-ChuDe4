@@ -55,7 +55,6 @@ def admin_login(request):
                 else:
                     request.session.set_expiry(0)  # Session cookie
 
-                messages.success(request, f'Chào mừng {user.username}!')
                 return redirect('appointments:admin_appointments')
             else:
                 messages.error(request, 'Tài khoản này không có quyền truy cập trang Admin.')

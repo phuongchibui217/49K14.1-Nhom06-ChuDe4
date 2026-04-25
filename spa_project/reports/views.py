@@ -10,8 +10,8 @@ from datetime import date, timedelta
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Sum, Count, Q
-from django.db.models.functions import TruncDate
+from django.db.models import Sum, Count, Q, F
+
 
 from appointments.models import Appointment, Invoice
 from complaints.models import Complaint
@@ -108,8 +108,7 @@ def admin_reports(request):
             appointment__deleted_at__isnull=True,
             status__in=['PAID', 'PARTIAL'],
         )
-        .annotate(day=TruncDate('appointment__appointment_date'))
-        .values('day')
+        .values(day=F('appointment__appointment_date'))
         .annotate(total=Sum('final_amount'))
         .order_by('day')
     )
@@ -133,13 +132,14 @@ def admin_reports(request):
         .order_by('-booking_count')[:10]
     )
 
-    # Top dịch vụ (số lượt đặt, không tính CANCELLED)
+    # Top dịch vụ (số lượt đặt, không tính CANCELLED, không tính lịch chưa chọn dịch vụ)
     top_services = (
         appts_qs
         .exclude(status='CANCELLED')
-        .values('service__name')
+        .exclude(service_variant__isnull=True)
+        .values('service_variant__service__name')
         .annotate(booking_count=Count('id'))
-        .order_by('-booking_count')[:10]
+        .order_by('-booking_count')[:5]
     )
 
     # Exception 6a: không có dữ liệu
