@@ -114,7 +114,7 @@ def check_room_availability(
         room=room,
         appointment_date=appointment_date,
         deleted_at__isnull=True,
-    ).exclude(status='CANCELLED')
+    ).exclude(status__in=['CANCELLED', 'REJECTED'])
 
     if exclude_appointment_code:
         queryset = queryset.exclude(appointment_code=exclude_appointment_code)
@@ -134,9 +134,7 @@ def check_room_availability(
 
     if overlapping_count >= room.capacity:
         msg = (
-            f'Phòng {room.name} đã đủ {overlapping_count}/{room.capacity} chỗ '
-            f'trong khung giờ {start_time.strftime("%H:%M")}–{end_time.strftime("%H:%M")} '
-            f'ngày {appointment_date.strftime("%d/%m/%Y")}.'
+            f'Phòng đã đủ chỗ ở khung giờ này, vui lòng chọn phòng hoặc thời gian khác.'
         )
         return (False, first_conflict, msg)
 

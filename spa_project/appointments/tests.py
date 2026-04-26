@@ -2,7 +2,7 @@
 Tests cho Appointments app — covers models, APIs, views.
 """
 import json
-from datetime import date, time, timedelta, datetime
+from datetime import date, time
 
 from django.contrib.auth.models import User
 from django.test import Client, TestCase
@@ -49,16 +49,15 @@ def make_service(category, created_by):
 def make_appointment(customer, service, room, created_by, appt_date=None, appt_time=None, status="NOT_ARRIVED"):
     appt_date = appt_date or date.today()
     appt_time = appt_time or time(10, 0)
-    end = (datetime.combine(date.today(), appt_time) + timedelta(minutes=60)).time()
+    variant = service.variants.first()
     return Appointment.objects.create(
         customer=customer,
-        service=service,
+        service_variant=variant,
         room=room,
+        booker_name=customer.full_name,
+        booker_phone=customer.phone,
         appointment_date=appt_date,
         appointment_time=appt_time,
-        end_time=end,
-        duration_minutes=60,
-        guests=1,
         status=status,
         payment_status="UNPAID",
         source="DIRECT",
@@ -90,7 +89,7 @@ class AppointmentModelTests(TestCase):
         self.assertEqual(appt.customer_phone_snapshot, self.profile.phone)
 
     def test_status_choices_valid(self):
-        for status in ["PENDING", "NOT_ARRIVED", "ARRIVED", "COMPLETED", "CANCELLED"]:
+        for status in ["PENDING", "NOT_ARRIVED", "ARRIVED", "COMPLETED", "CANCELLED", "REJECTED"]:
             appt = make_appointment(self.profile, self.svc, self.room, self.staff, status=status)
             self.assertEqual(appt.status, status)
 
@@ -124,7 +123,9 @@ class AppointmentAPITests(TestCase):
         return self.client.cookies.get("csrftoken", type("",(object,),{"value":""})()).value if hasattr(self.client.cookies.get("csrftoken",""), "value") else ""
 
     def post_json(self, url, data):
-        csrf_token = getattr(self.client.cookies.get("csrftoken"), "value", "")
+        if "csrftoken" not in self.client.cookies:
+            self.client.cookies["csrftoken"] = get_random_string(32)
+        csrf_token = self.client.cookies["csrftoken"].value
         return self.client.post(
             url, json.dumps(data), content_type="application/json",
             HTTP_X_CSRFTOKEN=csrf_token,
@@ -193,12 +194,43 @@ class AppointmentAPITests(TestCase):
         )
         self.assertEqual(resp.status_code, 400)
 
+    def test_api_appointment_rebook_cancelled_resets_to_pending(self):
+        appt = make_appointment(self.profile, self.svc, self.room, self.staff, status="CANCELLED")
+        resp = self.post_json(f"/api/appointments/{appt.appointment_code}/rebook/", {})
+        self.assertEqual(resp.status_code, 200)
+        appt.refresh_from_db()
+        self.assertEqual(appt.status, "PENDING")
+        self.assertEqual(resp.json()["appointment"]["apptStatus"], "PENDING")
+
+    def test_api_appointment_rebook_rejected_resets_to_pending(self):
+        appt = make_appointment(self.profile, self.svc, self.room, self.staff, status="REJECTED")
+        resp = self.post_json(f"/api/appointments/{appt.appointment_code}/rebook/", {})
+        self.assertEqual(resp.status_code, 200)
+        appt.refresh_from_db()
+        self.assertEqual(appt.status, "PENDING")
+
+    def test_api_appointment_rebook_rejected_get_returns_json(self):
+        appt = make_appointment(self.profile, self.svc, self.room, self.staff, status="REJECTED")
+        resp = self.client.get(f"/api/appointments/{appt.appointment_code}/rebook/")
+        self.assertEqual(resp.status_code, 200)
+        payload = resp.json()
+        self.assertTrue(payload["success"])
+        self.assertIn("rebook", payload)
+
+    def test_api_appointment_rebook_other_status_returns_json_error(self):
+        resp = self.post_json(f"/api/appointments/{self.appt.appointment_code}/rebook/", {})
+        self.assertEqual(resp.status_code, 400)
+        payload = resp.json()
+        self.assertFalse(payload["success"])
+        self.assertIn("error", payload)
+
     # --- Delete ---
     def test_api_appointment_delete(self):
         code = self.appt.appointment_code
         resp = self.post_json(f"/api/appointments/{code}/delete/", {})
         self.assertEqual(resp.status_code, 200)
-        self.assertFalse(Appointment.objects.filter(appointment_code=code).exists())
+        self.appt.refresh_from_db()
+        self.assertIsNotNone(self.appt.deleted_at)
 
     # --- Pending count ---
     def test_api_pending_count(self):
@@ -253,7 +285,7 @@ class BookingPendingCountApiTests(TestCase):
             image="/media/services/test.jpg",
             created_by=self.admin_user,
         )
-        ServiceVariant.objects.create(
+        self.variant = ServiceVariant.objects.create(
             service=self.service,
             label="60 phut",
             duration_minutes=60,
@@ -263,15 +295,14 @@ class BookingPendingCountApiTests(TestCase):
     def create_appointment(self, *, source="ONLINE", status="PENDING"):
         return Appointment.objects.create(
             customer=self.customer,
-            service=self.service,
+            service_variant=self.variant,
             room=self.room,
+            booker_name=self.customer.full_name,
+            booker_phone=self.customer.phone,
             customer_name_snapshot=self.customer.full_name,
             customer_phone_snapshot=self.customer.phone,
             appointment_date=date(2026, 4, 15),
             appointment_time=time(10, 0),
-            end_time=time(11, 0),
-            duration_minutes=60,
-            guests=1,
             status=status,
             source=source,
             created_by=self.admin_user,
@@ -281,6 +312,7 @@ class BookingPendingCountApiTests(TestCase):
         self.create_appointment(source="ONLINE", status="PENDING")
         self.create_appointment(source="DIRECT", status="PENDING")
         self.create_appointment(source="ONLINE", status="CANCELLED")
+        self.create_appointment(source="ONLINE", status="REJECTED")
 
         client = Client()
         client.force_login(self.admin_user)

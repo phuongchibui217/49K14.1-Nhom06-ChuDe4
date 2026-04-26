@@ -6,112 +6,133 @@
 
 {% block extra_css %}
 <style>
+/* ── WRAPPER ────────────────────────────────────────── */
+.ap-wrap {
+  max-width: 1140px;
+  margin: 0 auto;
+}
+
 /* ── PROFILE HEADER CARD ────────────────────────────── */
 .ap-header {
   background: var(--bg-white);
-  border-radius: var(--r-xl);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-xs);
-  padding: 1.75rem 2rem;
-  margin-bottom: 1.5rem;
+  border-radius: 18px;
+  border: 1px solid rgba(201,169,110,.22);
+  box-shadow: 0 2px 16px rgba(30,58,95,.07);
+  padding: 1.4rem 1.75rem;
+  margin-bottom: 1.25rem;
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+.ap-header::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(201,169,110,.06) 0%, transparent 60%);
+  pointer-events: none;
 }
 .ap-avatar {
-  width: 72px; height: 72px;
+  width: 60px; height: 60px;
   border-radius: 50%;
-  background: #1e3a5f;
-  border: 2px solid #2d5a8e;
-  color: #ffffff;
+  background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 100%);
+  border: 2px solid rgba(201,169,110,.45);
+  color: #fff;
   display: flex; align-items: center; justify-content: center;
-  font-size: 1.75rem; font-weight: 700;
+  font-size: 1.5rem; font-weight: 700;
   flex-shrink: 0;
   font-family: var(--font-ui);
+  box-shadow: 0 2px 10px rgba(30,58,95,.18);
 }
 .ap-header-info { flex: 1; min-width: 0; }
 .ap-header-name {
-  font-size: 1.2rem; font-weight: 700;
+  font-size: 1.05rem; font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: .3rem;
+  margin-bottom: .25rem;
   letter-spacing: -.01em;
+  line-height: 1.3;
 }
 .ap-header-meta {
-  font-size: .82rem; color: var(--text-secondary);
-  display: flex; flex-wrap: wrap; gap: 14px;
-  margin-bottom: .5rem;
+  font-size: .8rem; color: var(--text-secondary);
+  display: flex; flex-wrap: wrap; gap: 12px;
+  margin-bottom: .4rem;
 }
-.ap-header-meta span { display: flex; align-items: center; gap: 5px; }
+.ap-header-meta span { display: flex; align-items: center; gap: 4px; }
 .ap-role-badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  background: var(--gold-muted);
-  border: 1px solid var(--gold-border);
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(201,169,110,.1);
+  border: 1px solid rgba(201,169,110,.35);
   color: var(--gold-hover);
-  padding: .2rem .75rem;
+  padding: .18rem .65rem;
   border-radius: var(--r-pill);
-  font-size: .72rem; font-weight: 700;
-  letter-spacing: .06em; text-transform: uppercase;
+  font-size: .68rem; font-weight: 700;
+  letter-spacing: .07em; text-transform: uppercase;
 }
 
 /* ── SECTION CARD ───────────────────────────────────── */
 .ap-card {
   background: var(--bg-white);
-  border-radius: var(--r-lg);
+  border-radius: 16px;
   border: 1px solid var(--border);
-  box-shadow: var(--shadow-xs);
-  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 8px rgba(30,58,95,.05);
+  margin-bottom: 1.1rem;
   overflow: hidden;
 }
 .ap-card-header {
-  padding: 1rem 1.5rem;
+  padding: .85rem 1.4rem;
   border-bottom: 1px solid var(--border);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: rgba(248,249,252,.6);
 }
 .ap-card-title {
-  font-size: .72rem;
+  font-size: .68rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .1em;
   color: var(--text-secondary);
   margin: 0;
-  display: flex; align-items: center; gap: .5rem;
+  display: flex; align-items: center; gap: .45rem;
 }
-.ap-card-title i { color: var(--gold); font-size: .8rem; }
-.ap-card-body { padding: 1.25rem; }
+.ap-card-title i { color: var(--gold); font-size: .75rem; }
+.ap-card-body { padding: 1.1rem 1.4rem; }
 
 /* ── INFO GRID (view mode) ──────────────────────────── */
 .ap-info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px 24px;
-  max-width: 1000px;
-  margin: 0 auto;
+  gap: 10px 20px;
+  align-items: start;
 }
 .profile-item {
-  padding: 10px 12px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-  background: rgba(0, 0, 0, 0.01);
-  border-radius: 6px;
+  padding: 9px 12px;
+  background: rgba(248,249,252,.7);
+  border: 1px solid rgba(0,0,0,.045);
+  border-radius: 10px;
+  transition: border-color .15s;
+  align-self: start;
 }
+.profile-item:hover { border-color: rgba(201,169,110,.25); }
 .profile-item .label {
-  font-size: .75rem;
-  color: #888;
-  font-weight: 500;
-  margin-bottom: 4px;
+  font-size: .7rem;
+  color: #999;
+  font-weight: 600;
+  margin-bottom: 3px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
 }
 .profile-item .value {
-  font-size: .95rem;
+  font-size: .875rem;
   font-weight: 600;
   color: var(--text-primary);
   line-height: 1.4;
 }
 .profile-item .value.empty {
-  color: #aaa;
+  color: #bbb;
   font-style: italic;
   font-weight: 400;
-  opacity: 0.8;
 }
 
 /* ── STATUS / ROLE INLINE BADGES ────────────────────── */
@@ -130,16 +151,14 @@
 .ap-form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px 24px;
-  max-width: 1000px;
-  margin: 0 auto;
+  gap: 14px 20px;
 }
 .ap-form-full { grid-column: 1 / -1; }
 
 .ap-label {
   display: block;
   font-size: .68rem;
-  letter-spacing: .08em;
+  letter-spacing: .07em;
   text-transform: uppercase;
   color: var(--text-secondary);
   font-weight: 700;
@@ -147,9 +166,10 @@
 }
 .ap-input, .ap-select {
   width: 100%;
-  padding: 9px 13px;
+  height: 44px;
+  padding: 0 13px;
   border: 1.5px solid var(--border);
-  border-radius: var(--r-md);
+  border-radius: 10px;
   font-size: .875rem;
   font-family: var(--font-ui);
   color: var(--text-primary);
@@ -168,7 +188,7 @@
   cursor: not-allowed;
 }
 .ap-field-err {
-  font-size: .75rem;
+  font-size: .72rem;
   color: var(--danger);
   margin-top: 4px;
   display: none;
@@ -178,54 +198,61 @@
 /* ── FORM ACTIONS ───────────────────────────────────── */
 .ap-actions {
   display: flex; gap: 8px; justify-content: flex-end;
-  margin-top: 20px; padding-top: 16px;
+  margin-top: 16px; padding-top: 14px;
   border-top: 1px solid var(--border);
 }
 
 /* ── BUTTONS ────────────────────────────────────────── */
 .btn-ap-edit {
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 18px;
+  padding: 6px 16px;
   border-radius: var(--r-pill);
   border: 1.5px solid var(--gold);
   background: transparent;
   color: var(--gold-hover);
-  font-size: .78rem; font-weight: 600;
+  font-size: .75rem; font-weight: 600;
   cursor: pointer; font-family: var(--font-ui);
-  transition: background .18s;
+  transition: background .18s, color .18s;
+  line-height: 1;
 }
-.btn-ap-edit:hover { background: var(--gold-muted); }
-.btn-ap-edit i { font-size: .68rem; }
+.btn-ap-edit:hover { background: rgba(201,169,110,.12); }
+.btn-ap-edit i { font-size: .65rem; }
 
 .btn-ap-cancel {
-  padding: 7px 18px;
+  padding: 6px 16px;
   border-radius: var(--r-pill);
   border: 1.5px solid var(--border);
   background: transparent;
   color: var(--text-secondary);
-  font-size: .78rem; font-weight: 600;
+  font-size: .75rem; font-weight: 600;
   cursor: pointer; font-family: var(--font-ui);
   transition: border-color .18s, color .18s;
 }
 .btn-ap-cancel:hover { border-color: var(--text-muted); color: var(--text-primary); }
 
 .btn-ap-save {
-  padding: 7px 22px;
+  padding: 6px 20px;
   border-radius: var(--r-pill);
   border: none;
   background: var(--gold);
   color: #fff;
-  font-size: .78rem; font-weight: 700;
+  font-size: .75rem; font-weight: 700;
   cursor: pointer; font-family: var(--font-ui);
   transition: background .18s, box-shadow .18s;
 }
 .btn-ap-save:hover { background: var(--gold-hover); box-shadow: var(--shadow-gold); }
 
 /* ── PASSWORD SECTION ───────────────────────────────── */
+.ap-pw-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 20px;
+}
+.ap-pw-full { grid-column: 1 / -1; max-width: 560px; }
 .ap-pw-wrap { position: relative; }
-.ap-pw-wrap .ap-input { padding-right: 40px; }
+.ap-pw-wrap .ap-input { padding-right: 42px; }
 .ap-pw-toggle {
-  position: absolute; right: 12px; top: 50%;
+  position: absolute; right: 11px; top: 50%;
   transform: translateY(-50%);
   background: none; border: none; padding: 0;
   color: var(--text-muted); cursor: pointer;
@@ -233,14 +260,17 @@
   transition: color .18s;
 }
 .ap-pw-toggle:hover { color: var(--text-primary); }
-.ap-pw-toggle svg { width: 17px; height: 17px; display: block; }
+.ap-pw-toggle svg { width: 16px; height: 16px; display: block; }
 
 /* ── RESPONSIVE ─────────────────────────────────────── */
 @media (max-width: 768px) {
   .ap-header { flex-direction: column; text-align: center; }
   .ap-header-meta { justify-content: center; }
-  .ap-info-grid, .ap-form-grid { grid-template-columns: 1fr; }
-  .ap-form-full { grid-column: auto; }
+  .ap-info-grid,
+  .ap-form-grid,
+  .ap-pw-grid { grid-template-columns: 1fr; }
+  .ap-form-full,
+  .ap-pw-full { grid-column: auto; max-width: 100%; }
   .ap-actions { flex-direction: column-reverse; }
   .btn-ap-cancel, .btn-ap-save { width: 100%; text-align: center; justify-content: center; }
 }
@@ -248,6 +278,7 @@
 {% endblock %}
 
 {% block content %}
+<div class="ap-wrap">
 
 {% if messages %}{% for msg in messages %}
 <div class="alert alert-{{ msg.tags|default:'info' }} alert-dismissible fade show mb-3" role="alert">
@@ -445,9 +476,9 @@
     <form method="post" action="{% url 'admin_panel:admin_profile' %}" onsubmit="return validatePassword()">
       {% csrf_token %}
       <input type="hidden" name="action" value="change_password">
-      <div class="ap-form-grid">
+      <div class="ap-pw-grid">
 
-        <div class="ap-form-full">
+        <div class="ap-pw-full">
           <label class="ap-label">Mật khẩu hiện tại <span style="color:var(--danger)">*</span></label>
           <div class="ap-pw-wrap">
             <input class="ap-input" type="password" id="currentPassword" name="current_password" required>
@@ -491,6 +522,7 @@
   </div>
 </div>
 
+</div>{# /ap-wrap #}
 {% endblock %}
 
 {% block extra_js %}

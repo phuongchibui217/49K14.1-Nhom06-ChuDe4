@@ -97,8 +97,8 @@
                         <strong>Trạng thái:</strong>
                     </div>
                     <div class="col-6">
-                        <span class="status-badge status-{{ appointment.status }}">
-                            {{ appointment.get_status_display }}
+                        <span class="status-badge status-{{ appointment.customer_status_css }}">
+                            {{ appointment.customer_status_label }}
                         </span>
                     </div>
                 </div>

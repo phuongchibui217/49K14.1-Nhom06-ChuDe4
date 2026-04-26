@@ -73,9 +73,11 @@ def serialize_appointment(appointment):
         'apptStatus':  appointment.status,
         'payStatus':   appointment.payment_status,
         'source':      appointment.source,
+        'cancelledBy': appointment.cancelled_by or '',
         # Ghi chú
         'note':        appointment.notes or '',
         'staffNotes':  appointment.staff_notes or '',
+        'customerNote': (appointment.customer.notes or '') if appointment.customer_id else '',
     }
 
 

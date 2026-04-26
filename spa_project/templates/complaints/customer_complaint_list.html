@@ -120,28 +120,82 @@
         box-shadow: var(--shadow-sm);
         border: 1px solid var(--border);
     }
-    .empty-state i { font-size: 3.5rem; color: var(--text-muted); margin-bottom: 1.25rem; opacity: .5; }
+    .empty-state > i { font-size: 3.5rem; color: var(--text-muted); margin-bottom: 1.25rem; opacity: .5; display: block; }
     .empty-state h4 { color: var(--text-primary); font-weight: 600; margin-bottom: .5rem; }
     .empty-state p  { color: var(--text-secondary); margin-bottom: 1.5rem; }
 
-    /* Buttons */
-    .btn-cp-save {
-        padding: 8px 20px;
-        border-radius: var(--r-pill);
-        border: none;
-        background: var(--gold);
-        color: #fff;
-        font-size: .82rem;
-        font-weight: 600;
-        cursor: pointer;
-        font-family: var(--font-ui);
-        transition: background .18s, box-shadow .18s;
-        text-decoration: none;
+    /* Reset icon bên trong nút ở empty-state — không bị ảnh hưởng bởi rule trên */
+    .empty-state .btn-cp-save i {
+        font-size: 13px !important;
+        opacity: 1 !important;
+        color: #fff !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        line-height: 1 !important;
+        margin: 0 !important;
+    }
+
+    /* Nút CTA empty state — outline style, to hơn nhẹ, mang tính gợi ý */
+    .btn-cp-first {
         display: inline-flex;
         align-items: center;
-        gap: .4rem;
+        justify-content: center;
+        gap: 8px;
+        padding: 13px 36px;
+        background: transparent;
+        color: var(--gold-hover);
+        border: 2px solid var(--gold);
+        border-radius: var(--r-pill);
+        font-size: .9rem;
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-decoration: none;
+        transition: all .25s ease;
+        font-family: var(--font-ui);
     }
-    .btn-cp-save:hover { background: var(--gold-hover); color: #fff; box-shadow: var(--shadow-gold); }
+    .btn-cp-first i {
+        font-size: 13px !important;
+        opacity: 1 !important;
+        color: inherit !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        line-height: 1 !important;
+        margin: 0 !important;
+    }
+    .btn-cp-first:hover {
+        background: var(--gold);
+        color: #fff;
+        box-shadow: var(--shadow-gold);
+        transform: translateY(-2px);
+    }
+
+    /* Buttons */
+    .btn-cp-save {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 14px 32px;
+        background: rgba(218, 185, 135, 0.9);
+        color: #fff;
+        border-radius: 50px;
+        font-size: 14px;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        text-decoration: none;
+        text-transform: uppercase;
+        transition: all .3s ease;
+        border: 1.5px solid rgba(201, 169, 110, 0.3);
+        box-shadow: 0 6px 20px rgba(201, 169, 110, 0.25);
+        cursor: pointer;
+        font-family: var(--font-ui);
+    }
+    .btn-cp-save:hover {
+        background: rgba(218, 185, 135, 1);
+        color: #fff;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 28px rgba(218, 185, 135, 0.4);
+    }
     .btn-cp-outline {
         padding: 8px 20px;
         border-radius: var(--r-pill);
@@ -220,8 +274,8 @@
             <i class="fas fa-inbox"></i>
             <h4>Bạn chưa có khiếu nại nào</h4>
             <p>Nếu bạn có vấn đề cần phản ánh, hãy gửi khiếu nại để được chúng tôi hỗ trợ.</p>
-            <a href="{% url 'complaints:customer_complaint_create' %}" class="btn-cp-save">
-                <i class="fas fa-plus"></i>Gửi khiếu nại
+            <a href="{% url 'complaints:customer_complaint_create' %}" class="btn-cp-first">
+                <i class="fas fa-paper-plane"></i>Gửi khiếu nại đầu tiên
             </a>
         </div>
         {% endif %}

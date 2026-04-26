@@ -30,8 +30,10 @@
   --status-confirm-text:  #1e40af;
   --status-done-bg:       #f0fdf4;
   --status-done-text:     #166534;
-  --status-cancel-bg:     #fff1f2;
-  --status-cancel-text:   #9f1239;
+  --status-cancel-bg:     #f3f4f6;
+  --status-cancel-text:   #4b5563;
+  --status-reject-bg:     #fee2e2;
+  --status-reject-text:   #b91c1c;
 
   /* Semantic */
   --danger:         #ef4444;
@@ -592,6 +594,7 @@ input[type="time"] {
                      .status-arrived    { background: var(--status-confirm-bg);  color: var(--status-confirm-text); }
 .lux-badge-done,     .status-completed  { background: var(--status-done-bg);     color: var(--status-done-text); }
 .lux-badge-cancel,   .status-cancelled  { background: var(--status-cancel-bg);   color: var(--status-cancel-text); }
+.status-rejected                        { background: var(--status-reject-bg);   color: var(--status-reject-text); }
 .lux-badge-gold                         { background: var(--gold-muted);          color: var(--gold-hover); }
 
 /* Admin status badges */
@@ -600,6 +603,7 @@ input[type="time"] {
 .status-badge.confirmed,
 .status-badge.completed  { background: var(--status-done-bg); color: var(--status-done-text); }
 .status-badge.cancelled  { background: var(--bg-subtle);      color: var(--text-secondary); }
+.status-badge.rejected   { background: var(--danger-light);   color: var(--danger-text); }
 
 /* ── FILTER TABS ────────────────────────────────────────── */
 .filter-tabs,
@@ -987,6 +991,9 @@ input[type="time"] {
 /* ── BOOTSTRAP OVERRIDES (global compat) ────────────────── */
 /* Ensures any remaining btn-warning / text-warning uses luxury gold */
 .btn-warning {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
   background: var(--gold) !important;
   border-color: var(--gold) !important;
   color: #fff !important;

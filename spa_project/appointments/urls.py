@@ -31,5 +31,6 @@ urlpatterns = [
     path('api/appointments/<str:appointment_code>/delete/', api.api_appointment_delete, name='api_appointment_delete'),
     path('api/booking-requests/', api.api_booking_requests, name='api_booking_requests'),
     path('api/booking/pending-count/', api.api_booking_pending_count, name='api_booking_pending_count'),
+    path('api/appointments/customer-cancelled-recent/', api.api_customer_cancelled_recent, name='api_customer_cancelled_recent'),
     path('api/customers/search/', api.api_customer_search, name='api_customer_search'),
 ]

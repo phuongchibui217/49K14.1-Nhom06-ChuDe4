@@ -537,7 +537,8 @@
 .status-not_arrived{ background: #ffe7b8; }
 .status-arrived{ background: #c9f3ff; }
 .status-completed{ background: #ccefd9; }
-.status-cancelled{ background: #ffd0d0; opacity:.7; text-decoration: line-through; }
+.status-cancelled{ background: #e5e7eb; color:#374151; opacity:.85; text-decoration: line-through; }
+.status-rejected{ background: #fecaca; color:#7f1d1d; border:1px solid #ef4444; }
 
 .hint{
   font-size:.9rem; color:#6b7280;

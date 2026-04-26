@@ -65,7 +65,7 @@ def _redirect_by_role(request, user, show_welcome=False):
 
     try:
         profile = user.customer_profile
-        return redirect('appointments:my_appointments')
+        return redirect('pages:home')
     except CustomerProfile.DoesNotExist:
         pass
 
@@ -103,7 +103,7 @@ def register(request):
             if user is not None:
                 login(request, user)
                 messages.success(request, f'Đăng ký thành công! Chào mừng {profile.full_name}')
-                return redirect('appointments:my_appointments')
+                return redirect('pages:home')
             else:
                 # Tài khoản đã tạo nhưng authenticate thất bại (hiếm gặp)
                 messages.success(request, f'Đăng ký thành công! Vui lòng đăng nhập.')

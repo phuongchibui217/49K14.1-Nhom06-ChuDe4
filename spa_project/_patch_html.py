@@ -67,13 +67,6 @@ new_create_mode = '''      {# CREATE MODE — 3-panel redesign: Người đặt 
                 <span style="font-weight:600;font-size:.875rem;color:#1f2937;">Thông tin từng khách</span>
               </div>
               <div class="d-flex align-items-center gap-2 flex-wrap">
-                {# Progress #}
-                <div class="cm-progress-wrap" id="guestProgress">
-                  <span class="cm-progress-label" id="guestProgressLabel">0/0 đã đủ</span>
-                  <div class="cm-progress-bar-bg">
-                    <div class="cm-progress-bar-fill" id="guestProgressFill" style="width:0%"></div>
-                  </div>
-                </div>
                 <button type="button" id="btnAddGuest" class="cm-btn-add-guest">
                   <i class="fas fa-plus me-1"></i>Thêm khách
                 </button>

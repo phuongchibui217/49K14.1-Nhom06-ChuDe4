@@ -145,6 +145,7 @@ def my_appointments(request):
             'confirmed': ['NOT_ARRIVED', 'ARRIVED'],
             'completed': ['COMPLETED'],
             'cancelled': ['CANCELLED'],
+            'rejected':  ['REJECTED'],
         }
 
         if status_filter != 'all' and status_filter in CUSTOMER_STATUS_MAP:
@@ -158,6 +159,7 @@ def my_appointments(request):
             'confirmed': base_qs.filter(status__in=['NOT_ARRIVED', 'ARRIVED']).count(),
             'completed': base_qs.filter(status='COMPLETED').count(),
             'cancelled': base_qs.filter(status='CANCELLED').count(),
+            'rejected':  base_qs.filter(status='REJECTED').count(),
         }
         status_counts['all'] = base_qs.count()
 
@@ -195,6 +197,7 @@ def cancel_appointment(request, appointment_id):
 
     if request.method == 'POST':
         appointment.status = 'CANCELLED'
+        appointment.cancelled_by = 'customer'
         appointment.save()
         messages.success(request, f'Đã hủy lịch hẹn {appointment.appointment_code}.')
         return redirect('appointments:my_appointments')

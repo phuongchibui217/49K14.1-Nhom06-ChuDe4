@@ -124,6 +124,13 @@ class Appointment(models.Model):
         auto_now=True, null=True, blank=True, verbose_name='Thời điểm cập nhật'
     )
 
+    # ── Hủy lịch ─────────────────────────────────────────────────────────────
+    cancelled_by = models.CharField(
+        max_length=10, blank=True, null=True,
+        choices=[('customer', 'Khách hủy'), ('admin', 'Admin hủy')],
+        verbose_name='Người hủy'
+    )
+
     # ── Soft delete ───────────────────────────────────────────────────────────
     deleted_at = models.DateTimeField(
         null=True, blank=True, verbose_name='Thời điểm xóa'
@@ -189,7 +196,7 @@ class Appointment(models.Model):
         'ARRIVED':     'confirmed',
         'COMPLETED':   'completed',
         'CANCELLED':   'cancelled',
-        'REJECTED':    'cancelled',
+        'REJECTED':    'rejected',
     }
 
     @property
