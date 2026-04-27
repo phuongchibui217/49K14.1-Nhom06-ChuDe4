@@ -11,10 +11,13 @@ urlpatterns = [
     path('register/', views.register, name='register'),
     path('logout/', views.logout_view, name='logout'),
 
-    # Password reset — dùng Django built-in
+    # Password reset — dùng Django built-in views
+    # email_template_name: plain-text fallback cho email client cũ
+    # html_email_template_name: HTML email gửi qua SendGrid (hiển thị đẹp)
     path('quen-mat-khau/', auth_views.PasswordResetView.as_view(
         template_name='accounts/password_reset.html',
         email_template_name='accounts/password_reset_email.txt',
+        html_email_template_name='accounts/password_reset_email.html',
         success_url='/quen-mat-khau/da-gui/',
     ), name='password_reset'),
 
