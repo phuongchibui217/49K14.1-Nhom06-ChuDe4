@@ -1,343 +1,9 @@
 {% extends 'spa/base.html' %}
 {% block title %}Đặt lịch hẹn - Spa ANA{% endblock %}
 
+{% load static %}
 {% block extra_css %}
-<style>
-/* ═══════════════════════════════════════════════════════════
-   LUXURY SPA BOOKING PAGE — REDESIGNED
-   ═══════════════════════════════════════════════════════════ */
-
-/* ── PAGE HEADER ──────────────────────────────────────────── */
-/* Dùng global .page-header từ style.css — đồng bộ với about & services */
-.page-header {
-  margin-bottom: 2.5rem;
-}
-
-/* ── MAIN CONTAINER ───────────────────────────────────────── */
-.booking-wrap {
-  max-width: 1140px;
-  margin: 0 auto;
-  padding: 0 1.25rem 3.5rem;
-}
-
-/* ── GRID LAYOUT ──────────────────────────────────────────── */
-.booking-grid {
-  display: grid;
-  grid-template-columns: 360px 1fr;
-  gap: 2rem;
-  align-items: start;
-}
-
-/* ── CARDS ────────────────────────────────────────────────── */
-.bk-card {
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  padding: 1.75rem;
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow .2s ease;
-}
-
-.bk-card:hover {
-  box-shadow: var(--shadow-md);
-}
-
-/* ── LEFT SIDEBAR ─────────────────────────────────────────── */
-.customer-sidebar {
-  position: sticky;
-  top: 2rem;
-}
-
-/* ── RIGHT COLUMN ─────────────────────────────────────────── */
-.booking-main {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-/* ── SECTION HEADERS ──────────────────────────────────────── */
-.bk-section-title {
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--text-secondary);
-  margin-bottom: 1.5rem;
-  padding-bottom: 0.875rem;
-  border-bottom: 2px solid var(--gold-light);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.bk-section-title i {
-  color: var(--gold);
-  font-size: 0.95rem;
-}
-
-/* ── FORM FIELDS ──────────────────────────────────────────── */
-.bk-field {
-  margin-bottom: 1.25rem;
-}
-
-.bk-field:last-child {
-  margin-bottom: 0;
-}
-
-.bk-label {
-  display: block;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  margin-bottom: 0.45rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.bk-label .req {
-  color: var(--danger);
-  margin-left: 2px;
-}
-
-/* ── INPUTS ───────────────────────────────────────────────── */
-.bk-input,
-.bk-select,
-.bk-textarea,
-.lux-input,
-.lux-select,
-.lux-textarea {
-  width: 100%;
-  background: #fff;
-  border: 1.5px solid var(--border);
-  border-radius: var(--r-md);
-  padding: 0.75rem 1rem;
-  font-size: 0.95rem;
-  color: var(--text-primary);
-  font-family: var(--font-ui);
-  transition: border-color .2s, box-shadow .2s;
-}
-
-.bk-input:focus,
-.bk-select:focus,
-.bk-textarea:focus,
-.lux-input:focus,
-.lux-select:focus,
-.lux-textarea:focus {
-  outline: none;
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px var(--gold-muted);
-}
-
-.bk-input::placeholder,
-.bk-textarea::placeholder {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
-.bk-input[type="date"],
-.bk-input[type="time"],
-.lux-input[type="date"],
-.lux-input[type="time"] {
-  font-weight: 500;
-  font-size: 1rem;
-  padding: 0.85rem 1rem;
-  cursor: pointer;
-}
-
-.bk-textarea,
-.lux-textarea {
-  min-height: 130px;
-  resize: vertical;
-  line-height: 1.6;
-}
-
-.bk-select,
-.lux-select {
-  cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 1rem center;
-  padding-right: 2.5rem;
-}
-
-/* ── FIELD ERROR ──────────────────────────────────────────── */
-.bk-error {
-  color: var(--danger);
-  font-size: 0.75rem;
-  margin-top: 0.4rem;
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-
-.bk-error::before {
-  content: "⚠";
-}
-
-/* ── SERVICE INFO BOX ─────────────────────────────────────── */
-.service-info-box {
-  background: linear-gradient(135deg, var(--gold-muted) 0%, rgba(249,250,251,.5) 100%);
-  border: 1px solid var(--gold-border);
-  border-radius: var(--r-md);
-  padding: 1.1rem 1.25rem;
-  margin-top: 1rem;
-}
-
-.service-info-item {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 0.9rem;
-  color: var(--text-primary);
-  margin-bottom: 0.6rem;
-}
-
-.service-info-item:last-child { margin-bottom: 0; }
-
-.service-info-item i {
-  color: var(--gold);
-  font-size: 1.1rem;
-  width: 20px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.service-info-item .value {
-  font-weight: 700;
-  color: var(--gold-hover);
-  font-size: 1.05rem;
-  margin-left: auto;
-}
-
-/* ── BOOKING SUMMARY ──────────────────────────────────────── */
-.booking-summary {
-  background: linear-gradient(135deg,
-    rgba(201,169,110,.05) 0%,
-    rgba(249,248,245,.9) 100%);
-  border: 1.5px solid var(--gold-border);
-  border-radius: var(--r-lg);
-  padding: 1.5rem;
-  margin-top: 0.5rem;
-}
-
-.booking-summary .bk-section-title {
-  border-bottom-color: var(--gold);
-  margin-bottom: 1rem;
-  padding-bottom: 0.7rem;
-  font-size: 0.72rem;
-}
-
-.summary-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-  padding: 0.65rem 0;
-  border-bottom: 1px solid var(--border);
-  font-size: 0.875rem;
-}
-
-.summary-row:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.summary-row .s-label {
-  color: var(--text-secondary);
-  font-weight: 500;
-  flex-shrink: 0;
-}
-
-.summary-row .s-value {
-  color: var(--text-primary);
-  font-weight: 600;
-  text-align: right;
-}
-
-.summary-row.total {
-  margin-top: 0.5rem;
-  padding-top: 1rem;
-  border-top: 2px solid var(--gold-light);
-  font-size: 1rem;
-}
-
-.summary-row.total .s-label {
-  color: var(--text-primary);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.summary-row.total .s-value {
-  color: var(--gold-hover);
-  font-size: 1.3rem;
-  font-weight: 700;
-}
-
-/* ── SUBMIT BUTTON ────────────────────────────────────────── */
-.btn-book {
-  width: 100%;
-  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-hover) 100%);
-  color: #fff;
-  border: none;
-  border-radius: var(--r-pill);
-  padding: 1rem 2rem;
-  font-size: 1.05rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-  transition: all .3s ease;
-  box-shadow: 0 4px 14px rgba(201,169,110,.28);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  font-family: var(--font-ui);
-}
-
-.btn-book:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 22px rgba(201,169,110,.38);
-  background: linear-gradient(135deg, var(--gold-hover) 0%, var(--gold) 100%);
-  color: #fff;
-}
-
-.btn-book:active {
-  transform: translateY(0);
-}
-
-.btn-book i { font-size: 1.1rem; }
-
-/* ── ALERT ────────────────────────────────────────────────── */
-.alert-danger-ana {
-  background: var(--danger-light);
-  border: 1px solid rgba(239,68,68,.25);
-  border-radius: var(--r-md);
-  padding: 1rem 1.25rem;
-  color: var(--danger-text);
-  margin-bottom: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-size: 0.9rem;
-}
-
-/* ── RESPONSIVE ───────────────────────────────────────────── */
-@media (max-width: 991px) {
-  .booking-grid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-  .customer-sidebar { position: static; }
-}
-
-@media (max-width: 768px) {
-  .booking-wrap { padding: 0 1rem 2.5rem; }
-  .bk-card { padding: 1.4rem; }
-  .btn-book { padding: .875rem 1.5rem; font-size: 1rem; }
-}
-</style>
+<link rel="stylesheet" href="{% static 'css/booking.css' %}?v={% now 'His' %}">
 {% endblock %}
 
 {% block content %}
@@ -388,7 +54,7 @@
                    name="customer_name_snapshot"
                    id="customerNameSnapshot"
                    class="bk-input"
-                   value="{{ customer_profile.full_name|default:request.user.get_full_name|default:request.user.username }}"
+                   value="{{ customer_profile.full_name }}"
                    placeholder="Nhập họ và tên"
                    required>
           </div>
@@ -399,7 +65,7 @@
                    name="customer_phone_snapshot"
                    id="customerPhoneSnapshot"
                    class="bk-input"
-                   value="{{ customer_profile.phone|default:'' }}"
+                   value="{{ customer_profile.phone }}"
                    placeholder="Nhập số điện thoại">
           </div>
 
@@ -409,7 +75,7 @@
                    name="customer_email_snapshot"
                    id="customerEmailSnapshot"
                    class="bk-input"
-                   value="{{ customer_profile.user.email|default:'' }}"
+                   value="{{ customer_profile.user.email }}"
                    placeholder="Nhập email">
           </div>
         </div>
@@ -433,6 +99,7 @@
                   Chọn dịch vụ <span class="req">*</span>
                 </label>
                 {{ form.service }}
+                <!-- thông báo lỗi của input này -->
                 {% for e in form.service.errors %}
                   <div class="bk-error">{{ e }}</div>
                 {% endfor %}
@@ -490,6 +157,7 @@
               </div>
 
               <!-- Booking Summary (hiện khi đủ thông tin) -->
+              <!-- Ẩn box này có đến khi điền đầy đủ thông tin  -->
               <div class="booking-summary" id="bookingSummary" style="display:none;">
                 <h5 class="bk-section-title">
                   <i class="fas fa-clipboard-check"></i>
@@ -544,172 +212,417 @@
 </div>
 {% endblock %}
 
+
 {% block extra_js %}
 <script>
+/**
+ * ═══════════════════════════════════════════════════════════════════════
+ * JAVASCRIPT CHO TRANG ĐẶT LỊCH (BOOKING PAGE)
+ * ═══════════════════════════════════════════════════════════════════════
+ *
+ * Chức năng chính:
+ * 1. Load danh sách dịch vụ và gói dịch vụ từ backend
+ * 2. Tự động chọn dịch vụ nếu user click từ trang services
+ * 3. Cập nhật gói dịch vụ khi user chọn dịch vụ khác
+ * 4. Validate giờ đặt lịch (không được vượt giờ đóng cửa 21:00)
+ * 5. Hiển thị tóm tắt booking (summary) khi user chọn đủ thông tin
+ * 6. Prevent submit form nếu giờ không hợp lệ
+ *
+ * ─────────────────────────────────────────────────────────────────────
+ */
+
+// ─────────────────────────────────────────────────────────────────────
+// 1. LẤY DỮ LIỆU TỪ DJANGO BACKEND
+// ─────────────────────────────────────────────────────────────────────
+// Django render biến services_variants_json thành JSON object
+// Ví dụ: {"1": [{"id": 1, "label": "Gói 60 phút", "price": 500000, ...}]}
+// ─────────────────────────────────────────────────────────────────────
 const servicesVariantsData = {{ services_variants_json|safe }};
 
+// ─────────────────────────────────────────────────────────────────────
+// 2. CHẠY KHI TRANG WEB ĐÃ LOAD XONG (DOMContentLoaded)
+// ─────────────────────────────────────────────────────────────────────
+// Tương tự như $(document).ready() trong jQuery
+// ─────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function () {
-  // ── Date setup ──
-  const dateInput = document.getElementById('{{ form.appointment_date.id_for_label }}');
-  const today = new Date().toISOString().split('T')[0];
-  if (dateInput) { dateInput.setAttribute('min', today); dateInput.value = today; }
 
-  // ── Elements ──
+  // ═══════════════════════════════════════════════════════════════════
+  // A. SETUP NGÀY ĐẶT LỊCH (DATE INPUT)
+  // ═══════════════════════════════════════════════════════════════════
+  // - Lấy thẻ <input type="date"> từ DOM
+  // - Set ngày tối thiểu = hôm nay (không chọn ngày quá khứ)
+  // - Set giá trị mặc định = hôm nay
+  // ═══════════════════════════════════════════════════════════════════
+
+  // Lấy thẻ input date bằng ID (Django tự sinh id="id_appointment_date")
+  const dateInput = document.getElementById('{{ form.appointment_date.id_for_label }}');
+
+  // Tính ngày hôm nay (format: YYYY-MM-DD, ví dụ: 2026-04-28)
+  const today = new Date().toISOString().split('T')[0];
+
+  // Nếu thẻ input tồn tại:
+  if (dateInput) {
+    // Set attribute min="2026-04-28" → User không chọn ngày trước đó
+    dateInput.setAttribute('min', today);
+
+    // Set giá trị mặc định = hôm nay → User không cần chọn lại
+    dateInput.value = today;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // B. LẤY CÁC THẺ HTML CẦN DÙNG (DOM ELEMENTS)
+  // ═══════════════════════════════════════════════════════════════════
+  // Tương tự như: $("#serviceSelect") trong jQuery
+  // ─────────────────────────────────────────────────────────────────
+
+  // Dropdown chọn dịch vụ (Massage, Facial, Gội đầu...)
   const serviceSelect = document.getElementById('{{ form.service.id_for_label }}');
+
+  // Dropdown chọn gói dịch vụ (Gói 60 phút, Gói 90 phút...)
   const variantSelect = document.getElementById('id_service_variant');
+
+  // Thẻ span hiển thị thời lượng (ví dụ: "60 phút")
   const durationSpan  = document.getElementById('serviceDuration');
+
+  // Thẻ span hiển thị giá tiền (ví dụ: "500.000 VNĐ")
   const priceSpan     = document.getElementById('servicePrice');
+
+  // Input chọn giờ đặt lịch
   const timeInput     = document.getElementById('{{ form.appointment_time.id_for_label }}');
 
-  // ── Summary elements ──
-  const summaryBox     = document.getElementById('bookingSummary');
-  const sumService     = document.getElementById('summaryService');
-  const sumVariant     = document.getElementById('summaryVariant');
-  const sumDate        = document.getElementById('summaryDate');
-  const sumTime        = document.getElementById('summaryTime');
-  const sumTotal       = document.getElementById('summaryTotal');
+  // ═══════════════════════════════════════════════════════════════════
+  // C. LẤY CÁC THẺ TRONG SUMMARY BOX (TÓM TẮT BOOKING)
+  // ═══════════════════════════════════════════════════════════════════
+  // Summary box hiển thị tóm tắt khi user chọn đủ thông tin
+  // ═══════════════════════════════════════════════════════════════════
 
-  // ── Pre-select from URL ──
+  const summaryBox     = document.getElementById('bookingSummary');  // Cả box summary
+  const sumService     = document.getElementById('summaryService');  // Tên dịch vụ
+  const sumVariant     = document.getElementById('summaryVariant');  // Tên gói dịch vụ
+  const sumDate        = document.getElementById('summaryDate');     // Ngày đặt
+  const sumTime        = document.getElementById('summaryTime');     // Giờ đặt
+  const sumTotal       = document.getElementById('summaryTotal');    // Tổng tiền
+
+  // ═══════════════════════════════════════════════════════════════════
+  // D. PRE-SELECT TỪ URL (CHỌN TRƯỚC TỪ LINK)
+  // ═══════════════════════════════════════════════════════════════════
+  // Nếu user click "Đặt lịch" từ trang services detail
+  // URL sẽ là: /booking/?service_id=3&variant=5
+  // Script này sẽ tự động chọn dịch vụ 3 và variant 5
+  // ═══════════════════════════════════════════════════════════════════
+
+  // Đọc parameters từ URL (?service_id=3&variant=5)
   const urlParams = new URLSearchParams(window.location.search);
-  const serviceIdFromUrl = urlParams.get('service_id') || urlParams.get('service');
-  const variantIdFromUrl = urlParams.get('variant');
-  if (serviceIdFromUrl && serviceSelect) serviceSelect.value = serviceIdFromUrl;
 
-  // ── Update variant dropdown ──
+  // Lấy service_id từ URL (có thể là ?service_id= hoặc ?service=)
+  const serviceIdFromUrl = urlParams.get('service_id') || urlParams.get('service');
+
+  // Lấy variant ID từ URL (?variant=5)
+  const variantIdFromUrl = urlParams.get('variant');
+
+  // Nếu có service_id trong URL → Tự động chọn dropdown
+  if (serviceIdFromUrl && serviceSelect) {
+    serviceSelect.value = serviceIdFromUrl;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // E. FUNCTION: CẬP NHẬT DROPDOWN GÓI DỊCH VỤ
+  // ═══════════════════════════════════════════════════════════════════
+  // Khi user chọn "Massage" → Load các gói Massage
+  // Khi user chọn "Facial" → Load các gói Facial
+  // ═══════════════════════════════════════════════════════════════════
   function updateVariants() {
+    // Nếu thẻ select không tồn tại → Thoát
     if (!serviceSelect || !variantSelect) return;
+
+    // Lấy danh sách variants của dịch vụ đã chọn
+    // Ví dụ: serviceSelect.value = "1" → variants = [{"id": 1, ...}, {"id": 2, ...}]
     const variants = servicesVariantsData[serviceSelect.value] || [];
+
+    // Xóa tất cả options cũ
     variantSelect.innerHTML = '<option value="">— Chọn gói dịch vụ —</option>';
+
+    // Loop qua mỗi variant → Tạo <option> mới
     variants.forEach(function (v) {
+      // Tạo thẻ <option> mới
       const opt = document.createElement('option');
+
+      // Set value = ID của variant
       opt.value = v.id;
+
+      // Set text hiển thị: "Gói 60 phút — 500.000 VNĐ (60 phút)"
       opt.textContent = v.label + ' — ' + v.price.toLocaleString('vi-VN') + ' VNĐ (' + v.duration_minutes + ' phút)';
-      opt.dataset.duration = v.duration_minutes;
-      opt.dataset.price    = v.price;
-      opt.dataset.label    = v.label;
+
+      // Lưu thông tin vào data-attributes (để dùng sau này)
+      opt.dataset.duration = v.duration_minutes;  // Thời lượng (phút)
+      opt.dataset.price    = v.price;             // Giá tiền
+      opt.dataset.label    = v.label;             // Tên gói
+
+      // Thêm option vào dropdown
       variantSelect.appendChild(opt);
     });
+
+    // Nếu có variant ID từ URL → Tự động chọn
     if (variantIdFromUrl) {
       variantSelect.value = variantIdFromUrl;
-    } else if (variants.length === 1) {
+    }
+    // Nếu chỉ có 1 variant duy nhất → Tự động chọn
+    else if (variants.length === 1) {
       variantSelect.value = variants[0].id;
     }
+
+    // Cập nhật thông tin hiển thị và summary
     updateServiceInfo();
     updateSummary();
   }
 
-  // ── Constants ──
-  const SPA_CLOSE_HOUR = 21;
-  const SPA_CLOSE_MINUTES = 0;
-  const DEFAULT_DURATION = 60;
+  // ═══════════════════════════════════════════════════════════════════
+  // F. HẰNG SỐ (CONSTANTS)
+  // ═══════════════════════════════════════════════════════════════════
+  const SPA_CLOSE_HOUR = 21;      // Spa đóng cửa lúc 21h
+  const SPA_CLOSE_MINUTES = 0;    // 0 phút
+  const DEFAULT_DURATION = 60;    // Thời lượng mặc định 60 phút
 
-  // ── Tính giờ kết thúc và validate ──
+  // ═══════════════════════════════════════════════════════════════════
+  // G. FUNCTION: LẤY THỜI LƯỢNG CỦA GÓI ĐÃ CHỌN
+  // ═══════════════════════════════════════════════════════════════════
   function getSelectedDuration() {
+    // Nếu không có variant → Trả về 60 phút mặc định
     if (!variantSelect) return DEFAULT_DURATION;
+
+    // Lấy option đang được chọn
     const opt = variantSelect.options[variantSelect.selectedIndex];
-    return (opt && opt.value && opt.dataset.duration) ? parseInt(opt.dataset.duration) : DEFAULT_DURATION;
+
+    // Nếu option có value và có data-duration → Trả về duration
+    // Ngược lại → Trả về 60 phút mặc định
+    return (opt && opt.value && opt.dataset.duration)
+      ? parseInt(opt.dataset.duration)
+      : DEFAULT_DURATION;
   }
 
+  // ═══════════════════════════════════════════════════════════════════
+  // H. FUNCTION: VALIDATE GIỜ KẾT THÚC (KHÔNG VƯỢT 21H)
+  // ═══════════════════════════════════════════════════════════════════
+  // Ví dụ: Gói 90 phút → Giờ trễ nhất = 19:30 (kết thúc 21:00)
+  // ═══════════════════════════════════════════════════════════════════
   function validateEndTime() {
+    // Nếu user chưa chọn giờ → Thoát
     if (!timeInput || !timeInput.value) return;
+
+    // Lấy giờ user chọn (ví dụ: "19:30" → h=19, m=30)
     const [h, m] = timeInput.value.split(':').map(Number);
+
+    // Lấy thời lượng gói đã chọn
     const duration = getSelectedDuration();
+
+    // Tính giờ bắt đầu (tính bằng phút từ 0h)
+    // Ví dụ: 19:30 → 19*60 + 30 = 1170 phút
     const startMins = h * 60 + m;
-    const endMins   = startMins + duration;
+
+    // Tính giờ kết thúc
+    // Ví dụ: 1170 + 90 = 1260 phút = 21:00
+    const endMins = startMins + duration;
+
+    // Tính giờ đóng cửa (21:00 → 21*60 + 0 = 1260 phút)
     const closeMins = SPA_CLOSE_HOUR * 60 + SPA_CLOSE_MINUTES;
 
+    // ═══════════════════════════════════════════════════════════════
     // Tính giờ bắt đầu trễ nhất hợp lệ
+    // ═══════════════════════════════════════════════════════════════
+    // latestStart = closeTime - duration
+    // Ví dụ: 21:00 - 90 phút = 19:30
     const latestStartMins = closeMins - duration;
-    const latestH = Math.floor(latestStartMins / 60);
-    const latestM = latestStartMins % 60;
-    const latestStr = `${String(latestH).padStart(2,'0')}:${String(latestM).padStart(2,'0')}`;
+    const latestH = Math.floor(latestStartMins / 60);  // 19
+    const latestM = latestStartMins % 60;              // 30
+    const latestStr = `${String(latestH).padStart(2,'0')}:${String(latestM).padStart(2,'0')}`;  // "19:30"
 
-    // Cập nhật max của input
+    // ═══════════════════════════════════════════════════════════════
+    // Set max attribute cho input time
+    // ═══════════════════════════════════════════════════════════════
+    // <input type="time" max="19:30"> → Browser sẽ không cho chọn sau 19:30
     timeInput.setAttribute('max', latestStr);
 
+    // ═══════════════════════════════════════════════════════════════
+    // Hiển thị lỗi nếu giờ không hợp lệ
+    // ═══════════════════════════════════════════════════════════════
     let errEl = document.getElementById('timeEndError');
+
+    // Nếu chưa có thẻ lỗi → Tạo mới
     if (!errEl) {
       errEl = document.createElement('div');
       errEl.id = 'timeEndError';
       errEl.className = 'bk-error';
       errEl.style.display = 'none';
-      timeInput.parentNode.appendChild(errEl);
+      timeInput.parentNode.appendChild(errEl);  // Thêm vào sau input time
     }
 
+    // Nếu giờ kết thúc > 21:00 → Hiển thị lỗi
     if (endMins > closeMins) {
       errEl.textContent = `Spa đóng cửa lúc 21:00. Với gói ${duration} phút, giờ bắt đầu trễ nhất là ${latestStr}.`;
-      errEl.style.display = 'block';
-      return false;
+      errEl.style.display = 'block';  // Hiển thị lỗi
+      return false;  // Validate FAIL
     } else {
-      errEl.style.display = 'none';
-      return true;
+      errEl.style.display = 'none';  // Ẩn lỗi
+      return true;  // Validate OK
     }
   }
 
-  // ── Update service info box ──
+  // ═══════════════════════════════════════════════════════════════════
+  // I. FUNCTION: CẬP NHẬT THÔNG TIN DỊCH VỤ (INFO BOX)
+  // ═══════════════════════════════════════════════════════════════════
+  // Hiển thị thời lượng và giá tiền của gói đã chọn
+  // ═══════════════════════════════════════════════════════════════════
   function updateServiceInfo() {
+    // Nếu không có variant select → Thoát
     if (!variantSelect) return;
+
+    // Lấy option đang được chọn
     const opt = variantSelect.options[variantSelect.selectedIndex];
+
+    // Nếu user đã chọn gói → Hiển thị thông tin
     if (opt && opt.value) {
+      // Hiển thị: "60 phút"
       if (durationSpan) durationSpan.textContent = opt.dataset.duration + ' phút';
-      if (priceSpan)    priceSpan.textContent    = parseFloat(opt.dataset.price).toLocaleString('vi-VN') + ' VNĐ';
-    } else {
+
+      // Hiển thị: "500.000 VNĐ"
+      if (priceSpan) priceSpan.textContent = parseFloat(opt.dataset.price).toLocaleString('vi-VN') + ' VNĐ';
+    }
+    // Nếu user chưa chọn → Hiển thị dash
+    else {
       if (durationSpan) durationSpan.textContent = '—';
       if (priceSpan)    priceSpan.textContent    = '—';
     }
   }
 
-  // ── Update booking summary ──
+  // ═══════════════════════════════════════════════════════════════════
+  // J. FUNCTION: CẬP NHẬT SUMMARY BOX (TÓM TẮT BOOKING)
+  // ═══════════════════════════════════════════════════════════════════
+  // Hiển thị tóm tắt khi user chọn ĐỦ thông tin:
+  // - Dịch vụ ✓
+  // - Gói dịch vụ ✓
+  // - Ngày ✓
+  // - Giờ ✓
+  // ═══════════════════════════════════════════════════════════════════
   function updateSummary() {
+    // Nếu không có summary box → Thoát
     if (!summaryBox) return;
+
+    // Lấy các option đã chọn
     const svcOpt = serviceSelect ? serviceSelect.options[serviceSelect.selectedIndex] : null;
     const varOpt = variantSelect ? variantSelect.options[variantSelect.selectedIndex] : null;
     const dateVal = dateInput ? dateInput.value : '';
     const timeVal = timeInput ? timeInput.value : '';
 
+    // ═══════════════════════════════════════════════════════════════
+    // Nếu user đã chọn ĐỦ thông tin → Hiển thị summary
+    // ═══════════════════════════════════════════════════════════════
     if (svcOpt && svcOpt.value && varOpt && varOpt.value && dateVal && timeVal) {
-      summaryBox.style.display = 'block';
+      summaryBox.style.display = 'block';  // Hiển thị box
+
+      // Tên dịch vụ (ví dụ: "Massage toàn thân")
       if (sumService) sumService.textContent = svcOpt.textContent;
-      if (sumVariant) sumVariant.textContent = varOpt.dataset.label || varOpt.textContent.split('—')[0].trim();
+
+      // Tên gói (lấy từ data-label, nếu không có → cắt từ text)
+      if (sumVariant) {
+        sumVariant.textContent = varOpt.dataset.label || varOpt.textContent.split('—')[0].trim();
+      }
+
+      // Ngày (format: "Thứ Ba, 28/04/2026")
       if (sumDate && dateVal) {
         const d = new Date(dateVal + 'T00:00:00');
-        sumDate.textContent = d.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        sumDate.textContent = d.toLocaleDateString('vi-VN', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
       }
+
+      // Giờ (ví dụ: "14:30")
       if (sumTime) sumTime.textContent = timeVal;
+
+      // Tổng tiền (ví dụ: "500.000 VNĐ")
       if (sumTotal && varOpt.dataset.price) {
         sumTotal.textContent = parseFloat(varOpt.dataset.price).toLocaleString('vi-VN') + ' VNĐ';
       }
-    } else {
+    }
+    // ═══════════════════════════════════════════════════════════════
+    // Nếu user chưa chọn ĐỦ → Ẩn summary
+    // ═══════════════════════════════════════════════════════════════
+    else {
       summaryBox.style.display = 'none';
     }
   }
 
-  // ── Event listeners ──
+  // ═══════════════════════════════════════════════════════════════════
+  // K. ĐĂNG KÝ EVENT LISTENERS (LẮNG NGHE SỰ KIỆN)
+  // ═══════════════════════════════════════════════════════════════════
+  // Khi user thay đổi lựa chọn → Chạy function tương ứng
+  // ═══════════════════════════════════════════════════════════════════
+
+  // Khi user chọn dịch vụ khác → Cập nhật danh sách gói
   if (serviceSelect) {
     serviceSelect.addEventListener('change', updateVariants);
+
+    // Load variants ngay khi trang mở (nếu có pre-select từ URL)
     setTimeout(updateVariants, 50);
   }
-  if (variantSelect) variantSelect.addEventListener('change', function () { updateServiceInfo(); updateSummary(); validateEndTime(); });
-  if (dateInput)     dateInput.addEventListener('change', updateSummary);
-  if (timeInput) {
-    timeInput.setAttribute('min', '09:00');
-    timeInput.setAttribute('max', '21:00');
-    timeInput.addEventListener('change', function() { updateSummary(); validateEndTime(); });
+
+  // Khi user chọn gói khác → Cập nhật info + summary + validate giờ
+  if (variantSelect) {
+    variantSelect.addEventListener('change', function () {
+      updateServiceInfo();
+      updateSummary();
+      validateEndTime();
+    });
   }
 
-  // Chặn submit nếu end-time vượt giờ đóng cửa
+  // Khi user đổi ngày → Cập nhật summary
+  if (dateInput) {
+    dateInput.addEventListener('change', updateSummary);
+  }
+
+  // Khi user chọn giờ
+  if (timeInput) {
+    // Set giờ mở cửa (9:00) và đóng cửa (21:00)
+    timeInput.setAttribute('min', '09:00');
+    timeInput.setAttribute('max', '21:00');
+
+    // Khi giờ thay đổi → Cập nhật summary + validate
+    timeInput.addEventListener('change', function() {
+      updateSummary();
+      validateEndTime();
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // L. PREVENT SUBMIT NẾU GIỜ KHÔNG HỢP LỆ
+  // ═══════════════════════════════════════════════════════════════════
+  // Khi user click "Xác nhận đặt lịch" → Validate trước khi submit
+  // ═══════════════════════════════════════════════════════════════════
   const bookingForm = timeInput ? timeInput.closest('form') : null;
+
   if (bookingForm) {
     bookingForm.addEventListener('submit', function(e) {
+      // Nếu validate FAIL → Chặn submit
       if (!validateEndTime()) {
-        e.preventDefault();
-        timeInput.focus();
+        e.preventDefault();  // Ngăn form submit
+        timeInput.focus();   // Focus vào input time để user sửa
       }
     });
   }
 
-  setTimeout(updateSummary, 100);
-  setTimeout(validateEndTime, 150);
+  // ═══════════════════════════════════════════════════════════════════
+  // M. INITIALIZE (KHỞI TẠO)
+  // ═══════════════════════════════════════════════════════════════════
+  // Chạy các function lần đầu khi trang load
+  // ─────────────────────────────────────────────────────────────────
+  setTimeout(updateSummary, 100);      // Update summary sau 100ms
+  setTimeout(validateEndTime, 150);    // Validate giờ sau 150ms
+
+  // ═══════════════════════════════════════════════════════════════════
+  // END: DOMContentLoaded event
+  // ═══════════════════════════════════════════════════════════════════
 });
 </script>
 {% endblock %}

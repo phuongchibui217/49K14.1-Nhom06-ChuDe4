@@ -1052,7 +1052,7 @@ function _loadGuestVariants(item, serviceId, selectedVariantId) {
   _updateGuestEndTime(item);
 }
 
-/** Tính và lưu end_time vào dataset + cập nhật input giờ kết thúc */
+/** Tính và lưu end_time vào dataset + cập nhật hiển thị (giờ kết thúc auto-tính) */
 function _updateGuestEndTime(item) {
   const varSel = item.querySelector('.gc-variant');
   const timeVal = item.dataset.slotTime;
@@ -1064,10 +1064,7 @@ function _updateGuestEndTime(item) {
   // Cập nhật hidden input
   const endHidden = item.querySelector('.gc-time-end');
   if (endHidden) endHidden.value = newEnd;
-  // Cập nhật editable end input (chỉ khi chưa bị user chỉnh tay)
-  const endInput = item.querySelector('.gc-time-end-input');
-  if (endInput && !endInput.dataset.manualEdit) endInput.value = newEnd;
-  // Cập nhật time-range display
+  // Cập nhật time-range display (giờ kết thúc readonly)
   const disp = item.querySelector('.gc-time-range-display');
   if (disp) {
     const startVal = item.dataset.slotTime || '--:--';
@@ -1187,8 +1184,6 @@ function _buildGuestItem(idx, prefill) {
       + '</span>'
       + '<div class="gc-time-range-inputs">'
         + '<input type="time" class="gc-time-input" value="' + _esc(timeVal) + '" title="Giờ bắt đầu" />'
-        + '<span class="gc-time-range-sep-inner">–</span>'
-        + '<input type="time" class="gc-time-end-input" value="' + _esc(endTime) + '" title="Giờ kết thúc" />'
       + '</div>'
     + '</div>'
   + '</div>';
@@ -1342,7 +1337,6 @@ function _buildGuestItem(idx, prefill) {
 
   // ── Bind time inputs — sync về hidden fields + dataset ──
   var startInp = item.querySelector('.gc-time-input');
-  var endInp   = item.querySelector('.gc-time-end-input');
   var timeHid  = item.querySelector('.gc-time');
   var endHid   = item.querySelector('.gc-time-end');
 
@@ -1350,8 +1344,15 @@ function _buildGuestItem(idx, prefill) {
     var disp = item.querySelector('.gc-time-range-display');
     if (!disp) return;
     var s = startInp ? startInp.value : '';
-    var e = endInp   ? endInp.value   : '';
-    disp.innerHTML = (s || '--:--') + '<span class="gc-time-range-sep"> – </span>' + (e || '--:--');
+    // Giờ kết thúc luôn tính từ giờ bắt đầu + duration
+    var varSel = item.querySelector('.gc-variant');
+    var dur = 60;
+    if (varSel && varSel.selectedIndex >= 0) {
+      var opt = varSel.options[varSel.selectedIndex];
+      dur = opt?.dataset?.duration ? Number(opt.dataset.duration) : 60;
+    }
+    var e = s ? addMinutesToTime(s, dur) : '--:--';
+    disp.innerHTML = (s || '--:--') + '<span class="gc-time-range-sep"> – </span>' + e;
   }
 
   if (startInp) {
@@ -1359,29 +1360,19 @@ function _buildGuestItem(idx, prefill) {
       var v = startInp.value;
       item.dataset.slotTime = v;
       if (timeHid) timeHid.value = v;
-      // Tính lại end từ variant duration (chỉ khi end chưa bị chỉnh tay)
-      if (endInp && !endInp.dataset.manualEdit) {
-        var varSel2 = item.querySelector('.gc-variant');
-        var opt2 = varSel2?.options[varSel2.selectedIndex];
-        var dur2 = opt2?.dataset?.duration ? Number(opt2.dataset.duration) : 60;
-        var newEnd = addMinutesToTime(v, dur2);
-        endInp.value = newEnd;
-        item.dataset.endTime = newEnd;
-        if (endHid) endHid.value = newEnd;
+      // Tính lại end từ variant duration (luôn luôn tính)
+      var varSel2 = item.querySelector('.gc-variant');
+      var dur2 = 60;
+      if (varSel2 && varSel2.selectedIndex >= 0) {
+        var opt2 = varSel2.options[varSel2.selectedIndex];
+        dur2 = opt2?.dataset?.duration ? Number(opt2.dataset.duration) : 60;
       }
+      var newEnd = addMinutesToTime(v, dur2);
+      item.dataset.endTime = newEnd;
+      if (endHid) endHid.value = newEnd;
       _syncTimeDisplay();
       _markRowValidity(item);
       _updateGuestProgress();
-    });
-  }
-
-  if (endInp) {
-    endInp.addEventListener('change', function() {
-      endInp.dataset.manualEdit = '1'; // đánh dấu user đã chỉnh tay
-      var v = endInp.value;
-      item.dataset.endTime = v;
-      if (endHid) endHid.value = v;
-      _syncTimeDisplay();
     });
   }
 
@@ -1406,11 +1397,11 @@ function _buildGuestItem(idx, prefill) {
         timeRangeField.classList.remove('is-editing');
       }
     });
-    // Tab/Enter từ input cuối → đóng editing
-    var endTimeInp = timeRangeField.querySelector('.gc-time-end-input');
-    if (endTimeInp) {
-      endTimeInp.addEventListener('keydown', function(e) {
-        if (e.key === 'Tab' || e.key === 'Enter') {
+    // Enter từ input → đóng editing
+    var startTimeInp = timeRangeField.querySelector('.gc-time-input');
+    if (startTimeInp) {
+      startTimeInp.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
           timeRangeField.classList.remove('is-editing');
         }
       });
@@ -1714,6 +1705,8 @@ function openCreateModal(prefill={}) {
       variantId: prefill._guest?.variantId || null,
     });
     modalTitle.textContent = 'Đặt lại lịch hẹn';
+    // Ẩn nút "Thêm khách" khi đặt lại lịch (chỉ có 1 khách)
+    _setCreateOnlyVisible(false);
     showToast('info', 'Đặt lại', 'Vui lòng chọn ngày, giờ và phòng mới');
   } else if (prefill._fromPending && prefill._blocks && prefill._blocks.length > 0) {
     if (prefill._restoreBooker) {

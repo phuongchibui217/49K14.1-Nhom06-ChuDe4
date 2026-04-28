@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demo Modal V2 - Tạo Lịch Hẹn</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    /* ═══════════════════════════════════════════════════════════
+       MODAL V2 CSS - GIAO DIỆN ĐƠN GIẢN DỄ HIỂU
+       ═══════════════════════════════════════════════════════════ */
+
+    body {
+      background: #f3f4f6;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .demo-container {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    .demo-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .demo-header h1 {
+      color: #1e3a5f;
+      font-weight: 700;
+    }
+
+    .demo-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* Modal CSS */
+    #apptModalV2 .modal-content {
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    }
+
+    #apptModalV2 .modal-header {
+      background: linear-gradient(135deg, #1e3a5f, #2c5282);
+      color: #fff;
+      padding: 16px 20px;
+      border-bottom: none;
+    }
+
+    #apptModalV2 .modal-footer {
+      padding: 16px 20px;
+      border-top: 1px solid #e5e7eb;
+      background: #f9fafb;
+    }
+
+    #apptFormV2 {
+      display: flex !important;
+      flex-direction: column;
+      max-height: 70vh;
+      overflow: hidden;
+    }
+
+    /* Section Cards */
+    .form-section {
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 20px;
+    }
+
+    .form-section:last-child {
+      border-bottom: none;
+    }
+
+    /* Section Header */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    .section-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #1e3a5f;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #374151;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Form Grids */
+    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-grid-3 { display: grid; grid-template-columns: 2fr 1.5fr 2fr; gap: 16px; }
+    .form-grid-4 { display: grid; grid-template-columns: 2fr 1.5fr 2fr 1.2fr; gap: 16px; }
+    .form-grid-5 { display: grid; grid-template-columns: 2fr 1.5fr 2fr 1.2fr 2.5fr; gap: 16px; }
+
+    @media (max-width: 991px) {
+      .form-grid-2, .form-grid-3, .form-grid-4, .form-grid-5 {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    @media (max-width: 576px) {
+      .form-grid-2, .form-grid-3, .form-grid-4, .form-grid-5 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Form Fields */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #6b7280;
+    }
+
+    .form-label .required { color: #ef4444; margin-left: 2px; }
+
+    .form-input, .form-select {
+      width: 100%;
+      height: 42px;
+      padding: 8px 12px;
+      font-size: 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      outline: none;
+      background: #fff;
+      transition: border-color 0.2s;
+    }
+
+    .form-input:focus, .form-select:focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-input::placeholder { color: #9ca3af; font-size: 13px; }
+
+    .form-select {
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+
+    /* Apply All Bar */
+    #applyAllBarV2 {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .applyAll-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #0369a1;
+      white-space: nowrap;
+    }
+
+    .applyAll-select {
+      flex: 1;
+      min-width: 140px;
+      max-width: 200px;
+    }
+
+    /* Guest List */
+    #guestListContainerV2 {
+      flex: 1;
+      overflow-y: auto;
+      min-height: 200px;
+      background: #f9fafb;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .guest-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      transition: box-shadow 0.2s;
+    }
+
+    .guest-card:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .guest-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .guest-card-number {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: #1e3a5f;
+      font-size: 14px;
+    }
+
+    .guest-number-badge {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      background: #1e3a5f;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .guest-card-body {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+
+    @media (max-width: 768px) {
+      .guest-card-body { grid-template-columns: 1fr; }
+    }
+
+    /* Status & Payment */
+    #sharedStatusBlockV2 {
+      background: #f9fafb;
+      padding: 16px 20px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .status-payment-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .status-payment-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Buttons */
+    .btn-primary-custom {
+      background: linear-gradient(135deg, #1e3a5f, #2c5282);
+      color: #fff;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary-custom:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(30, 58, 95, 0.3);
+      background: linear-gradient(135deg, #2c5282, #1e3a5f);
+      color: #fff;
+    }
+
+    .btn-secondary-custom {
+      background: #fff;
+      color: #6b7280;
+      border: 1px solid #d1d5db;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-secondary-custom:hover {
+      background: #f9fafb;
+      border-color: #9ca3af;
+      color: #374151;
+    }
+
+    .btn-danger-custom {
+      background: #fee2e2;
+      color: #dc2626;
+      border: 1px solid #fecaca;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-danger-custom:hover {
+      background: #fecaca;
+      border-color: #fca5a5;
+      color: #dc2626;
+    }
+
+    .btn-sm-custom {
+      padding: 6px 12px;
+      font-size: 13px;
+      border-radius: 6px;
+    }
+
+    .btn-icon-custom {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+    }
+
+    .btn-demo {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-demo-primary {
+      background: linear-gradient(135deg, #1e3a5f, #2c5282);
+      color: #fff;
+      border: none;
+    }
+
+    .btn-demo-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(30, 58, 95, 0.4);
+    }
+
+    .btn-demo-secondary {
+      background: #fff;
+      color: #1e3a5f;
+      border: 2px solid #1e3a5f;
+    }
+
+    .btn-demo-secondary:hover {
+      background: #f0f9ff;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(30, 58, 95, 0.2);
+    }
+
+    /* Utilities */
+    .d-none { display: none !important; }
+    .text-muted { color: #6b7280; }
+  </style>
+</head>
+<body>
+
+  <!-- Demo Page -->
+  <div class="demo-container">
+    <div class="demo-header">
+      <h1><i class="fas fa-calendar-check me-2"></i>Demo Modal V2 - Form Tạo Lịch Hẹn</h1>
+      <p class="text-muted">Giao diện đơn giản, rõ ràng, dễ hiểu với 3 khối chính</p>
+    </div>
+
+    <div class="demo-buttons">
+      <button class="btn-demo btn-demo-primary" onclick="AppointmentModalV2.openCreate()">
+        <i class="fas fa-plus"></i>
+        Tạo lịch hẹn mới
+      </button>
+      <button class="btn-demo btn-demo-secondary" onclick="AppointmentModalV2.openEdit('123')">
+        <i class="fas fa-edit"></i>
+        Sửa lịch hẹn
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       MODAL V2 - GIAO DIỆN MỚI
+       ═══════════════════════════════════════════════════════════ -->
+  <div class="modal fade" id="apptModalV2" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"
+         style="max-width: min(92vw, 1200px); width: min(92vw, 1200px);">
+      <div class="modal-content">
+
+        <!-- HEADER -->
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="fas fa-calendar-plus me-2"></i>
+            <span id="modalTitleV2">Tạo lịch hẹn</span>
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+
+        <!-- ERROR ALERT -->
+        <div class="alert alert-danger d-none mx-3 mt-3 mb-0" id="modalErrorV2"></div>
+
+        <!-- HIDDEN STATE -->
+        <input type="hidden" id="apptIdV2" />
+        <input type="hidden" id="selectedCustomerIdV2" />
+
+        <!-- FORM -->
+        <form id="apptFormV2" novalidate>
+
+          <!-- KHỐC 1: THÔNG TIN NGƯỜI ĐẶT -->
+          <div class="form-section">
+            <div class="section-header">
+              <div class="section-icon">
+                <i class="fas fa-user"></i>
+              </div>
+              <span class="section-title">Thông tin người đặt</span>
+            </div>
+
+            <div class="form-grid-5">
+              <div class="form-group">
+                <label class="form-label">Họ tên <span class="required">*</span></label>
+                <input type="text" class="form-input" id="bookerNameV2" placeholder="Nhập họ tên người đặt" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Số điện thoại <span class="required">*</span></label>
+                <input type="tel" class="form-input" id="bookerPhoneV2" placeholder="Nhập SĐT" inputmode="numeric" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-input" id="bookerEmailV2" placeholder="email@example.com" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Nguồn</label>
+                <select class="form-select" id="bookerSourceV2">
+                  <option value="DIRECT">Trực tiếp</option>
+                  <option value="PHONE">Điện thoại</option>
+                  <option value="FACEBOOK">Facebook</option>
+                  <option value="ZALO">Zalo</option>
+                  <option value="ONLINE">Online</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Ghi chú</label>
+                <input type="text" class="form-input" id="bookerNoteV2" placeholder="Ghi chú thêm..." />
+              </div>
+            </div>
+          </div>
+
+          <!-- KHỐC 2: THÔNG TIN LỊCH HẸN -->
+          <div class="form-section" style="flex: 1; overflow: hidden; display: flex; flex-direction: column;">
+
+            <div class="section-header">
+              <div class="section-icon">
+                <i class="fas fa-calendar-check"></i>
+              </div>
+              <span class="section-title">Thông tin lịch hẹn</span>
+            </div>
+
+            <!-- Áp dụng tất cả -->
+            <div id="applyAllBarV2">
+              <span class="applyAll-label">
+                <i class="fas fa-magic me-1"></i>
+                Áp dụng tất cả:
+              </span>
+              <select class="form-select applyAll-select" id="applyAllServiceV2">
+                <option value="">-- Chọn dịch vụ --</option>
+                <option value="1">Massage chân</option>
+                <option value="2">Massage toàn thân</option>
+                <option value="3">Chăm sóc da mặt</option>
+              </select>
+              <select class="form-select applyAll-select" id="applyAllVariantV2" disabled>
+                <option value="">-- Chọn gói --</option>
+              </select>
+              <button type="button" class="btn-primary-custom btn-sm-custom" id="btnApplyAllV2">
+                <i class="fas fa-check"></i>
+                Áp dụng
+              </button>
+              <div style="margin-left: auto;">
+                <button type="button" class="btn-secondary-custom btn-sm-custom" id="btnAddGuestV2">
+                  <i class="fas fa-plus"></i>
+                  Thêm khách
+                </button>
+              </div>
+            </div>
+
+            <!-- Danh sách khách -->
+            <div id="guestListContainerV2">
+              <div id="guestListV2"></div>
+            </div>
+
+          </div>
+
+          <!-- KHỐC 3: TRẠNG THÁI & THANH TOÁN -->
+          <div class="form-section" id="sharedStatusBlockV2">
+            <div class="section-header">
+              <div class="section-icon" style="background: #c9a96e;">
+                <i class="fas fa-sliders-h"></i>
+              </div>
+              <span class="section-title">Trạng thái & Thanh toán</span>
+            </div>
+
+            <div class="status-payment-grid">
+              <div class="form-group">
+                <label class="form-label">Trạng thái</label>
+                <select class="form-select" id="sharedApptStatusV2">
+                  <option value="NOT_ARRIVED" selected>Chưa đến</option>
+                  <option value="PENDING">Chờ xác nhận</option>
+                  <option value="ARRIVED">Đã đến</option>
+                  <option value="COMPLETED">Hoàn thành</option>
+                  <option value="CANCELLED">Đã hủy</option>
+                  <option value="REJECTED">Đã từ chối</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Thanh toán</label>
+                <select class="form-select" id="sharedPayStatusV2">
+                  <option value="UNPAID" selected>Chưa thanh toán</option>
+                  <option value="PARTIAL">Một phần</option>
+                  <option value="PAID">Đã thanh toán</option>
+                  <option value="REFUNDED">Đã hoàn tiền</option>
+                </select>
+              </div>
+              <div class="form-group d-none" id="sharedPayMethodWrapV2">
+                <label class="form-label">Phương thức <span class="required">*</span></label>
+                <select class="form-select" id="sharedPayMethodV2">
+                  <option value="">-- Chọn --</option>
+                  <option value="CASH">Tiền mặt</option>
+                  <option value="CARD">Thẻ</option>
+                  <option value="BANK_TRANSFER">Chuyển khoản</option>
+                  <option value="E_WALLET">Ví điện tử</option>
+                </select>
+              </div>
+              <div class="form-group d-none" id="sharedPayAmountWrapV2">
+                <label class="form-label">Số tiền đã trả <span class="required">*</span></label>
+                <input type="number" class="form-input" id="sharedPayAmountV2" placeholder="0" min="1" step="1000" />
+              </div>
+            </div>
+          </div>
+
+        </form>
+
+        <!-- FOOTER -->
+        <div class="modal-footer">
+          <button type="button" class="btn-danger-custom d-none" id="btnDeleteV2">
+            <i class="fas fa-trash"></i>
+            Xóa
+          </button>
+          <button type="button" class="btn-secondary-custom" data-bs-dismiss="modal">
+            <i class="fas fa-times"></i>
+            Hủy
+          </button>
+          <button type="button" class="btn-secondary-custom d-none" id="btnRebookV2">
+            <i class="fas fa-redo"></i>
+            Đặt lại
+          </button>
+          <button type="button" class="btn-primary-custom" id="btnSaveV2">
+            <i class="fas fa-save"></i>
+            <span id="btnSaveTextV2">Tạo lịch hẹn</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Custom JS -->
+  <script>
+    /**
+     * MODAL V2 - JAVASCRIPT ĐƠN GIẢN DỄ HIỂU
+     */
+    (function() {
+      'use strict';
+
+      // ═══════════════════════════════════════════════════════════
+      // 1. HELPER FUNCTIONS
+      // ═══════════════════════════════════════════════════════════
+
+      function showToast(type, title, message) {
+        alert(`${title}: ${message}`);
+      }
+
+      function validateForm(form) {
+        const requiredFields = form.querySelectorAll('[required]');
+        let isValid = true;
+
+        requiredFields.forEach(field => {
+          if (!field.value.trim()) {
+            field.style.borderColor = '#ef4444';
+            isValid = false;
+          } else {
+            field.style.borderColor = '#d1d5db';
+          }
+        });
+
+        return isValid;
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      // 2. MODAL FUNCTIONS
+      // ═══════════════════════════════════════════════════════════
+
+      function openCreateModal() {
+        document.getElementById('apptFormV2').reset();
+        document.getElementById('apptIdV2').value = '';
+        document.getElementById('modalTitleV2').textContent = 'Tạo lịch hẹn';
+        document.getElementById('btnSaveTextV2').textContent = 'Tạo lịch hẹn';
+        document.getElementById('btnDeleteV2').classList.add('d-none');
+        document.getElementById('btnRebookV2').classList.add('d-none');
+        document.getElementById('applyAllBarV2').style.display = 'flex';
+        document.getElementById('guestListV2').innerHTML = '';
+
+        // Add 1 guest mặc định
+        addGuestCard();
+
+        const modal = new bootstrap.Modal(document.getElementById('apptModalV2'));
+        modal.show();
+      }
+
+      function openEditModal(appointmentId) {
+        document.getElementById('apptIdV2').value = appointmentId;
+        document.getElementById('modalTitleV2').textContent = 'Sửa lịch hẹn';
+        document.getElementById('btnSaveTextV2').textContent = 'Lưu thay đổi';
+        document.getElementById('btnDeleteV2').classList.remove('d-none');
+        document.getElementById('applyAllBarV2').style.display = 'none';
+
+        // Demo: Add 1 guest với data
+        document.getElementById('guestListV2').innerHTML = '';
+        addGuestCard({
+          name: 'Nguyễn Văn A',
+          phone: '0123456789',
+          service: '1',
+          variant: '1'
+        });
+
+        const modal = new bootstrap.Modal(document.getElementById('apptModalV2'));
+        modal.show();
+      }
+
+      function closeModal() {
+        const modalEl = document.getElementById('apptModalV2');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        if (modal) modal.hide();
+      }
+
+      // ═══════════════════════════════════════════════════════════
+      // 3. EVENT HANDLERS
+      // ═══════════════════════════════════════════════════════════
+
+      document.addEventListener('DOMContentLoaded', function() {
+
+        // Save button
+        document.getElementById('btnSaveV2').addEventListener('click', function() {
+          const form = document.getElementById('apptFormV2');
+          if (!validateForm(form)) {
+            showToast('error', 'Lỗi', 'Vui lòng điền đầy đủ thông tin');
+            return;
+          }
+          showToast('success', 'Thành công', 'Đã lưu lịch hẹn');
+          closeModal();
+        });
+
+        // Delete button
+        document.getElementById('btnDeleteV2').addEventListener('click', function() {
+          if (confirm('Bạn có chắc muốn xóa?')) {
+            showToast('success', 'Thành công', 'Đã xóa lịch hẹn');
+            closeModal();
+          }
+        });
+
+        // Add guest button
+        document.getElementById('btnAddGuestV2').addEventListener('click', function() {
+          addGuestCard();
+        });
+
+        // Pay status change
+        document.getElementById('sharedPayStatusV2').addEventListener('change', function() {
+          const value = this.value;
+          const methodWrap = document.getElementById('sharedPayMethodWrapV2');
+          const amountWrap = document.getElementById('sharedPayAmountWrapV2');
+
+          if (value === 'PAID' || value === 'PARTIAL') {
+            methodWrap.classList.remove('d-none');
+            amountWrap.classList.remove('d-none');
+          } else {
+            methodWrap.classList.add('d-none');
+            amountWrap.classList.add('d-none');
+          }
+        });
+
+      });
+
+      // ═══════════════════════════════════════════════════════════
+      // 4. GUEST CARD FUNCTIONS
+      // ═══════════════════════════════════════════════════════════
+
+      function addGuestCard(data = {}) {
+        const guestList = document.getElementById('guestListV2');
+        const guestCount = guestList.children.length + 1;
+
+        const cardHTML = `
+          <div class="guest-card" data-guest-id="${guestCount}">
+            <div class="guest-card-header">
+              <div class="guest-card-number">
+                <span class="guest-number-badge">${guestCount}</span>
+                <span>Khách hàng</span>
+              </div>
+              <button type="button" class="btn-icon-custom btn-danger-custom btn-remove-guest" title="Xóa">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div class="guest-card-body">
+              <div class="form-group">
+                <label class="form-label">Họ tên <span class="required">*</span></label>
+                <input type="text" class="form-input" placeholder="Nhập họ tên" required
+                       value="${data.name || ''}" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">SĐT</label>
+                <input type="tel" class="form-input" placeholder="Nhập SĐT" inputmode="numeric"
+                       value="${data.phone || ''}" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Dịch vụ</label>
+                <select class="form-select">
+                  <option value="">-- Chọn dịch vụ --</option>
+                  <option value="1" ${data.service === '1' ? 'selected' : ''}>Massage chân</option>
+                  <option value="2" ${data.service === '2' ? 'selected' : ''}>Massage toàn thân</option>
+                  <option value="3" ${data.service === '3' ? 'selected' : ''}>Chăm sóc da mặt</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Gói dịch vụ <span class="required">*</span></label>
+                <select class="form-select" required>
+                  <option value="">-- Chọn gói --</option>
+                  <option value="1" ${data.variant === '1' ? 'selected' : ''}>30 phút - 150.000đ</option>
+                  <option value="2" ${data.variant === '2' ? 'selected' : ''}>60 phút - 300.000đ</option>
+                  <option value="3" ${data.variant === '3' ? 'selected' : ''}>90 phút - 450.000đ</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        `;
+
+        guestList.insertAdjacentHTML('beforeend', cardHTML);
+
+        const newCard = guestList.lastElementChild;
+        const removeBtn = newCard.querySelector('.btn-remove-guest');
+        if (removeBtn) {
+          removeBtn.addEventListener('click', function() {
+            if (confirm('Xóa khách này?')) {
+              newCard.remove();
+              updateGuestNumbers();
+            }
+          });
+        }
+      }
+
+      function updateGuestNumbers() {
+        const cards = document.querySelectorAll('#guestListV2 .guest-card');
+        cards.forEach((card, index) => {
+          const badge = card.querySelector('.guest-number-badge');
+          if (badge) badge.textContent = index + 1;
+          card.dataset.guestId = index + 1;
+        });
+      }
+
+      // Export
+      window.AppointmentModalV2 = {
+        openCreate: openCreateModal,
+        openEdit: openEditModal,
+        close: closeModal,
+        addGuest: addGuestCard
+      };
+
+    })();
+  </script>
+
+</body>
+</html>

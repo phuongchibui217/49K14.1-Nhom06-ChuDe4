@@ -1454,13 +1454,14 @@
   color: #374151;
 }
 
+/* Giờ kết thúc (phần sau dấu gạch ngang) — auto-tính từ giờ bắt đầu + duration */
 #apptModal .gc-time-range-sep {
   color: #94a3b8;
   font-weight: 500;
   padding: 0 3px;
 }
 
-/* 2 input time ẩn — chỉ hiện khi editing */
+/* 1 input time (chỉ giờ bắt đầu) — ẩn, chỉ hiện khi editing */
 #apptModal .gc-time-range-inputs {
   display: none;
   position: absolute;
@@ -1485,13 +1486,13 @@
 }
 
 #apptModal .gc-time-range-inputs input[type="time"] {
-  flex: 1 1 0;
+  flex: 0 1 auto;
   width: auto;
-  min-width: 0;
-  max-width: 66px;
+  min-width: 100px;
+  max-width: 140px;
   height: 30px;
   min-height: 30px;
-  padding: 0 2px 0 4px;
+  padding: 0 12px;
   font-size: 14px;
   line-height: 30px;
   font-weight: 600;
@@ -1516,12 +1517,6 @@
   border-color: #3b82f6;
   background: #fff;
   box-shadow: 0 0 0 2px rgba(59,130,246,.12);
-}
-
-#apptModal .gc-time-range-sep-inner {
-  font-size: 14px;
-  color: #94a3b8;
-  flex: 0 0 auto;
 }
 
 #apptModal .gc-detail-wrap {

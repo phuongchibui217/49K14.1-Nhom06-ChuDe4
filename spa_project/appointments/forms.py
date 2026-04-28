@@ -68,8 +68,8 @@ class AppointmentForm(forms.ModelForm):
         self.customer_profile = kwargs.pop('customer_profile', None)
         super().__init__(*args, **kwargs)
 
-        self.fields['service_variant'].required = False
-        self.fields['service_variant'].empty_label = '-- Chọn gói dịch vụ (tuỳ chọn) --'
+        self.fields['service_variant'].required = True
+        self.fields['service_variant'].empty_label = '-- Chọn gói dịch vụ --'
 
         # Pre-fill booker từ profile — áp dụng cả GET lẫn POST
         # (POST data có thể không chứa hidden fields nếu bị strip)
@@ -123,3 +123,9 @@ class AppointmentForm(forms.ModelForm):
             except Exception as e:
                 raise forms.ValidationError(str(e.message))
         return appointment_time
+
+    def clean_service_variant(self):
+        service_variant = self.cleaned_data.get('service_variant')
+        if not service_variant:
+            raise forms.ValidationError('Vui lòng chọn gói dịch vụ để đặt lịch.')
+        return service_variant

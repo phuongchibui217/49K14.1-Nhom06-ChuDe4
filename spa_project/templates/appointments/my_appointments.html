@@ -3,445 +3,151 @@
 {% block title %}Lịch hẹn của tôi - Spa ANA{% endblock %}
 
 {% block extra_css %}
-<style>
-/* Page Header — dung global style.css, khong override */
-.page-header { margin-bottom: 2rem; }
-
-/* Filter Tabs — Segmented pill control */
-.filter-bar {
-    background: #f1f5f9;
-    border-radius: 14px;
-    padding: 6px;
-    display: inline-flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-bottom: 2rem;
-}
-
-.filter-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0.45rem 1rem;
-    border-radius: 10px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #475569;
-    background: transparent;
-    border: 1.5px solid transparent;
-    text-decoration: none;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-}
-
-.filter-pill:hover {
-    background: white;
-    color: #1e3a5f;
-    border-color: #cbd5e1;
-    text-decoration: none;
-}
-
-.filter-pill.active {
-    background: #1e3a5f;
-    color: white;
-    border-color: #1e3a5f;
-    box-shadow: 0 2px 8px rgba(30, 58, 95, 0.25);
-}
-
-.filter-pill .pill-count {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 20px;
-    height: 20px;
-    padding: 0 5px;
-    border-radius: 6px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    background: rgba(255,255,255,0.2);
-    color: inherit;
-}
-
-.filter-pill:not(.active) .pill-count {
-    background: #e2e8f0;
-    color: #475569;
-}
-
-@media (max-width: 576px) {
-    .filter-bar {
-        width: 100%;
-        justify-content: center;
-    }
-    .filter-pill {
-        font-size: 0.8rem;
-        padding: 0.4rem 0.75rem;
-    }
-}
-
-/* Appointment Card */
-.appointment-card {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
-    padding: 18px 20px;
-    margin-bottom: 1rem;
-    border: 1px solid #f1f5f9;
-    transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-.appointment-card:hover {
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-    transform: translateY(-1px);
-}
-
-/* Card Header */
-.card-header-section {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 14px;
-}
-
-.service-info h5 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: #1e3a5f;
-    margin-bottom: 4px;
-    line-height: 1.3;
-}
-
-.service-info .code {
-    font-size: 0.8rem;
-    color: #94a3b8;
-}
-
-/* Status Badge — pill, soft color */
-.status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 12px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 500;
-    white-space: nowrap;
-}
-
-.status-pending {
-    background: #fef9ec;
-    color: #b45309;
-}
-
-.status-not_arrived {
-    background: #eff6ff;
-    color: #1d4ed8;
-}
-
-.status-arrived {
-    background: #eff6ff;
-    color: #1d4ed8;
-}
-
-/* Customer-facing: NOT_ARRIVED + ARRIVED đều hiện "Đã xác nhận" */
-.status-confirmed {
-    background: #eff6ff;
-    color: #1d4ed8;
-}
-
-.status-completed {
-    background: #f0fdf4;
-    color: #15803d;
-}
-
-.status-cancelled {
-    background: #f3f4f6;
-    color: #4b5563;
-}
-
-.status-rejected {
-    background: #fee2e2;
-    color: #b91c1c;
-}
-
-/* Card Body — info row */
-.card-details {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 20px;
-    padding: 12px 0;
-    border-top: 1px solid #f1f5f9;
-}
-
-.detail-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.85rem;
-    color: #475569;
-}
-
-.detail-item i {
-    color: #d4a835;
-    font-size: 13px;
-    width: 14px;
-    text-align: center;
-}
-
-.detail-item .value {
-    color: #1e3a5f;
-    font-weight: 500;
-}
-
-/* Notes */
-.card-notes {
-    padding: 8px 12px;
-    background: #f8fafc;
-    border-radius: 8px;
-    font-size: 0.82rem;
-    color: #64748b;
-    margin-top: 10px;
-}
-
-/* Card Footer — action row */
-.card-action-footer {
-    display: flex;
-    justify-content: flex-end;
-    padding-top: 12px;
-    margin-top: 4px;
-    border-top: 1px solid #f1f5f9;
-}
-
-.btn-cancel-appt {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: #fff1f2;
-    color: #be123c;
-    border: 1px solid #fecdd3;
-    border-radius: 10px;
-    padding: 6px 16px;
-    font-size: 0.82rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s, border-color 0.2s;
-}
-
-.btn-cancel-appt:hover {
-    background: #ffe4e6;
-    border-color: #fda4af;
-    color: #9f1239;
-}
-
-/* Empty State */
-.empty-state {
-    text-align: center;
-    padding: 3rem 2rem;
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
-    border: 1px solid #f1f5f9;
-}
-
-.empty-state i { color: #cbd5e1; }
-.empty-state > i { color: #cbd5e1; } /* chỉ icon lớn trực tiếp trong empty-state */
-
-.empty-state h3 {
-    color: #1e3a5f;
-    font-size: 1.2rem;
-    margin-bottom: 0.5rem;
-}
-
-.empty-state .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.btn-appt-cta {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 10px !important;
-    padding: 16px 40px;
-    background: rgba(218, 185, 135, 0.9);
-    color: #fff !important;
-    border-radius: 50px;
-    font-size: 14px;
-    font-weight: 500;
-    letter-spacing: 0.1em;
-    text-decoration: none;
-    text-transform: uppercase;
-    transition: all .3s ease;
-    border: 1.5px solid rgba(201, 169, 110, 0.3);
-    box-shadow: 0 6px 20px rgba(201, 169, 110, 0.25);
-    line-height: 1;
-    vertical-align: middle;
-}
-
-.btn-appt-cta i {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    line-height: 1 !important;
-    font-size: 14px !important;
-    color: #fff !important;
-    margin: 0 !important;
-    width: auto !important;
-    transform: none !important;
-}
-
-.btn-appt-cta:hover {
-    background: rgba(218, 185, 135, 1);
-    color: #fff !important;
-    transform: translateY(-3px);
-    box-shadow: 0 8px 28px rgba(218, 185, 135, 0.4);
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .page-header { padding: 2rem 0 1.5rem; }
-    .card-details { flex-direction: column; gap: 8px; }
-    .filter-bar { width: 100%; justify-content: center; }
-}
-</style>
+<link rel="stylesheet" href="{% static 'css/my-appointments.css' %}?v={% now 'Ymd' %}">
 {% endblock %}
 
 {% block content %}
-<!-- Page Header -->
-<section class="page-header">
+<!-- Page Content với namespace để CSS hoạt động -->
+<div class="my-appointments-page">
+
+  <!-- Page Header -->
+  <section class="page-header">
     <div class="container">
-        <h1>Lịch Hẹn Của Tôi</h1>
-        <p class="subtitle mb-0">Quản lý và theo dõi các lịch hẹn đặt tại Spa ANA</p>
+      <h1>Lịch Hẹn Của Tôi</h1>
+      <p class="subtitle mb-0">Quản lý và theo dõi các lịch hẹn đặt tại Spa ANA</p>
     </div>
-</section>
+  </section>
 
-<!-- Appointments Section -->
-<section class="appointments-section">
+  <!-- Appointments Section -->
+  <section class="appointments-section">
     <div class="container">
 
-        <!-- Filter Tabs -->
-        <div class="d-flex justify-content-center mb-4">
-            <div class="filter-bar">
-                <a href="?status=all" class="filter-pill {% if status_filter == 'all' %}active{% endif %}">
-                    Tất cả
-                    {% if status_counts.all > 0 %}<span class="pill-count">{{ status_counts.all }}</span>{% endif %}
-                </a>
-                <a href="?status=pending" class="filter-pill {% if status_filter == 'pending' %}active{% endif %}">
-                    Chờ xác nhận
-                    {% if status_counts.pending > 0 %}<span class="pill-count">{{ status_counts.pending }}</span>{% endif %}
-                </a>
-                <a href="?status=confirmed" class="filter-pill {% if status_filter == 'confirmed' %}active{% endif %}">
-                    Đã xác nhận
-                    {% if status_counts.confirmed > 0 %}<span class="pill-count">{{ status_counts.confirmed }}</span>{% endif %}
-                </a>
-                <a href="?status=completed" class="filter-pill {% if status_filter == 'completed' %}active{% endif %}">
-                    Hoàn thành
-                    {% if status_counts.completed > 0 %}<span class="pill-count">{{ status_counts.completed }}</span>{% endif %}
-                </a>
-                <a href="?status=cancelled" class="filter-pill {% if status_filter == 'cancelled' %}active{% endif %}">
-                    Đã hủy
-                    {% if status_counts.cancelled > 0 %}<span class="pill-count">{{ status_counts.cancelled }}</span>{% endif %}
-                </a>
-                <a href="?status=rejected" class="filter-pill {% if status_filter == 'rejected' %}active{% endif %}">
-                    Đã từ chối
-                    {% if status_counts.rejected > 0 %}<span class="pill-count">{{ status_counts.rejected }}</span>{% endif %}
-                </a>
-            </div>
+      <!-- Filter Tabs -->
+      <div class="d-flex justify-content-center mb-4">
+        <div class="filter-bar">
+          <a href="?status=all" class="filter-pill {% if status_filter == 'all' %}active{% endif %}">
+            Tất cả
+            {% if status_counts.all > 0 %}<span class="pill-count">{{ status_counts.all }}</span>{% endif %}
+          </a>
+          <a href="?status=pending" class="filter-pill {% if status_filter == 'pending' %}active{% endif %}">
+            Chờ xác nhận
+            {% if status_counts.pending > 0 %}<span class="pill-count">{{ status_counts.pending }}</span>{% endif %}
+          </a>
+          <a href="?status=confirmed" class="filter-pill {% if status_filter == 'confirmed' %}active{% endif %}">
+            Đã xác nhận
+            {% if status_counts.confirmed > 0 %}<span class="pill-count">{{ status_counts.confirmed }}</span>{% endif %}
+          </a>
+          <a href="?status=completed" class="filter-pill {% if status_filter == 'completed' %}active{% endif %}">
+            Hoàn thành
+            {% if status_counts.completed > 0 %}<span class="pill-count">{{ status_counts.completed }}</span>{% endif %}
+          </a>
+          <a href="?status=cancelled" class="filter-pill {% if status_filter == 'cancelled' %}active{% endif %}">
+            Đã hủy
+            {% if status_counts.cancelled > 0 %}<span class="pill-count">{{ status_counts.cancelled }}</span>{% endif %}
+          </a>
+          <a href="?status=rejected" class="filter-pill {% if status_filter == 'rejected' %}active{% endif %}">
+            Đã từ chối
+            {% if status_counts.rejected > 0 %}<span class="pill-count">{{ status_counts.rejected }}</span>{% endif %}
+          </a>
         </div>
+      </div>
 
-        <!-- Appointments List -->
-        {% if appointments %}
-        <div class="row">
-            {% for appointment in appointments %}
-            <div class="col-12">
-                <div class="appointment-card">
+      <!-- Appointments List -->
+      {% if appointments %}
+      <div class="row">
+        {% for appointment in appointments %}
+        <div class="col-12">
+          <div class="appointment-card">
 
-                    <!-- Header: tên dịch vụ + mã | status -->
-                    <div class="card-header-section">
-                        <div class="service-info">
-                            <h5>
-                                {% if appointment.service_variant %}
-                                    {{ appointment.service_variant.service.name }}
-                                    <span style="font-size:.85rem;font-weight:400;color:#64748b;">— {{ appointment.service_variant.label }}</span>
-                                {% else %}
-                                    <span style="color:#94a3b8;font-style:italic;">Chưa chọn dịch vụ</span>
-                                {% endif %}
-                            </h5>
-                            <div class="code">
-                                <i class="fas fa-hashtag me-1"></i>{{ appointment.appointment_code }}
-                            </div>
-                        </div>
-                        <span class="status-badge status-{{ appointment.customer_status_css }}">
-                            {{ appointment.customer_status_label }}
-                        </span>
-                    </div>
-
-                    <!-- Body: ngày / giờ / đặt lúc -->
-                    <div class="card-details">
-                        <div class="detail-item">
-                            <i class="far fa-calendar"></i>
-                            <span>Ngày hẹn:</span>
-                            <span class="value">{{ appointment.appointment_date|date:"d/m/Y" }}</span>
-                        </div>
-                        <div class="detail-item">
-                            <i class="far fa-clock"></i>
-                            <span>Giờ:</span>
-                            <span class="value">{{ appointment.appointment_time|time:"H:i" }}</span>
-                        </div>
-                        <div class="detail-item">
-                            <i class="fas fa-history"></i>
-                            <span>Đặt lúc:</span>
-                            <span class="value">{{ appointment.created_at|date:"d/m/Y" }}</span>
-                        </div>
-                    </div>
-
-                    <!-- Notes -->
-                    {% if appointment.notes %}
-                    <div class="card-notes">
-                        <i class="far fa-sticky-note me-1"></i>{{ appointment.notes }}
-                    </div>
-                    {% endif %}
-
-                    <!-- Footer: nút hủy (chỉ khi chưa đến / chờ xác nhận) -->
-                    {% if appointment.status == 'PENDING' or appointment.status == 'NOT_ARRIVED' %}
-                    <div class="card-action-footer">
-                        <form method="post"
-                              action="{% url 'appointments:cancel_appointment' appointment.id %}"
-                              class="cancel-appointment-form"
-                              data-confirm-message="Bạn có chắc muốn hủy lịch hẹn này?">
-                            {% csrf_token %}
-                            <button type="submit" class="btn-cancel-appt">
-                                <i class="fas fa-times"></i>Hủy lịch
-                            </button>
-                        </form>
-                    </div>
-                    {% endif %}
-
+            <!-- Header: tên dịch vụ + mã | status -->
+            <div class="card-header-section">
+              <div class="service-info">
+                <h5>
+                  {% if appointment.service_variant %}
+                    {{ appointment.service_variant.service.name }}
+                    <span style="font-size:.85rem;font-weight:400;color:#64748b;">— {{ appointment.service_variant.label }}</span>
+                  {% else %}
+                    <span style="color:#94a3b8;font-style:italic;">Chưa chọn dịch vụ</span>
+                  {% endif %}
+                </h5>
+                <div class="code">
+                  <i class="fas fa-hashtag me-1"></i>{{ appointment.appointment_code }}
                 </div>
+              </div>
+              <span class="status-badge status-{{ appointment.customer_status_css }}">
+                {{ appointment.customer_status_label }}
+              </span>
             </div>
-            {% endfor %}
-        </div>
 
-        <!-- Empty State -->
-        {% else %}
-        <div class="empty-state">
-            <i class="fas fa-calendar-times fa-4x mb-3"></i>
-            <h3>Không tìm thấy lịch hẹn nào</h3>
-            <p class="text-muted mb-4">
-                {% if status_filter != 'all' %}
-                    Không có lịch hẹn nào ở trạng thái này.
-                {% else %}
-                    Bạn chưa đặt lịch hẹn nào. Hãy trải nghiệm dịch vụ của chúng tôi!
-                {% endif %}
-            </p>
-            <a href="{% url 'appointments:booking' %}" class="btn-appt-cta">
-                <i class="fas fa-calendar-check"></i> Đặt lịch ngay
-            </a>
+            <!-- Body: ngày / giờ / đặt lúc -->
+            <div class="card-details">
+              <div class="detail-item">
+                <i class="far fa-calendar"></i>
+                <span>Ngày hẹn:</span>
+                <span class="value">{{ appointment.appointment_date|date:"d/m/Y" }}</span>
+              </div>
+              <div class="detail-item">
+                <i class="far fa-clock"></i>
+                <span>Giờ:</span>
+                <span class="value">{{ appointment.appointment_time|time:"H:i" }}</span>
+              </div>
+              <div class="detail-item">
+                <i class="fas fa-history"></i>
+                <span>Đặt lúc:</span>
+                <span class="value">{{ appointment.created_at|date:"d/m/Y" }}</span>
+              </div>
+            </div>
+
+            <!-- Notes -->
+            {% if appointment.notes %}
+            <div class="card-notes">
+              <i class="far fa-sticky-note me-1"></i>{{ appointment.notes }}
+            </div>
+            {% endif %}
+
+            <!-- Footer: nút hủy (chỉ khi chưa đến / chờ xác nhận) -->
+            {% if appointment.status == 'PENDING' or appointment.status == 'NOT_ARRIVED' %}
+            <div class="card-action-footer">
+              <form method="post"
+                    action="{% url 'appointments:cancel_appointment' appointment.id %}"
+                    class="cancel-appointment-form"
+                    data-confirm-message="Bạn có chắc muốn hủy lịch hẹn này?">
+                {% csrf_token %}
+                <button type="submit" class="btn-cancel-appt">
+                  <i class="fas fa-times"></i>Hủy lịch
+                </button>
+              </form>
+            </div>
+            {% endif %}
+
+          </div>
         </div>
-        {% endif %}
+        {% endfor %}
+      </div>
+
+      <!-- Empty State -->
+      {% else %}
+      <div class="empty-state">
+        <i class="fas fa-calendar-times fa-4x mb-3"></i>
+        <h3>Không tìm thấy lịch hẹn nào</h3>
+        <p class="text-muted mb-4">
+          {% if status_filter != 'all' %}
+          Không có lịch hẹn nào ở trạng thái này.
+          {% else %}
+          Bạn chưa đặt lịch hẹn nào. Hãy trải nghiệm dịch vụ của chúng tôi!
+          {% endif %}
+        </p>
+        <a href="{% url 'appointments:booking' %}" class="btn-appt-cta">
+          <i class="fas fa-calendar-check"></i> Đặt lịch ngay
+        </a>
+      </div>
+      {% endif %}
 
     </div>
-</section>
+  </section>
+
+</div>
+<!-- End .my-appointments-page -->
 {% endblock %}
 
 {% block extra_js %}
