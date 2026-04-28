@@ -239,7 +239,7 @@
 // ─────────────────────────────────────────────────────────────────────
 const servicesVariantsData = {{ services_variants_json|safe }};
 
-// ─────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────
 // 2. CHẠY KHI TRANG WEB ĐÃ LOAD XONG (DOMContentLoaded)
 // ─────────────────────────────────────────────────────────────────────
 // Tương tự như $(document).ready() trong jQuery
@@ -311,8 +311,8 @@ document.addEventListener('DOMContentLoaded', function () {
   // Script này sẽ tự động chọn dịch vụ 3 và variant 5
   // ═══════════════════════════════════════════════════════════════════
 
-  // Đọc parameters từ URL (?service_id=3&variant=5)
-  const urlParams = new URLSearchParams(window.location.search);
+  // Đọc parameters từ URL (?service_id=3&variant=5) window.location.search chỉ lấy phần Query string (sau dấu ?)
+  const urlParams = new URLSearchParams(window.location.search); 
 
   // Lấy service_id từ URL (có thể là ?service_id= hoặc ?service=)
   const serviceIdFromUrl = urlParams.get('service_id') || urlParams.get('service');
@@ -342,8 +342,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // Xóa tất cả options cũ
     variantSelect.innerHTML = '<option value="">— Chọn gói dịch vụ —</option>';
 
-    // Loop qua mỗi variant → Tạo <option> mới
-    variants.forEach(function (v) {
+    // Loop qua mỗi variant → Tạo <option> mới (dùng arrow function)
+    variants.forEach((v) => {
       // Tạo thẻ <option> mới
       const opt = document.createElement('option');
 
