@@ -129,3 +129,23 @@ class AppointmentForm(forms.ModelForm):
         if not service_variant:
             raise forms.ValidationError('Vui lòng chọn gói dịch vụ để đặt lịch.')
         return service_variant
+
+    def clean(self):
+        """Validate end time không vượt giờ đóng cửa (21:00)."""
+        cleaned_data = super().clean()
+
+        appointment_time = cleaned_data.get('appointment_time')
+        appointment_date = cleaned_data.get('appointment_date')
+        service_variant = cleaned_data.get('service_variant')
+
+        if appointment_time and appointment_date and service_variant:
+            from .services import validate_appointment_time
+            from django.core.exceptions import ValidationError as DjangoValidationError
+
+            duration_min = service_variant.duration_minutes
+            try:
+                validate_appointment_time(appointment_time, appointment_date, duration_min)
+            except DjangoValidationError as e:
+                self.add_error('appointment_time', e.message)
+
+        return cleaned_data

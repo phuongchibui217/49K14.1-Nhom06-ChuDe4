@@ -1,12 +1,3 @@
-"""
-Views — Trang web (render HTML) cho appointments.
-
-views.py  → HTML
-api.py    → JSON
-
-Author: Spa ANA Team
-"""
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 
@@ -23,91 +14,55 @@ from core.decorators import customer_required
 
 @customer_required()
 def booking(request):
-    """
-    Trang đặt lịch hẹn cho khách hàng.
-
-    POST → validate → tạo Appointment → redirect "Lịch hẹn của tôi"
-    """
+    """Trang đặt lịch hẹn cho khách hàng."""
     customer_profile = request.user.customer_profile
-    selected_service_id = request.GET.get('service')
-    form = AppointmentForm(customer_profile=customer_profile)
 
     if request.method == 'POST':
         form = AppointmentForm(request.POST, customer_profile=customer_profile)
         if form.is_valid():
-            booker_name  = form.cleaned_data['booker_name']
+            # Form đã validate hết (bao gồm giờ kết thúc), chỉ cần tạo appointment
+            booker_name = form.cleaned_data['booker_name']
             booker_phone = form.cleaned_data['booker_phone']
 
-            # Customer snapshot — người thực sự sử dụng dịch vụ (có thể khác booker)
-            customer_name_snapshot  = request.POST.get('customer_name_snapshot', '').strip()
-            # Chuẩn hóa SĐT: chỉ giữ digits để tìm kiếm partial luôn hoạt động
+            # Customer snapshot
+            customer_name_snapshot = request.POST.get('customer_name_snapshot', '').strip() or booker_name
             _raw_phone = request.POST.get('customer_phone_snapshot', '').strip()
             customer_phone_snapshot = ''.join(filter(str.isdigit, _raw_phone)) or None
             customer_email_snapshot = request.POST.get('customer_email_snapshot', '').strip() or None
 
-            if not customer_name_snapshot:
-                customer_name_snapshot = booker_name  # fallback
-
-            # Validate giờ kết thúc không vượt giờ đóng cửa
-            from .services import validate_appointment_time, DEFAULT_APPOINTMENT_DURATION_MINUTES
-            from django.core.exceptions import ValidationError as DjangoValidationError
-            appt_time    = form.cleaned_data['appointment_time']
-            appt_date    = form.cleaned_data['appointment_date']
-            variant      = form.cleaned_data.get('service_variant')
-            duration_min = variant.duration_minutes if variant else DEFAULT_APPOINTMENT_DURATION_MINUTES
-            try:
-                validate_appointment_time(appt_time, appt_date, duration_min)
-            except DjangoValidationError as e:
-                form.add_error('appointment_time', e.message)
-                services = Service.objects.filter(status='ACTIVE').prefetch_related('variants')
-                import json as _json
-                services_with_variants = {
-                    str(s.id): [
-                        {'id': v.id, 'label': v.label, 'duration_minutes': v.duration_minutes, 'price': float(v.price)}
-                        for v in s.variants.order_by('sort_order', 'duration_minutes')
-                    ]
-                    for s in services
-                }
-                return render(request, 'appointments/booking.html', {
-                    'form': form, 'customer_profile': customer_profile,
-                    'services': services,
-                    'services_variants_json': _json.dumps(services_with_variants),
-                })
-
-            # Tìm hoặc tạo customer từ booker_phone (người đặt = chủ account)
+            # Tìm hoặc tạo customer
             from .api import _get_or_create_customer
             customer = _get_or_create_customer(phone=booker_phone, customer_name=booker_name)
 
-            # Gán phòng mặc định (booking online không chọn phòng)
+            # Gán phòng mặc định
             default_room = Room.objects.filter(is_active=True).order_by('code').first()
             if not default_room:
                 messages.error(request, 'Hiện tại chưa có phòng nào. Vui lòng liên hệ trực tiếp.')
-                return render(request, 'appointments/booking.html', {
-                    'form': form, 'customer_profile': customer_profile,
-                    'services': Service.objects.filter(status='ACTIVE').prefetch_related('variants'),
-                })
+                return _render_booking_form(request, form, customer_profile)
 
+            # Tạo appointment
             appointment = form.save(commit=False)
-            appointment.customer                = customer
-            appointment.room                    = default_room
-            appointment.source                  = 'ONLINE'
-            appointment.status                  = 'PENDING'
-            appointment.created_by              = request.user
-            appointment.booker_email            = customer_profile.user.email if customer_profile.user else None
-            appointment.customer_name_snapshot  = customer_name_snapshot
+            appointment.customer = customer
+            appointment.room = default_room
+            appointment.source = 'ONLINE'
+            appointment.status = 'PENDING'
+            appointment.created_by = request.user
+            appointment.booker_email = customer_profile.user.email
+            appointment.customer_name_snapshot = customer_name_snapshot
             appointment.customer_phone_snapshot = customer_phone_snapshot
             appointment.customer_email_snapshot = customer_email_snapshot
             appointment.save()
 
-            messages.success(
-                request,
-                f'Đặt lịch thành công! Mã lịch hẹn: {appointment.appointment_code}. Vui lòng chờ xác nhận.'
-            )
+            messages.success(request, f'Đặt lịch thành công! Mã lịch hẹn: {appointment.appointment_code}. Vui lòng chờ xác nhận.')
             return redirect('appointments:my_appointments')
     else:
-        if selected_service_id:
-            form.fields['service'].initial = selected_service_id
+        form = AppointmentForm(customer_profile=customer_profile)
 
+    return _render_booking_form(request, form, customer_profile)
+
+
+def _render_booking_form(request, form, customer_profile):
+    """Helper function render booking form với services data."""
     services = Service.objects.filter(status='ACTIVE').prefetch_related('variants')
 
     import json as _json
@@ -184,23 +139,15 @@ def cancel_appointment(request, appointment_id):
     """Hủy lịch hẹn (khách hàng)."""
     appointment = get_object_or_404(Appointment, id=appointment_id, deleted_at__isnull=True)
 
-    if appointment.customer.user != request.user:
-        messages.error(request, 'Bạn không có quyền hủy lịch hẹn này.')
-        return redirect('appointments:my_appointments')
-
     if appointment.status not in ['PENDING', 'NOT_ARRIVED']:
         messages.warning(request, f'Không thể hủy lịch hẹn này. Trạng thái: {appointment.get_status_display()}')
         return redirect('appointments:my_appointments')
 
-    if request.method == 'GET':
-        return render(request, 'appointments/cancel_appointment.html', {'appointment': appointment})
-
-    if request.method == 'POST':
-        appointment.status = 'CANCELLED'
-        appointment.cancelled_by = 'customer'
-        appointment.save()
-        messages.success(request, f'Đã hủy lịch hẹn {appointment.appointment_code}.')
-        return redirect('appointments:my_appointments')
+    appointment.status = 'CANCELLED'
+    appointment.cancelled_by = 'customer'
+    appointment.save()
+    messages.success(request, f'Đã hủy lịch hẹn {appointment.appointment_code}.')
+    return redirect('appointments:my_appointments')
 
 
 # =====================================================
