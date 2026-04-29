@@ -2,14 +2,13 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 
 from .models import Appointment, Room
-from customers.models import CustomerProfile
 from spa_services.models import Service, ServiceVariant
 from .forms import AppointmentForm
 from core.decorators import customer_required
 
 
 # =====================================================
-# TRANG ĐẶT LỊCH (Public — khách hàng)
+# TRANG ĐẶT LỊCH (Public — khách hàng) ok - booking.html
 # =====================================================
 
 @customer_required()
@@ -83,45 +82,40 @@ def _render_booking_form(request, form, customer_profile):
 
 
 # =====================================================
-# TRANG LỊCH HẸN CỦA TÔI
+# TRANG LỊCH HẸN CỦA TÔI - My_appointment.html
+#  view này giống như nhân viên lễ tân: nhận yêu cầu "Cho tôi xem lịch hẹn", mở hồ sơ khách hàng, lọc lịch theo status (tất cả, đang chờ, hoàn thành), đếm có bao nhiêu lịch mỗi loại theo status, hiển thị danh sách và số lượng status-count
 # =====================================================
 
 @customer_required()
 def my_appointments(request):
     """Trang xem lịch hẹn của khách hàng."""
-    try:
-        customer_profile = request.user.customer_profile
-        status_filter = request.GET.get('status', 'all')
+    customer_profile = request.user.customer_profile
+    status_filter = request.GET.get('status', 'all')
 
-        appointments = customer_profile.appointments.filter(deleted_at__isnull=True)
+    appointments = customer_profile.appointments.filter(deleted_at__isnull=True)
 
-        CUSTOMER_STATUS_MAP = {
-            'pending':   ['PENDING'],
-            'confirmed': ['NOT_ARRIVED', 'ARRIVED'],
-            'completed': ['COMPLETED'],
-            'cancelled': ['CANCELLED'],
-            'rejected':  ['REJECTED'],
-        }
+    CUSTOMER_STATUS_MAP = {
+        'pending':   ['PENDING'],
+        'confirmed': ['NOT_ARRIVED', 'ARRIVED'],
+        'completed': ['COMPLETED'],
+        'cancelled': ['CANCELLED'],
+        'rejected':  ['REJECTED'],
+    }
 
-        if status_filter != 'all' and status_filter in CUSTOMER_STATUS_MAP:
-            appointments = appointments.filter(status__in=CUSTOMER_STATUS_MAP[status_filter])
+    if status_filter != 'all' and status_filter in CUSTOMER_STATUS_MAP:
+        appointments = appointments.filter(status__in=CUSTOMER_STATUS_MAP[status_filter])
 
-        appointments = appointments.order_by('-created_at')
+    appointments = appointments.order_by('-created_at')
 
-        base_qs = customer_profile.appointments.filter(deleted_at__isnull=True)
-        status_counts = {
-            'pending':   base_qs.filter(status='PENDING').count(),
-            'confirmed': base_qs.filter(status__in=['NOT_ARRIVED', 'ARRIVED']).count(),
-            'completed': base_qs.filter(status='COMPLETED').count(),
-            'cancelled': base_qs.filter(status='CANCELLED').count(),
-            'rejected':  base_qs.filter(status='REJECTED').count(),
-        }
-        status_counts['all'] = base_qs.count()
-
-    except CustomerProfile.DoesNotExist:
-        appointments = Appointment.objects.none()
-        status_counts = {}
-        status_filter = 'all'
+    base_qs = customer_profile.appointments.filter(deleted_at__isnull=True)
+    status_counts = {
+        'pending':   base_qs.filter(status='PENDING').count(),
+        'confirmed': base_qs.filter(status__in=['NOT_ARRIVED', 'ARRIVED']).count(),
+        'completed': base_qs.filter(status='COMPLETED').count(),
+        'cancelled': base_qs.filter(status='CANCELLED').count(),
+        'rejected':  base_qs.filter(status='REJECTED').count(),
+    }
+    status_counts['all'] = base_qs.count()
 
     return render(request, 'appointments/my_appointments.html', {
         'appointments': appointments,

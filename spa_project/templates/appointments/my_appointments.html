@@ -154,20 +154,41 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('submit', async function (event) {
-    const form = event.target.closest('.cancel-appointment-form');
-    if (!form || form.dataset.confirmed === '1') return;
+/**
+ * JAVASCRIPT ĐƠN GIẢN - XỬ LÝ HỦY LỊCH
+ *
+ * BƯỚC 1: Tìm tất cả form có class "cancel-appointment-form"
+ * BƯỚC 2: Khi user click submit → Hiện hộp thoại xác nhận
+ * BƯỚC 3: Nếu user chọn OK → Gửi form đi
+ *         Nếu user chọn Hủy → Không làm gì
+ */
+document.addEventListener('DOMContentLoaded', function() {
 
-    event.preventDefault();
-    const ok = await window.showConfirm(form.dataset.confirmMessage || 'Bạn có chắc muốn hủy lịch hẹn này?', {
-        title: 'Xác nhận hủy lịch',
-        confirmText: 'Xác nhận',
-        cancelText: 'Hủy'
+  // TẤT CẢ CÁC FORM HỦY LỊCH
+  const cancelForms = document.querySelectorAll('.cancel-appointment-form');
+
+  // Gắn sự kiện cho MỖI form
+  cancelForms.forEach(function(form) {
+
+    form.addEventListener('submit', function(event) {
+
+      // CHẠN form submit ngay lập tức
+      event.preventDefault();
+
+      // HIỆN hộp thoại xác nhận (dùng có sẵn của browser)
+      var confirmMessage = form.dataset.confirmMessage || 'Bạn có chắc muốn hủy lịch hẹn này?';
+      var userConfirmed = confirm(confirmMessage);
+
+      // NẾU user chọn OK → Submit form
+      if (userConfirmed) {
+        form.submit();
+      }
+      // NẾU user chọn Hủy → Không làm gì (form không gửi đi)
+
     });
 
-    if (!ok) return;
-    form.dataset.confirmed = '1';
-    form.submit();
+  });
+
 });
 </script>
 {% endblock %}
