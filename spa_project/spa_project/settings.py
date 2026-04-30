@@ -172,3 +172,7 @@ else:
 
 # Địa chỉ "From" hiển thị trong email — phải là sender đã verify trên SendGrid
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Spa ANA <noreply@spaana.com>')
+
+# Thời gian hiệu lực của link đặt lại mật khẩu: 15 phút (tính bằng giây)
+# Django mặc định là 259200 giây (3 ngày) — override lại ở đây
+PASSWORD_RESET_TIMEOUT = 60 * 15  # 900 giây = 15 phút
