@@ -1152,7 +1152,7 @@ function _buildGuestItem(idx, prefill) {
   var endTime  = (timeVal && prefill.pendingDuration) ? addMinutesToTime(timeVal, prefill.pendingDuration) : '';
   var hasSlot  = !!(timeVal && prefill.roomId);
 
-  var svcOpts = '<option value="">-- Dịch vụ --</option>' +
+  var svcOpts = '<option value="">Dịch vụ</option>' +
     SERVICES.map(function(s){ return '<option value="' + s.id + '">' + s.name + '</option>'; }).join('');
 
   var inp = 'width:100%;height:36px;padding:0 12px;font-size:14px;border:1px solid #d1d5db;border-radius:6px;outline:none;background:#fff;box-sizing:border-box;font-family:inherit;color:#111827;display:block;';
@@ -1590,7 +1590,7 @@ function _collectGuestCards() {
 function _initApplyAllBar() {
   const applyAllSvc = document.getElementById('applyAllService');
   if (applyAllSvc) {
-    applyAllSvc.innerHTML = '<option value="">-- Dịch vụ --</option>' +
+    applyAllSvc.innerHTML = '<option value="">Dịch vụ</option>' +
       SERVICES.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
   }
 
