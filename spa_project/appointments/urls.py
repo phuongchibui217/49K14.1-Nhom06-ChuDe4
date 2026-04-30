@@ -35,3 +35,4 @@ urlpatterns = [
     path('api/appointments/customer-cancelled-recent/', api.api_customer_cancelled_recent, name='api_customer_cancelled_recent'),
     path('api/customers/search/', api.api_customer_search, name='api_customer_search'),
 ]
+# create, creat-batch,update,status,api_appointments_search

@@ -856,55 +856,76 @@ def api_appointment_delete(request, appointment_code):
 @require_http_methods(["GET"])
 def api_booking_requests(request):
     """GET /api/booking-requests/ — Yêu cầu đặt lịch từ web.
-    PENDING/CANCELLED: chỉ lấy ONLINE.
-    REJECTED: lấy tất cả source (admin có thể từ chối lịch DIRECT và cần đặt lại).
+
+    Business Logic:
+    - PENDING/CANCELLED: chỉ lấy ONLINE (web booking)
+    - REJECTED: lấy tất cả source (admin có thể từ chối lịch DIRECT)
+
+    Query params:
+    - date: Filter theo ngày (YYYY-MM-DD)
+    - status: Filter theo status (PENDING|CANCELLED|REJECTED)
+    - q: Search theo code, tên, phone
+    - service: Filter theo service_id
     """
     if not _is_staff(request.user):
-        return _deny() # return 403 Forbidden nếu không phải staff
+        return _deny()
 
-    appointments = Appointment.objects.filter(
-        deleted_at__isnull=True
-    ).filter(
+    # ========== 1. BASE FILTER ==========
+    appointments = Appointment.objects.filter(deleted_at__isnull=True).filter(
         Q(status='REJECTED') |
         Q(status__in=['PENDING', 'CANCELLED'], source='ONLINE') |
         Q(status__in=['PENDING', 'CANCELLED'], source__isnull=True)
     )
 
+    # ========== 2. OPTIONAL FILTERS ==========
+
+    # Filter by date
     if date_filter := request.GET.get('date'):
         appointments = appointments.filter(appointment_date=date_filter)
+
+    # Filter by status
     if status_filter := request.GET.get('status', '').strip().upper():
         if status_filter in ['PENDING', 'CANCELLED', 'REJECTED']:
             appointments = appointments.filter(status=status_filter)
+
+    # Search by code, name, phone
     if search := request.GET.get('q', '').strip():
-        # Chuẩn hóa: nếu search là chuỗi số thì cũng tìm theo digits-only
-        search_digits = ''.join(filter(str.isdigit, search))
-        phone_q = (
-            Q(customer_phone_snapshot__icontains=search) |
-            Q(booker_phone__icontains=search)
-        )
-        if search_digits and search_digits != search:
-            # Người dùng nhập có ký tự đặc biệt (dấu cách, gạch ngang...)
-            # → tìm thêm theo digits-only
-            phone_q |= (
-                Q(customer_phone_snapshot__icontains=search_digits) |
-                Q(booker_phone__icontains=search_digits)
-            )
+        # Chuẩn hóa: chỉ giữ số (cho phone search)
+        search_normalized = ''.join(filter(str.isdigit, search))
+
         appointments = appointments.filter(
             Q(appointment_code__icontains=search) |
             Q(customer_name_snapshot__icontains=search) |
             Q(booker_name__icontains=search) |
-            phone_q
+            Q(customer_phone_snapshot__icontains=search_normalized) |
+            Q(booker_phone__icontains=search_normalized)
         )
+
+    # Filter by service
     if service_id := request.GET.get('service', '').strip():
         appointments = appointments.filter(service_variant__service_id=service_id)
 
+    # ========== 3. ORDERING ==========
+    # Sắp xếp: PENDING (0) → CANCELLED/REJECTED (1) → Khác (2)
+    # Sau đó sort theo created_at mới nhất
+
     from django.db.models import Case, When, IntegerField
+
     appointments = appointments.order_by(
-        Case(When(status='PENDING', then=0), When(status='CANCELLED', then=1), When(status='REJECTED', then=1), default=2, output_field=IntegerField()),
+        Case(
+            When(status='PENDING', then=0),
+            When(status='CANCELLED', then=1),
+            When(status='REJECTED', then=1),
+            default=2,
+            output_field=IntegerField()
+        ),
         '-created_at'
     )
 
-    return JsonResponse({'success': True, 'appointments': [serialize_appointment(a) for a in appointments]})
+    return JsonResponse({
+        'success': True,
+        'appointments': [serialize_appointment(a) for a in appointments]
+    })
 
 
 @require_http_methods(["GET"])
