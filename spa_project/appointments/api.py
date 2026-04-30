@@ -1,5 +1,11 @@
 """
-API Endpoints — Lịch hẹn 
+API Endpoints — Lịch hẹn (Organized by Tabs)
+
+This file contains all appointment-related API endpoints, organized by their corresponding UI tabs:
+
+- TAB 1: Lịch theo phòng (Room Calendar)
+- TAB 2: Yêu cầu đặt lịch (Booking Requests)
+- SHARED: Endpoints used by both tabs
 """
 
 import json
@@ -20,15 +26,24 @@ from .services import validate_appointment_create, _get_appt_duration
 from core.api_response import staff_api, get_or_404
 
 
-# ═════════════════════════════════════════════════════════════════════════════
-# HELPERS
-# ═════════════════════════════════════════════════════════════════════════════
+# ============================================================
+# SECTION 1: IMPORTS & SETTINGS
+# ============================================================
+# All imports are defined above
+# This section serves as documentation for module dependencies
+
+
+# ============================================================
+# SECTION 2: HELPER FUNCTIONS
+# ============================================================
 
 def _is_staff(user):
+    """Check if user is staff or superuser."""
     return user.is_authenticated and (user.is_staff or user.is_superuser)
 
 
 def _deny():
+    """Return 403 Forbidden response."""
     return JsonResponse({'success': False, 'error': 'Không có quyền truy cập'}, status=403)
 
 
@@ -236,68 +251,35 @@ def _validate_appointment_data(data):
     return {'valid': len(errors) == 0, 'errors': errors, 'cleaned_data': cleaned}
 
 
-# ═════════════════════════════════════════════════════════════════════════════
-# API ENDPOINTS
-# ═════════════════════════════════════════════════════════════════════════════
-
-@require_http_methods(["GET"])
-def api_rooms_list(request):
-    """GET /api/rooms/ — Danh sách phòng."""
-    if not _is_staff(request.user):
-        return _deny()
-
-    rooms = Room.objects.filter(is_active=True).order_by('code')
-    return JsonResponse({
-        'success': True,
-        'rooms': [{'id': r.code, 'name': r.name, 'capacity': r.capacity} for r in rooms]
-    })
-
-
-@require_http_methods(["GET"])
-def api_appointments_list(request):
-    """GET /api/appointments/ — Danh sách lịch hẹn (có filter)."""
-    if not _is_staff(request.user):
-        return _deny()
-
-    appointments = Appointment.objects.filter(deleted_at__isnull=True).exclude(
-        source='ONLINE', status__in=['PENDING', 'CANCELLED', 'REJECTED']
-    )
-
-    # Filters
-    if date_filter := request.GET.get('date'):
-        appointments = appointments.filter(appointment_date=date_filter)
-    if status_filter := request.GET.get('status', '').strip().upper():
-        appointments = appointments.filter(status=status_filter)
-    if source_filter := request.GET.get('source'):
-        appointments = appointments.filter(source=source_filter)
-    # Filter theo dịch vụ — qua service_variant__service_id
-    if service_filter := request.GET.get('service'):
-        appointments = appointments.filter(service_variant__service_id=service_filter)
-    if search := request.GET.get('q', '').strip():
-        appointments = appointments.filter(
-            Q(customer_name_snapshot__icontains=search) |
-            Q(customer_phone_snapshot__icontains=search) |
-            Q(customer_email_snapshot__icontains=search) |
-            Q(booker_name__icontains=search) |
-            Q(booker_phone__icontains=search) |
-            Q(appointment_code__icontains=search) |
-            Q(notes__icontains=search) |
-            Q(staff_notes__icontains=search) |
-            Q(customer__full_name__icontains=search) |
-            Q(customer__phone__icontains=search)
-        )
-
-    appointments = appointments.order_by('appointment_date', 'appointment_time')
-    return JsonResponse({'success': True, 'appointments': [serialize_appointment(a) for a in appointments]})
-
+# ============================================================
+# SECTION 3: SHARED ENDPOINTS
+# ============================================================
+# These endpoints are used by both TAB 1 (Room Calendar) and TAB 2 (Booking Requests)
 
 @require_http_methods(["GET"])
 def api_appointments_search(request):
-    """GET /api/appointments/search/ — Tìm kiếm lịch hẹn toàn hệ thống.
+    """
+    [SHARED] GET /api/appointments/search/
 
-    Yêu cầu ít nhất 1 điều kiện (q, code, phone, email, status, source, service, room,
-    date_from hoặc date_to) để tránh query toàn bộ dữ liệu.
-    Trả về tối đa 100 kết quả, sắp xếp theo ngày giờ giảm dần.
+    Tìm kiếm lịch hẹn toàn hệ thống.
+
+    TAB: Used by both Room Calendar and Booking Requests
+    Methods: GET
+
+    Query params:
+    - q: General search (name, phone, email, code)
+    - name: Search by name only
+    - code: Search by appointment code
+    - phone: Search by phone number
+    - email: Search by email
+    - status: Filter by status
+    - source: Filter by source (ONLINE, DIRECT)
+    - service: Filter by service ID
+    - room: Filter by room code
+    - date_from: Filter by start date
+    - date_to: Filter by end date
+
+    Returns: Max 100 results, ordered by date/time desc
     """
     if not _is_staff(request.user):
         return _deny()
@@ -380,22 +362,20 @@ def api_appointments_search(request):
 
 
 @require_http_methods(["GET"])
-def api_appointment_detail(request, appointment_code):
-    """GET /api/appointments/<code>/ — Chi tiết 1 lịch hẹn."""
-    if not _is_staff(request.user):
-        return _deny()
-
-    try:
-        appt = Appointment.objects.get(appointment_code=appointment_code, deleted_at__isnull=True)
-    except Appointment.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Không tìm thấy lịch hẹn'}, status=404)
-
-    return JsonResponse({'success': True, 'appointment': serialize_appointment(appt)})
-
-
-@require_http_methods(["GET"])
 def api_customer_search(request):
-    """GET /api/customers/search/?q=... — Tìm khách hàng."""
+    """
+    [SHARED] GET /api/customers/search/?q=...
+
+    Tìm khách hàng theo tên, SĐT hoặc email.
+
+    TAB: Used by both Room Calendar and Booking Requests
+    Methods: GET
+
+    Query params:
+    - q: Search query (min 2 characters)
+
+    Returns: Max 10 customers with id, fullName, phone, email
+    """
     if not _is_staff(request.user):
         return _deny()
 
@@ -416,14 +396,225 @@ def api_customer_search(request):
     })
 
 
+@require_http_methods(["GET", "POST"])
+@staff_api
+def api_appointment_rebook(request, appointment_code):
+    """
+    [SHARED] GET/POST /api/appointments/<code>/rebook/
+
+    GET: Trả về thông tin cần thiết để đặt lại lịch từ lịch đã hủy/từ chối
+    POST: Đặt lại trạng thái về PENDING
+
+    TAB: Used by both Room Calendar and Booking Requests
+    Methods: GET, POST
+
+    Business logic:
+    - Only allows rebooking CANCELLED or REJECTED appointments
+    - GET returns pre-fill data for form
+    - POST changes status to PENDING
+    """
+    appointment, error = get_or_404(Appointment, appointment_code=appointment_code, deleted_at__isnull=True)
+    if error:
+        return error
+
+    # Trả về thông tin cần thiết để FE pre-fill form tạo mới
+    current_status = str(appointment.status or '').strip().upper()
+    if current_status not in ('CANCELLED', 'REJECTED'):
+        return JsonResponse(
+            {
+                'success': False,
+                'error': 'Chỉ có thể đặt lại lịch đã hủy hoặc đã từ chối.',
+                'currentStatus': appointment.status,
+            },
+            status=400,
+        )
+
+    if request.method == 'POST':
+        appointment.status = 'PENDING'
+        appointment.save(update_fields=['status', 'updated_at'])
+        return JsonResponse({
+            'success': True,
+            'message': f'Đã đặt lại lịch hẹn {appointment.appointment_code} về trạng thái chờ xác nhận.',
+            'appointment': serialize_appointment(appointment),
+        })
+
+    variant_available = False
+    variant_warning = None
+    if appointment.service_variant_id:
+        try:
+            sv = ServiceVariant.objects.get(id=appointment.service_variant_id)
+            # Kiểm tra service còn active không
+            if getattr(sv.service, 'status', 'ACTIVE') == 'ACTIVE':
+                variant_available = True
+            else:
+                variant_warning = 'Dịch vụ/gói cũ không còn khả dụng, vui lòng chọn lại.'
+        except ServiceVariant.DoesNotExist:
+            variant_warning = 'Dịch vụ/gói cũ không còn khả dụng, vui lòng chọn lại.'
+
+    return JsonResponse({
+        'success': True,
+        'rebook': {
+            'bookerName':  appointment.booker_name,
+            'bookerPhone': appointment.booker_phone,
+            'bookerEmail': appointment.booker_email or '',
+            'customerName': appointment.customer_name_snapshot,
+            'customerPhone': appointment.customer_phone_snapshot or '',
+            'customerEmail': appointment.customer_email_snapshot or '',
+            'serviceId':   appointment.service_variant.service_id if variant_available else None,
+            'variantId':   appointment.service_variant_id if variant_available else None,
+            'notes':       appointment.notes or '',
+            'source':      appointment.source or 'DIRECT',
+            'variantWarning': variant_warning,
+        }
+    })
+
+
+# ============================================================
+# SECTION 4: TAB 1 - LỊCH THEO PHÒNG (ROOM CALENDAR)
+# ============================================================
+# These endpoints are specifically for the Room Calendar tab
+# They handle room management and appointment CRUD operations
+
+@require_http_methods(["GET"])
+def api_rooms_list(request):
+    """
+    [TAB 1] GET /api/rooms/
+
+    Danh sách tất cả phòng đang active.
+
+    TAB: Room Calendar (Lịch theo phòng)
+    Methods: GET
+
+    Returns: List of rooms with id (code), name, capacity
+    """
+    if not _is_staff(request.user):
+        return _deny()
+
+    rooms = Room.objects.filter(is_active=True).order_by('code')
+    return JsonResponse({
+        'success': True,
+        'rooms': [{'id': r.code, 'name': r.name, 'capacity': r.capacity} for r in rooms]
+    })
+
+
+@require_http_methods(["GET"])
+def api_appointments_list(request):
+    """
+    [TAB 1] GET /api/appointments/
+
+    Danh sách lịch hẹn với các bộ lọc.
+
+    TAB: Room Calendar (Lịch theo phòng)
+    Methods: GET
+
+    Query params:
+    - date: Filter by appointment date (YYYY-MM-DD)
+    - status: Filter by status
+    - source: Filter by source (ONLINE, DIRECT)
+    - service: Filter by service ID
+    - q: Search query (name, phone, email, code, notes)
+
+    Returns: List of appointments ordered by date, time
+    Excludes: ONLINE appointments with PENDING/CANCELLED/REJECTED status
+    """
+    if not _is_staff(request.user):
+        return _deny()
+
+    appointments = Appointment.objects.filter(deleted_at__isnull=True).exclude(
+        source='ONLINE', status__in=['PENDING', 'CANCELLED', 'REJECTED']
+    )
+
+    # Filters
+    if date_filter := request.GET.get('date'):
+        appointments = appointments.filter(appointment_date=date_filter)
+    if status_filter := request.GET.get('status', '').strip().upper():
+        appointments = appointments.filter(status=status_filter)
+    if source_filter := request.GET.get('source'):
+        appointments = appointments.filter(source=source_filter)
+    # Filter theo dịch vụ — qua service_variant__service_id
+    if service_filter := request.GET.get('service'):
+        appointments = appointments.filter(service_variant__service_id=service_filter)
+    if search := request.GET.get('q', '').strip():
+        appointments = appointments.filter(
+            Q(customer_name_snapshot__icontains=search) |
+            Q(customer_phone_snapshot__icontains=search) |
+            Q(customer_email_snapshot__icontains=search) |
+            Q(booker_name__icontains=search) |
+            Q(booker_phone__icontains=search) |
+            Q(appointment_code__icontains=search) |
+            Q(notes__icontains=search) |
+            Q(staff_notes__icontains=search) |
+            Q(customer__full_name__icontains=search) |
+            Q(customer__phone__icontains=search)
+        )
+
+    appointments = appointments.order_by('appointment_date', 'appointment_time')
+    return JsonResponse({'success': True, 'appointments': [serialize_appointment(a) for a in appointments]})
+
+
+@require_http_methods(["GET"])
+def api_appointment_detail(request, appointment_code):
+    """
+    [TAB 1] GET /api/appointments/<code>/
+
+    Chi tiết một lịch hẹn theo code.
+
+    TAB: Room Calendar (Lịch theo phòng)
+    Methods: GET
+
+    Returns: Full appointment details
+    """
+    if not _is_staff(request.user):
+        return _deny()
+
+    try:
+        appt = Appointment.objects.get(appointment_code=appointment_code, deleted_at__isnull=True)
+    except Appointment.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Không tìm thấy lịch hẹn'}, status=404)
+
+    return JsonResponse({'success': True, 'appointment': serialize_appointment(appt)})
+
+
 @require_http_methods(["POST"])
 @staff_api
 def api_appointment_create_batch(request):
     """
-    POST /api/appointments/create-batch/
-    Body: { booker: {...}, guests: [{...}, ...] }
-    
+    [TAB 1] POST /api/appointments/create-batch/
+
     Tạo nhiều lịch hẹn cùng lúc (1 người đặt, nhiều khách).
+
+    TAB: Room Calendar (Lịch theo phòng)
+    Methods: POST
+
+    Request body:
+    {
+        "booker": {
+            "name": "Người đặt",
+            "phone": "0123456789",
+            "email": "email@example.com",
+            "source": "DIRECT" // optional, default "DIRECT"
+        },
+        "guests": [
+            {
+                "name": "Khách 1",
+                "phone": "0123456789",
+                "email": "guest1@example.com",
+                "variantId": 1,
+                "roomId": "P001",
+                "date": "2024-01-01",
+                "time": "10:00",
+                "note": "Ghi chú",
+                "apptStatus": "NOT_ARRIVED",
+                "payStatus": "UNPAID",
+                "paymentMethod": "CASH",
+                "paymentAmount": 0,
+                "customerId": null // optional
+            },
+            // ... more guests
+        ]
+    }
+
+    Returns: Created appointments with any errors
     """
     try:
         raw = json.loads(request.body)
@@ -546,70 +737,48 @@ def api_appointment_create_batch(request):
         return JsonResponse({'success': False, 'error': 'Không thể tạo lịch hẹn. Vui lòng thử lại sau'}, status=400)
 
 
-@require_http_methods(["GET", "POST"])
-@staff_api
-def api_appointment_rebook(request, appointment_code):
-    """POST /api/appointments/<code>/rebook/ — Tạo lịch mới từ lịch đã hủy/từ chối."""
-    appointment, error = get_or_404(Appointment, appointment_code=appointment_code, deleted_at__isnull=True)
-    if error:
-        return error
-
-    # Trả về thông tin cần thiết để FE pre-fill form tạo mới
-    current_status = str(appointment.status or '').strip().upper()
-    if current_status not in ('CANCELLED', 'REJECTED'):
-        return JsonResponse(
-            {
-                'success': False,
-                'error': 'Chỉ có thể đặt lại lịch đã hủy hoặc đã từ chối.',
-                'currentStatus': appointment.status,
-            },
-            status=400,
-        )
-
-    if request.method == 'POST':
-        appointment.status = 'PENDING'
-        appointment.save(update_fields=['status', 'updated_at'])
-        return JsonResponse({
-            'success': True,
-            'message': f'Đã đặt lại lịch hẹn {appointment.appointment_code} về trạng thái chờ xác nhận.',
-            'appointment': serialize_appointment(appointment),
-        })
-
-    variant_available = False
-    variant_warning = None
-    if appointment.service_variant_id:
-        try:
-            sv = ServiceVariant.objects.get(id=appointment.service_variant_id)
-            # Kiểm tra service còn active không
-            if getattr(sv.service, 'status', 'ACTIVE') == 'ACTIVE':
-                variant_available = True
-            else:
-                variant_warning = 'Dịch vụ/gói cũ không còn khả dụng, vui lòng chọn lại.'
-        except ServiceVariant.DoesNotExist:
-            variant_warning = 'Dịch vụ/gói cũ không còn khả dụng, vui lòng chọn lại.'
-
-    return JsonResponse({
-        'success': True,
-        'rebook': {
-            'bookerName':  appointment.booker_name,
-            'bookerPhone': appointment.booker_phone,
-            'bookerEmail': appointment.booker_email or '',
-            'customerName': appointment.customer_name_snapshot,
-            'customerPhone': appointment.customer_phone_snapshot or '',
-            'customerEmail': appointment.customer_email_snapshot or '',
-            'serviceId':   appointment.service_variant.service_id if variant_available else None,
-            'variantId':   appointment.service_variant_id if variant_available else None,
-            'notes':       appointment.notes or '',
-            'source':      appointment.source or 'DIRECT',
-            'variantWarning': variant_warning,
-        }
-    })
-
-
 @require_http_methods(["POST", "PUT"])
 @staff_api
 def api_appointment_update(request, appointment_code):
-    """POST /api/appointments/<code>/update/ — Cập nhật lịch hẹn."""
+    """
+    [TAB 1] POST/PUT /api/appointments/<code>/update/
+
+    Cập nhật thông tin lịch hẹn.
+
+    TAB: Room Calendar (Lịch theo phòng)
+    Methods: POST, PUT
+
+    Request body:
+    {
+        "bookerName": "Người đặt",
+        "bookerPhone": "0123456789",
+        "bookerEmail": "email@example.com",
+        "customerName": "Khách hàng",
+        "phone": "0123456789",
+        "email": "customer@example.com",
+        "variantId": 1,
+        "roomId": "P001",
+        "date": "2024-01-01",
+        "time": "10:00",
+        "note": "Ghi chú",
+        "staffNote": "Ghi chú nội bộ",
+        "apptStatus": "NOT_ARRIVED",
+        "payStatus": "UNPAID",
+        "paymentData": {
+            "payment_method": "CASH",
+            "amount": 100000,
+            "recorded_no": "",
+            "note": ""
+        }
+    }
+
+    Business rules:
+    - Cannot update CANCELLED or REJECTED appointments (use rebook instead)
+    - Validates room availability, date/time conflicts
+    - Syncs payment status with invoice
+
+    Returns: Updated appointment details
+    """
     appointment, error = get_or_404(Appointment, appointment_code=appointment_code, deleted_at__isnull=True)
     if error:
         return error
@@ -793,7 +962,29 @@ def api_appointment_update(request, appointment_code):
 @require_http_methods(["POST"])
 @staff_api
 def api_appointment_status(request, appointment_code):
-    """POST /api/appointments/<code>/status/ — Đổi trạng thái."""
+    """
+    [TAB 1] POST /api/appointments/<code>/status/
+
+    Đổi trạng thái lịch hẹn.
+
+    TAB: Room Calendar (Lịch theo phòng)
+    Methods: POST
+
+    Request body:
+    {
+        "status": "PENDING" // or NOT_ARRIVED, ARRIVED, COMPLETED, CANCELLED, REJECTED
+    }
+
+    Valid statuses:
+    - PENDING: Chờ xác nhận
+    - NOT_ARRIVED: Chưa đến
+    - ARRIVED: Đã đến
+    - COMPLETED: Hoàn thành
+    - CANCELLED: Đã hủy
+    - REJECTED: Đã từ chối
+
+    Returns: Success message with new status display name
+    """
     appointment, error = get_or_404(Appointment, appointment_code=appointment_code, deleted_at__isnull=True)
     if error:
         return error
@@ -823,7 +1014,21 @@ def api_appointment_status(request, appointment_code):
 @require_http_methods(["POST", "DELETE"])
 @staff_api
 def api_appointment_delete(request, appointment_code):
-    """POST /api/appointments/<code>/delete/ — Xóa mềm."""
+    """
+    [TAB 1] POST/DELETE /api/appointments/<code>/delete/
+
+    Xóa mềm lịch hẹn (soft delete).
+
+    TAB: Room Calendar (Lịch theo phòng)
+    Methods: POST, DELETE
+
+    Business logic:
+    - Sets deleted_at and deleted_by_user fields
+    - Appointment is not actually removed from database
+    - Can be restored by admin if needed
+
+    Returns: Success message with deleted appointment ID and customer name
+    """
     from django.utils import timezone
 
     try:
@@ -853,19 +1058,34 @@ def api_appointment_delete(request, appointment_code):
         return JsonResponse({'success': False, 'error': f'Không thể xóa: {str(e)}'}, status=400)
 
 
+# ============================================================
+# SECTION 5: TAB 2 - YÊU CẦU ĐẶT LỊCH (BOOKING REQUESTS)
+# ============================================================
+# These endpoints are specifically for the Booking Requests tab
+# They handle online booking requests and pending appointments
+
 @require_http_methods(["GET"])
 def api_booking_requests(request):
-    """GET /api/booking-requests/ — Yêu cầu đặt lịch từ web.
+    """
+    [TAB 2] GET /api/booking-requests/
 
-    Business Logic:
-    - PENDING/CANCELLED: chỉ lấy ONLINE (web booking)
-    - REJECTED: lấy tất cả source (admin có thể từ chối lịch DIRECT)
+    Danh sách yêu cầu đặt lịch từ web (online bookings).
+
+    TAB: Booking Requests (Yêu cầu đặt lịch)
+    Methods: GET
 
     Query params:
     - date: Filter theo ngày (YYYY-MM-DD)
     - status: Filter theo status (PENDING|CANCELLED|REJECTED)
     - q: Search theo code, tên, phone
     - service: Filter theo service_id
+
+    Business logic:
+    - PENDING/CANCELLED: chỉ lấy ONLINE (web booking)
+    - REJECTED: lấy tất cả source (admin có thể từ chối lịch DIRECT)
+    - Sắp xếp: PENDING → CANCELLED/REJECTED → created_at desc
+
+    Returns: List of booking requests ordered by priority (PENDING first)
     """
     if not _is_staff(request.user):
         return _deny()
@@ -930,7 +1150,20 @@ def api_booking_requests(request):
 
 @require_http_methods(["GET"])
 def api_booking_pending_count(request):
-    """GET /api/booking/pending-count/ — Số lượng booking pending."""
+    """
+    [TAB 2] GET /api/booking/pending-count/
+
+    Số lượng booking đang chờ xác nhận.
+
+    TAB: Booking Requests (Yêu cầu đặt lịch)
+    Methods: GET
+
+    Business logic:
+    - Counts ONLINE bookings with PENDING status
+    - Returns current timestamp for cache validation
+
+    Returns: Count of pending bookings with timestamp
+    """
     if not _is_staff(request.user):
         return _deny()
 
@@ -952,9 +1185,23 @@ api_appointment_create = api_appointment_create_batch
 
 @require_http_methods(["GET"])
 def api_customer_cancelled_recent(request):
-    """GET /api/appointments/customer-cancelled-recent/
-    Trả về các lịch bị khách hủy trong N phút gần đây (mặc định 10 phút).
-    Dùng cho admin polling để hiển thị toast thông báo.
+    """
+    [TAB 2] GET /api/appointments/customer-cancelled-recent/
+
+    Danh sách các lịch bị khách hủy gần đây.
+
+    TAB: Booking Requests (Yêu cầu đặt lịch)
+    Methods: GET
+
+    Query params:
+    - minutes: Số phút để tìm kiếm (default: 10)
+
+    Business logic:
+    - Finds appointments cancelled by customer within N minutes
+    - Used for admin polling to show toast notifications
+    - Ordered by updated_at desc (most recent first)
+
+    Returns: Max 20 recently cancelled appointments
     """
     if not _is_staff(request.user):
         return _deny()

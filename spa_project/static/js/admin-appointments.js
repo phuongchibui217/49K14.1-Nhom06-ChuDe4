@@ -1757,12 +1757,14 @@ function openCreateModal(prefill={}){
     document.getElementById('bookerEmail').value  = rb.email  || '';
     document.getElementById('bookerSource').value = rb.source || 'DIRECT';
     // Guest card trống slot — admin bắt buộc chọn ngày/giờ/phòng mới
+    // ✅ Thêm ngày mặc định (hôm nay) để admin dễ chỉnh sửa
     addGuestCard({
       name:      prefill._guest?.name      || '',
       phone:     prefill._guest?.phone     || '',
       email:     prefill._guest?.email     || '',
       serviceId: prefill._guest?.serviceId || null,
       variantId: prefill._guest?.variantId || null,
+      date:      dayPicker.value,  // ✅ Thêm ngày mặc định
     });
     modalTitle.textContent = 'Đặt lại lịch hẹn';
     // Ẩn nút "Thêm khách" khi đặt lại lịch (chỉ có 1 khách)
