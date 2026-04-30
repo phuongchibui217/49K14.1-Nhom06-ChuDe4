@@ -1395,6 +1395,22 @@
   text-align: center;
 }
 
+/* Date input for appointment date */
+#apptModal .gc-date-input {
+  width: 125px;
+  min-width: 110px;
+  max-width: 140px;
+  text-align: center;
+  font-family: inherit;
+  color: #374151;
+}
+
+#apptModal .gc-date-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,.14);
+}
+
 /* Cụm time-range — hiển thị dạng "07:30 – 08:30" */
 #apptModal .gc-time-range-field {
   position: relative;

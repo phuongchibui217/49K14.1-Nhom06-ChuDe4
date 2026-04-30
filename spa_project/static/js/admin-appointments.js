@@ -1175,6 +1175,7 @@ function _buildGuestItem(idx, prefill) {
 
   var slotBadge = '<div class="gc-slot-badge">'
     + '<select class="gc-room-select" required style="' + roomSelectCss + '">' + roomOpts + '</select>'
+    + '<input type="date" class="gc-date-input" value="' + _esc(dateVal) + '" title="Ngày hẹn" style="width:125px;max-width:100%;height:32px;padding:0 8px;font-size:13px;border:1px solid #d1d5db;border-radius:6px;outline:none;background:#fff;box-sizing:border-box;font-family:inherit;color:#374151;margin:0;" />'
     + '<div class="gc-time-range-field" title="Click để chỉnh giờ">'
       + '<i class="far fa-clock gc-time-range-icon"></i>'
       + '<span class="gc-time-range-display">'
@@ -1273,6 +1274,19 @@ function _buildGuestItem(idx, prefill) {
       item.dataset.slotRoom = roomSel.value;
       var roomInp = item.querySelector('.gc-room');
       if (roomInp) roomInp.value = roomSel.value;
+      _markRowValidity(item);
+      _updateGuestProgress();
+    });
+  }
+
+  // Bind date input event
+  var dateInp = item.querySelector('.gc-date-input');
+  var dateHid = item.querySelector('.gc-date');
+  if (dateInp) {
+    dateInp.addEventListener('change', function() {
+      var newDate = dateInp.value;
+      item.dataset.slotDate = newDate;
+      if (dateHid) dateHid.value = newDate;
       _markRowValidity(item);
       _updateGuestProgress();
     });
