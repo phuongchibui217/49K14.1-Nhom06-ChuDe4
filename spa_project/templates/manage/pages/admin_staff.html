@@ -387,6 +387,52 @@ document.addEventListener('DOMContentLoaded', function() {
         onApply:  () => searchStaff(),
         onClear:  () => clearStaffFilter(),
     });
+
+    // Validate mật khẩu xác nhận ngay phía client trước khi submit
+    // Tránh trường hợp form submit lên server rồi mới báo lỗi (modal đóng mất)
+    const addForm = document.querySelector('#addStaffModal form');
+    if (addForm) {
+        const pwInput      = document.getElementById('addPassword');
+        const confirmInput = document.getElementById('addConfirmPassword');
+
+        // Hiển thị lỗi inline dưới ô xác nhận mật khẩu
+        function showPwError(msg) {
+            let errEl = document.getElementById('addPasswordError');
+            if (!errEl) {
+                errEl = document.createElement('div');
+                errEl.id = 'addPasswordError';
+                errEl.className = 'text-danger small mt-1';
+                // pw-wrapper nằm trong col-md-6, chèn lỗi sau pw-wrapper
+                confirmInput.closest('.pw-wrapper').after(errEl);
+            }
+            errEl.textContent = msg;
+            confirmInput.classList.add('is-invalid');
+        }
+
+        function clearPwError() {
+            const errEl = document.getElementById('addPasswordError');
+            if (errEl) errEl.textContent = '';
+            confirmInput.classList.remove('is-invalid');
+        }
+
+        // Check realtime khi người dùng gõ vào ô xác nhận
+        confirmInput.addEventListener('input', function() {
+            if (pwInput.value && confirmInput.value && pwInput.value !== confirmInput.value) {
+                showPwError('Mật khẩu xác nhận không khớp.');
+            } else {
+                clearPwError();
+            }
+        });
+
+        // Block submit nếu mật khẩu không khớp
+        addForm.addEventListener('submit', function(e) {
+            if (pwInput.value !== confirmInput.value) {
+                e.preventDefault();
+                showPwError('Mật khẩu xác nhận không khớp.');
+                confirmInput.focus();
+            }
+        });
+    }
 });
 
 function editStaff(id) {
