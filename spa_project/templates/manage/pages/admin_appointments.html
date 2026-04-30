@@ -184,8 +184,12 @@
               <input type="text" class="form-control form-control-sm" id="srchEmail" placeholder="Nhập email...">
             </div>
           </div>
-          <!-- Hàng 2: Dịch vụ / Trạng thái / Nguồn -->
+          <!-- Hàng 2: Mã lịch hẹn / Dịch vụ / Trạng thái -->
           <div class="row g-2 mb-2">
+            <div class="col-12 col-sm-6 col-md-4">
+              <label class="form-label mb-1 search-form-label">Mã lịch hẹn</label>
+              <input type="text" class="form-control form-control-sm" id="srchCode" placeholder="Nhập mã lịch hẹn...">
+            </div>
             <div class="col-12 col-sm-6 col-md-4">
               <label class="form-label mb-1 search-form-label">Dịch vụ / gói</label>
               <select class="form-select form-select-sm" id="srchService">
@@ -204,6 +208,9 @@
                 <option value="REJECTED">Đã từ chối</option>
               </select>
             </div>
+          </div>
+          <!-- Hàng 3: Nguồn / Từ ngày / Đến ngày -->
+          <div class="row g-2 mb-2">
             <div class="col-12 col-sm-6 col-md-4">
               <label class="form-label mb-1 search-form-label">Nguồn</label>
               <select class="form-select form-select-sm" id="srchSource">
@@ -215,9 +222,6 @@
                 <option value="ZALO">Zalo</option>
               </select>
             </div>
-          </div>
-          <!-- Hàng 3: Từ ngày / Đến ngày / Nút hành động -->
-          <div class="row g-2 align-items-end">
             <div class="col-12 col-sm-6 col-md-4">
               <label class="form-label mb-1 search-form-label">Từ ngày</label>
               <input type="date" class="form-control form-control-sm" id="srchDateFrom">
@@ -226,7 +230,10 @@
               <label class="form-label mb-1 search-form-label">Đến ngày</label>
               <input type="date" class="form-control form-control-sm" id="srchDateTo">
             </div>
-            <div class="col-12 col-md-4 d-flex justify-content-md-end gap-2">
+          </div>
+          <!-- Hàng 4: Nút hành động -->
+          <div class="row g-2 align-items-end">
+            <div class="col-12 d-flex justify-content-end gap-2">
               <button type="button" class="btn btn-outline-secondary btn-sm px-3" id="btnResetSearch">
                 <i class="fas fa-undo me-1"></i>Đặt lại
               </button>
@@ -237,7 +244,7 @@
           </div>
           <div class="alert alert-warning py-1 px-2 mt-2 mb-0 d-none search-warning" id="srchWarning">
             <i class="fas fa-exclamation-triangle me-1"></i>
-            <span id="srchWarningText">Vui lòng nhập ít nhất 1 điều kiện tìm kiếm.</span>
+            <span id="srchWarningText">Vui lòng nhập điều kiện tìm kiếm</span>
           </div>
         </div>
 
@@ -440,7 +447,7 @@
 
       <div class="del-modal-body">
         <div class="del-modal-icon"><i class="fas fa-trash-alt"></i></div>
-        <div class="del-modal-title">Xóa lịch hẹn?</div>
+        <div class="del-modal-title">Xóa lịch hẹn này?</div>
         <div class="del-modal-info" id="deleteAppointmentInfo"></div>
       </div>
 

@@ -233,6 +233,12 @@
 {# ── GRID ── #}
 <section class="sl-section">
   <div class="container">
+    {% if load_error %}
+    <div class="col-12 sl-empty">
+      <i class="fas fa-exclamation-circle"></i>
+      <p>Không thể tải danh sách dịch vụ, vui lòng thử lại.</p>
+    </div>
+    {% else %}
     <div class="row g-4" id="servicesGrid">
       {% for service in services %}
       <div class="col-sm-6 col-lg-4 service-item" data-category="{{ service.category.code }}">
@@ -241,10 +247,11 @@
       {% empty %}
       <div class="col-12 sl-empty">
         <i class="fas fa-spa"></i>
-        <p>Chưa có dịch vụ nào.</p>
+        <p>Hiện chưa có dịch vụ nào.</p>
       </div>
       {% endfor %}
     </div>
+    {% endif %}
   </div>
 </section>
 

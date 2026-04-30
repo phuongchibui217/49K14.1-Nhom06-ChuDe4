@@ -1,7 +1,7 @@
 {% extends 'spa/base.html' %}
 {% load spa_filters %}
 
-{% block title %}{{ service.name }} — Spa ANA{% endblock %}
+{% block title %}{% if service %}{{ service.name }} — Spa ANA{% else %}Dịch vụ — Spa ANA{% endif %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -466,6 +466,25 @@
 
 {% block content %}
 
+{# ── ERROR STATES ── #}
+{% if not_found %}
+<div class="container" style="padding: 5rem 1rem; text-align: center;">
+  <i class="fas fa-exclamation-circle" style="font-size:2.5rem; color:#c8a97e; margin-bottom:1rem; display:block;"></i>
+  <p style="font-size:1.05rem; color:#555;">Dịch vụ không tồn tại hoặc đã bị xóa.</p>
+  <a href="{% url 'spa_services:service_list' %}" class="sd-btn sd-btn--outline" style="display:inline-flex; margin-top:1rem;">
+    <i class="fas fa-arrow-left"></i>&nbsp; Quay lại danh sách dịch vụ
+  </a>
+</div>
+{% elif load_error %}
+<div class="container" style="padding: 5rem 1rem; text-align: center;">
+  <i class="fas fa-triangle-exclamation" style="font-size:2.5rem; color:#c8a97e; margin-bottom:1rem; display:block;"></i>
+  <p style="font-size:1.05rem; color:#555;">Không thể tải thông tin dịch vụ, vui lòng thử lại.</p>
+  <a href="{% url 'spa_services:service_list' %}" class="sd-btn sd-btn--outline" style="display:inline-flex; margin-top:1rem;">
+    <i class="fas fa-arrow-left"></i>&nbsp; Quay lại danh sách dịch vụ
+  </a>
+</div>
+{% else %}
+
 {# Hero Split Layout #}
 <section class="sd-hero">
   <div class="sd-hero__grid">
@@ -710,7 +729,7 @@
           
         {% else %}
           <p style="font-size:.9rem;color:#666;margin-bottom:1.5rem;line-height:1.7;">
-            Liên hệ trực tiếp để được tư vấn gói phù hợp.
+            Hiện dịch vụ chưa có gói khả dụng.
           </p>
           <a href="{% url 'appointments:booking' %}?service={{ service.id }}"
              class="sd-card__btn">
@@ -743,6 +762,8 @@
   </div>
 </section>
 {% endif %}
+
+{% endif %}{# end not_found / load_error / else #}
 
 {% endblock %}
 

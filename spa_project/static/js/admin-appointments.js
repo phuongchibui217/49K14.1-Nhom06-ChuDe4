@@ -10,6 +10,18 @@ const DEFAULT_DURATION = 60; // Thời lượng mặc định cho pending block 
 // ===== API BASE URL- đường dẫn API để gọi BE =====
 const API_BASE = '/api';
 
+// Constant dùng chung cho tất cả lỗi tải lịch hẹn — UC 14.2 exception flow 5a
+const MSG_LOAD_APPT_ERROR = 'Không thể tải lịch hẹn. Vui lòng thử lại sau.';
+
+// ===== UC 14.3 — Messages chuẩn hóa =====
+const MSG_APPROVE_SUCCESS  = 'Xác nhận yêu cầu thành công';
+const MSG_REJECT_SUCCESS   = 'Từ chối yêu cầu thành công';
+const MSG_REBOOK_SUCCESS   = 'Đặt lại lịch hẹn thành công';
+const MSG_WEB_EMPTY        = 'Hiện chưa có yêu cầu đặt lịch nào.';
+const MSG_WEB_GENERIC_ERR  = 'Không thể xử lý yêu cầu. Vui lòng thử lại sau.';
+const MSG_WEB_CONFLICT     = 'Không thể xử lý do khung giờ hoặc phòng không khả dụng.';
+const MSG_APPROVE_CONFLICT = 'Không thể xác nhận do khung giờ hoặc phòng không khả dụng.';
+
 // ===== HELPER: format variant label — tránh lặp "90 phút — 90 phút" =====
 function variantLabel(v) {
   const dur = `${v.duration_minutes} phút`;
@@ -41,6 +53,9 @@ let isSubmitting = false;
 // State: đang ở chế độ "quay về grid để chọn thêm slot"
 let _addingSlotMode = false;
 let _savedBookerInfo = null;  // lưu tạm booker info khi quay về grid
+
+// UC 14.3 — track rebook mode để hiển thị đúng message sau khi tạo lịch
+let _isRebookMode = false;
 
 // CREATE MODE — ACCORDION GUEST CARDS
 let _guestCount = 0;
@@ -144,6 +159,9 @@ async function loadServices() {
   }
 }
 
+// _gridLoadError: true khi lần load gần nhất bị lỗi — dùng để renderGrid hiển thị error state
+let _gridLoadError = false;
+
 async function loadAppointments(date = '') {
   let url = `${API_BASE}/appointments/`;
   const params = [];
@@ -165,8 +183,12 @@ async function loadAppointments(date = '') {
   const result = await apiGet(url);
   if (result.success && result.appointments) {
     APPOINTMENTS = result.appointments;
+    _gridLoadError = false;
   } else {
+    // API trả error hoặc network lỗi — UC 14.2 exception flow 5a
     APPOINTMENTS = [];
+    _gridLoadError = true;
+    showToast('error', 'Lỗi', result.error || MSG_LOAD_APPT_ERROR);
   }
 }
 
@@ -183,6 +205,8 @@ async function loadBookingRequests(statusFilter = '', dateFilter = '', searchTer
   if (result && result.success) {
     return result.appointments || [];
   }
+  // UC 14.3 — lỗi tải không được im lặng
+  showToast('error', 'Lỗi', MSG_WEB_GENERIC_ERR);
   return [];
 }
 
@@ -453,7 +477,7 @@ function handleToggleSlot({ roomId, laneIndex, day, time, slotsEl }) {
     overlaps(startMin, endMin, minutesFromStart(a.start), minutesFromStart(a.end))
   );
   if (conflictAppt) {
-    showToast("warning", "Slot đã có lịch", `Lane này đã có lịch hẹn lúc ${conflictAppt.start}–${conflictAppt.end}`);
+    showToast("warning", "Slot đã có lịch", "Khung giờ đã có lịch, vui lòng chọn thời gian khác");
     if (slotsEl) {
       slotsEl.classList.add("conflict-flash");
       setTimeout(() => slotsEl.classList.remove("conflict-flash"), 450);
@@ -608,6 +632,16 @@ function renderGrid(){
   grid.innerHTML = "";
   const day = dayPicker.value;
 
+  // UC 14.2 exception flow 5a — hiển thị error state thay vì grid rỗng im lặng
+  if (_gridLoadError) {
+    grid.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;padding:3rem 1rem;gap:.75rem;color:#b91c1c;">
+        <i class="fas fa-exclamation-circle" style="font-size:1.25rem;flex-shrink:0;"></i>
+        <span style="font-size:.9rem;font-weight:500;">${MSG_LOAD_APPT_ERROR}</span>
+      </div>`;
+    return;
+  }
+
   ROOMS.forEach((r)=>{
     // Lọc lịch theo phòng — dùng roomCode (khớp với serializer)
     // Hiển thị tất cả trừ CANCELLED/REJECTED
@@ -756,7 +790,7 @@ async function renderWebRequests(){
 
   const webTbody = document.getElementById("webTbody");
   if(rows.length === 0){
-    webTbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">Không có yêu cầu đặt lịch trực tuyến</td></tr>`;
+    webTbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">${MSG_WEB_EMPTY}</td></tr>`;
     return;
   }
   webTbody.innerHTML = rows.map(a => {
@@ -786,16 +820,21 @@ async function renderWebRequests(){
 }
 
 window.approveWeb = async function(id){
-  const result = await apiGet(`${API_BASE}/appointments/${id}/`);
-  if (result.success && result.appointment) {
-    const a = result.appointment;
-    // Mở edit modal với status mặc định NOT_ARRIVED
-    openEditModalWithData({ ...a, apptStatus: 'NOT_ARRIVED' });
-    const dayPicker = document.getElementById("dayPicker");
-    if (a.date) dayPicker.value = a.date;
-    showToast("info", "Xác nhận lịch", "Kiểm tra phòng & giờ rồi bấm Lưu để xác nhận lên timeline");
-  } else {
-    showToast("error","Lỗi","Không tìm thấy lịch hẹn");
+  // UC 14.3 — Xác nhận trực tiếp qua API, không mở modal
+  try {
+    const result = await apiPost(`${API_BASE}/appointments/${id}/status/`, { status: 'NOT_ARRIVED' });
+    if (result.success) {
+      showToast("success", "Thành công", MSG_APPROVE_SUCCESS);
+      await renderWebRequests();
+      await refreshData();
+    } else {
+      // Phân biệt lỗi conflict vs lỗi chung — UC 14.3 case 6
+      const errLower = (result.error || '').toLowerCase();
+      const isConflict = errLower.includes('trùng') || errLower.includes('đầy') || errLower.includes('khả dụng') || errLower.includes('capacity') || errLower.includes('conflict');
+      showToast("error", "Không thể xác nhận", isConflict ? MSG_APPROVE_CONFLICT : MSG_WEB_GENERIC_ERR);
+    }
+  } catch (err) {
+    showToast("error", "Lỗi", MSG_WEB_GENERIC_ERR);
   }
 }
 
@@ -822,9 +861,18 @@ window.rejectWeb = async function(id){
 
   newBtn.addEventListener('click', async () => {
     modal.hide();
-    const result = await apiPost(`${API_BASE}/appointments/${id}/status/`, { status: 'REJECTED' });
-    if (result.success) { showToast("success", "Đã từ chối", "Yêu cầu đặt lịch đã bị từ chối"); await renderWebRequests(); await refreshData(); }
-    else showToast("error", "Lỗi", result.error || "Không thể từ chối yêu cầu");
+    try {
+      const result = await apiPost(`${API_BASE}/appointments/${id}/status/`, { status: 'REJECTED' });
+      if (result.success) {
+        showToast("success", "Thành công", MSG_REJECT_SUCCESS);
+        await renderWebRequests();
+        await refreshData();
+      } else {
+        showToast("error", "Lỗi", MSG_WEB_GENERIC_ERR);
+      }
+    } catch (err) {
+      showToast("error", "Lỗi", MSG_WEB_GENERIC_ERR);
+    }
   });
 
   modal.show();
@@ -834,7 +882,7 @@ window.rebookAppointment = async function(id) {
   // Fetch data lịch cũ để pre-fill form tạo mới
   const result = await apiGet(`${API_BASE}/appointments/${id}/`);
   if (!result || !result.success || !result.appointment) {
-    showToast('error', 'Lỗi', result?.error || 'Không tìm thấy lịch hẹn');
+    showToast('error', 'Lỗi', MSG_WEB_GENERIC_ERR);
     return;
   }
   openRebookAsCreate(result.appointment);
@@ -1362,16 +1410,21 @@ function _buildGuestItem(idx, prefill) {
       var nameI  = item.querySelector('.gc-name');
       var phoneI = item.querySelector('.gc-phone');
       var emailI = item.querySelector('.gc-email');
+      var noteI  = item.querySelector('.gc-customer-note');
       if (sameChk.checked) {
         if (nameI)  nameI.value  = document.getElementById('bookerName')?.value.trim()  || '';
         if (phoneI) phoneI.value = document.getElementById('bookerPhone')?.value.trim() || '';
         if (emailI) emailI.value = document.getElementById('bookerEmail')?.value.trim() || '';
         if (nameI)  nameI.readOnly  = true;
         if (phoneI) phoneI.readOnly = true;
+        // Ghi chú khách: khi tick "= người đặt", giữ nguyên giá trị hiện tại
+        // (đã được BE populate đúng từ profile người đặt nếu có)
       } else {
         if (nameI)  { nameI.value  = ''; nameI.readOnly  = false; }
         if (phoneI) { phoneI.value = ''; phoneI.readOnly = false; }
         if (emailI) emailI.readOnly = false;
+        // Bỏ tick → khách là người khác, xóa ghi chú khách vì chưa biết profile của họ
+        if (noteI)  noteI.value = '';
       }
       _updateGuestProgress();
     });
@@ -1751,6 +1804,7 @@ function openCreateModal(prefill={}){
 
   if (prefill._fromRebook && prefill._booker) {
     // Tạo lại lịch từ lịch cũ — pre-fill booker + khách, KHÔNG copy ngày/giờ/phòng
+    _isRebookMode = true;  // UC 14.3 — đánh dấu để hiển thị đúng message sau khi tạo
     const rb = prefill._booker;
     document.getElementById('bookerName').value   = rb.name   || '';
     document.getElementById('bookerPhone').value  = rb.phone  || '';
@@ -1771,6 +1825,7 @@ function openCreateModal(prefill={}){
     _setCreateOnlyVisible(false);
     showToast('info', 'Đặt lại', 'Vui lòng chọn ngày, giờ và phòng mới');
   } else if (prefill._fromPending && prefill._blocks && prefill._blocks.length > 0) {
+    _isRebookMode = false;
     if (prefill._restoreBooker) {
       const rb = prefill._restoreBooker;
       document.getElementById('bookerName').value   = rb.name   || '';
@@ -1784,6 +1839,7 @@ function openCreateModal(prefill={}){
       addGuestCard({ date: pb.day, time: pb.time, roomId: pb.roomId, pendingDuration: pb.duration });
     });
   } else {
+    _isRebookMode = false;
     addGuestCard({
       date: prefill.day || dayPicker.value,
       time: prefill.time || '',
@@ -1839,11 +1895,17 @@ function openEditModalWithData(a){
   resetModalError();
   modalTitle.textContent = `Chỉnh sửa • ${a.id}`;
   apptId.value = a.id;
-  btnDelete.classList.remove("d-none");
 
   // Hiện nút "Đặt lại" nếu lịch đã hủy hoặc đã từ chối
   const btnRebook = document.getElementById('btnRebook');
   const st = (a.apptStatus || '').toUpperCase();
+
+  // Ẩn nút Xóa nếu lịch đã COMPLETED — không cho phép xóa lịch đã hoàn thành
+  if (st === 'COMPLETED') {
+    btnDelete.classList.add("d-none");
+  } else {
+    btnDelete.classList.remove("d-none");
+  }
   if (btnRebook) {
     if (st === 'CANCELLED' || st === 'REJECTED') {
       btnRebook.classList.remove('d-none');
@@ -1995,11 +2057,14 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
         await renderWebRequests();
         showToast("success", "Thành công", result.message || "Cập nhật lịch hẹn thành công");
       } else {
-        modalError.textContent = result.error || "Không thể lưu lịch hẹn";
+        // UC 14.3 — phân biệt lỗi conflict khi xác nhận vs lỗi chung
+        const errLower = (result.error || '').toLowerCase();
+        const isConflict = errLower.includes('trùng') || errLower.includes('đầy') || errLower.includes('khả dụng') || errLower.includes('capacity') || errLower.includes('conflict');
+        modalError.textContent = isConflict ? MSG_APPROVE_CONFLICT : (result.error || MSG_WEB_GENERIC_ERR);
         modalError.classList.remove("d-none");
       }
     } catch(err) {
-      modalError.textContent = "Không thể cập nhật lịch hẹn. Vui lòng thử lại sau";
+      modalError.textContent = MSG_WEB_GENERIC_ERR;
       modalError.classList.remove("d-none");
     } finally {
       isSubmitting = false;
@@ -2109,16 +2174,22 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
       clearPendingBlocks();
       await refreshData();
       await renderWebRequests();
-      showToast("success", "Thành công", result.message || `Đã tạo ${result.appointments?.length || 0} lịch hẹn`);
+      // UC 14.3 — phân biệt rebook vs tạo mới thông thường
+      const successMsg = _isRebookMode ? MSG_REBOOK_SUCCESS : (result.message || 'Tạo lịch hẹn thành công');
+      _isRebookMode = false;
+      showToast("success", "Thành công", successMsg);
       if (result.errors?.length) {
         setTimeout(() => showToast("warning", "Một số lỗi", result.errors.join(' | ')), 1500);
       }
     } else {
-      modalError.textContent = result.error || "Không thể tạo lịch hẹn";
+      // UC 14.3 — chuẩn hóa lỗi conflict vs lỗi chung
+      const errLower = (result.error || '').toLowerCase();
+      const isConflict = errLower.includes('trùng') || errLower.includes('đầy') || errLower.includes('khả dụng') || errLower.includes('capacity') || errLower.includes('conflict');
+      modalError.textContent = isConflict ? MSG_WEB_CONFLICT : (result.error || MSG_WEB_GENERIC_ERR);
       modalError.classList.remove("d-none");
     }
     } catch(err) {
-      modalError.textContent = "Không thể tạo lịch hẹn. Vui lòng thử lại sau";
+      modalError.textContent = MSG_WEB_GENERIC_ERR;
       modalError.classList.remove("d-none");
   } finally {
     isSubmitting = false;
@@ -2185,14 +2256,14 @@ btnDelete.addEventListener("click", async ()=>{
           if (modal) modal.hide();
           await refreshData();
           await renderWebRequests();  // Refresh lại tab Yêu cầu đặt lịch
-          showToast("success","Đã xóa thành công", `Đã xóa hoàn toàn lịch hẹn ${id} khỏi hệ thống`);
+          showToast("success", "Thành công", result.message || "Đã xóa lịch hẹn");
         } else {
           showToast("error","Lỗi", result.error || "Không thể xóa lịch hẹn");
           isSubmitting = false; // Reset khi lỗi
         }
       } catch (err) {
         console.error('Error:', err);
-        showToast("error","Lỗi", "Không thể xóa lịch hẹn. Vui lòng thử lại sau");
+        showToast("error","Lỗi", "Xóa thất bại, vui lòng thử lại sau.");
         isSubmitting = false; // Reset khi lỗi
       } finally {
         // ===== TẮT LOADING STATE =====
@@ -2222,7 +2293,15 @@ function shiftDay(delta){ const d = new Date(dayPicker.value + "T00:00:00"); d.s
 
 // ===== REFRESH DATA =====
 async function refreshData(){
-  await loadAppointments(dayPicker.value);
+  try {
+    await loadAppointments(dayPicker.value);
+  } catch (err) {
+    // Network lỗi hoàn toàn (offline, DNS fail...) — UC 14.2 exception flow 5a
+    console.error('refreshData error:', err);
+    APPOINTMENTS = [];
+    _gridLoadError = true;
+    showToast('error', 'Lỗi', MSG_LOAD_APPT_ERROR);
+  }
   renderGrid();
 }
 
@@ -2256,7 +2335,8 @@ function initSearchModal() {
   if (btnReset) {
     btnReset.addEventListener('click', () => {
       _resetSearchModalState(searchModalEl);
-      loadBookingRequests();
+      refreshData();        // Refresh grid lịch theo phòng về toàn bộ danh sách
+      renderWebRequests();  // Refresh tab Yêu cầu đặt lịch
     });
   }
 
@@ -2342,7 +2422,7 @@ async function _doSearch() {
 
   const hasCondition = name || phone || email || code || service || status || source || room || dateFrom || dateTo;
   if (!hasCondition) {
-    _setSearchWarning(true, 'Vui lòng nhập điều kiện tìm kiếm.');
+    _setSearchWarning(true, 'Vui lòng nhập điều kiện tìm kiếm');
     return;
   }
 

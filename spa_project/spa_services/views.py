@@ -57,49 +57,80 @@ def service_list(request):
     from .models import ServiceCategory
     from django.db.models import Min, Max, Count
 
-    services = (
-        Service.objects
-        .filter(status='ACTIVE')
-        .select_related('category')
-        .prefetch_related('variants')
-        .annotate(
-            min_price=Min('variants__price'),
-            max_price=Max('variants__price'),
-            min_duration=Min('variants__duration_minutes'),
-            max_duration=Max('variants__duration_minutes'),
-            variant_count=Count('variants'),
+    load_error = False
+    services = []
+    categories = []
+
+    try:
+        services = (
+            Service.objects
+            .filter(status='ACTIVE')
+            .select_related('category')
+            .prefetch_related('variants')
+            .annotate(
+                min_price=Min('variants__price'),
+                max_price=Max('variants__price'),
+                min_duration=Min('variants__duration_minutes'),
+                max_duration=Max('variants__duration_minutes'),
+                variant_count=Count('variants'),
+            )
+            .order_by('-created_at')
         )
-        .order_by('-created_at')
-    )
-    categories = ServiceCategory.objects.filter(status='ACTIVE').order_by('sort_order', 'name')
+        categories = ServiceCategory.objects.filter(status='ACTIVE').order_by('sort_order', 'name')
+    except Exception:
+        import traceback
+        traceback.print_exc()
+        load_error = True
+
     return render(request, 'spa_services/services.html', {
         'services': services,
         'categories': categories,
+        'load_error': load_error,
     })
 
 
 def service_detail(request, service_id):
     """Chi tiết dịch vụ - Lấy từ database"""
-    service = get_object_or_404(Service, id=service_id, status='ACTIVE')
+    # Case 1: Dịch vụ không tồn tại hoặc không active
+    try:
+        service = Service.objects.get(id=service_id, status='ACTIVE')
+    except Service.DoesNotExist:
+        return render(request, 'spa_services/service_detail.html', {
+            'service': None,
+            'not_found': True,
+            'related_services': [],
+        })
+    except Exception:
+        # Case 2: Lỗi khi tải dữ liệu
+        import traceback
+        traceback.print_exc()
+        return render(request, 'spa_services/service_detail.html', {
+            'service': None,
+            'load_error': True,
+            'related_services': [],
+        })
 
     # Lấy các dịch vụ liên quan (cùng category)
-    related_services = (
-        Service.objects
-        .filter(category=service.category, status='ACTIVE')
-        .exclude(id=service_id)
-        .prefetch_related('variants')
-        .annotate(
-            min_price=Min('variants__price'),
-            max_price=Max('variants__price'),
-            min_duration=Min('variants__duration_minutes'),
-            max_duration=Max('variants__duration_minutes'),
-            variant_count=Count('variants'),
-        )[:4]
-    )
+    try:
+        related_services = (
+            Service.objects
+            .filter(category=service.category, status='ACTIVE')
+            .exclude(id=service_id)
+            .prefetch_related('variants')
+            .annotate(
+                min_price=Min('variants__price'),
+                max_price=Max('variants__price'),
+                min_duration=Min('variants__duration_minutes'),
+                max_duration=Max('variants__duration_minutes'),
+                variant_count=Count('variants'),
+            )[:4]
+        )
+    except Exception:
+        related_services = []
 
     return render(request, 'spa_services/service_detail.html', {
         'service': service,
-        'related_services': related_services
+        'related_services': related_services,
     })
 
 

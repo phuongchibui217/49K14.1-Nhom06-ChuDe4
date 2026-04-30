@@ -133,14 +133,22 @@ def cancel_appointment(request, appointment_id):
     """Hủy lịch hẹn (khách hàng)."""
     appointment = get_object_or_404(Appointment, id=appointment_id, deleted_at__isnull=True)
 
-    if appointment.status not in ['PENDING', 'NOT_ARRIVED']:
-        messages.warning(request, f'Không thể hủy lịch hẹn này. Trạng thái: {appointment.get_status_display()}')
+    if appointment.status == 'COMPLETED':
+        messages.warning(request, 'Không thể hủy lịch đã hoàn thành.')
         return redirect('appointments:my_appointments')
 
-    appointment.status = 'CANCELLED'
-    appointment.cancelled_by = 'customer'
-    appointment.save()
-    messages.success(request, f'Đã hủy lịch hẹn {appointment.appointment_code}.')
+    if appointment.status not in ['PENDING', 'NOT_ARRIVED']:
+        messages.warning(request, 'Hủy lịch thất bại, vui lòng thử lại.')
+        return redirect('appointments:my_appointments')
+
+    try:
+        appointment.status = 'CANCELLED'
+        appointment.cancelled_by = 'customer'
+        appointment.save()
+        messages.success(request, f'Đã hủy lịch hẹn {appointment.appointment_code}.')
+    except Exception:
+        messages.error(request, 'Hủy lịch thất bại, vui lòng thử lại.')
+
     return redirect('appointments:my_appointments')
 
 

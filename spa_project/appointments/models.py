@@ -223,7 +223,7 @@ class Appointment(models.Model):
     def clean(self):
         from django.core.exceptions import ValidationError
         if self.status == 'COMPLETED' and not self.service_variant_id:
-            raise ValidationError('Phải chọn gói dịch vụ trước khi hoàn tất lịch hẹn.')
+            raise ValidationError('Không thể hoàn thành lịch hẹn khi chưa có dịch vụ hoặc chưa có thông tin thanh toán')
 
     def save(self, *args, **kwargs):
         if not self.appointment_code:

@@ -113,9 +113,11 @@
               <form method="post"
                     action="{% url 'appointments:cancel_appointment' appointment.id %}"
                     class="cancel-appointment-form"
-                    data-confirm-message="Bạn có chắc muốn hủy lịch hẹn này?">
+                    data-code="{{ appointment.appointment_code }}">
                 {% csrf_token %}
-                <button type="submit" class="btn-cancel-appt">
+                <button type="button"
+                        class="btn-cancel-appt btn-trigger-cancel"
+                        data-code="{{ appointment.appointment_code }}">
                   <i class="fas fa-times"></i>Hủy lịch
                 </button>
               </form>
@@ -150,45 +152,177 @@
 
 </div>
 <!-- End .my-appointments-page -->
+
+<!-- ═══════════════════════════════════════════════════════
+     MODAL XÁC NHẬN HỦY LỊCH HẸN — style y hệt logout modal
+     ═══════════════════════════════════════════════════════ -->
+<div class="modal fade" id="cancelApptModal" tabindex="-1" aria-labelledby="cancelApptModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content cancel-appt-modal-content">
+
+      <!-- Icon -->
+      <div class="d-flex justify-content-center">
+        <div class="cancel-appt-modal-icon" aria-hidden="true">!</div>
+      </div>
+
+      <!-- Title -->
+      <h5 class="cancel-appt-modal-title" id="cancelApptModalLabel">Xác nhận hủy lịch</h5>
+
+      <!-- Description -->
+      <p class="cancel-appt-modal-desc">Bạn có chắc muốn hủy lịch hẹn này?</p>
+
+      <!-- Actions -->
+      <div class="cancel-appt-modal-actions">
+        <button type="button" class="capm-btn-cancel" data-bs-dismiss="modal">Hủy</button>
+        <button type="button" class="capm-btn-confirm" id="cancelApptConfirmBtn">Xác nhận</button>
+      </div>
+
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
+<style>
+  /* ── Backdrop blur — y hệt logout ── */
+  #cancelApptModal.modal {
+    backdrop-filter: blur(3px);
+    background: rgba(0, 0, 0, 0.35);
+  }
+
+  /* ── Dialog sizing ── */
+  #cancelApptModal .modal-dialog {
+    max-width: 400px;
+    width: 92%;
+  }
+
+  /* ── Modal card — clone từ logout ── */
+  .cancel-appt-modal-content {
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.14), 0 4px 16px rgba(0, 0, 0, 0.08);
+    padding: 32px 28px 28px;
+    text-align: center;
+    background: #ffffff;
+    animation: cancelApptModalIn 0.2s cubic-bezier(0.34, 1.2, 0.64, 1);
+  }
+
+  @keyframes cancelApptModalIn {
+    from { opacity: 0; transform: scale(0.96); }
+    to   { opacity: 1; transform: scale(1);    }
+  }
+
+  /* ── Icon — vòng tròn border đỏ, chữ ! ── */
+  .cancel-appt-modal-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 2.5px solid #e53935;
+    color: #e53935;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 18px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  /* ── Title ── */
+  .cancel-appt-modal-title {
+    font-size: 21px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 10px;
+    line-height: 1.3;
+  }
+
+  /* ── Description ── */
+  .cancel-appt-modal-desc {
+    font-size: 15px;
+    color: #6b7280;
+    line-height: 1.6;
+    margin: 0 0 28px;
+  }
+
+  /* ── Button row — clone từ logout ── */
+  .cancel-appt-modal-actions {
+    display: flex;
+    gap: 14px;
+  }
+
+  .cancel-appt-modal-actions .capm-btn-cancel,
+  .cancel-appt-modal-actions .capm-btn-confirm {
+    flex: 1;
+    height: 50px;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s, box-shadow 0.18s, transform 0.15s;
+  }
+
+  .cancel-appt-modal-actions .capm-btn-cancel {
+    background: #f3f4f6;
+    color: #374151;
+  }
+  .cancel-appt-modal-actions .capm-btn-cancel:hover {
+    background: #e5e7eb;
+  }
+
+  .cancel-appt-modal-actions .capm-btn-confirm {
+    background: #e53935;
+    color: #ffffff;
+    box-shadow: 0 4px 14px rgba(229, 57, 53, 0.28);
+  }
+  .cancel-appt-modal-actions .capm-btn-confirm:hover {
+    background: #c62828;
+    box-shadow: 0 6px 18px rgba(229, 57, 53, 0.38);
+    transform: translateY(-1px);
+  }
+</style>
+
 <script>
-/**
- * JAVASCRIPT ĐƠN GIẢN - XỬ LÝ HỦY LỊCH
- *
- * BƯỚC 1: Tìm tất cả form có class "cancel-appointment-form"
- * BƯỚC 2: Khi user click submit → Hiện hộp thoại xác nhận
- * BƯỚC 3: Nếu user chọn OK → Gửi form đi
- *         Nếu user chọn Hủy → Không làm gì
- */
-document.addEventListener('DOMContentLoaded', function() {
+(function () {
+  'use strict';
 
-  // TẤT CẢ CÁC FORM HỦY LỊCH
-  const cancelForms = document.querySelectorAll('.cancel-appointment-form');
+  const modalEl    = document.getElementById('cancelApptModal');
+  const btnConfirm = document.getElementById('cancelApptConfirmBtn');
+  const bsModal    = new bootstrap.Modal(modalEl);
 
-  // Gắn sự kiện cho MỖI form
-  cancelForms.forEach(function(form) {
+  let _activeForm = null;
 
-    form.addEventListener('submit', function(event) {
+  /* ── Mở modal ── */
+  function openModal(form) {
+    _activeForm = form;
+    bsModal.show();
+  }
 
-      // CHẠN form submit ngay lập tức
-      event.preventDefault();
-
-      // HIỆN hộp thoại xác nhận (dùng có sẵn của browser)
-      var confirmMessage = form.dataset.confirmMessage || 'Bạn có chắc muốn hủy lịch hẹn này?';
-      var userConfirmed = confirm(confirmMessage);
-
-      // NẾU user chọn OK → Submit form
-      if (userConfirmed) {
-        form.submit();
-      }
-      // NẾU user chọn Hủy → Không làm gì (form không gửi đi)
-
+  /* ── Gắn sự kiện nút "Hủy lịch" trên mỗi card ── */
+  document.querySelectorAll('.btn-trigger-cancel').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var form = btn.closest('.cancel-appointment-form');
+      openModal(form);
     });
-
   });
 
-});
+  /* ── Khi modal đóng (Hủy / click nền / Escape) → reset form ── */
+  modalEl.addEventListener('hidden.bs.modal', function () {
+    _activeForm = null;
+  });
+
+  /* ── Nút "Xác nhận" → đóng modal rồi submit form ── */
+  btnConfirm.addEventListener('click', function () {
+    var form = _activeForm;
+    bsModal.hide();
+    modalEl.addEventListener('hidden.bs.modal', function submitOnHide() {
+      modalEl.removeEventListener('hidden.bs.modal', submitOnHide);
+      if (form) form.submit();
+    });
+  });
+
+}());
 </script>
 {% endblock %}

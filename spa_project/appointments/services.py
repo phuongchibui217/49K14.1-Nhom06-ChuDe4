@@ -82,6 +82,9 @@ def check_room_availability(
 
     Returns:
         (is_available: bool, conflict: Appointment|None, message: str)
+        message phân biệt rõ 2 trường hợp:
+        - 'CONFLICT': khung giờ đã có lịch (capacity = 1, bị trùng)
+        - 'CAPACITY': phòng đã đủ chỗ (capacity > 1, vượt giới hạn)
     """
     if not room_code:
         return (True, None, '')
@@ -116,7 +119,10 @@ def check_room_availability(
                 first_conflict = existing
 
     if overlapping_count >= room.capacity:
-        return (False, first_conflict, 'Phòng đã đầy vào khung giờ này.')
+        # Phân biệt: capacity=1 → trùng lịch; capacity>1 → vượt sức chứa
+        if room.capacity == 1:
+            return (False, first_conflict, 'CONFLICT')
+        return (False, first_conflict, 'CAPACITY')
 
     return (True, None, '')
 
@@ -156,7 +162,12 @@ def validate_appointment_create(
             exclude_appointment_code=exclude_appointment_code,
         )
         if not is_available:
-            errors.append(message)
+            if message == 'CONFLICT':
+                errors.append('Khung giờ đã có lịch, vui lòng chọn thời gian khác')
+            elif message == 'CAPACITY':
+                errors.append('Phòng đã đủ chỗ ở khung giờ này, vui lòng chọn phòng hoặc thời gian khác')
+            else:
+                errors.append(message)
 
     return {'valid': len(errors) == 0, 'errors': errors}
 

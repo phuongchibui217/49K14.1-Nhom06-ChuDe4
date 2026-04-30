@@ -152,6 +152,9 @@ def _validate_payment_data(pay_status, payment_data, final_amount=None):
 
 def _validate_appointment_data(data):
     """Validate dữ liệu appointment trước khi tạo."""
+    import re
+    _EMAIL_RE = re.compile(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
+
     errors = []
     cleaned = {}
 
@@ -168,6 +171,13 @@ def _validate_appointment_data(data):
         errors.append('Số điện thoại khách không hợp lệ')
     else:
         cleaned['phone'] = phone or None
+
+    # Email khách (tuỳ chọn — validate format nếu có)
+    guest_email = data.get('email', '').strip()
+    if guest_email and not _EMAIL_RE.match(guest_email):
+        errors.append('Email không hợp lệ')
+    else:
+        cleaned['email'] = guest_email or None
 
     # Dịch vụ (bắt buộc — phải có variant_id)
     variant_id = data.get('variant_id')
@@ -248,6 +258,12 @@ def _validate_appointment_data(data):
                 else:
                     errors.append(err_msg)
 
+    # Validate trạng thái COMPLETED: phải có dịch vụ và trạng thái thanh toán
+    pay_status = cleaned.get('payment_status', 'UNPAID')
+    if cleaned.get('status') == 'COMPLETED':
+        if 'service_variant' not in cleaned or not pay_status or pay_status == 'UNPAID':
+            errors.append('Không thể hoàn thành lịch hẹn khi chưa có dịch vụ hoặc chưa có thông tin thanh toán')
+
     return {'valid': len(errors) == 0, 'errors': errors, 'cleaned_data': cleaned}
 
 
@@ -299,7 +315,7 @@ def api_appointments_search(request):
     # Bắt buộc ít nhất 1 điều kiện
     has_condition = any([q, name, code, phone, email, status, source, service_id, room_code, date_from, date_to])
     if not has_condition:
-        return JsonResponse({'success': False, 'error': 'Vui lòng nhập ít nhất 1 điều kiện tìm kiếm'}, status=400)
+        return JsonResponse({'success': False, 'error': 'Vui lòng nhập điều kiện tìm kiếm'}, status=400)
 
     qs = Appointment.objects.filter(deleted_at__isnull=True)
 
@@ -520,36 +536,45 @@ def api_appointments_list(request):
     if not _is_staff(request.user):
         return _deny()
 
-    appointments = Appointment.objects.filter(deleted_at__isnull=True).exclude(
-        source='ONLINE', status__in=['PENDING', 'CANCELLED', 'REJECTED']
-    )
-
-    # Filters
-    if date_filter := request.GET.get('date'):
-        appointments = appointments.filter(appointment_date=date_filter)
-    if status_filter := request.GET.get('status', '').strip().upper():
-        appointments = appointments.filter(status=status_filter)
-    if source_filter := request.GET.get('source'):
-        appointments = appointments.filter(source=source_filter)
-    # Filter theo dịch vụ — qua service_variant__service_id
-    if service_filter := request.GET.get('service'):
-        appointments = appointments.filter(service_variant__service_id=service_filter)
-    if search := request.GET.get('q', '').strip():
-        appointments = appointments.filter(
-            Q(customer_name_snapshot__icontains=search) |
-            Q(customer_phone_snapshot__icontains=search) |
-            Q(customer_email_snapshot__icontains=search) |
-            Q(booker_name__icontains=search) |
-            Q(booker_phone__icontains=search) |
-            Q(appointment_code__icontains=search) |
-            Q(notes__icontains=search) |
-            Q(staff_notes__icontains=search) |
-            Q(customer__full_name__icontains=search) |
-            Q(customer__phone__icontains=search)
+    try:
+        appointments = Appointment.objects.filter(deleted_at__isnull=True).exclude(
+            source='ONLINE', status__in=['PENDING', 'CANCELLED', 'REJECTED']
         )
 
-    appointments = appointments.order_by('appointment_date', 'appointment_time')
-    return JsonResponse({'success': True, 'appointments': [serialize_appointment(a) for a in appointments]})
+        # Filters
+        if date_filter := request.GET.get('date'):
+            appointments = appointments.filter(appointment_date=date_filter)
+        if status_filter := request.GET.get('status', '').strip().upper():
+            appointments = appointments.filter(status=status_filter)
+        if source_filter := request.GET.get('source'):
+            appointments = appointments.filter(source=source_filter)
+        # Filter theo dịch vụ — qua service_variant__service_id
+        if service_filter := request.GET.get('service'):
+            appointments = appointments.filter(service_variant__service_id=service_filter)
+        if search := request.GET.get('q', '').strip():
+            appointments = appointments.filter(
+                Q(customer_name_snapshot__icontains=search) |
+                Q(customer_phone_snapshot__icontains=search) |
+                Q(customer_email_snapshot__icontains=search) |
+                Q(booker_name__icontains=search) |
+                Q(booker_phone__icontains=search) |
+                Q(appointment_code__icontains=search) |
+                Q(notes__icontains=search) |
+                Q(staff_notes__icontains=search) |
+                Q(customer__full_name__icontains=search) |
+                Q(customer__phone__icontains=search)
+            )
+
+        appointments = appointments.order_by('appointment_date', 'appointment_time')
+        return JsonResponse({'success': True, 'appointments': [serialize_appointment(a) for a in appointments]})
+
+    except Exception:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse(
+            {'success': False, 'error': 'Không thể tải lịch hẹn. Vui lòng thử lại sau.'},
+            status=500,
+        )
 
 
 @require_http_methods(["GET"])
@@ -633,6 +658,10 @@ def api_appointment_create_batch(request):
             return JsonResponse({'success': False, 'error': 'Vui lòng nhập họ tên người đặt'}, status=400)
         if not booker_phone or len(booker_phone) < 9:
             return JsonResponse({'success': False, 'error': 'Số điện thoại không hợp lệ'}, status=400)
+        if booker_email:
+            import re
+            if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', booker_email):
+                return JsonResponse({'success': False, 'error': 'Email không hợp lệ'}, status=400)
 
         created = []
         errors = []
@@ -642,6 +671,7 @@ def api_appointment_create_batch(request):
             data = {
                 'customer_name': g.get('name', '').strip(),
                 'phone': ''.join(filter(str.isdigit, g.get('phone', ''))),
+                'email': g.get('email', '').strip(),
                 'variant_id': g.get('variantId'),
                 'room_id': g.get('roomId'),
                 'date_str': g.get('date', ''),
@@ -726,7 +756,7 @@ def api_appointment_create_batch(request):
 
         return JsonResponse({
             'success': True,
-            'message': f'Đã tạo {len(created)} lịch hẹn' + (f' ({len(errors)} lỗi)' if errors else ''),
+            'message': 'Tạo lịch hẹn thành công',
             'appointments': created,
             'errors': errors,
         })
@@ -787,6 +817,13 @@ def api_appointment_update(request, appointment_code):
     if appointment.status in ('CANCELLED', 'REJECTED'):
         return JsonResponse(
             {'success': False, 'error': 'Không thể sửa lịch đã hủy/từ chối. Hãy dùng chức năng "Đặt lại" để tạo lịch mới.'},
+            status=400
+        )
+
+    # Chặn sửa lịch đã hoàn thành
+    if appointment.status == 'COMPLETED':
+        return JsonResponse(
+            {'success': False, 'error': 'Không thể chỉnh sửa lịch hẹn đã hoàn thành'},
             status=400
         )
 
@@ -860,7 +897,15 @@ def api_appointment_update(request, appointment_code):
                 exclude_appointment_code=appointment_code,
             )
             if not result['valid']:
-                return JsonResponse({'success': False, 'error': result['errors'][0]}, status=400)
+                # Map message từ service layer → text chuẩn UC
+                raw_err = result['errors'][0]
+                if raw_err == 'Khung giờ đã có lịch, vui lòng chọn thời gian khác':
+                    mapped_err = 'Khung giờ đã có lịch, vui lòng chọn thời gian khác'
+                elif raw_err == 'Phòng đã đủ chỗ ở khung giờ này, vui lòng chọn phòng hoặc thời gian khác':
+                    mapped_err = 'Phòng đã đủ chỗ ở khung giờ này, vui lòng chọn phòng hoặc thời gian khác'
+                else:
+                    mapped_err = raw_err
+                return JsonResponse({'success': False, 'error': mapped_err}, status=400)
 
         # UPDATE với transaction
         with transaction.atomic():
@@ -910,8 +955,15 @@ def api_appointment_update(request, appointment_code):
 
             # Trạng thái
             if new_status:
-                if new_status == 'COMPLETED' and not locked.service_variant_id:
-                    return JsonResponse({'success': False, 'error': 'Phải chọn gói dịch vụ trước khi hoàn tất'}, status=400)
+                if new_status == 'COMPLETED':
+                    # Phải có service_variant VÀ payment_status != UNPAID
+                    has_variant = new_variant_id or locked.service_variant_id
+                    effective_pay = new_pay_status or locked.payment_status
+                    if not has_variant or not effective_pay or effective_pay == 'UNPAID':
+                        return JsonResponse(
+                            {'success': False, 'error': 'Không thể hoàn thành lịch hẹn khi chưa có dịch vụ hoặc chưa có thông tin thanh toán'},
+                            status=400
+                        )
                 locked.status = new_status
                 if new_status == 'CANCELLED':
                     locked.cancelled_by = 'admin'
@@ -949,7 +1001,7 @@ def api_appointment_update(request, appointment_code):
 
         return JsonResponse({
             'success': True,
-            'message': f'Cập nhật lịch hẹn {appointment_code} thành công',
+            'message': 'Cập nhật lịch hẹn thành công',
             'appointment': serialize_appointment(locked)
         })
 
@@ -1039,6 +1091,12 @@ def api_appointment_delete(request, appointment_code):
     if not _is_staff(request.user):
         return _deny()
 
+    if appointment.status == 'COMPLETED':
+        return JsonResponse({
+            'success': False,
+            'error': 'Không thể xóa lịch hẹn đã hoàn thành dịch vụ.'
+        }, status=400)
+
     try:
         customer_name = appointment.customer_name_snapshot or "Khách hàng"
         appointment_id = appointment.id
@@ -1049,7 +1107,7 @@ def api_appointment_delete(request, appointment_code):
 
         return JsonResponse({
             'success': True,
-            'message': f'Đã xóa lịch hẹn {appointment_code}',
+            'message': 'Đã xóa lịch hẹn',
             'deleted_id': appointment_id,
             'customer_name': customer_name
         })

@@ -8,6 +8,44 @@ from .models import Appointment
 from .services import _get_appt_duration, _calc_end_time
 
 
+def _resolve_customer_note(appointment):
+    """
+    Trả về ghi chú hồ sơ của đúng khách sử dụng dịch vụ trong dòng này.
+
+    Quy tắc:
+    - Chỉ lấy customer.notes khi customer.phone khớp với customer_phone_snapshot
+      (tức là profile được gán đúng là khách sử dụng dịch vụ, không phải người đặt).
+    - Nếu không có customer_phone_snapshot (đặt dùm, không nhập SĐT riêng)
+      → trả về '' để tránh lấy nhầm ghi chú của người đặt.
+    - Nếu customer_phone_snapshot có nhưng không khớp customer.phone
+      → thử lookup profile theo snapshot phone, lấy notes từ đó.
+    """
+    if not appointment.customer_id:
+        return ''
+
+    guest_phone = (appointment.customer_phone_snapshot or '').strip()
+    if not guest_phone:
+        # Không có SĐT riêng của khách → không thể xác định đúng profile → trả rỗng
+        return ''
+
+    try:
+        customer = appointment.customer
+        if customer.phone == guest_phone:
+            # Profile đúng là khách sử dụng dịch vụ
+            return customer.notes or ''
+        else:
+            # Profile được gán là người đặt (fallback), thử tìm đúng profile của khách
+            from customers.models import CustomerProfile
+            try:
+                guest_profile = CustomerProfile.objects.get(phone=guest_phone)
+                return guest_profile.notes or ''
+            except CustomerProfile.DoesNotExist:
+                # Khách chưa có hồ sơ → không có ghi chú
+                return ''
+    except Exception:
+        return ''
+
+
 def serialize_appointment(appointment):
     """Chuyển 1 Appointment thành dict."""
 
@@ -77,7 +115,9 @@ def serialize_appointment(appointment):
         # Ghi chú
         'note':        appointment.notes or '',
         'staffNotes':  appointment.staff_notes or '',
-        'customerNote': (appointment.customer.notes or '') if appointment.customer_id else '',
+        # Ghi chú khách: chỉ lấy từ profile nếu profile đó đúng là khách sử dụng dịch vụ
+        # (customer.phone khớp customer_phone_snapshot), tránh fallback sang profile người đặt
+        'customerNote': _resolve_customer_note(appointment),
     }
 
 
