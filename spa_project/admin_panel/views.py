@@ -149,6 +149,9 @@ def admin_profile(request):
                 pw_error = 'Mật khẩu hiện tại không đúng.'
             elif len(new_password) < 6:
                 pw_error = 'Mật khẩu mới phải có ít nhất 6 ký tự.'
+            elif new_password == current_password:
+                # Không cho đặt mật khẩu mới trùng mật khẩu cũ
+                pw_error = 'Mật khẩu mới không được trùng mật khẩu hiện tại.'
             elif new_password != confirm_password:
                 pw_error = 'Xác nhận mật khẩu không khớp.'
 

@@ -166,6 +166,9 @@ class ChangePasswordForm(forms.Form):
             raise forms.ValidationError('Vui lòng nhập mật khẩu mới.')
         if len(new_password) < 6:
             raise forms.ValidationError('Mật khẩu mới phải có ít nhất 6 ký tự.')
+        # Không cho đặt mật khẩu mới trùng mật khẩu cũ
+        if self.user.check_password(new_password):
+            raise forms.ValidationError('Mật khẩu mới không được trùng mật khẩu hiện tại.')
         return new_password
 
     def clean_confirm_password(self):

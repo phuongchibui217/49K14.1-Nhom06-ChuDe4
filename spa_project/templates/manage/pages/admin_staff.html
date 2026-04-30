@@ -117,7 +117,13 @@
                         <button class="action-btn view" onclick="viewStaff({{ s.pk }})" title="Xem"><i class="fas fa-eye"></i></button>
                         <button class="action-btn edit" onclick="editStaff({{ s.pk }})" title="Sửa"><i class="fas fa-edit"></i></button>
                         {% if s.user != request.user %}
-                        <button class="action-btn delete" onclick="lockStaff({{ s.pk }}, '{{ s.full_name }}')" title="Khóa"><i class="fas fa-user-slash"></i></button>
+                            {% if s.user.is_active %}
+                            {# Tài khoản đang hoạt động → cho phép khóa #}
+                            <button class="action-btn delete" onclick="lockStaff({{ s.pk }}, '{{ s.full_name }}')" title="Khóa tài khoản"><i class="fas fa-user-slash"></i></button>
+                            {% else %}
+                            {# Tài khoản đã bị khóa → cho phép mở khóa #}
+                            <button class="action-btn" style="background:#dcfce7;color:#16a34a;" onclick="unlockStaff({{ s.pk }}, '{{ s.full_name }}')" title="Mở khóa tài khoản"><i class="fas fa-user-check"></i></button>
+                            {% endif %}
                         {% endif %}
                     </td>
                 </tr>
@@ -308,11 +314,37 @@
             </div>
             <form method="post" action="{% url 'staff:admin_staff' %}">
                 {% csrf_token %}
-                <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="action" value="lock">
                 <input type="hidden" name="staff_id" id="lockStaffId">
                 <div class="modal-footer justify-content-center">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
                     <button type="submit" class="btn btn-danger"><i class="fas fa-lock me-2"></i>Xác nhận khóa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Unlock Staff Modal -->
+<div class="modal fade" id="unlockStaffModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header text-white" style="background:#16a34a;border-radius:15px 15px 0 0;">
+                <h5 class="modal-title"><i class="fas fa-user-check me-2"></i>Xác nhận mở khóa tài khoản</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div style="font-size:4rem;color:#16a34a;margin-bottom:1rem;"><i class="fas fa-user-check"></i></div>
+                <h5 class="mb-2">Mở khóa tài khoản <strong id="unlockStaffName"></strong>?</h5>
+                <p class="text-muted">Tài khoản sẽ có thể đăng nhập trở lại sau khi mở khóa.</p>
+            </div>
+            <form method="post" action="{% url 'staff:admin_staff' %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="unlock">
+                <input type="hidden" name="staff_id" id="unlockStaffId">
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn" style="background:#16a34a;color:white;"><i class="fas fa-unlock me-2"></i>Xác nhận mở khóa</button>
                 </div>
             </form>
         </div>
@@ -376,6 +408,12 @@ function lockStaff(id, name) {
     document.getElementById('lockStaffId').value = id;
     document.getElementById('lockStaffName').textContent = name;
     new bootstrap.Modal(document.getElementById('lockStaffModal')).show();
+}
+
+function unlockStaff(id, name) {
+    document.getElementById('unlockStaffId').value = id;
+    document.getElementById('unlockStaffName').textContent = name;
+    new bootstrap.Modal(document.getElementById('unlockStaffModal')).show();
 }
 
 function viewStaff(id) {

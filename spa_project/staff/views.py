@@ -46,6 +46,12 @@ def admin_staff(request):
                 messages.error(request, 'Mật khẩu xác nhận không khớp.')
                 return redirect('staff:admin_staff')
 
+            # Validate format trước khi check trùng
+            if not phone.isdigit():
+                messages.error(request, 'Số điện thoại chỉ được chứa chữ số.')
+                return redirect('staff:admin_staff')
+
+            # Kiểm tra trùng dữ liệu
             if User.objects.filter(username=username).exists():
                 messages.error(request, 'Tên đăng nhập đã tồn tại.')
                 return redirect('staff:admin_staff')
@@ -56,10 +62,6 @@ def admin_staff(request):
 
             if StaffProfile.objects.filter(phone=phone).exists():
                 messages.error(request, 'Số điện thoại đã tồn tại.')
-                return redirect('staff:admin_staff')
-
-            if not phone.isdigit():
-                messages.error(request, 'Số điện thoại chỉ được chứa chữ số.')
                 return redirect('staff:admin_staff')
 
             try:
@@ -134,7 +136,7 @@ def admin_staff(request):
             return redirect('staff:admin_staff')
 
         # KHÓA
-        elif action == 'delete':
+        elif action == 'lock':
             staff_id = request.POST.get('staff_id', '').strip()
 
             if not staff_id:
@@ -142,10 +144,35 @@ def admin_staff(request):
                 return redirect('staff:admin_staff')
 
             staff = get_object_or_404(StaffProfile, pk=staff_id)
+
+            # Không cho khóa nếu tài khoản đã bị khóa rồi
+            if not staff.user.is_active:
+                messages.warning(request, 'Tài khoản này đã bị khóa trước đó.')
+                return redirect('staff:admin_staff')
+
             staff.user.is_active = False
             staff.user.save()
+            messages.success(request, f'Đã khóa tài khoản "{staff.full_name}".')
+            return redirect('staff:admin_staff')
 
-            messages.success(request, 'Đã khóa tài khoản nhân viên!')
+        # MỞ KHÓA
+        elif action == 'unlock':
+            staff_id = request.POST.get('staff_id', '').strip()
+
+            if not staff_id:
+                messages.error(request, 'Không tìm thấy nhân viên cần mở khóa.')
+                return redirect('staff:admin_staff')
+
+            staff = get_object_or_404(StaffProfile, pk=staff_id)
+
+            # Không cho mở khóa nếu tài khoản đang hoạt động
+            if staff.user.is_active:
+                messages.warning(request, 'Tài khoản này đang hoạt động, không cần mở khóa.')
+                return redirect('staff:admin_staff')
+
+            staff.user.is_active = True
+            staff.user.save()
+            messages.success(request, f'Đã mở khóa tài khoản "{staff.full_name}".')
             return redirect('staff:admin_staff')
 
         else:
