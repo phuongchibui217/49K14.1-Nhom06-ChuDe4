@@ -8,6 +8,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/admin-appointments.css' %}?v={% now 'His' %}">
+<link rel="stylesheet" href="{% static 'css/admin-appointments-extracted.css' %}?v={% now 'His' %}">
 
 {% endblock %}
 
@@ -80,7 +81,7 @@
 
     <!-- TAB- Header: Yêu cầu đặt lịch -->
     <div class="tab-pane fade" id="pane-web" role="tabpanel">
-      <div class="p-3" style="background:#fff;">
+      <div class="p-3 web-tab-content">
 
         <!-- Filter Bar -->
         <div class="card mb-3 border-0 shadow-sm">
@@ -155,44 +156,44 @@
 
 <!-- Modal Tìm kiếm lịch hẹn -->
 <div class="modal fade" id="searchModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" style="max-width:960px;width:95vw;margin:auto;height:88vh;">
-    <div class="modal-content" style="display:flex;flex-direction:column;height:100%;max-height:88vh;overflow:hidden;">
+  <div class="modal-dialog modal-dialog-centered search-modal-dialog">
+    <div class="modal-content search-modal-content">
 
-      <div class="modal-header py-2 px-3" style="background:linear-gradient(135deg,#1f3a5f,#1f3a5f);color:#fff;flex-shrink:0;border-radius:0;">
+      <div class="modal-header py-2 px-3 search-modal-header">
         <h6 class="modal-title mb-0"><i class="fas fa-search me-2"></i>Tìm kiếm lịch hẹn</h6>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
 
       <!-- body: flex column, chiếm phần còn lại -->
-      <div class="modal-body p-0" style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;">
+      <div class="modal-body p-0 search-modal-body">
 
         <!-- Form filter: cố định, không scroll -->
-        <div class="px-3 pt-3 pb-2 border-bottom" id="searchFormArea" style="background:#f8fafc;flex-shrink:0;">
+        <div class="px-3 pt-3 pb-2 border-bottom search-form-area" id="searchFormArea">
           <!-- Hàng 1: Tên / SĐT / Email -->
           <div class="row g-2 mb-2">
             <div class="col-12 col-sm-6 col-md-4">
-              <label class="form-label mb-1" style="font-size:.72rem;font-weight:600;color:#374151;">Tên khách / người đặt</label>
+              <label class="form-label mb-1 search-form-label">Tên khách / người đặt</label>
               <input type="text" class="form-control form-control-sm" id="srchName" placeholder="Nhập tên...">
             </div>
             <div class="col-12 col-sm-6 col-md-4">
-              <label class="form-label mb-1" style="font-size:.72rem;font-weight:600;color:#374151;">Số điện thoại</label>
+              <label class="form-label mb-1 search-form-label">Số điện thoại</label>
               <input type="text" class="form-control form-control-sm" id="srchPhone" placeholder="Nhập SĐT...">
             </div>
             <div class="col-12 col-sm-6 col-md-4">
-              <label class="form-label mb-1" style="font-size:.72rem;font-weight:600;color:#374151;">Email</label>
+              <label class="form-label mb-1 search-form-label">Email</label>
               <input type="text" class="form-control form-control-sm" id="srchEmail" placeholder="Nhập email...">
             </div>
           </div>
           <!-- Hàng 2: Dịch vụ / Trạng thái / Nguồn -->
           <div class="row g-2 mb-2">
             <div class="col-12 col-sm-6 col-md-4">
-              <label class="form-label mb-1" style="font-size:.72rem;font-weight:600;color:#374151;">Dịch vụ / gói</label>
+              <label class="form-label mb-1 search-form-label">Dịch vụ / gói</label>
               <select class="form-select form-select-sm" id="srchService">
                 <option value="">Tất cả dịch vụ</option>
               </select>
             </div>
             <div class="col-12 col-sm-6 col-md-4">
-              <label class="form-label mb-1" style="font-size:.72rem;font-weight:600;color:#374151;">Trạng thái</label>
+              <label class="form-label mb-1 search-form-label">Trạng thái</label>
               <select class="form-select form-select-sm" id="srchStatus">
                 <option value="">Tất cả trạng thái</option>
                 <option value="PENDING">Chờ xác nhận</option>
@@ -204,7 +205,7 @@
               </select>
             </div>
             <div class="col-12 col-sm-6 col-md-4">
-              <label class="form-label mb-1" style="font-size:.72rem;font-weight:600;color:#374151;">Nguồn</label>
+              <label class="form-label mb-1 search-form-label">Nguồn</label>
               <select class="form-select form-select-sm" id="srchSource">
                 <option value="">Tất cả nguồn</option>
                 <option value="DIRECT">Trực tiếp</option>
@@ -218,31 +219,30 @@
           <!-- Hàng 3: Từ ngày / Đến ngày / Nút hành động -->
           <div class="row g-2 align-items-end">
             <div class="col-12 col-sm-6 col-md-4">
-              <label class="form-label mb-1" style="font-size:.72rem;font-weight:600;color:#374151;">Từ ngày</label>
+              <label class="form-label mb-1 search-form-label">Từ ngày</label>
               <input type="date" class="form-control form-control-sm" id="srchDateFrom">
             </div>
             <div class="col-12 col-sm-6 col-md-4">
-              <label class="form-label mb-1" style="font-size:.72rem;font-weight:600;color:#374151;">Đến ngày</label>
+              <label class="form-label mb-1 search-form-label">Đến ngày</label>
               <input type="date" class="form-control form-control-sm" id="srchDateTo">
             </div>
             <div class="col-12 col-md-4 d-flex justify-content-md-end gap-2">
               <button type="button" class="btn btn-outline-secondary btn-sm px-3" id="btnResetSearch">
                 <i class="fas fa-undo me-1"></i>Đặt lại
               </button>
-              <button type="button" class="btn btn-sm px-4 fw-semibold" id="btnDoSearch"
-                      style="background:#1f3a5f;color:#fff;border:none;">
+              <button type="button" class="btn btn-sm px-4 fw-semibold search-btn-primary" id="btnDoSearch">
                 <i class="fas fa-search me-1"></i>Tìm kiếm
               </button>
             </div>
           </div>
-          <div class="alert alert-warning py-1 px-2 mt-2 mb-0 d-none" style="font-size:.78rem;" id="srchWarning">
+          <div class="alert alert-warning py-1 px-2 mt-2 mb-0 d-none search-warning" id="srchWarning">
             <i class="fas fa-exclamation-triangle me-1"></i>
             <span id="srchWarningText">Vui lòng nhập ít nhất 1 điều kiện tìm kiếm.</span>
           </div>
         </div>
 
         <!-- Vùng kết quả: chiếm phần còn lại, chỉ vùng này scroll -->
-        <div style="flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;">
+        <div class="search-results-area">
           <div id="srchResults">
             <div class="text-center text-muted py-5" id="srchPlaceholder">
               <i class="fas fa-search fa-2x mb-2 d-block opacity-25"></i>
@@ -258,9 +258,9 @@
 
 <!-- Appointment Modal (Create/Edit) -->
 <div class="modal fade" id="apptModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="max-width:min(92vw,1280px);width:min(92vw,1280px);">
-    <div class="modal-content" style="max-height:92vh;display:flex;flex-direction:column;">
-      <div class="modal-header" style="background:linear-gradient(135deg,#1f3a5f,#1f3a5f);color:#fff;flex-shrink:0;">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable appt-modal-dialog">
+    <div class="modal-content appt-modal-content">
+      <div class="modal-header appt-modal-header">
         <h5 class="modal-title">
           <i class="fas fa-calendar-plus me-2"></i>
           <span id="modalTitle">Tạo lịch hẹn</span>
@@ -275,144 +275,21 @@
       <input type="hidden" id="selectedCustomerId" />
 
       {# SHARED MODAL BODY — dùng cho cả CREATE và EDIT #}
-      <form id="apptForm" novalidate style="display:none;flex-direction:column;overflow:hidden;flex:1;min-height:0;">
+      <form id="apptForm" novalidate class="appt-form">
 
         {# PANEL 1: Người đặt #}
-        <div style="flex-shrink:0;padding:16px 20px 14px;background:#f8fafc;border-bottom:2px solid #e5e7eb;">
-          <div style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;color:#374151;margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em;">
-            <span style="width:24px;height:24px;border-radius:6px;background:#1f3a5f;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:12px;flex-shrink:0;"><i class="fas fa-user"></i></span>
+        <div class="appt-panel-booker">
+          <div class="booker-panel-header">
+            <span class="booker-panel-icon"><i class="fas fa-user"></i></span>
             <span id="bookerPanelLabel">Người đặt lịch</span>
           </div>
-          <style>
-            .booker-grid {
-              display: grid;
-              grid-template-columns: 2fr 1.5fr 2fr 1.2fr 2.5fr;
-              gap: 16px;
-              align-items: end;
-            }
-            @media (max-width: 991px) {
-              .booker-grid { grid-template-columns: 1fr 1fr; }
-            }
-            @media (max-width: 576px) {
-              .booker-grid { grid-template-columns: 1fr; }
-            }
-            .booker-grid label { font-size: 14px; font-weight: 600; color: #6b7280; display: block; margin-bottom: 6px; }
-            .booker-grid input, .booker-grid select {
-              width: 100%; height: 42px; padding: 8px 12px; font-size: 15px;
-              border: 1px solid #d1d5db; border-radius: 6px; outline: none; box-sizing: border-box; background: #fff;
-            }
-
-            .gc-row-grid {
-              display: grid;
-              grid-template-columns: 40px minmax(145px, 160px) minmax(220px, 1.3fr) minmax(150px, .8fr) minmax(220px, 1.1fr) minmax(230px, 1.1fr) 90px;
-              gap: 12px;
-              padding: 14px 12px;
-              align-items: start;
-              min-height: 64px;
-              box-sizing: border-box;
-              background: #fff;
-              border-left: 3px solid transparent;
-              transition: border-color .15s;
-            }
-            .gc-row-header {
-              display: grid;
-              grid-template-columns: 40px minmax(145px, 160px) minmax(220px, 1.3fr) minmax(150px, .8fr) minmax(220px, 1.1fr) minmax(230px, 1.1fr) 90px;
-              gap: 12px;
-              padding: 12px;
-              background: #f1f5f9;
-              border-bottom: 1px solid #e2e8f0;
-              position: sticky;
-              top: 0;
-              z-index: 5;
-              align-items: center;
-            }
-            .gc-slot-cell {
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              min-width: 0;
-            }
-            .gc-name-cell,
-            .gc-phone-cell,
-            .gc-service-cell,
-            .gc-variant-cell,
-            .gc-actions-cell {
-              min-width: 0;
-            }
-            .gc-name-inline {
-              display: flex;
-              align-items: center;
-              gap: 8px;
-              flex-wrap: wrap;
-            }
-            .gc-name-inline .gc-name {
-              flex: 1 1 220px;
-              min-width: 180px;
-            }
-            .gc-same-booker-label {
-              display: inline-flex;
-              align-items: center;
-              gap: 4px;
-              white-space: nowrap;
-              cursor: pointer;
-              padding: 0 8px;
-              height: 36px;
-              border: 1px solid #e5e7eb;
-              border-radius: 6px;
-              background: #f8fafc;
-              font-size: 12px;
-              font-weight: 500;
-              color: #6b7280;
-              flex: 0 0 auto;
-            }
-            @media (max-width: 1280px) {
-              .gc-row-header { display: none; }
-              .gc-row-grid {
-                grid-template-columns: 40px minmax(145px, 160px) minmax(220px, 1fr) minmax(150px, .8fr) 90px;
-                border-bottom: 1px solid #eef0f3;
-                gap: 12px;
-              }
-              .gc-service-cell { grid-column: 3 / 4; }
-              .gc-variant-cell { grid-column: 4 / 6; }
-            }
-            @media (max-width: 840px) {
-              .gc-row-grid {
-                grid-template-columns: 40px minmax(0, 1fr) 90px;
-                gap: 10px;
-                padding: 12px;
-              }
-              .gc-slot-cell { grid-column: 2 / 3; }
-              .gc-actions-cell { grid-column: 3 / 4; }
-              .gc-name-cell,
-              .gc-phone-cell,
-              .gc-service-cell,
-              .gc-variant-cell {
-                grid-column: 1 / -1;
-              }
-            }
-            @media (max-width: 576px) {
-              .gc-row-grid {
-                grid-template-columns: 36px minmax(0, 1fr) 80px;
-              }
-              .gc-name-inline {
-                align-items: stretch;
-              }
-              .gc-name-inline .gc-name {
-                flex-basis: 100%;
-                min-width: 0;
-              }
-              .gc-same-booker-label {
-                width: max-content;
-              }
-            }
-          </style>
           <div class="booker-grid">
             <div>
-              <label>Họ tên <span style="color:#ef4444;">*</span></label>
+              <label>Họ tên <span class="required-field">*</span></label>
               <input id="bookerName" placeholder="Họ tên người đặt" autocomplete="off" />
             </div>
             <div>
-              <label>SĐT <span style="color:#ef4444;">*</span></label>
+              <label>SĐT <span class="required-field">*</span></label>
               <input id="bookerPhone" placeholder="Số điện thoại" inputmode="numeric" autocomplete="off" />
             </div>
             <div>
@@ -437,42 +314,38 @@
         </div>
 
         {# PANEL 2+3: Scroll area #}
-        <div style="flex:1;overflow-y:auto;overflow-x:hidden;min-height:0;display:flex;flex-direction:column;">
+        <div class="appt-scroll-area">
 
           {# Apply-all bar — CHỈ HIỆN Ở CREATE MODE #}
-          <div id="createOnlyBar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:7px 16px;background:#fff;border-bottom:1px solid #e5e7eb;flex-shrink:0;">
-            <span style="font-size:.72rem;font-weight:700;color:#6b7280;white-space:nowrap;"><i class="fas fa-magic me-1"></i>Áp dụng tất cả:</span>
-            <select id="applyAllService"
-                    style="height:32px;padding:2px 24px 2px 8px;font-size:14px;border:1px solid #d1d5db;border-radius:6px;background:#fff;outline:none;min-width:140px;max-width:180px;">
+          <div id="createOnlyBar" class="create-only-bar">
+            <span class="create-only-label"><i class="fas fa-magic me-1"></i>Áp dụng tất cả:</span>
+            <select id="applyAllService" class="apply-all-select">
               <option value="">-- Dịch vụ --</option>
             </select>
-            <select id="applyAllVariant" disabled
-                    style="height:32px;padding:2px 24px 2px 8px;font-size:14px;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;outline:none;min-width:140px;max-width:180px;">
+            <select id="applyAllVariant" disabled class="apply-all-select">
               <option value="">-- Gói --</option>
             </select>
-            <button type="button" id="btnApplyAll"
-                    style="height:32px;padding:0 16px;font-size:13px;font-weight:600;background:#1f3a5f;color:#fff;border:none;border-radius:6px;cursor:pointer;white-space:nowrap;">
+            <button type="button" id="btnApplyAll" class="btn-apply-all">
               <i class="fas fa-check me-1"></i>Áp dụng
             </button>
-            <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
-              <button type="button" id="btnAddGuest"
-                      style="height:28px;padding:0 10px;font-size:.72rem;font-weight:600;background:#fff;color:#6b7280;border:1.5px dashed #d1d5db;border-radius:6px;cursor:pointer;white-space:nowrap;">
+            <div class="ms-auto d-flex align-items-center gap-8">
+              <button type="button" id="btnAddGuest" class="btn-add-guest">
                 <i class="fas fa-plus me-1"></i>Thêm khách
               </button>
             </div>
           </div>
 
           {# Bảng khách #}
-          <div style="flex:1;overflow-y:auto;min-height:0;">
+          <div class="guest-table-area">
             {# Header cột — CSS Grid #}
             <div id="guestTableHeader" class="gc-row-header">
-              <div style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;text-align:center;">#</div>
-              <div style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;text-align:center;">Phòng · Giờ</div>
-              <div style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;">Tên khách</div>
-              <div style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;">SĐT</div>
-              <div style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;">Dịch vụ (không bắt buộc)</div>
-              <div style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;">Gói (bắt buộc nếu chọn dịch vụ)</div>
-              <div style="text-align:center;font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;">Tác vụ</div>
+              <div class="guest-table-header-cell guest-table-header-cell-center">#</div>
+              <div class="guest-table-header-cell guest-table-header-cell-center">Phòng · Giờ</div>
+              <div class="guest-table-header-cell">Tên khách</div>
+              <div class="guest-table-header-cell">SĐT</div>
+              <div class="guest-table-header-cell">Dịch vụ (không bắt buộc)</div>
+              <div class="guest-table-header-cell">Gói (bắt buộc nếu chọn dịch vụ)</div>
+              <div class="guest-table-header-cell guest-table-header-cell-center">Tác vụ</div>
             </div>
             {# Rows render bằng JS #}
             <div id="guestList"></div>
@@ -481,14 +354,14 @@
         </div>
 
         <!-- Block trạng thái & thanh toán — dùng chung create/edit -->
-        <div id="sharedStatusBlock" style="display:none;width:100%;flex-shrink:0;padding:10px 14px;background:#f8fafc;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;">
-          <div style="font-size:.7rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">
-            <i class="fas fa-sliders-h me-1" style="color:#c9a96e;"></i>Trạng thái &amp; Thanh toán
+        <div id="sharedStatusBlock" class="shared-status-block">
+          <div class="status-block-title">
+            <i class="fas fa-sliders-h me-1 status-block-icon"></i>Trạng thái &amp; Thanh toán
           </div>
-          <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;">
-            <div style="display:flex;flex-direction:column;gap:4px;">
-              <label style="font-size:13px;font-weight:600;color:#6b7280;">Trạng thái</label>
-              <select id="sharedApptStatus" style="height:36px;padding:0 12px;font-size:14px;border:1px solid #d1d5db;border-radius:6px;background:#fff;outline:none;min-width:160px;">
+          <div class="status-form-row">
+            <div class="status-form-group">
+              <label class="status-label">Trạng thái</label>
+              <select id="sharedApptStatus" class="status-select">
                 <option value="NOT_ARRIVED" selected>Chưa đến</option>
                 <option value="PENDING">Chờ xác nhận</option>
                 <option value="ARRIVED">Đã đến</option>
@@ -497,18 +370,18 @@
                 <option value="REJECTED">Đã từ chối</option>
               </select>
             </div>
-            <div style="display:flex;flex-direction:column;gap:4px;">
-              <label style="font-size:13px;font-weight:600;color:#6b7280;">Thanh toán</label>
-              <select id="sharedPayStatus" style="height:36px;padding:0 12px;font-size:14px;border:1px solid #d1d5db;border-radius:6px;background:#fff;outline:none;min-width:160px;">
+            <div class="status-form-group">
+              <label class="status-label">Thanh toán</label>
+              <select id="sharedPayStatus" class="status-select">
                 <option value="UNPAID" selected>Chưa thanh toán</option>
                 <option value="PARTIAL">Một phần</option>
                 <option value="PAID">Đã thanh toán</option>
                 <option value="REFUNDED">Đã hoàn tiền</option>
               </select>
             </div>
-            <div id="sharedPayMethodWrap" style="display:none;flex-direction:column;gap:4px;">
-              <label style="font-size:13px;font-weight:600;color:#6b7280;">Phương thức <span style="color:#ef4444;">*</span></label>
-              <select id="sharedPayMethod" style="height:36px;padding:0 12px;font-size:14px;border:1px solid #d1d5db;border-radius:6px;background:#fff;outline:none;min-width:160px;">
+            <div id="sharedPayMethodWrap" class="status-form-group">
+              <label class="status-label">Phương thức <span class="required-field">*</span></label>
+              <select id="sharedPayMethod" class="status-select">
                 <option value="">-- Chọn --</option>
                 <option value="CASH">Tiền mặt</option>
                 <option value="CARD">Thẻ</option>
@@ -516,15 +389,15 @@
                 <option value="E_WALLET">Ví điện tử</option>
               </select>
             </div>
-            <div id="sharedPayAmountWrap" style="display:none;flex-direction:column;gap:4px;">
-              <label style="font-size:13px;font-weight:600;color:#6b7280;">Số tiền đã trả <span style="color:#ef4444;">*</span></label>
-              <input type="number" id="sharedPayAmount" style="height:36px;padding:0 12px;font-size:14px;border:1px solid #d1d5db;border-radius:6px;background:#fff;outline:none;width:150px;" placeholder="0" min="1" step="1000" />
+            <div id="sharedPayAmountWrap" class="status-form-group">
+              <label class="status-label">Số tiền đã trả <span class="required-field">*</span></label>
+              <input type="number" id="sharedPayAmount" class="status-input" placeholder="0" min="1" step="1000" />
             </div>
           </div>
         </div>
       </form>
 
-      <div class="modal-footer" style="flex-shrink:0;">
+      <div class="modal-footer appt-modal-footer">
         <button type="button" class="btn btn-outline-danger d-none" id="btnDelete">
           <i class="fas fa-trash me-2"></i>Xóa
         </button>
@@ -546,89 +419,6 @@
 <div class="modal fade reject-confirm-modal" id="rejectWebModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered reject-confirm-dialog">
     <div class="modal-content reject-confirm-popup">
-      <style>
-        #rejectWebModal.reject-confirm-modal.modal {
-          backdrop-filter: blur(3px);
-          background: rgba(0, 0, 0, 0.35);
-        }
-        #rejectWebModal .reject-confirm-dialog {
-          max-width: 400px;
-          width: 92%;
-        }
-        #rejectWebModal.reject-confirm-modal .reject-confirm-popup {
-          border: 0;
-          border-radius: 20px !important;
-          box-shadow: 0 24px 64px rgba(0, 0, 0, 0.14), 0 4px 16px rgba(0, 0, 0, 0.08) !important;
-          padding: 32px 28px 28px;
-          text-align: center;
-          background: #ffffff;
-          animation: logoutModalIn 0.2s cubic-bezier(0.34, 1.2, 0.64, 1);
-        }
-        #rejectWebModal.reject-confirm-modal .reject-confirm-icon {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          width:52px;
-          height:52px;
-          border-radius: 50%;
-          border: 2.5px solid #FCA5A5;
-          background: #FEE2E2;
-          color: #DC2626;
-          font-size: 22px;
-          font-weight: 700;
-          margin-bottom: 18px;
-          line-height: 1;
-          flex-shrink: 0;
-        }
-        #rejectWebModal.reject-confirm-modal .reject-confirm-title {
-          font-size: 21px;
-          font-weight: 700;
-          color: #111827;
-          margin: 0 0 10px;
-          line-height: 1.3;
-        }
-        #rejectWebModal.reject-confirm-modal .reject-confirm-desc {
-          font-size: 15px;
-          color: #6b7280;
-          line-height: 1.6;
-          margin: 0 0 28px;
-        }
-        #rejectWebModal.reject-confirm-modal .reject-confirm-actions {
-          display: flex;
-          gap: 14px;
-        }
-        #rejectWebModal.reject-confirm-modal .reject-cancel-btn,
-        #rejectWebModal.reject-confirm-modal .reject-confirm-btn {
-          flex: 1;
-          height: 50px;
-          border: 0;
-          border-radius: 12px;
-          font-size: 15px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: background 0.18s, box-shadow 0.18s, transform 0.15s;
-        }
-        #rejectWebModal.reject-confirm-modal .reject-cancel-btn {
-          background: #f3f4f6;
-          color: #374151;
-        }
-        #rejectWebModal.reject-confirm-modal .reject-cancel-btn:hover {
-          background: #e5e7eb;
-        }
-        #rejectWebModal.reject-confirm-modal .reject-confirm-btn {
-          background: #DC2626;
-          color: #FFFFFF;
-          box-shadow: 0 4px 14px rgba(220, 38, 38, 0.28);
-        }
-        #rejectWebModal.reject-confirm-modal .reject-confirm-btn:hover {
-          background: #B91C1C;
-          box-shadow: 0 6px 18px rgba(220, 38, 38, 0.38);
-          transform: translateY(-1px);
-        }
-        .reject-web-backdrop.modal-backdrop.show {
-          backdrop-filter: blur(3px);
-        }
-      </style>
       <div class="d-flex justify-content-center">
         <div class="reject-confirm-icon" aria-hidden="true">!</div>
       </div>
@@ -644,50 +434,9 @@
 
 <!-- Modal xác nhận xóa lịch hẹn-->
 <div class="modal fade" id="deleteAppointmentModal" tabindex="-1" aria-labelledby="deleteAppointmentModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" style="max-width:380px;">
-    <div class="modal-content border-0" style="border-radius:20px;box-shadow:0 20px 60px rgba(0,0,0,.15);overflow:hidden;">
+  <div class="modal-dialog modal-dialog-centered delete-modal-dialog">
+    <div class="modal-content border-0">
 
-      <style>
-        #deleteAppointmentModal .modal.fade .modal-dialog { transform: scale(.96); }
-        #deleteAppointmentModal .modal.show  .modal-dialog { transform: scale(1); }
-        .del-modal-body   { padding: 2rem 2rem 1.25rem; text-align: center; }
-        .del-modal-icon   {
-          width: 48px; height: 48px; border-radius: 50%;
-          background: #fff1f2; border: 1.5px solid #fecdd3;
-          display: inline-flex; align-items: center; justify-content: center;
-          margin-bottom: 1.1rem;
-        }
-        .del-modal-icon i { color: #e11d48; font-size: 1.1rem; }
-        .del-modal-title  { font-size: 1rem; font-weight: 600; color: #1f2937; margin-bottom: .4rem; }
-        .del-modal-sub    { font-size: .82rem; color: #9ca3af; line-height: 1.6; margin: 0; }
-        .del-modal-info   {
-          margin: 1rem 0 0;
-          padding: .6rem 1rem;
-          background: #f9fafb;
-          border-radius: 10px;
-          font-size: .82rem;
-          color: #374151;
-          font-weight: 500;
-        }
-        .del-modal-footer { padding: 1rem 2rem 1.75rem; display: flex; gap: .75rem; }
-        .del-btn-cancel {
-          flex: 1; padding: .6rem 0;
-          border: 1.5px solid #e5e7eb; border-radius: 10px;
-          background: #fff; color: #6b7280;
-          font-size: .875rem; font-weight: 500;
-          cursor: pointer; transition: all .18s;
-        }
-        .del-btn-cancel:hover { background: #f3f4f6; border-color: #d1d5db; color: #374151; }
-        .del-btn-confirm {
-          flex: 1; padding: .6rem 0;
-          border: none; border-radius: 10px;
-          background: #e11d48; color: #fff;
-          font-size: .875rem; font-weight: 600;
-          cursor: pointer; transition: all .18s;
-          box-shadow: 0 2px 10px rgba(225,29,72,.25);
-        }
-        .del-btn-confirm:hover { background: #be123c; box-shadow: 0 4px 14px rgba(225,29,72,.35); transform: translateY(-1px); }
-      </style>
 
       <div class="del-modal-body">
         <div class="del-modal-icon"><i class="fas fa-trash-alt"></i></div>
@@ -705,7 +454,7 @@
 </div>
 
 <!-- Pending Action Bar — hiện khi có block tạm chờ xác nhận -->
-<div id="pendingActionBar" role="status" aria-live="polite" style="display:none;">
+<div id="pendingActionBar" role="status" aria-live="polite">
   <div class="pending-bar-inner">
     <span class="pb-count">
       <i class="fas fa-calendar-check"></i>
@@ -722,7 +471,7 @@
 </div>
 
 <!-- Toast -->
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+<div class="position-fixed bottom-0 end-0 p-3 toast-container">
   <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
     <div class="toast-header">
       <i class="fas fa-check-circle me-2"></i>

@@ -1,4 +1,6 @@
-// ===== 1. SETTINGS - cấu hình =====
+// ============================================================
+// SECTION 1: SETTINGS & CONSTANTS
+// ============================================================
 console.log("ADMIN APPOINTMENTS JS LOADED v20260426-003");
 const START_HOUR = 9;  // Giờ mở cửa (9:00 sáng)
 const END_HOUR = 21;   // Giờ đóng cửa (21:00 tối)
@@ -21,13 +23,364 @@ function _truncate(str, maxLen) {
   return str.length > maxLen ? str.slice(0, maxLen) + '…' : str;
 }
 
-// ===================================================
-/// ===================================================
+// ============================================================
+// SECTION 2: STATE VARIABLES
+// ============================================================
 // PENDING BLOCKS STATE — Flow 2 bước tạo lịch hẹn
-// ===================================================
 let pendingBlocks = [];
 let _pendingIdCounter = 0;
 
+// Dữ liệu ( lấy từ API) ==> lưu dữ liệu load từ DB để render giao diện, validate form, tính toán trùng lịch
+let ROOMS = []; // danh sách phòng
+let SERVICES = []; //dánh sách dịch vụ
+let APPOINTMENTS = []; // danh sách lịch hẹn
+
+// Biến theo dõi trạng thái đang submit để tránh submit lặp
+let isSubmitting = false;
+
+// State: đang ở chế độ "quay về grid để chọn thêm slot"
+let _addingSlotMode = false;
+let _savedBookerInfo = null;  // lưu tạm booker info khi quay về grid
+
+// CREATE MODE — ACCORDION GUEST CARDS
+let _guestCount = 0;
+// Map pendingBlockId → guestIdx để sync slot summary
+let _pendingBlockMap = []; // [{pendingId, guestIdx}]
+
+// Current time line interval
+let _ctlInterval = null;
+
+// ============================================================
+// SECTION 3: API HELPERS
+// ============================================================
+// ===== CSRF HELPER ======
+function getCSRFToken() {
+  const cookieValue = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
+  return cookieValue ? cookieValue.split('=')[1] : '';
+}
+
+async function apiGet(url) {
+  try {
+    const response = await fetch(url);
+    const text = await response.text();
+    if (!text) {
+      if (!response.ok) return { success: false, ok: false, status: response.status, error: `HTTP error ${response.status}` };
+      return { success: true, ok: true, status: response.status };
+    }
+    try {
+      const data = JSON.parse(text);
+      if (!response.ok && !data.error) data.error = `HTTP error ${response.status}`;
+      data.ok = response.ok;
+      data.status = response.status;
+      return data;
+    } catch (e) {
+      return {
+        success: false,
+        ok: response.ok,
+        status: response.status,
+        error: !response.ok ? `HTTP error ${response.status}: Máy chủ trả về phản hồi không hợp lệ` : 'Invalid JSON response'
+      };
+    }
+  } catch (error) {
+    console.error('API GET error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+async function apiPost(url, payload) {
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
+      body: JSON.stringify(payload),
+    });
+    const text = await response.text();
+    if (!text) {
+      if (!response.ok) return { success: false, ok: false, status: response.status, error: `HTTP error ${response.status}` };
+      return { success: true, ok: true, status: response.status };
+    }
+    try {
+      const data = JSON.parse(text);
+      if (!response.ok && !data.error) data.error = `HTTP error ${response.status}`;
+      data.ok = response.ok;
+      data.status = response.status;
+      return data;
+    } catch (e) {
+      return {
+        success: false,
+        ok: response.ok,
+        status: response.status,
+        error: !response.ok ? `HTTP error ${response.status}: Máy chủ trả về phản hồi không hợp lệ` : 'Invalid JSON response'
+      };
+    }
+  } catch (error) {
+    console.error('API POST error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// ===== LOAD DATA FROM API =====
+async function loadRooms() {
+  const result = await apiGet(`${API_BASE}/rooms/`);
+  if (result.success && result.rooms) {
+    ROOMS = result.rooms;
+  } else {
+    // Fallback data - CẬN NHẬP: Phải khớp với database!
+    ROOMS = [
+      { id: "P01", name: "1", capacity: 1 },
+      { id: "P02", name: "2", capacity: 2 },
+      { id: "P03", name: "3", capacity: 3 },
+      { id: "P04", name: "4", capacity: 4 },
+      { id: "P05", name: "5", capacity: 5 },
+    ];
+  }
+}
+
+async function loadServices() {
+  const result = await apiGet(`${API_BASE}/services/`);
+  if (result.services) {
+    SERVICES = result.services;
+    fillServicesSelect();
+  }
+}
+
+async function loadAppointments(date = '') {
+  let url = `${API_BASE}/appointments/`;
+  const params = [];
+  if (date) params.push(`date=${date}`);
+
+  const statusFilter  = (document.getElementById('statusFilter')  || {}).value || '';
+  const serviceFilter = (document.getElementById('serviceFilter') || {}).value || '';
+  const sourceFilter  = (document.getElementById('sourceFilter')  || {}).value || '';
+  if (statusFilter)  params.push(`status=${encodeURIComponent(statusFilter)}`);
+  if (serviceFilter) params.push(`service=${encodeURIComponent(serviceFilter)}`);
+  if (sourceFilter)  params.push(`source=${encodeURIComponent(sourceFilter)}`);
+
+  const searchInput = document.getElementById("searchInput");
+  const searchTerm = (searchInput ? searchInput.value.trim() : '');
+  if (searchTerm) params.push(`q=${encodeURIComponent(searchTerm)}`);
+
+  if (params.length) url += '?' + params.join('&');
+
+  const result = await apiGet(url);
+  if (result.success && result.appointments) {
+    APPOINTMENTS = result.appointments;
+  } else {
+    APPOINTMENTS = [];
+  }
+}
+
+async function loadBookingRequests(statusFilter = '', dateFilter = '', searchTerm = '', serviceFilter = '') {
+  let url = `${API_BASE}/booking-requests/`;
+  const queryParams = [];
+  if (statusFilter)  queryParams.push(`status=${encodeURIComponent(statusFilter)}`);
+  if (dateFilter)    queryParams.push(`date=${encodeURIComponent(dateFilter)}`);
+  if (searchTerm)    queryParams.push(`q=${encodeURIComponent(searchTerm)}`);
+  if (serviceFilter) queryParams.push(`service=${encodeURIComponent(serviceFilter)}`);
+  if (queryParams.length > 0) url += '?' + queryParams.join('&');
+
+  const result = await apiGet(url);
+  if (result && result.success) {
+    return result.appointments || [];
+  }
+  return [];
+}
+
+// ============================================================
+// SECTION 4: VALIDATION HELPERS
+// ============================================================
+function isValidPhone(v){ return /^\d{10}$/.test(v.replace(/\D/g,"")); }
+function isValidEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+
+function capacityOK({roomId, day, start, end, ignoreId}){
+  const roomInfo = ROOMS.find(r=>r.id===roomId);
+  if(!roomInfo) return false;
+
+  const newS = minutesFromStart(start), newE = minutesFromStart(end);
+  let count = 0;
+
+  // Mỗi appointment = 1 khách, đếm số lịch trùng giờ
+  const overlappingAppts = APPOINTMENTS.filter(
+    a => a.roomCode===roomId && a.date===day && !["cancelled", "rejected"].includes((a.apptStatus||'').toLowerCase()) && a.id!==ignoreId
+  );
+
+  overlappingAppts.forEach(a => {
+    const s = minutesFromStart(a.start);
+    const rawE = a.end ? minutesFromStart(a.end) : NaN;
+    const e = (!isNaN(rawE) && rawE > s) ? rawE : s + Math.max(SLOT_MIN, Number(a.durationMin) || SLOT_MIN);
+    if(overlaps(newS, newE, s, e)) count++;
+  });
+
+  return count < roomInfo.capacity;
+}
+
+// ============================================================
+// SECTION 5: TIME/DATE HELPERS
+// ============================================================
+function pad2(n){ return String(n).padStart(2,"0"); }
+
+function minutesFromStart(t){ const [h,m]=t.split(":").map(Number); return (h-START_HOUR)*60 + m; }
+
+function addMinutesToTime(t, add){
+  const [h,m]=t.split(":").map(Number);
+  const total = h*60+m+add;
+  return `${pad2(Math.floor(total/60))}:${pad2(total%60)}`;
+}
+
+function overlaps(aStart,aEnd,bStart,bEnd){ return aStart < bEnd && bStart < aEnd; }
+
+// Tổng số phút của toàn bộ timeline (9:00 → 21:00 = 720 phút)
+function totalTimelineMinutes(){ return (END_HOUR - START_HOUR) * 60; }
+
+// Chuyển số phút từ START_HOUR sang % chiều ngang của vùng slots
+function minutesToPercent(minutes){ return (minutes / totalTimelineMinutes()) * 100; }
+
+// ============================================================
+// SECTION 6: UI HELPERS
+// ============================================================
+function showToast(type, title, message){
+  const toastEl = document.getElementById("toast");
+  const header = toastEl.querySelector(".toast-header");
+  const icon = header.querySelector("i");
+  const toastTitle = document.getElementById("toastTitle");
+  const toastBody = document.getElementById("toastBody");
+  const toast = window.toast;
+
+  header.className = "toast-header";
+  if(type==="success"){ header.classList.add("bg-success","text-white"); icon.className="fas fa-check-circle me-2"; }
+  else if(type==="warning"){ header.classList.add("bg-warning","text-dark"); icon.className="fas fa-exclamation-triangle me-2"; }
+  else if(type==="error"){ header.classList.add("bg-danger","text-white"); icon.className="fas fa-times-circle me-2"; }
+  else { header.classList.add("bg-info","text-white"); icon.className="fas fa-info-circle me-2"; }
+  toastTitle.textContent = title;
+  toastBody.textContent = message;
+  if (toast) toast.show();
+}
+
+function statusClass(s){
+  const sl = (s||'').toLowerCase();
+  if(sl==="not_arrived") return "status-not_arrived";
+  if(sl==="arrived") return "status-arrived";
+  if(sl==="completed") return "status-completed";
+  if(sl==="cancelled") return "status-cancelled";
+  if(sl==="rejected") return "status-rejected";
+  return "status-pending";
+}
+
+function statusLabel(s, cancelledBy){
+  const sl = (s||'').toLowerCase();
+  if(sl==="pending") return "Chờ xác nhận";
+  if(sl==="not_arrived") return "Chưa đến";
+  if(sl==="arrived") return "Đã đến";
+  if(sl==="completed") return "Hoàn thành";
+  if(sl==="cancelled") return cancelledBy === 'customer' ? "Khách đã hủy" : "Đã hủy";
+  if(sl==="rejected") return "Đã từ chối";
+  return s;
+}
+
+// ===== BOOKING BADGES UPDATE =====
+function updateBookingBadges(rows) {
+  // Chỉ đếm PENDING — không tính CANCELLED hay trạng thái khác
+  const pendingCount = rows.filter(r => (r.apptStatus || '').toUpperCase() === 'PENDING').length;
+  const webCount = document.getElementById("webCount");
+  if (webCount) {
+    if (pendingCount === 0) {
+      webCount.textContent = '';
+      webCount.classList.add('d-none');
+    } else {
+      webCount.textContent = String(pendingCount);
+      webCount.classList.remove('d-none');
+    }
+  }
+}
+
+/**
+ * Bật loading state cho button
+ * @param {HTMLElement} btn - Button cần set loading
+ * @param {string} loadingText - Text hiển thị khi loading
+ * @param {string} originalText - Text gốc để restore sau này
+ */
+function setButtonLoading(btn, loadingText = 'Đang xử lý...', originalText = null) {
+  if (!btn) return;
+
+  // Lưu text gốc nếu chưa có
+  if (!btn.dataset.originalText) {
+    btn.dataset.originalText = originalText || btn.innerHTML;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${loadingText}`;
+}
+
+/**
+ * Tắt loading state và restore button về trạng thái ban đầu
+ * @param {HTMLElement} btn - Button cần restore
+ */
+function resetButton(btn) {
+  if (!btn) return;
+
+  btn.disabled = false;
+  if (btn.dataset.originalText) {
+    btn.innerHTML = btn.dataset.originalText;
+    delete btn.dataset.originalText;
+  }
+}
+
+/**
+ * Hiển thị modal xác nhận đồng bộ giao diện hệ thống
+ * @param {string} title - Tiêu đề
+ * @param {string} message - Nội dung xác nhận
+ * @param {string} confirmText - Text nút xác nhận
+ * @param {string} cancelText - Text nút hủy
+ * @returns {Promise<boolean>} - true nếu người dùng xác nhận
+ */
+async function confirmAction(title, message, confirmText = 'Xác nhận', cancelText = 'Hủy') {
+  if (window.showConfirm) {
+    return window.showConfirm(message, { title, confirmText, cancelText });
+  }
+  return false;
+}
+
+function resetModalError(){
+  const modalError = document.getElementById("modalError");
+  modalError.classList.add("d-none");
+  modalError.textContent = "";
+}
+
+function getSlotWidth(){
+  // Đọc chiều rộng thực tế của 1 slot từ DOM (sau khi flex giãn)
+  // Dùng cho tính toán click position
+  const timeHeader = document.getElementById("timeHeader");
+  const firstSlot = timeHeader ? timeHeader.querySelector('.slot') : null;
+  if (firstSlot) {
+    const w = firstSlot.getBoundingClientRect().width;
+    if (w > 0) return w;
+  }
+  // Fallback: chia đều chiều rộng vùng slots
+  const slotsEl = timeHeader ? timeHeader.querySelector('.slots') : null;
+  if (slotsEl) {
+    const totalW = slotsEl.getBoundingClientRect().width;
+    const totalSlots = ((END_HOUR - START_HOUR) * 60) / SLOT_MIN;
+    if (totalW > 0 && totalSlots > 0) return totalW / totalSlots;
+  }
+  return parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--slotW")) || 36;
+}
+
+// ===== LOADING SKELETON CHO GRID =====
+function showGridLoading(){
+  const grid = document.getElementById("grid");
+  if (!grid) return;
+  // Hiện 5 dòng skeleton để layout không bị trống trong lúc fetch
+  const rowH = getComputedStyle(document.documentElement).getPropertyValue('--rowH') || '72px';
+  grid.innerHTML = Array.from({length: 5}, (_, i) => `
+    <div class="lane-row" style="opacity:.45;">
+      <div class="roomcell"><span class="dot"></span>—</div>
+      <div class="slots" style="background: repeating-linear-gradient(90deg,#f3f4f6 0,#f3f4f6 40%,#e9eaec 40%,#e9eaec 100%) 0 0 / 120px 100%;"></div>
+    </div>`).join('');
+}
+
+// ============================================================
+// SECTION 7: PENDING BLOCKS STATE
+// ============================================================
 function _nextPendingId() {
   return ++_pendingIdCounter;
 }
@@ -206,347 +559,12 @@ function renderPendingBlocks(slotsEl, roomId, laneIndex, day) {
     .filter(pb => pb.roomId === roomId && pb.laneIndex === laneIndex && pb.day === day)
     .forEach(pb => _mountPendingBlock(pb, slotsEl));
 }
-// ===== Dữ liệu ( lấy từ API) ==> lưu dữ liệu load từ DB để render giao diện, validate form, tính toán trùng lịch =====
-let ROOMS = []; // danh sách phòng
-let SERVICES = []; //dánh sách dịch vụ
-let APPOINTMENTS = []; // danh sách lịch hẹn
 
-// ===== 2. DOM =====
-const sidebar = document.getElementById("sidebar");
-const sidebarToggle = document.getElementById("sidebarToggle");
-const timeHeader = document.getElementById("timeHeader");
-const grid = document.getElementById("grid");
-const dayPicker = document.getElementById("dayPicker");
-const btnPrev = document.getElementById("btnPrev");
-const btnNext = document.getElementById("btnNext");
-const btnToday = document.getElementById("btnToday");
-const searchInput = document.getElementById("searchInput");
-const webTbody = document.getElementById("webTbody");
-const webCount = document.getElementById("webCount");
-const webStatusFilter = document.getElementById("webStatusFilter");
-const modalEl = document.getElementById("apptModal");
-let modal = null;
-const modalTitle = document.getElementById("modalTitle");
-const modalError = document.getElementById("modalError");
-const btnSave = document.getElementById("btnSave");
-const btnDelete = document.getElementById("btnDelete");
-const apptId = document.getElementById("apptId");
-const toastEl = document.getElementById("toast");
-let toast = null;
-const toastTitle = document.getElementById("toastTitle");
-const toastBody = document.getElementById("toastBody");
-
-// ===== CSRF HELPER ======
-function getCSRFToken() {
-  const cookieValue = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
-  return cookieValue ? cookieValue.split('=')[1] : '';
-}
-
-// ===== BOOKING BADGES UPDATE =====
-function updateBookingBadges(rows) {
-  // Chỉ đếm PENDING — không tính CANCELLED hay trạng thái khác
-  const pendingCount = rows.filter(r => (r.apptStatus || '').toUpperCase() === 'PENDING').length;
-  if (webCount) {
-    if (pendingCount === 0) {
-      webCount.textContent = '';
-      webCount.classList.add('d-none');
-    } else {
-      webCount.textContent = String(pendingCount);
-      webCount.classList.remove('d-none');
-    }
-  }
-}
-
-// ===== LOADING STATE HELPER =====
-// Biến theo dõi trạng thái đang submit để tránh submit lặp
-let isSubmitting = false;
-
-/**
- * Bật loading state cho button
- * @param {HTMLElement} btn - Button cần set loading
- * @param {string} loadingText - Text hiển thị khi loading
- * @param {string} originalText - Text gốc để restore sau này
- */
-function setButtonLoading(btn, loadingText = 'Đang xử lý...', originalText = null) {
-  if (!btn) return;
-
-  // Lưu text gốc nếu chưa có
-  if (!btn.dataset.originalText) {
-    btn.dataset.originalText = originalText || btn.innerHTML;
-  }
-
-  btn.disabled = true;
-  btn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${loadingText}`;
-}
-
-/**
- * Tắt loading state và restore button về trạng thái ban đầu
- * @param {HTMLElement} btn - Button cần restore
- */
-function resetButton(btn) {
-  if (!btn) return;
-
-  btn.disabled = false;
-  if (btn.dataset.originalText) {
-    btn.innerHTML = btn.dataset.originalText;
-    delete btn.dataset.originalText;
-  }
-}
-
-/**
- * Hiển thị modal xác nhận đồng bộ giao diện hệ thống
- * @param {string} title - Tiêu đề
- * @param {string} message - Nội dung xác nhận
- * @param {string} confirmText - Text nút xác nhận
- * @param {string} cancelText - Text nút hủy
- * @returns {Promise<boolean>} - true nếu người dùng xác nhận
- */
-async function confirmAction(title, message, confirmText = 'Xác nhận', cancelText = 'Hủy') {
-  if (window.showConfirm) {
-    return window.showConfirm(message, { title, confirmText, cancelText });
-  }
-  return false;
-}
-
-// ===== API CALLS =====
-async function apiGet(url) {
-  try {
-    const response = await fetch(url);
-    const text = await response.text();
-    if (!text) {
-      if (!response.ok) return { success: false, ok: false, status: response.status, error: `HTTP error ${response.status}` };
-      return { success: true, ok: true, status: response.status };
-    }
-    try {
-      const data = JSON.parse(text);
-      if (!response.ok && !data.error) data.error = `HTTP error ${response.status}`;
-      data.ok = response.ok;
-      data.status = response.status;
-      return data;
-    } catch (e) {
-      return {
-        success: false,
-        ok: response.ok,
-        status: response.status,
-        error: !response.ok ? `HTTP error ${response.status}: Máy chủ trả về phản hồi không hợp lệ` : 'Invalid JSON response'
-      };
-    }
-  } catch (error) {
-    console.error('API GET error:', error);
-    return { success: false, error: error.message };
-  }
-}
-
-async function apiPost(url, payload) {
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken() },
-      body: JSON.stringify(payload),
-    });
-    const text = await response.text();
-    if (!text) {
-      if (!response.ok) return { success: false, ok: false, status: response.status, error: `HTTP error ${response.status}` };
-      return { success: true, ok: true, status: response.status };
-    }
-    try {
-      const data = JSON.parse(text);
-      if (!response.ok && !data.error) data.error = `HTTP error ${response.status}`;
-      data.ok = response.ok;
-      data.status = response.status;
-      return data;
-    } catch (e) {
-      return {
-        success: false,
-        ok: response.ok,
-        status: response.status,
-        error: !response.ok ? `HTTP error ${response.status}: Máy chủ trả về phản hồi không hợp lệ` : 'Invalid JSON response'
-      };
-    }
-  } catch (error) {
-    console.error('API POST error:', error);
-    return { success: false, error: error.message };
-  }
-}
-
-// ===== LOAD DATA FROM API =====
-async function loadRooms() {
-  const result = await apiGet(`${API_BASE}/rooms/`);
-  if (result.success && result.rooms) {
-    ROOMS = result.rooms;
-  } else {
-    // Fallback data - CẬN NHẬP: Phải khớp với database!
-    ROOMS = [
-      { id: "P01", name: "1", capacity: 1 },
-      { id: "P02", name: "2", capacity: 2 },
-      { id: "P03", name: "3", capacity: 3 },
-      { id: "P04", name: "4", capacity: 4 },
-      { id: "P05", name: "5", capacity: 5 },
-    ];
-  }
-}
-
-async function loadServices() {
-  const result = await apiGet(`${API_BASE}/services/`);
-  if (result.services) {
-    SERVICES = result.services;
-    fillServicesSelect();
-  }
-}
-
-async function loadAppointments(date = '') {
-  let url = `${API_BASE}/appointments/`;
-  const params = [];
-  if (date) params.push(`date=${date}`);
-
-  const statusFilter  = (document.getElementById('statusFilter')  || {}).value || '';
-  const serviceFilter = (document.getElementById('serviceFilter') || {}).value || '';
-  const sourceFilter  = (document.getElementById('sourceFilter')  || {}).value || '';
-  if (statusFilter)  params.push(`status=${encodeURIComponent(statusFilter)}`);
-  if (serviceFilter) params.push(`service=${encodeURIComponent(serviceFilter)}`);
-  if (sourceFilter)  params.push(`source=${encodeURIComponent(sourceFilter)}`);
-
-  const searchTerm = (searchInput ? searchInput.value.trim() : '');
-  if (searchTerm) params.push(`q=${encodeURIComponent(searchTerm)}`);
-
-  if (params.length) url += '?' + params.join('&');
-
-  const result = await apiGet(url);
-  if (result.success && result.appointments) {
-    APPOINTMENTS = result.appointments;
-  } else {
-    APPOINTMENTS = [];
-  }
-}
-
-async function loadBookingRequests(statusFilter = '', dateFilter = '', searchTerm = '', serviceFilter = '') {
-  let url = `${API_BASE}/booking-requests/`;
-  const queryParams = [];
-  if (statusFilter)  queryParams.push(`status=${encodeURIComponent(statusFilter)}`);
-  if (dateFilter)    queryParams.push(`date=${encodeURIComponent(dateFilter)}`);
-  if (searchTerm)    queryParams.push(`q=${encodeURIComponent(searchTerm)}`);
-  if (serviceFilter) queryParams.push(`service=${encodeURIComponent(serviceFilter)}`);
-  if (queryParams.length > 0) url += '?' + queryParams.join('&');
-
-  const result = await apiGet(url);
-  if (result && result.success) {
-    return result.appointments || [];
-  }
-  return [];
-}
-
-// ===== HELPERS =====
-function pad2(n){ return String(n).padStart(2,"0"); }
-
-function showToast(type, title, message){
-  const header = toastEl.querySelector(".toast-header");
-  const icon = header.querySelector("i");
-  header.className = "toast-header";
-  if(type==="success"){ header.classList.add("bg-success","text-white"); icon.className="fas fa-check-circle me-2"; }
-  else if(type==="warning"){ header.classList.add("bg-warning","text-dark"); icon.className="fas fa-exclamation-triangle me-2"; }
-  else if(type==="error"){ header.classList.add("bg-danger","text-white"); icon.className="fas fa-times-circle me-2"; }
-  else { header.classList.add("bg-info","text-white"); icon.className="fas fa-info-circle me-2"; }
-  toastTitle.textContent = title;
-  toastBody.textContent = message;
-  if (toast) toast.show();
-}
-
-function statusClass(s){
-  const sl = (s||'').toLowerCase();
-  if(sl==="not_arrived") return "status-not_arrived";
-  if(sl==="arrived") return "status-arrived";
-  if(sl==="completed") return "status-completed";
-  if(sl==="cancelled") return "status-cancelled";
-  if(sl==="rejected") return "status-rejected";
-  return "status-pending";
-}
-
-function statusLabel(s, cancelledBy){
-  const sl = (s||'').toLowerCase();
-  if(sl==="pending") return "Chờ xác nhận";
-  if(sl==="not_arrived") return "Chưa đến";
-  if(sl==="arrived") return "Đã đến";
-  if(sl==="completed") return "Hoàn thành";
-  if(sl==="cancelled") return cancelledBy === 'customer' ? "Khách đã hủy" : "Đã hủy";
-  if(sl==="rejected") return "Đã từ chối";
-  return s;
-}
-
-function isValidPhone(v){ return /^\d{10}$/.test(v.replace(/\D/g,"")); }
-function isValidEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
-
-function minutesFromStart(t){ const [h,m]=t.split(":").map(Number); return (h-START_HOUR)*60 + m; }
-
-function addMinutesToTime(t, add){
-  const [h,m]=t.split(":").map(Number);
-  const total = h*60+m+add;
-  return `${pad2(Math.floor(total/60))}:${pad2(total%60)}`;
-}
-
-function overlaps(aStart,aEnd,bStart,bEnd){ return aStart < bEnd && bStart < aEnd; }
-
-function resetModalError(){ modalError.classList.add("d-none"); modalError.textContent = ""; }
-
-// Tổng số phút của toàn bộ timeline (9:00 → 21:00 = 720 phút)
-function totalTimelineMinutes(){ return (END_HOUR - START_HOUR) * 60; }
-
-// Chuyển số phút từ START_HOUR sang % chiều ngang của vùng slots
-function minutesToPercent(minutes){ return (minutes / totalTimelineMinutes()) * 100; }
-
-function getSlotWidth(){
-  // Đọc chiều rộng thực tế của 1 slot từ DOM (sau khi flex giãn)
-  // Dùng cho tính toán click position
-  const firstSlot = timeHeader ? timeHeader.querySelector('.slot') : null;
-  if (firstSlot) {
-    const w = firstSlot.getBoundingClientRect().width;
-    if (w > 0) return w;
-  }
-  // Fallback: chia đều chiều rộng vùng slots
-  const slotsEl = timeHeader ? timeHeader.querySelector('.slots') : null;
-  if (slotsEl) {
-    const totalW = slotsEl.getBoundingClientRect().width;
-    const totalSlots = ((END_HOUR - START_HOUR) * 60) / SLOT_MIN;
-    if (totalW > 0 && totalSlots > 0) return totalW / totalSlots;
-  }
-  return parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--slotW")) || 36;
-}
-
-function capacityOK({roomId, day, start, end, ignoreId}){
-  const roomInfo = ROOMS.find(r=>r.id===roomId);
-  if(!roomInfo) return false;
-
-  const newS = minutesFromStart(start), newE = minutesFromStart(end);
-  let count = 0;
-
-  // Mỗi appointment = 1 khách, đếm số lịch trùng giờ
-  const overlappingAppts = APPOINTMENTS.filter(
-    a => a.roomCode===roomId && a.date===day && !["cancelled", "rejected"].includes((a.apptStatus||'').toLowerCase()) && a.id!==ignoreId
-  );
-
-  overlappingAppts.forEach(a => {
-    const s = minutesFromStart(a.start);
-    const rawE = a.end ? minutesFromStart(a.end) : NaN;
-    const e = (!isNaN(rawE) && rawE > s) ? rawE : s + Math.max(SLOT_MIN, Number(a.durationMin) || SLOT_MIN);
-    if(overlaps(newS, newE, s, e)) count++;
-  });
-
-  return count < roomInfo.capacity;
-}
-
-// ===== LOADING SKELETON CHO GRID =====
-function showGridLoading(){
-  if (!grid) return;
-  // Hiện 5 dòng skeleton để layout không bị trống trong lúc fetch
-  const rowH = getComputedStyle(document.documentElement).getPropertyValue('--rowH') || '72px';
-  grid.innerHTML = Array.from({length: 5}, (_, i) => `
-    <div class="lane-row" style="opacity:.45;">
-      <div class="roomcell"><span class="dot"></span>—</div>
-      <div class="slots" style="background: repeating-linear-gradient(90deg,#f3f4f6 0,#f3f4f6 40%,#e9eaec 40%,#e9eaec 100%) 0 0 / 120px 100%;"></div>
-    </div>`).join('');
-}
-
-// ===== RENDER NHÓM VẼ GIAO DIỆN RENDER-UI =====
+// ============================================================
+// SECTION 8: TAB 1 - LỊCH THEO PHÒNG (GRID)
+// ============================================================
 function renderHeader(){
+  const timeHeader = document.getElementById("timeHeader");
   const totalSlots = ((END_HOUR-START_HOUR)*60)/SLOT_MIN;
   document.documentElement.style.setProperty("--totalSlots", totalSlots);
   let html = `<div class="leftcell">Phòng</div><div class="slots">`;
@@ -585,6 +603,8 @@ function allocateRoomLanes(roomId, day, appts){
 }
 
 function renderGrid(){
+  const grid = document.getElementById("grid");
+  const dayPicker = document.getElementById("dayPicker");
   grid.innerHTML = "";
   const day = dayPicker.value;
 
@@ -670,6 +690,8 @@ function renderGrid(){
  * Gọi khi: renderGrid, đổi ngày, resize, setInterval.
  */
 function updateCurrentTimeLine() {
+  const grid = document.getElementById("grid");
+  const dayPicker = document.getElementById("dayPicker");
   if (!grid) return;
 
   // Lấy hoặc tạo element (chỉ tạo 1 lần duy nhất)
@@ -712,12 +734,14 @@ function updateCurrentTimeLine() {
 }
 
 // Khởi động interval realtime — cập nhật mỗi 30 giây
-let _ctlInterval = null;
 function startCurrentTimeLineInterval() {
   if (_ctlInterval) clearInterval(_ctlInterval);
   _ctlInterval = setInterval(updateCurrentTimeLine, 30_000);
 }
 
+// ============================================================
+// SECTION 9: TAB 2 - YÊU CẦU ĐẶT LỊCH (WEB REQUESTS)
+// ============================================================
 // vẽ bảng yêu cầu đặt lịch online
 async function renderWebRequests(){
   const statusFilter  = (document.getElementById("webStatusFilter")  || {}).value || '';
@@ -730,6 +754,7 @@ async function renderWebRequests(){
   updateBookingBadges(rows);
   window._webAppts = rows;
 
+  const webTbody = document.getElementById("webTbody");
   if(rows.length === 0){
     webTbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">Không có yêu cầu đặt lịch trực tuyến</td></tr>`;
     return;
@@ -766,6 +791,7 @@ window.approveWeb = async function(id){
     const a = result.appointment;
     // Mở edit modal với status mặc định NOT_ARRIVED
     openEditModalWithData({ ...a, apptStatus: 'NOT_ARRIVED' });
+    const dayPicker = document.getElementById("dayPicker");
     if (a.date) dayPicker.value = a.date;
     showToast("info", "Xác nhận lịch", "Kiểm tra phòng & giờ rồi bấm Lưu để xác nhận lên timeline");
   } else {
@@ -820,6 +846,12 @@ window.rebookAppointment = async function(id) {
  */
 function openRebookAsCreate(a) {
   // Đóng modal edit nếu đang mở
+  const modalEl = document.getElementById("apptModal");
+  let modal = null;
+  if (modalEl) {
+    const existing = bootstrap.Modal.getInstance(modalEl);
+    modal = existing || new bootstrap.Modal(modalEl);
+  }
   if (modal) modal.hide();
 
   // Mở modal tạo mới với booker + khách pre-fill, không có slot
@@ -842,11 +874,6 @@ function openRebookAsCreate(a) {
   });
 }
 
-// ===== MODAL  =====
-// fillRoomsSelect / fillServicesSelect không còn dùng — rooms/services load vào guest card trực tiếp
-function fillRoomsSelect(){ /* no-op — rooms rendered per guest card */ }
-function fillServicesSelect(){ /* no-op — services rendered per guest card */ }
-
 // Điền dropdown dịch vụ cho filter bar scheduler
 function fillServiceFilter(){
   const sel = document.getElementById('serviceFilter');
@@ -862,6 +889,9 @@ function fillServiceFilter(){
   }
 }
 
+// ============================================================
+// SECTION 10: CUSTOMER LOOKUP (STUB)
+// ============================================================
 // ===== CUSTOMER INLINE LOOKUP =====
 // Spec: nhập SĐT/email → gợi ý → nhân viên xác nhận ✓ hoặc bỏ qua ✕
 // Không tự fill, không tạo duplicate CustomerProfile
@@ -903,6 +933,14 @@ function _resetAllCustomerState() {
   document.getElementById('selectedCustomerId').value = '';
 }
 
+// ============================================================
+// SECTION 11: MODAL & FORM HELPERS
+// ============================================================
+// ===== MODAL =====
+// fillRoomsSelect / fillServicesSelect không còn dùng — rooms/services load vào guest card trực tiếp
+function fillRoomsSelect(){ /* no-op — rooms rendered per guest card */ }
+function fillServicesSelect(){ /* no-op — services rendered per guest card */ }
+
 // Escape HTML để tránh XSS
 function _esc(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
@@ -916,11 +954,6 @@ function _roomShortLabel(room) {
   if (/^\d+$/.test(raw)) return 'P' + Number(raw);
   return raw;
 }
-
-// ===== CREATE MODE — ACCORDION GUEST CARDS =====
-let _guestCount = 0;
-// Map pendingBlockId → guestIdx để sync slot summary
-let _pendingBlockMap = []; // [{pendingId, guestIdx}]
 
 // ── Helpers ──
 function _getGuestItems() {
@@ -1147,6 +1180,7 @@ function _showSharedStatusBlock(statusValue, payValue) {
 function _buildGuestItem(idx, prefill) {
   prefill = prefill || {};
   var roomName = prefill.roomId ? (ROOMS.find(function(r){ return r.id === prefill.roomId; }) || {}).name || prefill.roomId : '';
+  const dayPicker = document.getElementById("dayPicker");
   var dateVal  = prefill.date || dayPicker.value;
   var timeVal  = prefill.time || '';
   var endTime  = (timeVal && prefill.pendingDuration) ? addMinutesToTime(timeVal, prefill.pendingDuration) : '';
@@ -1247,7 +1281,7 @@ function _buildGuestItem(idx, prefill) {
 
   + '</div>'
 
-  // gc-sub-row đã chuyển thành block chung ở footer — không render per-guest nữa
+  // gc-sub-row đã chuyển thành block chung ở footer — không render per-guest anymore
 
   // ── PHẦN MỞ RỘNG — Email + Ghi chú (toggle bằng dấu 3 chấm) ──
   + '<div class="gc-detail-wrap">'
@@ -1648,6 +1682,12 @@ function _initApplyAllBar() {
         note:   document.getElementById('bookerNote')?.value  || '',
       };
       _addingSlotMode = true;
+      const modalEl = document.getElementById("apptModal");
+      let modal = null;
+      if (modalEl) {
+        const existing = bootstrap.Modal.getInstance(modalEl);
+        modal = existing || new bootstrap.Modal(modalEl);
+      }
       if (modal) modal.hide();
       showToast('info', 'Chọn thêm slot', 'Hãy chọn thêm 1 slot trên lịch để thêm khách mới, rồi bấm "Tiếp tục"');
     };
@@ -1672,7 +1712,13 @@ function _setCreateOnlyVisible(visible) {
   // progress bar nằm trong createOnlyBar nên tự ẩn theo
 }
 
-function openCreateModal(prefill={}) {
+function openCreateModal(prefill={}){
+  const modalEl = document.getElementById("apptModal");
+  const modalTitle = document.getElementById("modalTitle");
+  const apptId = document.getElementById("apptId");
+  const btnDelete = document.getElementById("btnDelete");
+  const dayPicker = document.getElementById("dayPicker");
+
   resetModalError();
   modalTitle.textContent = "Tạo lịch hẹn";
   apptId.value = "";
@@ -1736,10 +1782,10 @@ function openCreateModal(prefill={}) {
       addGuestCard({ date: pb.day, time: pb.time, roomId: pb.roomId, pendingDuration: pb.duration });
     });
   } else {
-    addGuestCard({ 
-      date: prefill.day || dayPicker.value, 
-      time: prefill.time || '', 
-      roomId: prefill.roomId || '' 
+    addGuestCard({
+      date: prefill.day || dayPicker.value,
+      time: prefill.time || '',
+      roomId: prefill.roomId || ''
     });
   }
 
@@ -1751,6 +1797,7 @@ function openCreateModal(prefill={}) {
   // Hiện block trạng thái & thanh toán, reset về mặc định
   _showSharedStatusBlock('NOT_ARRIVED', 'UNPAID');
 
+  let modal = null;
   if (modalEl) {
     const existing = bootstrap.Modal.getInstance(modalEl);
     modal = existing || new bootstrap.Modal(modalEl);
@@ -1758,10 +1805,6 @@ function openCreateModal(prefill={}) {
   if (!modal) return;
   modal.show();
 }
-
-// ── State: đang ở chế độ "quay về grid để chọn thêm slot" ──
-let _addingSlotMode = false;
-let _savedBookerInfo = null;  // lưu tạm booker info khi quay về grid
 
 /** Mở modal tạo lịch từ pending blocks đã chọn trên grid */
 function openCreateModalFromPending() {
@@ -1779,11 +1822,18 @@ function openCreateModalFromPending() {
 
 async function openEditModal(id){
   const result = await apiGet(`${API_BASE}/appointments/${id}/`);
+  const modalError = document.getElementById("modalError");
   if (result.success && result.appointment) openEditModalWithData(result.appointment);
-  else { const a = APPOINTMENTS.find(x=>x.id===id); if (a) openEditModalWithData(a); else showToast("error","Lỗi","Không tìm thấy lịch hẹn"); }
+  else { const a = APPOINTMENTS.find(x=>x.id===id); if (a) openEditModalWithData(a); else { modalError.textContent = "Không tìm thấy lịch hẹn"; modalError.classList.remove("d-none"); } }
 }
 
 function openEditModalWithData(a){
+  const modalEl = document.getElementById("apptModal");
+  const modalTitle = document.getElementById("modalTitle");
+  const apptId = document.getElementById("apptId");
+  const btnDelete = document.getElementById("btnDelete");
+  const dayPicker = document.getElementById("dayPicker");
+
   resetModalError();
   modalTitle.textContent = `Chỉnh sửa • ${a.id}`;
   apptId.value = a.id;
@@ -1847,6 +1897,7 @@ function openEditModalWithData(a){
     _editMode:    true,
   });
 
+  let modal = null;
   if (modalEl) {
     const existing = bootstrap.Modal.getInstance(modalEl);
     modal = existing || new bootstrap.Modal(modalEl);
@@ -1854,6 +1905,7 @@ function openEditModalWithData(a){
   if (modal) modal.show();
 }
 
+const btnSave = document.getElementById("btnSave");
 btnSave.addEventListener("click", ()=> {
   // Trigger submit trên form
   const f = document.getElementById('apptForm');
@@ -1863,10 +1915,13 @@ btnSave.addEventListener("click", ()=> {
 // Validate Form
 document.getElementById('apptForm').addEventListener("submit", async (e)=>{
   e.preventDefault();
+  const modalError = document.getElementById("modalError");
+  const dayPicker = document.getElementById("dayPicker");
 
   if (isSubmitting) return;
   resetModalError();
 
+  const apptId = document.getElementById("apptId");
   const id = apptId.value.trim();
 
   // ── EDIT MODE — đọc data từ guest card duy nhất ──
@@ -1926,6 +1981,12 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
     try {
       const result = await apiPost(`${API_BASE}/appointments/${id}/update/`, payload);
       if (result.success) {
+        const modalEl = document.getElementById("apptModal");
+        let modal = null;
+        if (modalEl) {
+          const existing = bootstrap.Modal.getInstance(modalEl);
+          modal = existing || new bootstrap.Modal(modalEl);
+        }
         if (modal) modal.hide();
         if (dayPicker.value !== g.date) dayPicker.value = g.date;
         await refreshData();
@@ -2032,6 +2093,12 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
   try {
     const result = await apiPost(`${API_BASE}/appointments/create-batch/`, batchPayload);
     if (result.success) {
+      const modalEl = document.getElementById("apptModal");
+      let modal = null;
+      if (modalEl) {
+        const existing = bootstrap.Modal.getInstance(modalEl);
+        modal = existing || new bootstrap.Modal(modalEl);
+      }
       if (modal) modal.hide();
       _addingSlotMode = false;
       _savedBookerInfo = null;
@@ -2059,12 +2126,15 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
 
 // ===== NÚT ĐẶT LẠI trong modal =====
 document.getElementById('btnRebook')?.addEventListener('click', async () => {
+  const apptId = document.getElementById("apptId");
   const id = apptId.value.trim();
   if (!id) return;
   await rebookAppointment(id);
 });
 
+const btnDelete = document.getElementById("btnDelete");
 btnDelete.addEventListener("click", async ()=>{
+  const apptId = document.getElementById("apptId");
   const id = apptId.value.trim();
   if (isSubmitting || !id) return;
 
@@ -2104,6 +2174,12 @@ btnDelete.addEventListener("click", async ()=>{
       try {
         const result = await apiPost(`${API_BASE}/appointments/${id}/delete/`, {});
         if (result.success) {
+          const modalEl = document.getElementById("apptModal");
+          let modal = null;
+          if (modalEl) {
+            const existing = bootstrap.Modal.getInstance(modalEl);
+            modal = existing || new bootstrap.Modal(modalEl);
+          }
           if (modal) modal.hide();
           await refreshData();
           await renderWebRequests();  // Refresh lại tab Yêu cầu đặt lịch
@@ -2117,7 +2193,7 @@ btnDelete.addEventListener("click", async ()=>{
         showToast("error","Lỗi", "Không thể xóa lịch hẹn. Vui lòng thử lại sau");
         isSubmitting = false; // Reset khi lỗi
       } finally {
-        // ===== TẬT LOADING STATE =====
+        // ===== TẮT LOADING STATE =====
         isSubmitting = false;
       }
     });
@@ -2130,7 +2206,14 @@ btnDelete.addEventListener("click", async ()=>{
   deleteModal.show();
 });
 
-// ===== DATE NAV =====
+// ============================================================
+// SECTION 12: DATE NAVIGATION
+// ============================================================
+const dayPicker = document.getElementById("dayPicker");
+const btnPrev = document.getElementById("btnPrev");
+const btnNext = document.getElementById("btnNext");
+const btnToday = document.getElementById("btnToday");
+
 function setDay(d){ dayPicker.value = d; refreshData(); }
 function todayISO(){ const t = new Date(); return `${t.getFullYear()}-${pad2(t.getMonth()+1)}-${pad2(t.getDate())}`; }
 function shiftDay(delta){ const d = new Date(dayPicker.value + "T00:00:00"); d.setDate(d.getDate()+delta); setDay(`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`); }
@@ -2141,112 +2224,9 @@ async function refreshData(){
   renderGrid();
 }
 
-// ===== INIT =====
-document.addEventListener("DOMContentLoaded", async ()=>{
-
-  if (modalEl) modal = new bootstrap.Modal(modalEl);
-  if (toastEl) toast = new bootstrap.Toast(toastEl);
-
-  // Initialize customer search (stub — badges đã bỏ)
-  initCustomerSearch();
-
-  // Initialize delete modal
-  const deleteModalEl = document.getElementById('deleteAppointmentModal');
-  if (deleteModalEl) {
-    window.deleteAppointmentModal = new bootstrap.Modal(deleteModalEl);
-  }
-
-  if(sidebarToggle) sidebarToggle.addEventListener("click", ()=> sidebar.classList.toggle("show"));
-
-  // ── Render header timeline NGAY LẬP TỨC trước khi fetch ──
-  // Để layout ổn định, không bị trống trong lúc chờ API
-  dayPicker.value = todayISO();
-  renderHeader();
-  showGridLoading();   // hiện skeleton trong vùng grid
-
-  // ── Fetch song song rooms + services để giảm thời gian chờ ──
-  await Promise.all([loadRooms(), loadServices()]);
-
-  fillRoomsSelect();
-  fillServiceFilter();
-
-  // ── Fetch appointments + web requests song song ──
-  await Promise.all([
-    refreshData(),
-    renderWebRequests(),
-  ]);
-
-  // ===== POLLING: cập nhật badge pending count mỗi 15 giây =====
-  setInterval(async () => {
-    try {
-      const res = await apiGet(`${API_BASE}/booking/pending-count/`);
-      if (res.success && typeof res.count === 'number') {
-        if (webCount) {
-          if (res.count === 0) {
-            webCount.textContent = '';
-            webCount.classList.add('d-none');
-          } else {
-            webCount.textContent = String(res.count);
-            webCount.classList.remove('d-none');
-          }
-        }
-      }
-    } catch(e) { /* silent */ }
-  }, 15000);
-
-  if(btnToday) btnToday.addEventListener("click", ()=> setDay(todayISO()));
-  if(btnPrev) btnPrev.addEventListener("click", ()=> shiftDay(-1));
-  if(btnNext) btnNext.addEventListener("click", ()=> shiftDay(1));
-  if(dayPicker) dayPicker.addEventListener("change", ()=> { clearPendingBlocks(); refreshData(); updateCurrentTimeLine(); });
-
-  // ── Current time line: interval realtime + resize ──
-  startCurrentTimeLineInterval();
-  window.addEventListener('resize', updateCurrentTimeLine);
-
-  // ===== ACTION BAR — Pending blocks =====
-  const btnCancelPending   = document.getElementById('btnCancelPending');
-  const btnContinuePending = document.getElementById('btnContinuePending');
-
-  if (btnCancelPending) {
-    btnCancelPending.addEventListener('click', () => {
-      _addingSlotMode = false;
-      _savedBookerInfo = null;
-      clearPendingBlocks();
-      showToast('info', 'Đã hủy', 'Đã xóa toàn bộ slot đang chọn');
-    });
-  }
-
-  if (btnContinuePending) {
-    btnContinuePending.addEventListener('click', () => {
-      if (!pendingBlocks.length) return;
-      openCreateModalFromPending();
-    });
-  }
-
-  if (modalEl) {
-    modalEl.addEventListener('hidden.bs.modal', () => {
-      if (!isSubmitting && !_addingSlotMode) {
-        clearPendingBlocks();
-      }
-    });
-  }
-
-  // Filter bar — tab Yêu cầu đặt lịch (dùng FilterManager chung)
-  const webFM = new FilterManager({
-    fields:   ['webSearchInput', 'webStatusFilter', 'webServiceFilter', 'webDateFilter'],
-    btnId:    'webFilterBtn',
-    searchId: 'webSearchInput',
-    onApply:  () => renderWebRequests(),
-  });
-
-  // ===== SEARCH MODAL =====
-  initSearchModal();
-
-  window.openEditModal = openEditModal;
-  window.renderWebRequests = renderWebRequests;
-});
-
-// ===== SEARCH MODAL =====
+// ============================================================
+// SECTION 13: SEARCH MODAL
+// ============================================================
 function initSearchModal() {
   const searchModalEl = document.getElementById('searchModal');
   if (!searchModalEl) return;
@@ -2478,7 +2458,9 @@ window._srchGoToAppt = async function(apptId, apptDate) {
   }, 350);
 };
 
-// ===== CUSTOMER CANCEL POLLING =====
+// ============================================================
+// SECTION 14: CUSTOMER CANCEL POLLING
+// ============================================================
 (function initCustomerCancelPolling() {
   // Lưu các mã lịch đã toast để không hiện lại
   const _seenCodes = new Set();
@@ -2554,3 +2536,119 @@ window._srchGoToAppt = async function(apptId, apptDate) {
     setInterval(_pollCancelledByCustomer, 30000);
   }, 5000);
 })();
+
+// ============================================================
+// SECTION 15: INITIALIZATION
+// ============================================================
+document.addEventListener("DOMContentLoaded", async ()=>{
+  const modalEl = document.getElementById("apptModal");
+  const toastEl = document.getElementById("toast");
+  const webCount = document.getElementById("webCount");
+  const sidebar = document.getElementById("sidebar");
+  const sidebarToggle = document.getElementById("sidebarToggle");
+  const grid = document.getElementById("grid");
+
+  let modal = null;
+  let toast = null;
+
+  if (modalEl) modal = new bootstrap.Modal(modalEl);
+  if (toastEl) toast = new bootstrap.Toast(toastEl);
+
+  // Initialize customer search (stub — badges đã bỏ)
+  initCustomerSearch();
+
+  // Initialize delete modal
+  const deleteModalEl = document.getElementById('deleteAppointmentModal');
+  if (deleteModalEl) {
+    window.deleteAppointmentModal = new bootstrap.Modal(deleteModalEl);
+  }
+
+  if(sidebarToggle) sidebarToggle.addEventListener("click", ()=> sidebar.classList.toggle("show"));
+
+  // ── Render header timeline NGAY LẬP TỨC trước khi fetch ──
+  // Để layout ổn định, không bị trống trong lúc chờ API
+  dayPicker.value = todayISO();
+  renderHeader();
+  showGridLoading();   // hiện skeleton trong vùng grid
+
+  // ── Fetch song song rooms + services để giảm thời gian chờ ──
+  await Promise.all([loadRooms(), loadServices()]);
+
+  fillRoomsSelect();
+  fillServiceFilter();
+
+  // ── Fetch appointments + web requests song song ──
+  await Promise.all([
+    refreshData(),
+    renderWebRequests(),
+  ]);
+
+  // ===== POLLING: cập nhật badge pending count mỗi 15 giây =====
+  setInterval(async () => {
+    try {
+      const res = await apiGet(`${API_BASE}/booking/pending-count/`);
+      if (res.success && typeof res.count === 'number') {
+        if (webCount) {
+          if (res.count === 0) {
+            webCount.textContent = '';
+            webCount.classList.add('d-none');
+          } else {
+            webCount.textContent = String(res.count);
+            webCount.classList.remove('d-none');
+          }
+        }
+      }
+    } catch(e) { /* silent */ }
+  }, 15000);
+
+  if(btnToday) btnToday.addEventListener("click", ()=> setDay(todayISO()));
+  if(btnPrev) btnPrev.addEventListener("click", ()=> shiftDay(-1));
+  if(btnNext) btnNext.addEventListener("click", ()=> shiftDay(1));
+  if(dayPicker) dayPicker.addEventListener("change", ()=> { clearPendingBlocks(); refreshData(); updateCurrentTimeLine(); });
+
+  // ── Current time line: interval realtime + resize ──
+  startCurrentTimeLineInterval();
+  window.addEventListener('resize', updateCurrentTimeLine);
+
+  // ===== ACTION BAR — Pending blocks =====
+  const btnCancelPending   = document.getElementById('btnCancelPending');
+  const btnContinuePending = document.getElementById('btnContinuePending');
+
+  if (btnCancelPending) {
+    btnCancelPending.addEventListener('click', () => {
+      _addingSlotMode = false;
+      _savedBookerInfo = null;
+      clearPendingBlocks();
+      showToast('info', 'Đã hủy', 'Đã xóa toàn bộ slot đang chọn');
+    });
+  }
+
+  if (btnContinuePending) {
+    btnContinuePending.addEventListener('click', () => {
+      if (!pendingBlocks.length) return;
+      openCreateModalFromPending();
+    });
+  }
+
+  if (modalEl) {
+    modalEl.addEventListener('hidden.bs.modal', () => {
+      if (!isSubmitting && !_addingSlotMode) {
+        clearPendingBlocks();
+      }
+    });
+  }
+
+  // Filter bar — tab Yêu cầu đặt lịch (dùng FilterManager chung)
+  const webFM = new FilterManager({
+    fields:   ['webSearchInput', 'webStatusFilter', 'webServiceFilter', 'webDateFilter'],
+    btnId:    'webFilterBtn',
+    searchId: 'webSearchInput',
+    onApply:  () => renderWebRequests(),
+  });
+
+  // ===== SEARCH MODAL =====
+  initSearchModal();
+
+  window.openEditModal = openEditModal;
+  window.renderWebRequests = renderWebRequests;
+});
