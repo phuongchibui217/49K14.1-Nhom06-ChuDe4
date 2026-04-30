@@ -1,14 +1,5 @@
 """
-API Endpoints — Lịch hẹn (refactored theo model mới)
-
-THAY ĐỔI:
-- Bỏ service_id (chỉ dùng service_variant_id)
-- Bỏ end_time, duration_minutes, guests (tính từ variant)
-- room_id bắt buộc NOT NULL
-- customer_id luôn được set (auto find/create)
-- 1 slot = 1 khách = 1 appointment
-
-Author: Spa ANA Team
+API Endpoints — Lịch hẹn 
 """
 
 import json
@@ -869,7 +860,7 @@ def api_booking_requests(request):
     REJECTED: lấy tất cả source (admin có thể từ chối lịch DIRECT và cần đặt lại).
     """
     if not _is_staff(request.user):
-        return _deny()
+        return _deny() # return 403 Forbidden nếu không phải staff
 
     appointments = Appointment.objects.filter(
         deleted_at__isnull=True

@@ -19,6 +19,7 @@ urlpatterns = [
     path('lich-hen-cua-toi/', views.my_appointments, name='my_appointments'),
     path('lich-hen/cancel/<int:appointment_id>/', views.cancel_appointment, name='cancel_appointment'),
     path('manage/appointments/', views.admin_appointments, name='admin_appointments'),
+    
     path('api/rooms/', api.api_rooms_list, name='api_rooms_list'),
     path('api/appointments/', api.api_appointments_list, name='api_appointments_list'),
     path('api/appointments/search/', api.api_appointments_search, name='api_appointments_search'),

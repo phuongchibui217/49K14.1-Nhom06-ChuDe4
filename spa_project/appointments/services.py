@@ -2,8 +2,6 @@
 Services cho Appointment Validation
 
 Tách logic nghiệp vụ ra khỏi views/api để dùng lại và dễ test.
-
-Author: Spa ANA Team
 """
 
 from datetime import datetime, timedelta, date, time as time_type
@@ -34,13 +32,8 @@ def validate_appointment_date(appointment_date, is_staff_confirm=False):
     if is_staff_confirm:
         return
 
-    today = timezone.now().date()
-    if appointment_date < today:
-        raise ValidationError(
-            f'Không thể đặt lịch ở ngày quá khứ. '
-            f'Bạn đang chọn ngày {appointment_date.strftime("%d/%m/%Y")}, '
-            f'nhưng hôm nay là {today.strftime("%d/%m/%Y")}.'
-        )
+    if appointment_date < timezone.now().date():
+        raise ValidationError('Ngày hẹn không được nhỏ hơn ngày hôm nay.')
 
 
 def validate_appointment_time(appointment_time, appointment_date, duration_minutes=None):
@@ -54,34 +47,24 @@ def validate_appointment_time(appointment_time, appointment_date, duration_minut
         duration_minutes = DEFAULT_APPOINTMENT_DURATION_MINUTES
 
     if appointment_time < SPA_OPEN_TIME:
-        raise ValidationError(
-            f'Giờ làm việc bắt đầu từ 09:00. Vui lòng chọn giờ từ 09:00 đến 21:00.'
-        )
+        raise ValidationError('Giờ làm việc từ 09:00 đến 21:00.')
 
     if appointment_time >= SPA_CLOSE_TIME:
-        raise ValidationError(
-            f'Spa đóng cửa lúc 21:00. Vui lòng chọn giờ bắt đầu trước 21:00.'
-        )
+        raise ValidationError('Giờ hẹn phải trước 21:00.')
 
     # Kiểm tra giờ kết thúc không vượt 21:00
     end_time = _calc_end_time(appointment_time, duration_minutes)
     if end_time > SPA_CLOSE_TIME:
         latest_start = _calc_end_time(SPA_CLOSE_TIME, -duration_minutes)
         raise ValidationError(
-            f'Spa đóng cửa lúc 21:00. Với gói {duration_minutes} phút, '
-            f'giờ bắt đầu trễ nhất là {latest_start.strftime("%H:%M")}. '
-            f'Vui lòng chọn giờ sớm hơn hoặc chọn gói dịch vụ ngắn hơn.'
+            f'Gói {duration_minutes} phút sẽ kết thúc sau 21:00. '
+            f'Giờ trễ nhất có thể đặt: {latest_start.strftime("%H:%M")}.'
         )
 
     # Chặn giờ đã qua trong ngày hôm nay
     now = timezone.localtime(timezone.now())
-    today = now.date()
-    if appointment_date == today and appointment_time <= now.time():
-        raise ValidationError(
-            f'Không thể tạo lịch trong quá khứ. '
-            f'Giờ hiện tại là {now.strftime("%H:%M")}, '
-            f'vui lòng chọn khung giờ sau {now.strftime("%H:%M")}.'
-        )
+    if appointment_date == now.date() and appointment_time <= now.time():
+        raise ValidationError(f'Giờ hẹn phải sau giờ hiện tại ({now.strftime("%H:%M")}).')
 
 
 def check_room_availability(
@@ -106,7 +89,7 @@ def check_room_availability(
     try:
         room = Room.objects.get(code=room_code, is_active=True)
     except Room.DoesNotExist:
-        return (False, None, f'Phòng {room_code} không tồn tại hoặc không hoạt động.')
+        return (False, None, f'Phòng {room_code} không tồn tại.')
 
     end_time = _calc_end_time(start_time, duration_minutes)
 
@@ -133,10 +116,7 @@ def check_room_availability(
                 first_conflict = existing
 
     if overlapping_count >= room.capacity:
-        msg = (
-            f'Phòng đã đủ chỗ ở khung giờ này, vui lòng chọn phòng hoặc thời gian khác.'
-        )
-        return (False, first_conflict, msg)
+        return (False, first_conflict, 'Phòng đã đầy vào khung giờ này.')
 
     return (True, None, '')
 
