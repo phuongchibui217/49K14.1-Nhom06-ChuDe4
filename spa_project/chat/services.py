@@ -62,21 +62,6 @@ def normalize_sender_type(sender_type):
     return normalized
 
 
-def normalize_admin_sender_name(raw_name):
-    """
-    Chuẩn hóa tên người gửi phía admin.
-    Nếu tên trong DB là dạng không dấu (dữ liệu cũ), trả về tên mặc định có dấu.
-    """
-    name = (raw_name or "").strip()
-    if not name:
-        return "Nhân viên"
-    # Các biến thể không dấu phổ biến của "Nhân viên" trong dữ liệu cũ
-    _legacy_admin_names = {"nhan vien", "nhân viên", "staff", "admin"}
-    if name.lower() in _legacy_admin_names:
-        return "Nhân viên"
-    return name
-
-
 def get_customer_visible_sender_name(sender_type, sender_name):
     if normalize_sender_type(sender_type) == "admin":
         return CUSTOMER_VISIBLE_ADMIN_NAME
@@ -423,12 +408,8 @@ def serialize_chat_message(message, customer_safe=False):
         sender_name = get_customer_visible_sender_name(sender_type, raw_sender_name)
         staff_name = ""
     else:
-        if sender_type == "admin":
-            sender_name = normalize_admin_sender_name(raw_sender_name)
-            staff_name = sender_name
-        else:
-            sender_name = raw_sender_name
-            staff_name = ""
+        sender_name = raw_sender_name
+        staff_name = raw_sender_name if sender_type == "admin" else ""
 
     return {
         "id": message.id,

@@ -119,23 +119,31 @@ def customer_complaint_reply(request, complaint_id):
         return redirect('complaints:customer_complaint_list')
 
     if request.method == 'POST':
-        form = ComplaintReplyForm(request.POST)
-        if form.is_valid():
-            reply = form.save(commit=False)
-            reply.complaint = complaint
-            reply.sender = request.user
-            reply.sender_role = 'CUSTOMER'
-            reply.sender_name = complaint.customer_name_snapshot or complaint.full_name
-            reply.is_internal = False
-            reply.save()
+        if complaint.status == 'RESOLVED':
+            messages.error(request, 'Khiếu nại đã được giải quyết, không thể phản hồi thêm.')
+            return redirect('complaints:customer_complaint_detail', complaint_id=complaint_id)
 
-            ComplaintHistory.log(
-                complaint=complaint,
-                action='REPLY',
-                note='Khách hàng phản hồi bổ sung',
-                performed_by=request.user
-            )
-            messages.success(request, 'Đã gửi phản hồi.')
+        message_text = request.POST.get('message', '').strip()
+        if not message_text:
+            messages.error(request, 'Vui lòng nhập nội dung phản hồi.')
+            return redirect('complaints:customer_complaint_detail', complaint_id=complaint_id)
+
+        ComplaintReply.objects.create(
+            complaint=complaint,
+            sender=request.user,
+            sender_role='CUSTOMER',
+            sender_name=complaint.customer_name_snapshot or complaint.full_name,
+            message=message_text,
+            is_internal=False,
+        )
+
+        ComplaintHistory.log(
+            complaint=complaint,
+            action='REPLY',
+            note='Khách hàng phản hồi bổ sung',
+            performed_by=request.user
+        )
+        messages.success(request, 'Đã gửi phản hồi thành công.')
 
     return redirect('complaints:customer_complaint_detail', complaint_id=complaint_id)
 
