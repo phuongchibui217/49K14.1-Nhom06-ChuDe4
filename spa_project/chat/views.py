@@ -8,7 +8,7 @@ from .services import get_attachment_accept_string
 @login_required(login_url="accounts:login")
 def admin_live_chat(request):
     if not (request.user.is_staff or request.user.is_superuser):
-        messages.error(request, "Ban khong co quyen truy cap trang nay.")
+        messages.error(request, "Bạn không có quyền truy cập trang này.")
         return redirect("pages:home")
 
     return render(

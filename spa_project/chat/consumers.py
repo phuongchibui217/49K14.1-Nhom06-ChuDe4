@@ -39,13 +39,13 @@ def format_exception_message(exc):
             return str(exc.message)
 
     message = str(exc).strip()
-    return message or "Khong the xu ly yeu cau."
+    return message or "Không thể xử lý yêu cầu."
 
 
 def get_customer_warning_message(is_authenticated):
     if is_authenticated:
         return ""
-    return "Lich su chat se khong duoc luu khi ban roi khoi website."
+    return "Lịch sử chat sẽ không được lưu khi bạn rời khỏi website."
 
 
 def get_admin_session_meta(chat_code):
@@ -202,12 +202,12 @@ class CustomerChatConsumer(BaseChatConsumer):
             self.handle_mark_read()
             return
 
-        self.send_error("Su kien WebSocket khong hop le.")
+        self.send_error("Sự kiện WebSocket không hợp lệ.")
 
     def handle_send_message(self, content):
         if content.get("attachment"):
             self.send_error(
-                "Khach hang chi duoc gui tin nhan van ban.",
+                "Khách hàng chỉ được gửi tin nhắn văn bản.",
                 clientMessageId=(content.get("clientMessageId") or "").strip(),
             )
             return
@@ -220,7 +220,7 @@ class CustomerChatConsumer(BaseChatConsumer):
         try:
             session = self.get_bound_session()
             if session and not can_user_access_session(user, session, guest_key):
-                self.send_error("Ban khong co quyen truy cap phien chat nay.", clientMessageId=client_message_id)
+                self.send_error("Bạn không có quyền truy cập phiên chat này.", clientMessageId=client_message_id)
                 return
 
             if not session:
@@ -240,7 +240,7 @@ class CustomerChatConsumer(BaseChatConsumer):
                 session=session,
                 sender_type="customer",
                 sender_user=user,
-                sender_name=session.get_customer_display_name() if user else "Khach vang lai",
+                sender_name=session.get_customer_display_name() if user else "Khách vãng lai",
                 content=content.get("content", ""),
                 client_message_id=client_message_id,
             )
@@ -263,7 +263,7 @@ class CustomerChatConsumer(BaseChatConsumer):
 
             user = self.get_scope_user()
             if not can_user_access_session(user, session, self.guest_key):
-                self.send_error("Ban khong co quyen truy cap phien chat nay.")
+                self.send_error("Bạn không có quyền truy cập phiên chat này.")
                 return
 
             mark_session_read_by_customer(session)
@@ -288,7 +288,7 @@ class AdminChatSessionsConsumer(BaseChatConsumer):
     def receive_json(self, content, **kwargs):
         action = self.get_action(content)
         if action != "set_filters":
-            self.send_error("Su kien WebSocket khong hop le.")
+            self.send_error("Sự kiện WebSocket không hợp lệ.")
             return
 
         self.search = (content.get("search") or "").strip()
@@ -353,7 +353,7 @@ class AdminChatSessionConsumer(BaseChatConsumer):
             self.handle_mark_read()
             return
 
-        self.send_error("Su kien WebSocket khong hop le.")
+        self.send_error("Sự kiện WebSocket không hợp lệ.")
 
     def build_attachment_from_payload(self, payload):
         if not payload:
@@ -364,7 +364,7 @@ class AdminChatSessionConsumer(BaseChatConsumer):
         encoded_content = (payload.get("data") or "").strip()
 
         if not attachment_name or not attachment_content_type or not encoded_content:
-            raise ValidationError("Thong tin tep dinh kem khong hop le.")
+            raise ValidationError("Thông tin tệp đính kèm không hợp lệ.")
 
         if "," in encoded_content:
             encoded_content = encoded_content.split(",", 1)[1]
@@ -372,7 +372,7 @@ class AdminChatSessionConsumer(BaseChatConsumer):
         try:
             file_bytes = base64.b64decode(encoded_content, validate=True)
         except (ValueError, binascii.Error) as exc:
-            raise ValidationError("Khong the doc tep dinh kem.") from exc
+            raise ValidationError("Không thể đọc tệp đính kèm.") from exc
 
         return SimpleUploadedFile(
             attachment_name,
@@ -383,7 +383,7 @@ class AdminChatSessionConsumer(BaseChatConsumer):
     def handle_send_message(self, content):
         user = self.get_scope_user()
         if not user:
-            self.send_error("Ban khong co quyen thuc hien thao tac nay.")
+            self.send_error("Bạn không có quyền thực hiện thao tác này.")
             return
 
         client_message_id = (content.get("clientMessageId") or "").strip()

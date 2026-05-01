@@ -47,7 +47,7 @@
         dom.badge.classList.remove("d-none");
         dom.badge.setAttribute(
             "aria-label",
-            `${normalizedCount} tin nhan chat khach hang chua doc`
+            `${normalizedCount} tin nhắn chat khách hàng chưa đọc`
         );
     }
 
@@ -89,7 +89,7 @@
                 }
                 renderBadge(data.unreadTotal);
             } catch (error) {
-                // Bo qua payload loi va cho event tiep theo.
+                // Bỏ qua payload lỗi và chờ event tiếp theo.
             }
         });
 

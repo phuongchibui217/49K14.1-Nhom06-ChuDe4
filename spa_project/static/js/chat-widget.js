@@ -190,7 +190,7 @@
             return `
                 <div class="chat-attachment">
                     <a href="${message.attachmentUrl}" target="_blank" rel="noopener noreferrer">
-                        <img src="${message.attachmentUrl}" alt="${escapeHtml(message.attachmentName || "Hinh anh")}">
+                        <img src="${message.attachmentUrl}" alt="${escapeHtml(message.attachmentName || "Hình ảnh")}">
                     </a>
                 </div>
             `;
@@ -205,7 +205,7 @@
                     rel="noopener noreferrer"
                 >
                     <i class="fas fa-file-alt"></i>
-                    <span>${escapeHtml(message.attachmentName || "Tep dinh kem")}</span>
+                    <span>${escapeHtml(message.attachmentName || "Tệp đính kèm")}</span>
                     <small>${escapeHtml(formatFileSize(message.attachmentSize))}</small>
                 </a>
             </div>
@@ -220,9 +220,9 @@
                 : "admin";
 
         const displayName = message.senderType === "customer"
-            ? "Ban"
+            ? "Bạn"
             : senderClass === "admin"
-                ? "Nhan vien"
+                ? "Nhân viên"
                 : message.senderName || "Spa ANA";
 
         const headerHtml = senderClass === "system"
@@ -267,7 +267,7 @@
         }
 
         dom.messages.innerHTML = messages
-            .map((message) => buildMessageHtml(message, message.senderType === "customer" ? "Da gui" : ""))
+            .map((message) => buildMessageHtml(message, message.senderType === "customer" ? "Đã gửi" : ""))
             .join("");
         scrollMessagesToBottom();
     }
@@ -324,11 +324,11 @@
         element.classList.add("failed");
         const statusElement = element.querySelector(".chat-message-status");
         if (statusElement) {
-            statusElement.textContent = "Loi gui";
+            statusElement.textContent = "Lỗi gửi";
             return;
         }
 
-        element.insertAdjacentHTML("beforeend", '<div class="chat-message-status">Loi gui</div>');
+        element.insertAdjacentHTML("beforeend", '<div class="chat-message-status">Lỗi gửi</div>');
     }
 
     function applySessionState(session, guestKey) {
@@ -393,14 +393,14 @@
                 updatePendingMessage(
                     pendingId,
                     message,
-                    message.senderType === "customer" ? "Da gui" : "",
+                    message.senderType === "customer" ? "Đã gửi" : "",
                     false
                 );
             } else {
-                appendMessage(message, message.senderType === "customer" ? "Da gui" : "");
+                appendMessage(message, message.senderType === "customer" ? "Đã gửi" : "");
             }
         } else {
-            appendMessage(message, message.senderType === "customer" ? "Da gui" : "");
+            appendMessage(message, message.senderType === "customer" ? "Đã gửi" : "");
         }
 
         if (message.senderType === "admin") {
@@ -575,14 +575,14 @@
             id: clientMessageId,
             clientMessageId: clientMessageId,
             senderType: "customer",
-            senderName: "Ban",
+            senderName: "Bạn",
             messageType: "text",
             content: content,
             createdAt: new Date().toISOString(),
             timeLabel: formatTime(new Date().toISOString()),
         };
 
-        appendMessage(tempMessage, "Dang gui...");
+        appendMessage(tempMessage, "Đang gửi...");
         dom.input.value = "";
         autoResizeInput();
         updateSendButtonState();
@@ -596,7 +596,7 @@
         });
 
         if (!sent) {
-            updatePendingMessage(clientMessageId, tempMessage, "Loi gui", true);
+            updatePendingMessage(clientMessageId, tempMessage, "Lỗi gửi", true);
         }
     }
 
