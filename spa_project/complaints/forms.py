@@ -166,8 +166,8 @@ class ComplaintReplyForm(forms.ModelForm):
 
     def clean_message(self):
         message = self.cleaned_data.get('message', '').strip()
-        if not message or len(message) < 3:
-            raise forms.ValidationError('Nội dung phản hồi phải có ít nhất 3 ký tự.')
+        if not message:
+            raise forms.ValidationError('Vui lòng nhập nội dung phản hồi.')
         return message
 
 

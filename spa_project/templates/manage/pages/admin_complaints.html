@@ -134,13 +134,9 @@
             <div class="filter-select">
                 <select class="form-select" name="status" id="complaintsStatus">
                     <option value="">Tất cả trạng thái</option>
-                    <option value="new" {% if status_filter == 'new' %}selected{% endif %}>Mới</option>
-                    <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Chờ xử lý</option>
-                    <option value="assigned" {% if status_filter == 'assigned' %}selected{% endif %}>Đã phân công</option>
-                    <option value="processing" {% if status_filter == 'processing' %}selected{% endif %}>Đang xử lý</option>
-                    <option value="waiting_customer" {% if status_filter == 'waiting_customer' %}selected{% endif %}>Chờ khách phản hồi</option>
-                    <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>Đã giải quyết</option>
-                    <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Đã đóng</option>
+                    <option value="NEW" {% if status_filter == 'NEW' %}selected{% endif %}>Mới tạo</option>
+                    <option value="IN_PROGRESS" {% if status_filter == 'IN_PROGRESS' %}selected{% endif %}>Đang xử lý</option>
+                    <option value="RESOLVED" {% if status_filter == 'RESOLVED' %}selected{% endif %}>Đã hoàn thành</option>
                 </select>
             </div>
             <div class="filter-btn">

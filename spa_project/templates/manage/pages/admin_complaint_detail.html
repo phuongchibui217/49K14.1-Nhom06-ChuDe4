@@ -212,15 +212,15 @@
             <!-- Replies Section -->
             <div class="complaint-detail-card">
                 <div class="complaint-body">
-                    <h5 class="section-title"><i class="fas fa-comments"></i> Phản hồi ({{ replies.count }})</h5>
+                    <h5 class="section-title"><i class="fas fa-comments"></i> Phản hồi ({{ all_replies.count }})</h5>
                     
-                    {% if replies %}
-                        {% for reply in replies %}
-                        <div class="reply-item {% if reply.sender_role == 'customer' %}customer-reply{% elif reply.is_internal %}internal-note{% else %}staff-reply{% endif %}">
+                    {% if all_replies %}
+                        {% for reply in all_replies %}
+                        <div class="reply-item {% if reply.sender_role == 'CUSTOMER' %}customer-reply{% elif reply.is_internal %}internal-note{% else %}staff-reply{% endif %}">
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <div>
                                     <strong>{{ reply.sender_name }}</strong>
-                                    <span class="badge {% if reply.sender_role == 'customer' %}bg-info{% else %}bg-success{% endif %} ms-2">
+                                    <span class="badge {% if reply.sender_role == 'CUSTOMER' %}bg-info{% else %}bg-success{% endif %} ms-2">
                                         {{ reply.get_sender_role_display }}
                                     </span>
                                     {% if reply.is_internal %}
@@ -237,8 +237,7 @@
                             <i class="fas fa-comments fa-3x mb-3" style="opacity: 0.3;"></i>
                             <p>Chưa có phản hồi nào</p>
                         </div>
-                    {% endif %}
-                </div>
+                    {% endif %}                </div>
             </div>
 
             <!-- Reply Form -->
@@ -335,7 +334,7 @@
                     </button>
                     
                     <!-- Complete -->
-                    {% if complaint.assigned_to and complaint.status != 'resolved' and complaint.status != 'closed' %}
+                    {% if complaint.assigned_to and complaint.status != 'RESOLVED' %}
                     <button type="button" class="btn btn-success action-btn" data-bs-toggle="modal" data-bs-target="#completeModal">
                         <i class="fas fa-check-circle"></i> Hoàn thành
                     </button>
@@ -433,10 +432,9 @@
                     <div class="mb-3">
                         <label class="form-label">Trạng thái mới</label>
                         <select name="status" class="form-select" required>
-                            <option value="pending" {% if complaint.status == 'pending' %}selected{% endif %}>Chờ xử lý</option>
-                            <option value="processing" {% if complaint.status == 'processing' %}selected{% endif %}>Đang xử lý</option>
-                            <option value="resolved" {% if complaint.status == 'resolved' %}selected{% endif %}>Đã xử lý</option>
-                            <option value="closed" {% if complaint.status == 'closed' %}selected{% endif %}>Đã hủy</option>
+                            <option value="NEW" {% if complaint.status == 'NEW' %}selected{% endif %}>Mới tạo</option>
+                            <option value="IN_PROGRESS" {% if complaint.status == 'IN_PROGRESS' %}selected{% endif %}>Đang xử lý</option>
+                            <option value="RESOLVED" {% if complaint.status == 'RESOLVED' %}selected{% endif %}>Đã hoàn thành</option>
                         </select>
                     </div>
                 </div>
