@@ -281,8 +281,8 @@
                 {{ forloop.counter }}
               </span>
             </td>
-            <td>{{ c.customer__full_name|default:"—" }}</td>
-            <td style="color:#6b7280;">{{ c.customer__phone|default:"—" }}</td>
+            <td>{{ c.customer_name_snapshot|default:"—" }}</td>
+            <td style="color:#6b7280;">{{ c.customer_phone_snapshot|default:"—" }}</td>
             <td class="text-end fw-bold">{{ c.booking_count }}</td>
           </tr>
           {% endfor %}

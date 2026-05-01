@@ -540,6 +540,25 @@
 .status-cancelled{ background: #e5e7eb; color:#374151; opacity:.85; text-decoration: line-through; }
 .status-rejected{ background: #fecaca; color:#7f1d1d; border:1px solid #ef4444; }
 
+/* BUG-07: Online PENDING — block slot, style vàng nhạt với border nét đứt */
+.appt-online-pending {
+  background: repeating-linear-gradient(
+    45deg,
+    #fef9c3,
+    #fef9c3 6px,
+    #fde68a 6px,
+    #fde68a 12px
+  );
+  border: 1.5px dashed #d97706;
+  color: #92400e;
+  cursor: pointer;
+  opacity: .9;
+}
+.appt-online-pending:hover {
+  opacity: 1;
+  border-color: #b45309;
+}
+
 .hint{
   font-size:.9rem; color:#6b7280;
   white-space:nowrap;

@@ -220,6 +220,14 @@ def validate_service_description(description):
 # CUSTOMER VALIDATORS
 # =====================================================
 
+def is_valid_vn_phone(phone_digits: str) -> bool:
+    """
+    Kiểm tra định dạng SĐT Việt Nam.
+    Quy tắc: đúng 10 chữ số, bắt đầu bằng 0.
+    """
+    return bool(re.match(r'^0\d{9}$', phone_digits))
+
+
 def validate_phone_number(phone, check_exists=False, exclude_phone=None):
     """
     Validate số điện thoại
@@ -227,7 +235,7 @@ def validate_phone_number(phone, check_exists=False, exclude_phone=None):
     Quy tắc:
     - Không được rỗng
     - Chỉ chứa số
-    - Độ dài: 10-11 số
+    - Đúng 10 số, bắt đầu bằng 0 (format SĐT Việt Nam)
     - (Optional) Check đã tồn tại trong DB
 
     Args:
@@ -249,11 +257,8 @@ def validate_phone_number(phone, check_exists=False, exclude_phone=None):
     # Chuẩn hóa: chỉ giữ lại số
     phone_clean = ''.join(filter(str.isdigit, str(phone)))
 
-    if len(phone_clean) < 10:
-        raise ValidationError('Số điện thoại phải có ít nhất 10 số.')
-
-    if len(phone_clean) > 11:
-        raise ValidationError('Số điện thoại không được quá 11 số.')
+    if not is_valid_vn_phone(phone_clean):
+        raise ValidationError('Số điện thoại không hợp lệ (phải có 10 số và bắt đầu bằng 0).')
 
     # Check trùng trong DB (nếu yêu cầu)
     if check_exists:

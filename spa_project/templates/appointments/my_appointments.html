@@ -100,15 +100,16 @@
               </div>
             </div>
 
-            <!-- Notes -->
-            {% if appointment.notes %}
+            <!-- Ghi chú lần đặt lịch (từ Booking) -->
+            {% if appointment.booking.booker_notes %}
             <div class="card-notes">
-              <i class="far fa-sticky-note me-1"></i>{{ appointment.notes }}
+              <i class="far fa-sticky-note me-1"></i>{{ appointment.booking.booker_notes }}
             </div>
             {% endif %}
 
-            <!-- Footer: nút hủy (chỉ khi chưa đến / chờ xác nhận) -->
-            {% if appointment.status == 'PENDING' or appointment.status == 'NOT_ARRIVED' %}
+            <!-- Footer: nút hủy (chỉ khi Booking PENDING hoặc CONFIRMED) -->
+            {% if appointment.booking.status == 'PENDING' or appointment.booking.status == 'CONFIRMED' %}
+            {% if appointment.status != 'COMPLETED' and appointment.status != 'CANCELLED' %}
             <div class="card-action-footer">
               <form method="post"
                     action="{% url 'appointments:cancel_appointment' appointment.id %}"
@@ -122,6 +123,7 @@
                 </button>
               </form>
             </div>
+            {% endif %}
             {% endif %}
 
           </div>

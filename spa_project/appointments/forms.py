@@ -1,29 +1,40 @@
 """
-Forms cho Appointment — booking online từ phía khách hàng.
+Forms cho Appointments module.
+
+BookingOnlineForm: Form đặt lịch online cho khách hàng.
+Chỉ thu thập thông tin booker + dịch vụ + ngày giờ.
+Thông tin khách (snapshot) được xử lý riêng trong view.
 
 Author: Spa ANA Team
 """
 
 import re
 from django import forms
-from .models import Appointment
 from spa_services.models import Service, ServiceVariant
 from .services import validate_appointment_date, validate_appointment_time
 
 
-class AppointmentForm(forms.ModelForm):
+class BookingOnlineForm(forms.Form):
     """
     Form đặt lịch hẹn cho khách hàng (booking online).
 
     Phân tách rõ:
     - booker_name / booker_phone: lấy từ account đang đăng nhập (hidden field)
-    - customer_name_snapshot / customer_phone_snapshot: khách sử dụng dịch vụ
-      (mặc định = thông tin account, nhưng user có thể sửa nếu đặt dùm người khác)
     - service: chọn dịch vụ để lọc variant — không lưu vào DB
-    - service_variant: gói dịch vụ (tuỳ chọn)
+    - service_variant: gói dịch vụ
+    - appointment_date / appointment_time: ngày giờ hẹn
+    - booker_notes: ghi chú lần đặt lịch (lưu vào Booking)
     """
 
-    # Chọn dịch vụ để lọc variant — không lưu vào DB
+    booker_name = forms.CharField(
+        widget=forms.HiddenInput(),
+        required=True,
+    )
+    booker_phone = forms.CharField(
+        widget=forms.HiddenInput(),
+        required=True,
+    )
+
     service = forms.ModelChoiceField(
         queryset=Service.objects.filter(status='ACTIVE'),
         required=False,
@@ -32,53 +43,46 @@ class AppointmentForm(forms.ModelForm):
         widget=forms.Select(attrs={'class': 'lux-select'})
     )
 
-    class Meta:
-        model = Appointment
-        fields = [
-            'booker_name',
-            'booker_phone',
-            'service_variant',
-            'appointment_date',
-            'appointment_time',
-            'notes',
-        ]
-        widgets = {
-            # booker fields — hidden, tự điền từ account
-            'booker_name':  forms.HiddenInput(),
-            'booker_phone': forms.HiddenInput(),
-            # các field hiển thị
-            'service_variant': forms.Select(attrs={'class': 'lux-select'}),
-            'appointment_date': forms.DateInput(attrs={'class': 'lux-input', 'type': 'date'}),
-            'appointment_time': forms.TimeInput(attrs={'class': 'lux-input', 'type': 'time'}),
-            'notes': forms.Textarea(attrs={
-                'class': 'lux-textarea',
-                'rows': 4,
-                'placeholder': 'Ghi chú thêm về yêu cầu đặc biệt, dị ứng, hoặc thông tin khác...',
-            }),
-        }
-        labels = {
-            'service_variant': 'Gói dịch vụ',
-            'appointment_date': 'Ngày hẹn',
-            'appointment_time': 'Giờ hẹn',
-            'notes': 'Ghi chú',
-        }
+    service_variant = forms.ModelChoiceField(
+        queryset=ServiceVariant.objects.none(),
+        required=True,
+        empty_label='-- Chọn gói dịch vụ --',
+        label='Gói dịch vụ',
+        widget=forms.Select(attrs={'class': 'lux-select'}),
+    )
+
+    appointment_date = forms.DateField(
+        required=True,
+        label='Ngày hẹn',
+        widget=forms.DateInput(attrs={'class': 'lux-input', 'type': 'date'}),
+    )
+
+    appointment_time = forms.TimeField(
+        required=True,
+        label='Giờ hẹn',
+        widget=forms.TimeInput(attrs={'class': 'lux-input', 'type': 'time'}),
+    )
+
+    booker_notes = forms.CharField(
+        required=False,
+        label='Ghi chú',
+        widget=forms.Textarea(attrs={
+            'class': 'lux-textarea',
+            'rows': 4,
+            'placeholder': 'Ghi chú thêm về yêu cầu đặc biệt, dị ứng, hoặc thông tin khác...',
+        }),
+    )
 
     def __init__(self, *args, **kwargs):
-        # Nhận customer_profile để pre-fill booker fields
         self.customer_profile = kwargs.pop('customer_profile', None)
         super().__init__(*args, **kwargs)
 
-        self.fields['service_variant'].required = True
-        self.fields['service_variant'].empty_label = '-- Chọn gói dịch vụ --'
-
-        # Pre-fill booker từ profile — áp dụng cả GET lẫn POST
-        # (POST data có thể không chứa hidden fields nếu bị strip)
+        # Pre-fill booker từ profile
         if self.customer_profile:
             profile_name  = self.customer_profile.full_name or ''
             profile_phone = self.customer_profile.phone or ''
             self.initial['booker_name']  = profile_name
             self.initial['booker_phone'] = profile_phone
-            # Nếu POST data thiếu booker fields thì inject vào data
             if self.data:
                 data = self.data.copy()
                 if not data.get('booker_name'):
@@ -103,6 +107,8 @@ class AppointmentForm(forms.ModelForm):
         digits = re.sub(r'\D', '', phone)
         if not digits:
             raise forms.ValidationError('Không xác định được số điện thoại người đặt.')
+        if len(digits) < 10:
+            raise forms.ValidationError('Số điện thoại không hợp lệ (tối thiểu 10 số).')
         return digits
 
     def clean_appointment_date(self):
@@ -132,17 +138,14 @@ class AppointmentForm(forms.ModelForm):
 
     def clean(self):
         """Validate end time không vượt giờ đóng cửa (21:00)."""
-        cleaned_data = super().clean()
-
+        cleaned_data    = super().clean()
         appointment_time = cleaned_data.get('appointment_time')
         appointment_date = cleaned_data.get('appointment_date')
-        service_variant = cleaned_data.get('service_variant')
+        service_variant  = cleaned_data.get('service_variant')
 
         if appointment_time and appointment_date and service_variant:
-            from .services import validate_appointment_time
             from django.core.exceptions import ValidationError as DjangoValidationError
-
-            duration_min = service_variant.duration_minutes
+            duration_min = service_variant.duration_minutes if service_variant else 60
             try:
                 validate_appointment_time(appointment_time, appointment_date, duration_min)
             except DjangoValidationError as e:

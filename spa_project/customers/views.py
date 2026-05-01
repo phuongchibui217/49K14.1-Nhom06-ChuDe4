@@ -26,6 +26,7 @@ def admin_customers(request):
             notes = request.POST.get('notes', '').strip()
             gender = request.POST.get('gender', '').strip()
             address = request.POST.get('address', '').strip()
+            email = request.POST.get('email', '').strip().lower() or None
 
             if not full_name or not phone:
                 messages.error(request, 'Vui lòng nhập đầy đủ họ tên và số điện thoại.')
@@ -38,6 +39,7 @@ def admin_customers(request):
             CustomerProfile.objects.create(
                 full_name=full_name,
                 phone=phone,
+                email=email,
                 dob=dob or None,
                 contact_channel=channel or '',
                 notes=notes,
@@ -72,6 +74,7 @@ def admin_customers(request):
 
             customer.full_name = full_name
             customer.phone = phone
+            customer.email = request.POST.get('email', '').strip().lower() or None
             customer.dob = dob or None
             customer.contact_channel = channel or ''
             customer.notes = notes

@@ -194,8 +194,8 @@
             <i class="far fa-sticky-note"></i>
             Ghi chú thêm
           </h4>
-          {{ form.notes }}
-          {% for e in form.notes.errors %}
+          {{ form.booker_notes }}
+          {% for e in form.booker_notes.errors %}
             <div class="bk-error">{{ e }}</div>
           {% endfor %}
         </div>
@@ -257,8 +257,9 @@ document.addEventListener('DOMContentLoaded', function () {
   // Lấy thẻ input date bằng ID (Django tự sinh id="id_appointment_date")
   const dateInput = document.getElementById('{{ form.appointment_date.id_for_label }}');
 
-  // Tính ngày hôm nay (format: YYYY-MM-DD, ví dụ: 2026-04-28)
-  const today = new Date().toISOString().split('T')[0];
+  // Tính ngày hôm nay theo giờ địa phương (format: YYYY-MM-DD)
+  const _now = new Date();
+  const today = `${_now.getFullYear()}-${String(_now.getMonth()+1).padStart(2,'0')}-${String(_now.getDate()).padStart(2,'0')}`;
 
   // Nếu thẻ input tồn tại:
   if (dateInput) {

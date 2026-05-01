@@ -17,6 +17,7 @@ class CustomerProfile(models.Model):
     )
     phone = models.CharField(max_length=15, unique=True, verbose_name='Số điện thoại')
     full_name = models.CharField(max_length=100, verbose_name='Họ và tên')
+    email = models.CharField(max_length=255, blank=True, null=True, unique=True, verbose_name='Email')
     gender = models.CharField(max_length=10, choices=GENDER_CHOICES, blank=True, null=True, verbose_name='Giới tính')
     dob = models.DateField(blank=True, null=True, verbose_name='Ngày sinh')
     address = models.CharField(max_length=255, blank=True, null=True, verbose_name='Địa chỉ')

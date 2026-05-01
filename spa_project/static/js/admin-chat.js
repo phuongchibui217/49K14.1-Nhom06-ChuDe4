@@ -86,7 +86,7 @@
 
     function getSessionStatusLabel(status) {
         const normalized = String(status || "").trim().toUpperCase();
-        return normalized === "CLOSED" ? "Da dong" : "Dang mo";
+        return normalized === "CLOSED" ? "Đã đóng" : "Đang mở";
     }
 
     function debounce(fn, delay) {
@@ -136,13 +136,13 @@
 
     function renderSessions() {
         const unreadCount = state.sessions.reduce((sum, item) => sum + (item.adminUnreadCount || 0), 0);
-        dom.unreadTotal.textContent = `${unreadCount} chua doc`;
+        dom.unreadTotal.textContent = `${unreadCount} chưa đọc`;
 
         if (!state.sessions.length) {
             dom.sessionList.innerHTML = `
                 <div class="admin-chat-list-empty">
                     <i class="fas fa-comments"></i>
-                    <p>Chua co phien chat nao.</p>
+                    <p>Chưa có phiên chat nào.</p>
                 </div>
             `;
             return;
@@ -154,7 +154,7 @@
                 const unreadBadge = session.adminUnreadCount
                     ? `<span class="admin-chat-unread-badge">${session.adminUnreadCount}</span>`
                     : "";
-                const contactLabel = session.customerPhone || (session.isGuest ? "Khach vang lai" : "Khach hang");
+                const contactLabel = session.customerPhone || (session.isGuest ? "Khách vãng lai" : "Khách hàng");
 
                 return `
                     <button
@@ -164,12 +164,12 @@
                     >
                         <div class="admin-chat-session-top">
                             <div>
-                                <p class="admin-chat-session-name">${escapeHtml(session.customerName || "Khach hang")}</p>
+                                <p class="admin-chat-session-name">${escapeHtml(session.customerName || "Khách hàng")}</p>
                                 <span class="admin-chat-session-code">${escapeHtml(session.chatCode)}</span>
                             </div>
-                            <span class="admin-chat-session-time">${escapeHtml(session.lastMessageTimeLabel || "Moi tao")}</span>
+                            <span class="admin-chat-session-time">${escapeHtml(session.lastMessageTimeLabel || "Mới tạo")}</span>
                         </div>
-                        <div class="admin-chat-session-preview">${escapeHtml(session.lastMessagePreview || "Chua co tin nhan")}</div>
+                        <div class="admin-chat-session-preview">${escapeHtml(session.lastMessagePreview || "Chưa có tin nhắn")}</div>
                         <div class="admin-chat-session-bottom">
                             <span class="admin-chat-session-contact">${escapeHtml(contactLabel)}</span>
                             ${unreadBadge}
@@ -194,7 +194,7 @@
                         <a href="${message.attachmentUrl}" target="_blank" rel="noopener noreferrer">
                             <img
                                 src="${message.attachmentUrl}"
-                                alt="${escapeHtml(message.attachmentName || "Hinh anh chat")}"
+                                alt="${escapeHtml(message.attachmentName || "Hình ảnh chat")}"
                                 class="admin-chat-attachment-image"
                             >
                         </a>
@@ -211,7 +211,7 @@
                         class="admin-chat-attachment-file"
                     >
                         <i class="fas fa-file-alt"></i>
-                        <span>${escapeHtml(message.attachmentName || "Tep dinh kem")}</span>
+                        <span>${escapeHtml(message.attachmentName || "Tệp đính kèm")}</span>
                         <small>${escapeHtml(formatFileSize(message.attachmentSize))}</small>
                     </a>
                 </div>
@@ -241,8 +241,8 @@
                 : "customer";
 
         const displayName = message.senderType === "admin"
-            ? (message.staffName || message.senderName || "Nhan vien")
-            : (message.senderName || "Khach hang");
+            ? (message.staffName || message.senderName || "Nhân viên")
+            : (message.senderName || "Khách hàng");
 
         return `
             <div class="admin-chat-message ${messageClass}" data-message-id="${escapeHtml(message.id)}">
@@ -272,7 +272,7 @@
             : `
                 <div class="admin-chat-empty">
                     <i class="fas fa-comment-slash"></i>
-                    <p>Phien chat nay chua co tin nhan nao.</p>
+                    <p>Phiên chat này chưa có tin nhắn nào.</p>
                 </div>
             `;
 
@@ -302,9 +302,9 @@
         state.selectedSession = session;
         dom.emptyState.classList.add("d-none");
         dom.panel.classList.remove("d-none");
-        dom.sessionName.textContent = session.customerName || "Khach hang";
+        dom.sessionName.textContent = session.customerName || "Khách hàng";
         dom.sessionCode.textContent = session.chatCode || "";
-        dom.sessionContact.textContent = session.customerPhone || (session.isGuest ? "Khach vang lai" : "");
+        dom.sessionContact.textContent = session.customerPhone || (session.isGuest ? "Khách vãng lai" : "");
         dom.sessionStatus.textContent = getSessionStatusLabel(session.status);
         updateSendButtonState();
         renderSessions();
@@ -430,7 +430,7 @@
         dom.messages.innerHTML = `
             <div class="admin-chat-empty">
                 <i class="fas fa-spinner fa-spin"></i>
-                <p>Dang tai lich su chat...</p>
+                <p>Đang tải lịch sử chat...</p>
             </div>
         `;
     }
@@ -516,7 +516,7 @@
                 });
             };
             reader.onerror = function () {
-                reject(new Error("Khong the doc tep dinh kem."));
+                reject(new Error("Không thể đọc tệp đính kèm."));
             };
             reader.readAsDataURL(file);
         });
@@ -539,7 +539,7 @@
         }
 
         if (state.selectedFile && config.maxAttachmentSize && state.selectedFile.size > config.maxAttachmentSize) {
-            setErrorMessage("Tep dinh kem khong duoc vuot qua 10MB.");
+            setErrorMessage("Tệp đính kèm không được vượt quá 10MB.");
             return;
         }
 

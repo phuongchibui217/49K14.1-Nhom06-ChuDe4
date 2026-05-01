@@ -62,6 +62,21 @@ def normalize_sender_type(sender_type):
     return normalized
 
 
+def normalize_admin_sender_name(raw_name):
+    """
+    Chuẩn hóa tên người gửi phía admin.
+    Nếu tên trong DB là dạng không dấu (dữ liệu cũ), trả về tên mặc định có dấu.
+    """
+    name = (raw_name or "").strip()
+    if not name:
+        return "Nhân viên"
+    # Các biến thể không dấu phổ biến của "Nhân viên" trong dữ liệu cũ
+    _legacy_admin_names = {"nhan vien", "nhân viên", "staff", "admin"}
+    if name.lower() in _legacy_admin_names:
+        return "Nhân viên"
+    return name
+
+
 def get_customer_visible_sender_name(sender_type, sender_name):
     if normalize_sender_type(sender_type) == "admin":
         return CUSTOMER_VISIBLE_ADMIN_NAME
@@ -92,12 +107,12 @@ def generate_guest_session_key():
 
 
 def normalize_text_message(content):
-    content = validate_required(content, "Tin nhan")
+    content = validate_required(content, "Tin nhắn")
     return validate_length(
         content,
         min_len=1,
         max_len=CHAT_TEXT_MAX_LENGTH,
-        field_name="Tin nhan",
+        field_name="Tin nhắn",
     )
 
 
@@ -106,7 +121,7 @@ def validate_admin_attachment(attachment):
         return "text"
 
     if attachment.size > CHAT_ATTACHMENT_MAX_SIZE:
-        raise ValidationError("Tep dinh kem khong duoc vuot qua 10MB.")
+        raise ValidationError("Tệp đính kèm không được vượt quá 10MB.")
 
     content_type = getattr(attachment, "content_type", "").lower()
     extension = os.path.splitext(attachment.name or "")[1].lower()
@@ -117,7 +132,7 @@ def validate_admin_attachment(attachment):
     if content_type in ALLOWED_FILE_TYPES or extension in ALLOWED_FILE_EXTENSIONS:
         return "file"
 
-    raise ValidationError("Dinh dang tep khong duoc ho tro.")
+    raise ValidationError("Định dạng tệp không được hỗ trợ.")
 
 
 def get_existing_customer_chat_session_for_identity(user=None, guest_key=None):
@@ -229,7 +244,7 @@ def create_chat_message(
     client_message_id = (client_message_id or "").strip() or None
 
     if sender_type == "customer" and attachment:
-        raise ValidationError("Khach hang chi duoc gui tin nhan van ban.")
+        raise ValidationError("Khách hàng chỉ được gửi tin nhắn văn bản.")
 
     message_type = validate_admin_attachment(attachment)
 
@@ -237,7 +252,7 @@ def create_chat_message(
         content = normalize_text_message(content)
 
     if not content and not attachment:
-        raise ValidationError("Vui long nhap noi dung tin nhan.")
+        raise ValidationError("Vui lòng nhập nội dung tin nhắn.")
 
     with transaction.atomic():
         locked_session = ChatSession.objects.select_for_update().get(pk=session.pk)
@@ -408,8 +423,12 @@ def serialize_chat_message(message, customer_safe=False):
         sender_name = get_customer_visible_sender_name(sender_type, raw_sender_name)
         staff_name = ""
     else:
-        sender_name = raw_sender_name
-        staff_name = raw_sender_name if sender_type == "admin" else ""
+        if sender_type == "admin":
+            sender_name = normalize_admin_sender_name(raw_sender_name)
+            staff_name = sender_name
+        else:
+            sender_name = raw_sender_name
+            staff_name = ""
 
     return {
         "id": message.id,

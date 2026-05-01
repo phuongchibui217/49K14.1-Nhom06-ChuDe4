@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, date, time as time_type
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.db.models import Q
-from .models import Appointment, Room
+from .models import Appointment, Booking, Room
 
 
 # =====================================================
@@ -32,16 +32,18 @@ def validate_appointment_date(appointment_date, is_staff_confirm=False):
     if is_staff_confirm:
         return
 
-    if appointment_date < timezone.now().date():
+    today = timezone.localtime(timezone.now()).date()
+    if appointment_date < today:
         raise ValidationError('Ngày hẹn không được nhỏ hơn ngày hôm nay.')
 
 
-def validate_appointment_time(appointment_time, appointment_date, duration_minutes=None):
+def validate_appointment_time(appointment_time, appointment_date, duration_minutes=None, is_staff_confirm=False):
     """
     Kiểm tra giờ hẹn hợp lệ.
     - Phải trong 09:00 – 21:00.
     - Giờ kết thúc (start + duration) không được vượt quá 21:00.
     - Nếu là ngày hôm nay, giờ phải >= giờ hiện tại.
+    - is_staff_confirm=True: bỏ qua check giờ đã qua (dùng khi staff edit lịch cũ không đổi giờ).
     """
     if duration_minutes is None:
         duration_minutes = DEFAULT_APPOINTMENT_DURATION_MINUTES
@@ -61,10 +63,11 @@ def validate_appointment_time(appointment_time, appointment_date, duration_minut
             f'Giờ trễ nhất có thể đặt: {latest_start.strftime("%H:%M")}.'
         )
 
-    # Chặn giờ đã qua trong ngày hôm nay
-    now = timezone.localtime(timezone.now())
-    if appointment_date == now.date() and appointment_time <= now.time():
-        raise ValidationError(f'Giờ hẹn phải sau giờ hiện tại ({now.strftime("%H:%M")}).')
+    # Chặn giờ đã qua trong ngày hôm nay — bỏ qua khi staff confirm lịch cũ
+    if not is_staff_confirm:
+        now = timezone.localtime(timezone.now())
+        if appointment_date == now.date() and appointment_time <= now.time():
+            raise ValidationError(f'Giờ hẹn phải sau giờ hiện tại ({now.strftime("%H:%M")}).')
 
 
 def check_room_availability(
@@ -100,7 +103,7 @@ def check_room_availability(
         room=room,
         appointment_date=appointment_date,
         deleted_at__isnull=True,
-    ).exclude(status__in=['CANCELLED', 'REJECTED'])
+    ).exclude(status='CANCELLED')
 
     if exclude_appointment_code:
         queryset = queryset.exclude(appointment_code=exclude_appointment_code)
@@ -149,7 +152,7 @@ def validate_appointment_create(
         errors.append(str(e.message))
 
     try:
-        validate_appointment_time(appointment_time, appointment_date, duration_minutes)
+        validate_appointment_time(appointment_time, appointment_date, duration_minutes, is_staff_confirm=is_staff_confirm)
     except ValidationError as e:
         errors.append(str(e.message))
 

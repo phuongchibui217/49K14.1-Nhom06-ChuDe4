@@ -200,7 +200,7 @@
               <label class="form-label mb-1 search-form-label">Trạng thái</label>
               <select class="form-select form-select-sm" id="srchStatus">
                 <option value="">Tất cả trạng thái</option>
-                <option value="PENDING">Chờ xác nhận</option>
+                <option value="CONFIRMED">Đã xác nhận</option>
                 <option value="NOT_ARRIVED">Chưa đến</option>
                 <option value="ARRIVED">Đã đến</option>
                 <option value="COMPLETED">Hoàn thành</option>
@@ -317,6 +317,10 @@
               <label>Ghi chú lịch hẹn</label>
               <input id="bookerNote" placeholder="Ghi chú riêng cho lần đặt này..." />
             </div>
+            <div class="booker-date-field">
+              <label>Ngày hẹn <span class="required-field">*</span></label>
+              <input type="date" id="bookingDate" />
+            </div>
           </div>
         </div>
 
@@ -350,8 +354,8 @@
               <div class="guest-table-header-cell guest-table-header-cell-center">Phòng · Giờ</div>
               <div class="guest-table-header-cell">Tên khách</div>
               <div class="guest-table-header-cell">SĐT</div>
-              <div class="guest-table-header-cell">Dịch vụ (không bắt buộc)</div>
-              <div class="guest-table-header-cell">Gói (bắt buộc nếu chọn dịch vụ)</div>
+              <div class="guest-table-header-cell">Dịch vụ</div>
+              <div class="guest-table-header-cell">Gói</div>
               <div class="guest-table-header-cell guest-table-header-cell-center">Tác vụ</div>
             </div>
             {# Rows render bằng JS #}
@@ -366,18 +370,20 @@
             <i class="fas fa-sliders-h me-1 status-block-icon"></i>Trạng thái &amp; Thanh toán
           </div>
           <div class="status-form-row">
+
+            {# Trạng thái lịch hẹn — luôn editable #}
             <div class="status-form-group">
               <label class="status-label">Trạng thái</label>
               <select id="sharedApptStatus" class="status-select">
                 <option value="NOT_ARRIVED" selected>Chưa đến</option>
-                <option value="PENDING">Chờ xác nhận</option>
                 <option value="ARRIVED">Đã đến</option>
                 <option value="COMPLETED">Hoàn thành</option>
                 <option value="CANCELLED">Đã hủy</option>
-                <option value="REJECTED">Đã từ chối</option>
               </select>
             </div>
-            <div class="status-form-group">
+
+            {# Trạng thái thanh toán — CREATE MODE: dropdown editable; EDIT MODE: badge readonly #}
+            <div class="status-form-group" id="payStatusEditableWrap">
               <label class="status-label">Thanh toán</label>
               <select id="sharedPayStatus" class="status-select">
                 <option value="UNPAID" selected>Chưa thanh toán</option>
@@ -386,6 +392,23 @@
                 <option value="REFUNDED">Đã hoàn tiền</option>
               </select>
             </div>
+
+            {# Badge readonly — chỉ hiện ở EDIT MODE thay cho dropdown #}
+            <div class="status-form-group d-none" id="payStatusReadonlyWrap">
+              <label class="status-label">Thanh toán</label>
+              <span id="payStatusBadge" class="pay-status-badge pay-status-unpaid">Chưa thanh toán</span>
+            </div>
+
+            {# Nút mở Invoice Modal — chỉ hiện ở EDIT MODE #}
+            <div id="btnInvoiceWrap" class="status-form-group d-none">
+              <label class="status-label">&nbsp;</label>
+              <button type="button" id="btnOpenInvoice" class="btn-invoice-action">
+                <i class="fas fa-file-invoice-dollar me-1"></i>
+                <span id="btnInvoiceLabel">Thanh toán</span>
+              </button>
+            </div>
+
+            {# PAYMENT FIELDS — chỉ dùng ở CREATE MODE #}
             <div id="sharedPayMethodWrap" class="status-form-group">
               <label class="status-label">Phương thức <span class="required-field">*</span></label>
               <select id="sharedPayMethod" class="status-select">
@@ -400,6 +423,7 @@
               <label class="status-label">Số tiền đã trả <span class="required-field">*</span></label>
               <input type="number" id="sharedPayAmount" class="status-input" placeholder="0" min="1" step="1000" />
             </div>
+
           </div>
         </div>
       </form>
@@ -418,6 +442,140 @@
           <i class="fas fa-save me-2"></i><span id="btnSaveText">Lưu lịch hẹn</span>
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- INVOICE MODAL — Popup hóa đơn chi tiết                     -->
+<!-- ============================================================ -->
+<div class="modal fade" id="invoiceModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable invoice-modal-dialog">
+    <div class="modal-content invoice-modal-content">
+
+      <div class="modal-header invoice-modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-file-invoice-dollar me-2"></i>
+          <span id="invoiceModalTitle">Hóa đơn</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body invoice-modal-body">
+
+        <!-- Thông tin booking -->
+        <div class="invoice-info-row">
+          <div class="invoice-info-item">
+            <span class="invoice-info-lbl">Mã booking:</span>
+            <span id="invBookingCode" class="invoice-info-val fw-bold"></span>
+          </div>
+          <div class="invoice-info-item">
+            <span class="invoice-info-lbl">Người đặt:</span>
+            <span id="invBookerName" class="invoice-info-val"></span>
+          </div>
+          <div class="invoice-info-item">
+            <span class="invoice-info-lbl">SĐT:</span>
+            <span id="invBookerPhone" class="invoice-info-val"></span>
+          </div>
+        </div>
+
+        <!-- Bảng dịch vụ -->
+        <div class="invoice-table-wrap">
+          <table class="invoice-table">
+            <thead>
+              <tr>
+                <th>Khách</th>
+                <th>Dịch vụ</th>
+                <th>Gói / Thời lượng</th>
+                <th class="text-end">Đơn giá</th>
+                <th class="text-center">SL</th>
+                <th class="text-end">Thành tiền</th>
+              </tr>
+            </thead>
+            <tbody id="invLinesTbody">
+              <!-- render bằng JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Chiết khấu -->
+        <div class="invoice-discount-row">
+          <label class="invoice-discount-lbl">Chiết khấu:</label>
+          <div class="invoice-discount-inputs">
+            <input type="number" id="invDiscountValue" class="invoice-discount-input" placeholder="0" min="0" step="1000" />
+            <select id="invDiscountType" class="invoice-discount-type">
+              <option value="NONE">Không CK</option>
+              <option value="AMOUNT">VNĐ</option>
+              <option value="PERCENT">%</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Tổng kết -->
+        <div class="invoice-totals">
+          <div class="invoice-total-row">
+            <span class="invoice-total-lbl">Tổng tạm tính:</span>
+            <span id="invSubtotal" class="invoice-total-val">0đ</span>
+          </div>
+          <div class="invoice-total-row">
+            <span class="invoice-total-lbl">Giảm giá:</span>
+            <span id="invDiscount" class="invoice-total-val invoice-discount-val">0đ</span>
+          </div>
+          <div class="invoice-total-row invoice-total-final">
+            <span class="invoice-total-lbl">Tổng cần thanh toán:</span>
+            <span id="invFinal" class="invoice-total-val">0đ</span>
+          </div>
+          <div class="invoice-total-row">
+            <span class="invoice-total-lbl">Đã thanh toán:</span>
+            <span id="invPaid" class="invoice-total-val invoice-paid-val">0đ</span>
+          </div>
+          <div class="invoice-total-row invoice-total-remaining">
+            <span class="invoice-total-lbl">Còn lại:</span>
+            <span id="invRemaining" class="invoice-total-val">0đ</span>
+          </div>
+        </div>
+
+        <!-- Nhập số tiền thu lần này (ẩn khi đã trả đủ) -->
+        <div id="invPayInputWrap" class="invoice-pay-input-wrap">
+          <div class="invoice-pay-row">
+            <div class="invoice-pay-field">
+              <label class="invoice-pay-lbl">Số tiền thu lần này <span class="required-field">*</span></label>
+              <input type="number" id="invPayAmount" class="invoice-pay-input" placeholder="0" min="0" step="1000" />
+            </div>
+            <div class="invoice-pay-field">
+              <label class="invoice-pay-lbl">Phương thức <span class="required-field">*</span></label>
+              <select id="invPayMethod" class="invoice-pay-select">
+                <option value="">-- Chọn --</option>
+                <option value="CASH">Tiền mặt</option>
+                <option value="CARD">Thẻ</option>
+                <option value="BANK_TRANSFER">Chuyển khoản</option>
+                <option value="E_WALLET">Ví điện tử</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert-danger d-none mt-2 mb-0" id="invoiceModalError"></div>
+
+        <!-- Thông báo đã hoàn tiền (chỉ hiện khi status = REFUNDED) -->
+        <div id="invRefundedMsg" class="alert alert-warning mt-2 mb-0" style="display:none;">
+          <i class="fas fa-undo me-2"></i>Hóa đơn đã được hoàn tiền. Không thể thực hiện thêm giao dịch.
+        </div>
+
+      </div>
+
+      <div class="modal-footer invoice-modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+          <i class="fas fa-times me-1"></i>Đóng
+        </button>
+        <button type="button" id="btnRefundPayment" class="btn btn-outline-danger invoice-refund-btn" style="display:none;">
+          <i class="fas fa-undo me-1"></i><span id="btnRefundPaymentLabel">Hoàn tiền</span>
+        </button>
+        <button type="button" id="btnConfirmPayment" class="btn btn-success invoice-pay-btn">
+          <i class="fas fa-check me-1"></i><span id="btnConfirmPaymentLabel">Xác nhận thanh toán</span>
+        </button>
+      </div>
+
     </div>
   </div>
 </div>
@@ -492,5 +650,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/admin-appointments.js' %}?v=20260428-001"></script>
+<script src="{% static 'js/admin-appointments.js' %}?v={% now 'YmdHis' %}"></script>
 {% endblock %}

@@ -79,12 +79,13 @@ def admin_reports(request):
     total_appointments = appts_qs.exclude(status='CANCELLED').count()
 
     # KPI 2: Tổng doanh thu (hóa đơn PAID hoặc PARTIAL)
+    # Invoice → Booking (1-1) → Appointment (FK), lọc theo ngày hẹn của appointment
     revenue_qs = Invoice.objects.filter(
-        appointment__appointment_date__gte=date_from,
-        appointment__appointment_date__lte=date_to,
-        appointment__deleted_at__isnull=True,
+        booking__appointments__appointment_date__gte=date_from,
+        booking__appointments__appointment_date__lte=date_to,
+        booking__appointments__deleted_at__isnull=True,
         status__in=['PAID', 'PARTIAL'],
-    )
+    ).distinct()
     total_revenue = revenue_qs.aggregate(total=Sum('final_amount'))['total'] or 0
 
     # KPI 3: Khách hàng mới (tính theo ngày tạo CustomerProfile)
@@ -100,15 +101,17 @@ def admin_reports(request):
     ).count()
 
     # Biểu đồ doanh thu theo ngày
+    # Dùng ngày hẹn của appointment đầu tiên trong booking để nhóm theo ngày
     revenue_by_day = (
         Invoice.objects
         .filter(
-            appointment__appointment_date__gte=date_from,
-            appointment__appointment_date__lte=date_to,
-            appointment__deleted_at__isnull=True,
+            booking__appointments__appointment_date__gte=date_from,
+            booking__appointments__appointment_date__lte=date_to,
+            booking__appointments__deleted_at__isnull=True,
             status__in=['PAID', 'PARTIAL'],
         )
-        .values(day=F('appointment__appointment_date'))
+        .distinct()
+        .values(day=F('booking__appointments__appointment_date'))
         .annotate(total=Sum('final_amount'))
         .order_by('day')
     )
@@ -124,10 +127,11 @@ def admin_reports(request):
         chart_data.append(revenue_map.get(d, 0))
 
     # Top khách hàng (số lần đặt lịch, không tính CANCELLED)
+    # Dùng snapshot để luôn có tên/SĐT kể cả khi customer bị NULL
     top_customers = (
         appts_qs
         .exclude(status='CANCELLED')
-        .values('customer__full_name', 'customer__phone')
+        .values('customer_name_snapshot', 'customer_phone_snapshot')
         .annotate(booking_count=Count('id'))
         .order_by('-booking_count')[:10]
     )

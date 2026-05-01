@@ -1,10 +1,10 @@
 """
-Serializers — chuyển Appointment model thành dict/JSON cho frontend.
+Serializers — chuyển Booking/Appointment model thành dict/JSON cho frontend.
 
 Author: Spa ANA Team
 """
 
-from .models import Appointment
+from .models import Appointment, Booking
 from .services import _get_appt_duration, _calc_end_time
 
 
@@ -15,8 +15,7 @@ def _resolve_customer_note(appointment):
     Quy tắc:
     - Chỉ lấy customer.notes khi customer.phone khớp với customer_phone_snapshot
       (tức là profile được gán đúng là khách sử dụng dịch vụ, không phải người đặt).
-    - Nếu không có customer_phone_snapshot (đặt dùm, không nhập SĐT riêng)
-      → trả về '' để tránh lấy nhầm ghi chú của người đặt.
+    - Nếu không có customer_phone_snapshot → trả về '' để tránh lấy nhầm ghi chú người đặt.
     - Nếu customer_phone_snapshot có nhưng không khớp customer.phone
       → thử lookup profile theo snapshot phone, lấy notes từ đó.
     """
@@ -25,41 +24,61 @@ def _resolve_customer_note(appointment):
 
     guest_phone = (appointment.customer_phone_snapshot or '').strip()
     if not guest_phone:
-        # Không có SĐT riêng của khách → không thể xác định đúng profile → trả rỗng
         return ''
 
     try:
         customer = appointment.customer
         if customer.phone == guest_phone:
-            # Profile đúng là khách sử dụng dịch vụ
             return customer.notes or ''
         else:
-            # Profile được gán là người đặt (fallback), thử tìm đúng profile của khách
             from customers.models import CustomerProfile
             try:
                 guest_profile = CustomerProfile.objects.get(phone=guest_phone)
                 return guest_profile.notes or ''
             except CustomerProfile.DoesNotExist:
-                # Khách chưa có hồ sơ → không có ghi chú
                 return ''
     except Exception:
         return ''
 
 
-def serialize_appointment(appointment):
-    """Chuyển 1 Appointment thành dict."""
+def serialize_booking(booking):
+    """Chuyển 1 Booking thành dict."""
+    return {
+        'bookingCode':    booking.booking_code,
+        'bookerName':     booking.booker_name or '',
+        'bookerPhone':    booking.booker_phone or '',
+        'bookerEmail':    booking.booker_email or '',
+        'bookerNotes':    booking.booker_notes or '',
+        'status':         booking.status,
+        'paymentStatus':  booking.payment_status,
+        'source':         booking.source,
+        'createdAt':      booking.created_at.isoformat() if booking.created_at else '',
+        'createdBy': {
+            'id':       booking.created_by.id,
+            'username': booking.created_by.username,
+            'fullName': f"{booking.created_by.first_name} {booking.created_by.last_name}".strip(),
+        } if booking.created_by_id else None,
+    }
 
-    # Người đặt lịch
-    booker_name  = appointment.booker_name  or ''
-    booker_phone = appointment.booker_phone or ''
-    booker_email = appointment.booker_email or ''
+
+def serialize_appointment(appointment):
+    """
+    Chuyển 1 Appointment thành dict.
+    Bao gồm thông tin Booking cha (booker info, payment, source).
+    """
+    booking = appointment.booking
+
+    # Người đặt lịch — lấy từ Booking
+    booker_name  = booking.booker_name  if booking else ''
+    booker_phone = booking.booker_phone if booking else ''
+    booker_email = booking.booker_email if booking else ''
 
     # Khách sử dụng dịch vụ (snapshot)
     customer_name  = appointment.customer_name_snapshot  or ''
     customer_phone = appointment.customer_phone_snapshot or ''
     customer_email = appointment.customer_email_snapshot or ''
 
-    # Thời lượng và end_time tính từ service_variant (không lưu trong DB)
+    # Thời lượng và end_time tính từ service_variant
     duration_min = _get_appt_duration(appointment)
     end_str = ''
     if appointment.appointment_time:
@@ -67,32 +86,34 @@ def serialize_appointment(appointment):
         end_str = end_time.strftime('%H:%M')
 
     # Service info từ variant
-    service_name = ''
-    service_id = None
-    service_code = ''
+    service_name  = ''
+    service_id    = None
+    service_code  = ''
     variant_label = ''
     if appointment.service_variant_id:
         try:
             sv = appointment.service_variant
             if sv.service_id:
                 service_name = sv.service.name
-                service_id = sv.service_id
+                service_id   = sv.service_id
                 service_code = sv.service.code or ''
             variant_label = sv.label or ''
         except Exception:
             pass
 
     return {
-        'id': appointment.appointment_code,
-        'customerId': appointment.customer_id,
-        # Người đặt lịch
+        'id':          appointment.appointment_code,
+        'bookingCode': booking.booking_code if booking else '',
+        'customerId':  appointment.customer_id,
+        # Người đặt lịch (từ Booking)
         'bookerName':  booker_name,
         'bookerPhone': booker_phone,
         'bookerEmail': booker_email,
+        'bookerNotes': booking.booker_notes if booking else '',
         # Khách sử dụng dịch vụ (snapshot)
-        'customerName': customer_name,
-        'phone':        customer_phone,
-        'email':        customer_email,
+        'customerName':  customer_name,
+        'phone':         customer_phone,
+        'email':         customer_email,
         # Dịch vụ / gói
         'service':      service_name,
         'serviceCode':  service_code,
@@ -107,16 +128,14 @@ def serialize_appointment(appointment):
         'start':       appointment.appointment_time.strftime('%H:%M') if appointment.appointment_time else '',
         'end':         end_str,
         'durationMin': duration_min,
-        # Trạng thái
+        # Trạng thái appointment
         'apptStatus':  appointment.status,
-        'payStatus':   appointment.payment_status,
-        'source':      appointment.source,
-        'cancelledBy': appointment.cancelled_by or '',
-        # Ghi chú
-        'note':        appointment.notes or '',
-        'staffNotes':  appointment.staff_notes or '',
+        # Trạng thái booking (payment, source)
+        'payStatus':   booking.payment_status if booking else 'UNPAID',
+        'source':      booking.source if booking else 'DIRECT',
+        # Booking status riêng để frontend phân biệt PENDING/CONFIRMED/CANCELLED/REJECTED
+        'bookingStatus': booking.status if booking else '',
         # Ghi chú khách: chỉ lấy từ profile nếu profile đó đúng là khách sử dụng dịch vụ
-        # (customer.phone khớp customer_phone_snapshot), tránh fallback sang profile người đặt
         'customerNote': _resolve_customer_note(appointment),
     }
 

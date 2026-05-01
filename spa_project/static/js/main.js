@@ -332,9 +332,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if (bookingForm) {
         const dateInput = bookingForm.querySelector('input[name="appointment_date"]');
 
-        // Set min date to today
+        // Set min date to today (dùng local date, không dùng toISOString() vì trả về UTC)
         if (dateInput) {
-            const today = new Date().toISOString().split('T')[0];
+            const _n = new Date();
+            const today = `${_n.getFullYear()}-${String(_n.getMonth()+1).padStart(2,'0')}-${String(_n.getDate()).padStart(2,'0')}`;
             dateInput.setAttribute('min', today);
         }
     }

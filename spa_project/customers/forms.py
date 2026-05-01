@@ -11,6 +11,7 @@ class CustomerProfileForm(forms.ModelForm):
     username = forms.CharField(
         label='Tên đăng nhập',
         max_length=150,
+        required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'Tên đăng nhập (không dấu, không khoảng trắng)',
@@ -18,20 +19,9 @@ class CustomerProfileForm(forms.ModelForm):
         })
     )
 
-    # email nằm trên User, không phải CustomerProfile — xử lý thủ công
-    email = forms.EmailField(
-        label='Email',
-        required=False,
-        widget=forms.EmailInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Địa chỉ email (không bắt buộc)',
-            'autocomplete': 'email',
-        })
-    )
-
     class Meta:
         model = CustomerProfile
-        fields = ['full_name', 'phone', 'gender', 'dob', 'address']
+        fields = ['full_name', 'phone', 'email', 'gender', 'dob', 'address']
         widgets = {
             'full_name': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -40,6 +30,11 @@ class CustomerProfileForm(forms.ModelForm):
             'phone': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Số điện thoại',
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Địa chỉ email (không bắt buộc)',
+                'autocomplete': 'email',
             }),
             'gender': forms.Select(attrs={
                 'class': 'form-select'
@@ -56,10 +51,9 @@ class CustomerProfileForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Điền sẵn username và email từ User nếu có
+        # Điền sẵn username từ User nếu có
         if self.instance and self.instance.user:
             self.fields['username'].initial = self.instance.user.username
-            self.fields['email'].initial = self.instance.user.email
 
     def clean_username(self):
         username = self.cleaned_data.get('username', '').strip()
@@ -96,12 +90,12 @@ class CustomerProfileForm(forms.ModelForm):
         return phone
 
     def clean_email(self):
-        email = self.cleaned_data.get('email', '').strip().lower()
-        if not email:
-            return email
-        # Kiểm tra trùng email với user khác
-        if self.instance and self.instance.user:
-            if User.objects.filter(email=email).exclude(pk=self.instance.user.pk).exists():
+        email = self.cleaned_data.get('email', '').strip().lower() or None
+        if email:
+            qs = CustomerProfile.objects.filter(email=email)
+            if self.instance and self.instance.pk:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
                 raise forms.ValidationError('Địa chỉ email này đã được sử dụng.')
         return email
 
@@ -115,11 +109,39 @@ class CustomerProfileForm(forms.ModelForm):
 
     def save(self, commit=True):
         profile = super().save(commit=commit)
-        # Lưu username và email vào User
+        # Đồng bộ thông tin từ CustomerProfile về User
         if commit and profile.user:
-            profile.user.username = self.cleaned_data.get('username', profile.user.username)
-            profile.user.email = self.cleaned_data.get('email', '')
-            profile.user.save(update_fields=['username', 'email'])
+            user = profile.user
+            user_fields_changed = []
+
+            # Đồng bộ username
+            username = self.cleaned_data.get('username', '').strip()
+            if username and user.username != username:
+                user.username = username
+                user_fields_changed.append('username')
+
+            # Đồng bộ họ tên → first_name / last_name
+            full_name = self.cleaned_data.get('full_name', '').strip()
+            if full_name:
+                parts = full_name.split(None, 1)
+                new_first = parts[0]
+                new_last  = parts[1] if len(parts) > 1 else ''
+                if user.first_name != new_first:
+                    user.first_name = new_first
+                    user_fields_changed.append('first_name')
+                if user.last_name != new_last:
+                    user.last_name = new_last
+                    user_fields_changed.append('last_name')
+
+            # Đồng bộ email
+            email = self.cleaned_data.get('email') or ''
+            if email and user.email != email:
+                user.email = email
+                user_fields_changed.append('email')
+
+            if user_fields_changed:
+                user.save(update_fields=user_fields_changed)
+
         return profile
 
 class ChangePasswordForm(forms.Form):
