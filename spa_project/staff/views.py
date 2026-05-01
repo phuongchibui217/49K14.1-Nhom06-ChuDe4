@@ -11,6 +11,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
+from django.http import JsonResponse
 
 from .models import StaffProfile
 
@@ -183,3 +184,17 @@ def admin_staff(request):
     return render(request, 'manage/pages/admin_staff.html', {
         'staffs': staffs,
     })
+
+
+@login_required(login_url='accounts:login')
+def check_username(request):
+    """API nhanh kiểm tra username đã tồn tại chưa — dùng cho realtime check ở frontend"""
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+
+    username = request.GET.get('username', '').strip()
+    if not username:
+        return JsonResponse({'exists': False})
+
+    exists = User.objects.filter(username=username).exists()
+    return JsonResponse({'exists': exists})

@@ -402,7 +402,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 errEl = document.createElement('div');
                 errEl.id = 'addPasswordError';
                 errEl.className = 'text-danger small mt-1';
-                // pw-wrapper nằm trong col-md-6, chèn lỗi sau pw-wrapper
                 confirmInput.closest('.pw-wrapper').after(errEl);
             }
             errEl.textContent = msg;
@@ -432,6 +431,56 @@ document.addEventListener('DOMContentLoaded', function() {
                 confirmInput.focus();
             }
         });
+    }
+
+    // Realtime check username trùng — gọi API khi người dùng rời khỏi ô username
+    const usernameInput = addForm ? addForm.querySelector('input[name="username"]') : null;
+    if (usernameInput) {
+        function showUsernameError(msg) {
+            let errEl = document.getElementById('addUsernameError');
+            if (!errEl) {
+                errEl = document.createElement('div');
+                errEl.id = 'addUsernameError';
+                errEl.className = 'text-danger small mt-1';
+                usernameInput.after(errEl);
+            }
+            errEl.textContent = msg;
+            usernameInput.classList.add('is-invalid');
+        }
+
+        function clearUsernameError() {
+            const errEl = document.getElementById('addUsernameError');
+            if (errEl) errEl.textContent = '';
+            usernameInput.classList.remove('is-invalid');
+        }
+
+        // Gọi API check khi người dùng rời khỏi ô (blur)
+        usernameInput.addEventListener('blur', function() {
+            const val = usernameInput.value.trim();
+            if (!val) return;
+            fetch(`{% url 'staff:check_username' %}?username=${encodeURIComponent(val)}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.exists) {
+                        showUsernameError('Tên đăng nhập đã tồn tại.');
+                    } else {
+                        clearUsernameError();
+                    }
+                });
+        });
+
+        // Xóa lỗi khi người dùng bắt đầu gõ lại
+        usernameInput.addEventListener('input', clearUsernameError);
+
+        // Block submit nếu username đang báo lỗi
+        if (addForm) {
+            addForm.addEventListener('submit', function(e) {
+                if (usernameInput.classList.contains('is-invalid')) {
+                    e.preventDefault();
+                    usernameInput.focus();
+                }
+            });
+        }
     }
 });
 

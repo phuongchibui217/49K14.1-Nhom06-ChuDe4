@@ -137,7 +137,7 @@ def create_staff_user(username: str, password: str, full_name: str,
     """
     Tạo tài khoản nhân viên:
     - User với is_staff=True
-    - Gán group 'Lễ tân' (mặc định) hoặc 'Quản lí' nếu is_superuser
+    - Gán group 'Lễ tân' (mặc định)
     - Tạo StaffProfile
     """
     from staff.models import StaffProfile
@@ -149,6 +149,10 @@ def create_staff_user(username: str, password: str, full_name: str,
         is_staff=True,
         is_superuser=False,
     )
+
+    # Gán group 'Lễ tân' mặc định cho nhân viên mới (tạo group nếu chưa có)
+    group, _ = Group.objects.get_or_create(name=GROUP_RECEPTIONIST)
+    user.groups.add(group)
 
     profile = StaffProfile.objects.create(
         user=user,
