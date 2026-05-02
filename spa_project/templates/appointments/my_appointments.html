@@ -73,7 +73,7 @@
                   {% endif %}
                 </h5>
                 <div class="code">
-                  <i class="fas fa-hashtag me-1"></i>{{ appointment.appointment_code }}
+                  <i class="fas fa-hashtag me-1"></i>{{ appointment.booking.booking_code }}
                 </div>
               </div>
               <span class="status-badge status-{{ appointment.customer_status_css }}">
@@ -114,11 +114,11 @@
               <form method="post"
                     action="{% url 'appointments:cancel_appointment' appointment.id %}"
                     class="cancel-appointment-form"
-                    data-code="{{ appointment.appointment_code }}">
+                    data-code="{{ appointment.booking.booking_code }}">
                 {% csrf_token %}
                 <button type="button"
                         class="btn-cancel-appt btn-trigger-cancel"
-                        data-code="{{ appointment.appointment_code }}">
+                        data-code="{{ appointment.booking.booking_code }}">
                   <i class="fas fa-times"></i>Hủy lịch
                 </button>
               </form>
