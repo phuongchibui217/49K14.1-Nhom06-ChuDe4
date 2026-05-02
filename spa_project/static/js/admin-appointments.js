@@ -1542,9 +1542,40 @@ function _setSelectValue(sel, value, fallback) {
   sel.value = hasOption ? wanted : (fallback || '');
 }
 
+/**
+ * Áp dụng mode cho modal lịch hẹn — phải gọi TRƯỚC modal.show().
+ *
+ * mode = 'request' : ẩn block Trạng thái & Thanh toán (xác nhận online / đặt lại từ request)
+ * mode = 'normal'  : hiện lại block Trạng thái & Thanh toán (tạo mới / chỉnh sửa bình thường)
+ *
+ * Reset hoàn toàn trạng thái ẩn/hiện cũ trước khi apply mode mới,
+ * tránh trạng thái từ lần mở trước bị giữ lại.
+ */
+function _applyModalMode(mode) {
+  const sharedStatusBlock = document.getElementById('sharedStatusBlock');
+  if (!sharedStatusBlock) return;
+
+  if (mode === 'request') {
+    // request-mode: ẩn Trạng thái & Thanh toán
+    sharedStatusBlock.style.display = 'none';
+    sharedStatusBlock.classList.add('d-none');
+  } else {
+    // normal-mode: hiện lại — xóa mọi class/style ẩn từ lần trước
+    sharedStatusBlock.style.display = 'block';
+    sharedStatusBlock.classList.remove('d-none');
+    sharedStatusBlock.classList.remove('hidden');
+    sharedStatusBlock.removeAttribute('hidden');
+  }
+}
+
 function _showSharedStatusBlock(statusValue, payValue, isEditMode) {
   const sharedBlock = document.getElementById('sharedStatusBlock');
-  if (sharedBlock) sharedBlock.style.display = 'block';
+  if (sharedBlock) {
+    sharedBlock.style.display = 'block';
+    sharedBlock.classList.remove('d-none');   // reset class ẩn từ request-mode
+    sharedBlock.classList.remove('hidden');
+    sharedBlock.removeAttribute('hidden');
+  }
 
   const sharedStatusSel = document.getElementById('sharedApptStatus');
   const sharedPaySel    = document.getElementById('sharedPayStatus');
@@ -2444,11 +2475,23 @@ function openCreateModal(prefill={}){
   _updateGuestProgress();
   _updateSlotSummary();
   _resetAllCustomerState();
-  console.log('[openCreateModal] Sau _initApplyAllBar, chuẩn bị show modal');
 
-  // Hiện block trạng thái & thanh toán, reset về mặc định
-  _showSharedStatusBlock('NOT_ARRIVED', 'UNPAID', false);
-  console.log('[openCreateModal] Sau _showSharedStatusBlock');
+  // Xác định mode và apply TRƯỚC KHI show modal — không bị nhá UI
+  const _isOnlineRequestMode = !!(prefill._fromOnlineRequest);
+  const _isRebookModeLocal   = !!(prefill._fromRebook);
+  const _shouldHideStatus    = _isOnlineRequestMode || _isRebookModeLocal;
+
+  window._currentModalMode = {
+    _fromOnlineRequest: _isOnlineRequestMode,
+    _fromRebook:        _isRebookModeLocal,
+  };
+
+  if (_shouldHideStatus) {
+    _applyModalMode('request');
+  } else {
+    _applyModalMode('normal');
+    _showSharedStatusBlock('NOT_ARRIVED', 'UNPAID', false);
+  }
 
   let modal = null;
   if (modalEl) {
@@ -2464,42 +2507,15 @@ function openCreateModal(prefill={}){
   modalEl.addEventListener('shown.bs.modal', () => {
     console.log('[openCreateModal] Modal đã shown thành công ✓');
 
-    // ẨN/HIỆN block "Trạng thái & Thanh toán" SAU KHI modal shown
-    const sharedStatusBlock = document.getElementById('sharedStatusBlock');
-    const isFromOnlineRequest = window._currentModalMode?._fromOnlineRequest || false;
-    const isFromRebook = window._currentModalMode?._fromRebook || false;
-    const shouldHideStatusBlock = isFromOnlineRequest || isFromRebook;
-
-    console.log('[openCreateModal::shown] _fromOnlineRequest =', isFromOnlineRequest, ', _fromRebook =', isFromRebook, ', shouldHideStatusBlock =', shouldHideStatusBlock, ', sharedStatusBlock =', sharedStatusBlock);
-
-    if (sharedStatusBlock) {
-      if (shouldHideStatusBlock) {
-        console.log('[openCreateModal::shown] ẨN sharedStatusBlock (Xác nhận hoặc Đặt lại)');
-        sharedStatusBlock.style.display = 'none';
-        sharedStatusBlock.classList.add('d-none');
-      } else {
-        console.log('[openCreateModal::shown] Hiện sharedStatusBlock (Tạo mới/Sửa)');
-        sharedStatusBlock.style.display = 'block';
-        sharedStatusBlock.classList.remove('d-none');
-      }
-    }
-
-    // XÓA nút ba chấm và XÓA HOÀN TOÁN Email + Ghi chú trong form "Xác nhận" và "Đặt lại"
-    if (shouldHideStatusBlock) {
+    // XÓA nút ba chấm và XÓA HOÀN TOÀN Email + Ghi chú trong form "Xác nhận" và "Đặt lại"
+    if (_shouldHideStatus) {
       console.log('[openCreateModal::shown] XÓA nút ba chấm và XÓA Email + Ghi chú');
       const guestItems = document.querySelectorAll('.gc-item');
       guestItems.forEach(item => {
-        // XÓA HOÀN TOÀN nút ba chấm khỏi DOM
         const expandBtn = item.querySelector('.gc-expand-btn');
-        if (expandBtn) {
-          expandBtn.remove();
-        }
-
-        // XÓA HOÀN TOÁN gc-detail-wrap (chứa Email + Ghi chú khách)
+        if (expandBtn) expandBtn.remove();
         const detailWrap = item.querySelector('.gc-detail-wrap');
-        if (detailWrap) {
-          detailWrap.remove(); // Xóa hoàn toàn khỏi DOM
-        }
+        if (detailWrap) detailWrap.remove();
       });
     }
   }, { once: true });
@@ -2507,11 +2523,6 @@ function openCreateModal(prefill={}){
   } catch (err) {
     console.error('[openCreateModal] LỖI EXCEPTION:', err);
   }
-  // Lưu mode để sử dụng trong event listener
-  window._currentModalMode = {
-    _fromOnlineRequest: prefill._fromOnlineRequest || false,
-    _fromRebook: prefill._fromRebook || false
-  };
 }
 
 /** Mở modal tạo lịch từ pending blocks đã chọn trên grid */
@@ -2637,6 +2648,8 @@ function openEditModalWithData(appointments, clickedApptId) {
   _setCreateOnlyVisible(false);
 
   // Trạng thái & thanh toán dùng của primary (hoặc appointment được click)
+  // Luôn apply normal-mode trước để reset mọi trạng thái ẩn từ request-mode
+  _applyModalMode('normal');
   _showSharedStatusBlock(primary.apptStatus || 'NOT_ARRIVED', primary.payStatus || 'UNPAID', true);
 
   const lbl = document.getElementById('bookerPanelLabel');
