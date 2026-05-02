@@ -28,12 +28,10 @@ urlpatterns = [
     # Appointment CRUD Operations
     path('api/appointments/', api.api_appointments_list, name='api_appointments_list'),  # Danh sách với filters
     path('api/appointments/search/', api.api_appointments_search, name='api_appointments_search'),  # Tìm kiếm / share
-    path('api/appointments/create/', api.api_appointment_create, name='api_appointment_create'),  # Tạo 1 appointment 
     path('api/appointments/create-batch/', api.api_appointment_create_batch, name='api_appointment_create_batch'),  # Tạo nhiều / share
     path('api/appointments/customer-cancelled-recent/', api.api_customer_cancelled_recent, name='api_customer_cancelled_recent'),  # Khách hủy gần đây
     path('api/appointments/<str:appointment_code>/', api.api_appointment_detail, name='api_appointment_detail'),  # Chi tiết
-    path('api/appointments/<str:appointment_code>/update/', api.api_appointment_update, name='api_appointment_update'),  # Cập nhật
-    # path('api/appointments/<str:appointment_code>/rebook/', api.api_appointment_rebook, name='api_appointment_rebook'),  # Đặt lại (không dùng API này)
+    path('api/appointments/<str:appointment_code>/update/', api.api_appointment_update, name='api_appointment_update'),  # [REMOVED] trả 410 — dùng update-batch
     path('api/appointments/<str:appointment_code>/status/', api.api_appointment_status, name='api_appointment_status'),  # Đổi trạng thái
     path('api/appointments/<str:appointment_code>/delete/', api.api_appointment_delete, name='api_appointment_delete'),  # Xóa
 

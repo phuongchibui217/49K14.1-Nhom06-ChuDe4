@@ -368,7 +368,7 @@ class Appointment(models.Model):
                 ).order_by('-appointment_code').first()
                 if last:
                     try:
-                        new_number = int(last.appointment_code[-4:]) + 1
+                        new_number = int(last.appointment_code[len(prefix):]) + 1
                     except (ValueError, IndexError):
                         new_number = 1
                 else:

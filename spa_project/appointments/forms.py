@@ -107,8 +107,8 @@ class BookingOnlineForm(forms.Form):
         digits = re.sub(r'\D', '', phone)
         if not digits:
             raise forms.ValidationError('Không xác định được số điện thoại người đặt.')
-        if len(digits) < 10:
-            raise forms.ValidationError('Số điện thoại không hợp lệ (tối thiểu 10 số).')
+        if not re.match(r'^0\d{9}$', digits):
+            raise forms.ValidationError('Số điện thoại không hợp lệ (phải có 10 số và bắt đầu bằng 0).')
         return digits
 
     def clean_appointment_date(self):

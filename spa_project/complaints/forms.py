@@ -141,10 +141,14 @@ class GuestComplaintForm(forms.ModelForm):
         return content
 
     def clean_customer_phone_snapshot(self):
+        import re
         phone = self.cleaned_data.get('customer_phone_snapshot', '').strip()
         if not phone:
             raise forms.ValidationError('Vui lòng nhập số điện thoại.')
-        return phone
+        digits = ''.join(filter(str.isdigit, phone))
+        if not re.match(r'^0\d{9}$', digits):
+            raise forms.ValidationError('Số điện thoại không hợp lệ (phải có 10 số và bắt đầu bằng 0).')
+        return digits
 
 
 class ComplaintReplyForm(forms.ModelForm):

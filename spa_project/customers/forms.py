@@ -324,10 +324,8 @@ class CustomerRegistrationForm(forms.ModelForm):
         if not phone:
             raise forms.ValidationError('Vui lòng nhập số điện thoại.')
         digits = ''.join(filter(str.isdigit, phone))
-        if len(digits) != len(phone.replace(' ', '')):
-            raise forms.ValidationError('Số điện thoại chỉ được chứa chữ số.')
-        if len(digits) < 10 or len(digits) > 11:
-            raise forms.ValidationError('Số điện thoại phải có 10-11 chữ số.')
+        if not re.match(r'^0\d{9}$', digits):
+            raise forms.ValidationError('Số điện thoại không hợp lệ (phải có 10 số và bắt đầu bằng 0).')
         if CustomerProfile.objects.filter(phone=digits).exists():
             raise forms.ValidationError('Số điện thoại này đã được đăng ký.')
         return digits
