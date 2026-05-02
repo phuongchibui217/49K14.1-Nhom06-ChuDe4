@@ -560,34 +560,34 @@ def api_customer_search(request):
     })
 
 
-@require_http_methods(["GET", "POST"])
-@staff_api
-def api_appointment_rebook(request, appointment_code):
-    """
-    [DEPRECATED — 410 Gone]
+# @require_http_methods(["GET", "POST"])
+# @staff_api
+# def api_appointment_rebook(request, appointment_code):
+#     """
+#     [DEPRECATED — 410 Gone]
 
-    GET/POST /api/appointments/<code>/rebook/
+#     GET/POST /api/appointments/<code>/rebook/
 
-    Endpoint này đã bị loại bỏ.
-    Flow "Đặt lại" hiện tại hoạt động hoàn toàn trên frontend:
-      openRebookAsCreate() → mở modal tạo booking/appointment mới.
-    Không còn reset booking/appointment cũ về PENDING/NOT_ARRIVED nữa
-    vì dễ gây sai dữ liệu, đặc biệt với booking nhiều khách.
+#     Endpoint này đã bị loại bỏ.
+#     Flow "Đặt lại" hiện tại hoạt động hoàn toàn trên frontend:
+#       openRebookAsCreate() → mở modal tạo booking/appointment mới.
+#     Không còn reset booking/appointment cũ về PENDING/NOT_ARRIVED nữa
+#     vì dễ gây sai dữ liệu, đặc biệt với booking nhiều khách.
 
-    Frontend không gọi endpoint này — trả 410 Gone để tránh nhầm lẫn.
-    """
-    return JsonResponse(
-        {
-            'success': False,
-            'error': (
-                'Endpoint này đã bị loại bỏ (410 Gone). '
-                'Flow "Đặt lại" hiện dùng openRebookAsCreate() trên frontend '
-                'để tạo booking/appointment mới thay vì reset dữ liệu cũ.'
-            ),
-            'deprecated': True,
-        },
-        status=410,
-    )
+#     Frontend không gọi endpoint này — trả 410 Gone để tránh nhầm lẫn.
+#     """
+#     return JsonResponse(
+#         {
+#             'success': False,
+#             'error': (
+#                 'Endpoint này đã bị loại bỏ (410 Gone). '
+#                 'Flow "Đặt lại" hiện dùng openRebookAsCreate() trên frontend '
+#                 'để tạo booking/appointment mới thay vì reset dữ liệu cũ.'
+#             ),
+#             'deprecated': True,
+#         },
+#         status=410,
+#     )
 
 
 # ============================================================

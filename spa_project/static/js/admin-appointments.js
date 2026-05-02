@@ -819,23 +819,20 @@ async function renderWebRequests(){
   const searchTerm    = ((document.getElementById("webSearchInput")   || {}).value || '').trim();
   const serviceFilter = (document.getElementById("webServiceFilter")  || {}).value || '';
 
-  let rows = await loadBookingRequests(statusFilter, dateFilter, searchTerm, serviceFilter);
+  // Tab "Yêu cầu đặt lịch" - Chỉ hiển thị PENDING, không filter theo status
+  let rows = await loadBookingRequests('', dateFilter, searchTerm, serviceFilter);
 
   updateBookingBadges(rows);
   window._webAppts = rows;
 
   const webTbody = document.getElementById("webTbody");
   if(rows.length === 0){
-    webTbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-4">${MSG_WEB_EMPTY}</td></tr>`;
+    webTbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">${MSG_WEB_EMPTY}</td></tr>`;
     return;
   }
   webTbody.innerHTML = rows.map(a => {
-    // apptStatus = Appointment.status (NOT_ARRIVED, ARRIVED, COMPLETED, CANCELLED)
     // bookingStatus = Booking.status (PENDING, CONFIRMED, CANCELLED, REJECTED)
-    const st = (a.apptStatus || '').toUpperCase();
     const bkSt = (a.bookingStatus || '').toUpperCase();
-    // Hiển thị trạng thái theo Booking
-    const displaySt = bkSt || st;
     let actionBtn = '';
     if (bkSt === 'PENDING') {
       actionBtn = `<div class="action-buttons">
@@ -847,12 +844,9 @@ async function renderWebRequests(){
     } else {
       actionBtn = `<div class="action-buttons"><button type="button" class="web-action-btn web-action-btn-edit" data-id="${a.id}" onclick="openEditModal('${a.id}')"><i class="fas fa-pen"></i><span>Xem/Sửa</span></button></div>`;
     }
-    const badgeClass = bkSt === 'PENDING' ? 'bg-warning text-dark'
-      : (bkSt === 'REJECTED' ? 'bg-danger' : (bkSt === 'CANCELLED' ? 'bg-secondary' : 'bg-success'));
     return `<tr>
       <td class="fw-semibold">${a.id}</td><td>${a.customerName}</td><td>${a.phone}</td><td>${a.service}</td>
       <td>${a.date}</td><td>${a.start} - ${a.end}</td><td>${a.durationMin||""} phút</td>
-      <td><span class="badge ${badgeClass}">${statusLabel(displaySt)}</span></td>
       <td class="action-cell">${actionBtn}</td>
     </tr>`;
   }).join("");
@@ -2469,11 +2463,55 @@ function openCreateModal(prefill={}){
   console.log('[openCreateModal] Gọi modal.show()');
   modalEl.addEventListener('shown.bs.modal', () => {
     console.log('[openCreateModal] Modal đã shown thành công ✓');
+
+    // ẨN/HIỆN block "Trạng thái & Thanh toán" SAU KHI modal shown
+    const sharedStatusBlock = document.getElementById('sharedStatusBlock');
+    const isFromOnlineRequest = window._currentModalMode?._fromOnlineRequest || false;
+    const isFromRebook = window._currentModalMode?._fromRebook || false;
+    const shouldHideStatusBlock = isFromOnlineRequest || isFromRebook;
+
+    console.log('[openCreateModal::shown] _fromOnlineRequest =', isFromOnlineRequest, ', _fromRebook =', isFromRebook, ', shouldHideStatusBlock =', shouldHideStatusBlock, ', sharedStatusBlock =', sharedStatusBlock);
+
+    if (sharedStatusBlock) {
+      if (shouldHideStatusBlock) {
+        console.log('[openCreateModal::shown] ẨN sharedStatusBlock (Xác nhận hoặc Đặt lại)');
+        sharedStatusBlock.style.display = 'none';
+        sharedStatusBlock.classList.add('d-none');
+      } else {
+        console.log('[openCreateModal::shown] Hiện sharedStatusBlock (Tạo mới/Sửa)');
+        sharedStatusBlock.style.display = 'block';
+        sharedStatusBlock.classList.remove('d-none');
+      }
+    }
+
+    // XÓA nút ba chấm và XÓA HOÀN TOÁN Email + Ghi chú trong form "Xác nhận" và "Đặt lại"
+    if (shouldHideStatusBlock) {
+      console.log('[openCreateModal::shown] XÓA nút ba chấm và XÓA Email + Ghi chú');
+      const guestItems = document.querySelectorAll('.gc-item');
+      guestItems.forEach(item => {
+        // XÓA HOÀN TOÀN nút ba chấm khỏi DOM
+        const expandBtn = item.querySelector('.gc-expand-btn');
+        if (expandBtn) {
+          expandBtn.remove();
+        }
+
+        // XÓA HOÀN TOÁN gc-detail-wrap (chứa Email + Ghi chú khách)
+        const detailWrap = item.querySelector('.gc-detail-wrap');
+        if (detailWrap) {
+          detailWrap.remove(); // Xóa hoàn toàn khỏi DOM
+        }
+      });
+    }
   }, { once: true });
   modal.show();
   } catch (err) {
     console.error('[openCreateModal] LỖI EXCEPTION:', err);
   }
+  // Lưu mode để sử dụng trong event listener
+  window._currentModalMode = {
+    _fromOnlineRequest: prefill._fromOnlineRequest || false,
+    _fromRebook: prefill._fromRebook || false
+  };
 }
 
 /** Mở modal tạo lịch từ pending blocks đã chọn trên grid */
@@ -3666,7 +3704,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 
   // Filter bar — tab Yêu cầu đặt lịch (dùng FilterManager chung)
   const webFM = new FilterManager({
-    fields:   ['webSearchInput', 'webStatusFilter', 'webServiceFilter', 'webDateFilter'],
+    fields:   ['webSearchInput', 'webServiceFilter', 'webDateFilter'],
     btnId:    'webFilterBtn',
     searchId: 'webSearchInput',
     onApply:  () => renderWebRequests(),

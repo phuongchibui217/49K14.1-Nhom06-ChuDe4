@@ -103,7 +103,11 @@ def check_room_availability(
         room=room,
         appointment_date=appointment_date,
         deleted_at__isnull=True,
-    ).exclude(status='CANCELLED')
+    ).exclude(
+        status='CANCELLED'
+    ).exclude(
+        booking__status__in=['CANCELLED', 'REJECTED']
+    )
 
     if exclude_appointment_code:
         queryset = queryset.exclude(appointment_code=exclude_appointment_code)
