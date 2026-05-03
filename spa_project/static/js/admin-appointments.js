@@ -241,10 +241,10 @@ function _calcDiscountAmount(subtotal, dtype, value) {
  * @param {number} totalPaid
  * @returns {'UNPAID'|'PARTIAL'|'PAID'}
  */
-function _calcPayStatus(finalAmount, totalPaid) {
-  if (finalAmount === 0) return 'PAID';           // discount 100% → PAID
+function _calcPayStatus(finalAmount, totalPaid, hasAnyService = false) {
+  if (finalAmount === 0 && hasAnyService) return 'PAID';  // discount 100% + có dịch vụ
   if (totalPaid <= 0) return 'UNPAID';
-  if (totalPaid >= finalAmount) return 'PAID';
+  if (totalPaid >= finalAmount && finalAmount > 0) return 'PAID';
   return 'PARTIAL';
 }
 
@@ -4167,7 +4167,8 @@ async function _submitInvoicePayment() {
     const finalAmount = subtotal - discountAmount;
 
     // Xác định payStatus
-    const payStatus = _calcPayStatus(finalAmount, payAmount);
+    const hasAnyService = ((_invoiceData.lines || []).some(l => parseFloat(l.unitPrice) > 0));
+    const payStatus = _calcPayStatus(finalAmount, payAmount, hasAnyService);
 
     // Lưu vào state tạm
     _createModePayment = {
