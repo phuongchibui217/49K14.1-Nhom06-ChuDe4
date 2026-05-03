@@ -1,4 +1,25 @@
 // ============================================================
+// ADMIN APPOINTMENTS - MỤC LỤC
+// ============================================================
+// SECTION 1:  CẤU HÌNH & HẰNG SỐ            (Line ~25)  - Constants, URLs, Messages
+// SECTION 2:  BIẾN TRẠNG THÁI (STATE)       (Line ~33)  - Quản lý state toàn cục
+// SECTION 3:  HÀM API                        (Line ~60)  - Gọi HTTP, tải dữ liệu
+// SECTION 4:  HÀM VALIDATION                 (Line ~204) - Kiểm tra form
+// SECTION 5:  HÀM XỬ LÝ THỜI GIAN            (Line ~355) - DateTime utilities
+// SECTION 6:  HÀM GIAO DIỆN (UI)            (Line ~376) - Toast, buttons, modals
+// SECTION 7:  QUẢN LÝ PENDING BLOCKS         (Line ~625) - Slot đang chọn
+// SECTION 8:  TAB 1 - LỊCH THEO PHÒNG        (Line ~805) - Grid hiển thị lịch
+// SECTION 9:  TAB 2 - YÊU CẦU ĐẶT LỊCH      (Line ~1017)- Xử lý booking online
+// SECTION 10: TÌM KIẾM KHÁCH HÀNG           (Line ~1238)- Tra cứu khách theo SĐT
+// SECTION 11: MODAL & FORM                   (Line ~1326)- Dialog & form helpers
+// SECTION 12: CHỌN NGÀY (DATE NAVIGATION)    (Line ~3215)- DatePicker
+// SECTION 13: MODAL TÌM KIẾM                (Line ~3241)- Tìm kiếm lịch hẹn
+// SECTION 14: AUTO-REFRESH CANCEL            (Line ~3467)- Cập nhật khách hủy
+// SECTION 15: KHỞI TẠO APP                  (Line ~3546)- Startup & event listeners
+// SECTION 16: MODAL HÓA ĐƠN (INVOICE)        (Line ~3663)- Thanh toán
+// ============================================================
+
+// ============================================================
 // SECTION 1: SETTINGS & CONSTANTS
 // ============================================================
 console.log("ADMIN APPOINTMENTS JS LOADED v20260501-005");
@@ -3660,7 +3681,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 });
 
 // ============================================================
-// SECTION 14: INVOICE MODAL
+// SECTION 16: INVOICE MODAL
 // ============================================================
 
 /** State của invoice modal */

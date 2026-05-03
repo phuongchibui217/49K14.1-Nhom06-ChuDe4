@@ -2271,6 +2271,10 @@ def api_confirm_online_request(request, booking_code):
     [TAB 2] POST /api/booking-requests/<booking_code>/confirm/
     Xac nhan yeu cau dat lich online: cap nhat phong/gio/dich vu vao appointment goc
     roi confirm booking. KHONG tao Booking moi.
+    
+    API endpoint nhận POST request để xác nhận yêu cầu đặt lịch online
+    Cập nhật phòng/giờ/dịch vụ vào appointment gốc, sau đó confirm booking 
+    KHÔNG tạo booking mới (update booking đã có từ request online)
 
     Payload:
     {
