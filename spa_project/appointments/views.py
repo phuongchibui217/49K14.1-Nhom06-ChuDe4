@@ -149,7 +149,8 @@ def my_appointments(request):
         'pending':   {'booking__status': 'PENDING'},
         'confirmed': {'booking__status': 'CONFIRMED'},
         'completed': {'status': 'COMPLETED'},
-        'cancelled': {'booking__status__in': ['CANCELLED', 'REJECTED']},
+        'cancelled': {'booking__status': 'CANCELLED'},
+        'rejected':  {'booking__status': 'REJECTED'},
     }
 
     if status_filter != 'all' and status_filter in FILTER_MAP:
@@ -168,7 +169,8 @@ def my_appointments(request):
         'pending':   base_qs.filter(booking__status='PENDING').count(),
         'confirmed': base_qs.filter(booking__status='CONFIRMED').count(),
         'completed': base_qs.filter(status='COMPLETED').count(),
-        'cancelled': base_qs.filter(booking__status__in=['CANCELLED', 'REJECTED']).count(),
+        'cancelled': base_qs.filter(booking__status='CANCELLED').count(),
+        'rejected':  base_qs.filter(booking__status='REJECTED').count(),
     }
     status_counts['all'] = base_qs.count()
 

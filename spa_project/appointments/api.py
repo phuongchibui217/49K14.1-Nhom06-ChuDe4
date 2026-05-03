@@ -2161,72 +2161,110 @@ def api_appointment_delete(request, appointment_code):
 # SECTION 5: TAB 2 - YEU CAU DAT LICH (BOOKING REQUESTS)
 # ============================================================
 
+
 @require_http_methods(["GET"])
 def api_booking_requests(request):
     """
     [TAB 2] GET /api/booking-requests/
     Danh sach yeu cau dat lich online (Booking.source=ONLINE, status PENDING/CANCELLED/REJECTED).
+
+    Query Parameters:
+        - date:     Lọc theo ngày hẹn (YYYY-MM-DD)
+        - status:   Lọc theo trạng thái (PENDING/CANCELLED/REJECTED)
+        - q:        Tìm kiếm tự do (code, tên, SĐT)
+        - service:  Lọc theo dịch vụ
+
+    Returns:
+        JSON với danh sách appointments (đã serialize)
     """
+    # ── STEP 1: Kiểm tra quyền truy cập ────────────────────────────────────────
+    # Chỉ staff mới được xem danh sách yêu cầu đặt lịch online
     if not _is_staff(request.user):
         return _deny()
 
-    # Base: Booking ONLINE chua xu ly hoac da xu ly
-    bookings_qs = Booking.objects.filter(
-        source='ONLINE',
-        status__in=['PENDING', 'CANCELLED', 'REJECTED'],
-        deleted_at__isnull=True,
+    # ── STEP 2: Query cơ bản - Lấy appointments từ booking online ─────────────────
+    # TẠI SAO query Appointment thay vì Booking?
+    #   - Booking là "đơn đặt" (1 booking có N appointments)
+    #   - Appointment là "lịch hẹn" từng khách riêng lẻ
+    #   - Frontend hiển thị theo từng khách → query appointments trực tiếp
+    #   - Tránh việc query 2 lần (bookings → appointments)
+    qs = Appointment.objects.filter(
+        booking__source='ONLINE',                      # Chỉ lấy booking đặt online
+        booking__status__in=['PENDING', 'CANCELLED', 'REJECTED'],  # 3 trạng thái cần hiển thị
+        deleted_at__isnull=True,                       # Loại bỏ appointment đã xóa (soft delete)
+    ).select_related(
+        'booking',                    # JOIN với bảng bookings (tránh N+1 queries)
+        'customer',                   # JOIN với bảng customers
+        'service_variant__service',   # JOIN với services qua variants
+        'room'                        # JOIN với bảng rooms
     )
 
+
+    # ── STEP 3: Áp dụng filters từ query parameters ─────────────────────────────
+    # Mỗi filter là OPTIONAL - chỉ áp dụng khi có giá trị
+
+    # Filter 1: Theo ngày hẹn
+    # Ví dụ: GET /api/booking-requests/?date=2024-01-15
     if date_filter := request.GET.get('date'):
-        bookings_qs = bookings_qs.filter(appointments__appointment_date=date_filter).distinct()
+        qs = qs.filter(appointment_date=date_filter)
+
+    # Filter 2: Theo trạng thái booking
+    # Ví dụ: GET /api/booking-requests/?status=PENDING
+    #       → Chỉ hiển thị booking chờ xác nhận
     if status_filter := request.GET.get('status', '').strip().upper():
         if status_filter in ('PENDING', 'CANCELLED', 'REJECTED'):
-            bookings_qs = bookings_qs.filter(status=status_filter)
+            qs = qs.filter(booking__status=status_filter)
+
+    # Filter 3: Tìm kiếm tự do (full-text search trên nhiều fields)
+    # Ví dụ: GET /api/booking-requests/?q=0123456789
+    #       → Tìm trong: booking_code, booker_name, booker_phone, appointment_code, customer_name
+    # 💡 TIP: search_norm = loại bỏ tất cả ký tự không phải số (để search SĐT)
     if search := request.GET.get('q', '').strip():
         search_norm = ''.join(filter(str.isdigit, search))
-        bookings_qs = bookings_qs.filter(
-            Q(booking_code__icontains=search) |
-            Q(booker_name__icontains=search) |
-            Q(booker_phone__icontains=search_norm) |
-            Q(appointments__appointment_code__icontains=search) |
-            Q(appointments__customer_name_snapshot__icontains=search)
-        ).distinct()
+        qs = qs.filter(
+            Q(booking__booking_code__icontains=search) |           # Mã booking: BK0001
+            Q(booking__booker_name__icontains=search) |            # Tên người đặt
+            Q(booking__booker_phone__icontains=search_norm) |       # SĐT người đặt (chỉ số)
+            Q(appointment_code__icontains=search) |                # Mã lịch hẹn: APP0001
+            Q(customer_name_snapshot__icontains=search)             # Tên khách hàng
+        )
+    # 💡 TIP: Q() objects cho phép OR queries (|)
+    #         icontains = case-insensitive contains (không phân biệt hoa thường)
+
+    # Filter 4: Theo dịch vụ
+    # Ví dụ: GET /api/booking-requests/?service=1
+    #       → Chỉ hiển thị booking của dịch vụ có id=1
     if service_id := request.GET.get('service', '').strip():
-        bookings_qs = bookings_qs.filter(appointments__service_variant__service_id=service_id).distinct()
+        qs = qs.filter(service_variant__service_id=service_id)
 
+    # ── STEP 4: Sắp xếp kết quả (Ordering) ───────────────────────────────────────
+    # Ưu tiên hiển thị: PENDING (mới) → CANCELLED/REJECTED (cũ)
+    # Trong cùng nhóm: mới nhất trước (theo created_at)
+
+    # 💡 TIP: Case/When = "CASE WHEN" trong SQL
+    #         - PENDING → 0 (ưu tiên nhất)
+    #         - CANCELLED/REJECTED → 1 (ưu tiên thứ 2)
+    #         - Khác → 2 (ưu tiên cuối)
     from django.db.models import Case, When, IntegerField
-    bookings_qs = bookings_qs.order_by(
+    qs = qs.order_by(
         Case(
-            When(status='PENDING', then=0),
-            When(status='CANCELLED', then=1),
-            When(status='REJECTED', then=1),
-            default=2,
+            When(booking__status='PENDING', then=0),      # Chờ xác nhận → đầu tiên
+            When(booking__status='CANCELLED', then=1),    # Đã hủy → sau
+            When(booking__status='REJECTED', then=1),     # Đã từ chối → sau
+            default=2,                                     # Khác → cuối cùng
             output_field=IntegerField()
         ),
-        '-created_at'
+        '-booking__created_at',     # Mới nhất trước (dấu - = DESC)
+        'appointment_date',          # Ngày hẹn tăng dần
+        'appointment_time',          # Giờ hẹn tăng dần
     )
 
-    # Lay tat ca appointments cua cac bookings nay
-    booking_ids = list(bookings_qs.values_list('id', flat=True))
-    appointments = Appointment.objects.filter(
-        booking_id__in=booking_ids,
-        deleted_at__isnull=True,
-    ).select_related('booking', 'customer', 'service_variant__service', 'room').order_by(
-        Case(
-            When(booking__status='PENDING', then=0),
-            When(booking__status='CANCELLED', then=1),
-            When(booking__status='REJECTED', then=1),
-            default=2,
-            output_field=IntegerField()
-        ),
-        '-booking__created_at',
-        'appointment_date',
-        'appointment_time',
-    )
-
+    # ── STEP 5: Serialize & Return ───────────────────────────────────────────────
+    # 💡 TIP: qs được EVALUATE ở đây (query thực sự chạy DB)
+    #         Django ORM là lazy - chỉ query khi cần dữ liệu
     return JsonResponse({
         'success': True,
-        'appointments': [serialize_appointment(a) for a in appointments]
+        'appointments': [serialize_appointment(a) for a in qs]
     })
 
 
