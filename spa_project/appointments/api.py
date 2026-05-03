@@ -164,6 +164,70 @@ def _count_db_overlaps(room_code, appt_date, start_min, end_min, exclude_codes=N
     return count
 
 
+def _check_cross_capacity(slot_list, error_prefix_fn=None, status_code=400, conflict_flag=False,
+                          capacity1_msg_fn=None, capacityN_msg_fn=None):
+    """
+    Kiểm tra capacity tổng hợp cho danh sách slots cùng phòng/ngày.
+
+    slot_list : list of (identifier, room_code, date, start_min, end_min)
+                identifier — dùng để exclude DB overlap và nhận diện slot trong req_count.
+    error_prefix_fn   : callable(identifier, room_code, capacity) → str prefix (dùng khi
+                        không truyền capacity1_msg_fn / capacityN_msg_fn).
+    capacity1_msg_fn  : callable(identifier, room_code, capacity) → str message đầy đủ
+                        khi capacity == 1. Override error_prefix_fn nếu có.
+    capacityN_msg_fn  : callable(identifier, room_code, capacity) → str message đầy đủ
+                        khi capacity > 1. Override error_prefix_fn nếu có.
+    status_code : HTTP status khi lỗi (400 hoặc 409).
+    conflict_flag : nếu True thêm 'conflict': True vào response.
+
+    Returns: JsonResponse (lỗi) hoặc None (pass).
+    """
+    from collections import defaultdict as _defaultdict
+
+    groups = _defaultdict(list)
+    for entry in slot_list:
+        _, room_code, appt_date, start_min, end_min = entry
+        groups[(room_code, appt_date)].append(entry)
+
+    for (room_code, appt_date), slots in groups.items():
+        if len(slots) < 2:
+            continue
+        try:
+            room_obj = Room.objects.get(code=room_code, is_active=True)
+            capacity = room_obj.capacity
+        except Room.DoesNotExist:
+            continue
+
+        for identifier, _, _, start_min, end_min in slots:
+            db_count = _count_db_overlaps(
+                room_code, appt_date, start_min, end_min,
+                exclude_codes=[identifier] if identifier else None,
+            )
+            req_count = sum(
+                1 for other_id, _, _, o_start, o_end in slots
+                if other_id != identifier and start_min < o_end and o_start < end_min
+            )
+            total_overlap = db_count + req_count
+            if total_overlap >= capacity:
+                if capacity == 1:
+                    if capacity1_msg_fn:
+                        msg = capacity1_msg_fn(identifier, room_code, capacity)
+                    else:
+                        prefix = error_prefix_fn(identifier, room_code, capacity) if error_prefix_fn else ''
+                        msg = f'{prefix}Khung giờ đã có lịch ở phòng {room_code}, vui lòng chọn thời gian khác.'
+                else:
+                    if capacityN_msg_fn:
+                        msg = capacityN_msg_fn(identifier, room_code, capacity)
+                    else:
+                        prefix = error_prefix_fn(identifier, room_code, capacity) if error_prefix_fn else ''
+                        msg = f'{prefix}Phòng {room_code} đã đủ chỗ ở khung giờ này (sức chứa {capacity}), vui lòng chọn phòng hoặc thời gian khác.'
+                body = {'success': False, 'error': msg}
+                if conflict_flag:
+                    body['conflict'] = True
+                return JsonResponse(body, status=status_code)
+    return None
+
+
 def _resolve_customer_from_guest(g, cleaned):
     """
     Resolve CustomerProfile từ dữ liệu guest.
@@ -1342,9 +1406,7 @@ def api_appointment_create_batch(request):
         # BUG-002 FIX: Capacity check tổng hợp — DB slots + request slots cùng phòng/giờ
         # validate_appointment_create chỉ check từng khách riêng lẻ với DB, không tính
         # các khách khác trong cùng request (chưa được lưu). Cần cộng dồn thủ công.
-        # Nhóm validated_guests theo (room_code, date) để check capacity từng nhóm
-        from collections import defaultdict
-        room_date_groups = defaultdict(list)  # key=(room_code, date) → list of (idx, start_min, end_min)
+        _slot_list_create = []
         for idx_g, (_, _, cleaned) in enumerate(validated_guests):
             room = cleaned.get('room')
             appt_date = cleaned.get('appointment_date')
@@ -1354,50 +1416,19 @@ def api_appointment_create_batch(request):
                 continue
             start_min = _time_to_minutes(appt_time)
             end_min   = start_min + dur
-            room_date_groups[(room.code, appt_date)].append((idx_g + 1, start_min, end_min, room))
+            _slot_list_create.append((idx_g + 1, room.code, appt_date, start_min, end_min))
 
-        for (room_code, appt_date), slots in room_date_groups.items():
-            if not slots:
-                continue
-            room_obj = slots[0][3]
-            capacity = room_obj.capacity
-
-            for slot_idx, (guest_num, start_min, end_min, _) in enumerate(slots):
-                # Đếm số lịch trong DB overlap với slot này (exclude CANCELLED/REJECTED)
-                db_count = _count_db_overlaps(room_code, appt_date, start_min, end_min)
-
-                # Đếm số khách trong request overlap với slot này (không tính chính nó)
-                request_count = 0
-                for other_num, other_start, other_end, _ in slots:
-                    if other_num == guest_num:
-                        continue
-                    if start_min < other_end and other_start < end_min:
-                        request_count += 1
-
-                total_overlap = db_count + request_count
-                if total_overlap >= capacity:
-                    if capacity == 1:
-                        return JsonResponse(
-                            {
-                                'success': False,
-                                'error': (
-                                    f'Khách {guest_num}: Khung giờ đã có lịch, '
-                                    'vui lòng chọn thời gian khác.'
-                                ),
-                            },
-                            status=400,
-                        )
-                    else:
-                        return JsonResponse(
-                            {
-                                'success': False,
-                                'error': (
-                                    f'Khách {guest_num}: Phòng đã đủ chỗ ở khung giờ này '
-                                    f'(sức chứa {capacity}), vui lòng chọn phòng hoặc thời gian khác.'
-                                ),
-                            },
-                            status=400,
-                        )
+        if _slot_list_create:
+            _cap_err = _check_cross_capacity(
+                _slot_list_create,
+                error_prefix_fn=lambda id, room, cap: f'Khách {id}: ',
+                status_code=400,
+                conflict_flag=False,
+                capacity1_msg_fn=lambda id, room, cap: f'Khách {id}: Khung giờ đã có lịch, vui lòng chọn thời gian khác.',
+                capacityN_msg_fn=lambda id, room, cap: f'Khách {id}: Phòng đã đủ chỗ ở khung giờ này (sức chứa {cap}), vui lòng chọn phòng hoặc thời gian khác.',
+            )
+            if _cap_err:
+                return _cap_err
 
         # Validate payment chung
         g_payment_data = {
@@ -1697,48 +1728,10 @@ def api_booking_update_batch(request, booking_code):
             end_min   = start_min + dur
             _slot_list.append((appt_code, room_code, appt_date, start_min, end_min))
 
-        # Nhóm theo (room_code, date)
-        _room_date_groups = _defaultdict(list)
-        for entry in _slot_list:
-            appt_code, room_code, appt_date, start_min, end_min = entry
-            _room_date_groups[(room_code, appt_date)].append(entry)
-
-        for (room_code, appt_date), slots in _room_date_groups.items():
-            if len(slots) < 2:
-                continue  # 1 slot trong nhóm → không cần cross-check
-            try:
-                room_obj  = Room.objects.get(code=room_code, is_active=True)
-                capacity  = room_obj.capacity
-            except Room.DoesNotExist:
-                continue
-
-            for appt_code, _, _, start_min, end_min in slots:
-                # Đếm DB slots overlap (exclude chính appointment này)
-                db_count = _count_db_overlaps(
-                    room_code, appt_date, start_min, end_min,
-                    exclude_codes=[appt_code],
-                )
-
-                # Đếm các guest khác trong request overlap với slot này
-                req_count = 0
-                for other_code, _, _, other_start, other_end in slots:
-                    if other_code == appt_code:
-                        continue
-                    if start_min < other_end and other_start < end_min:
-                        req_count += 1
-
-                total_overlap = db_count + req_count
-                if total_overlap >= capacity:
-                    if capacity == 1:
-                        return JsonResponse(
-                            {'success': False, 'error': f'Khung giờ đã có lịch ở phòng {room_code}, vui lòng chọn thời gian khác.'},
-                            status=400,
-                        )
-                    else:
-                        return JsonResponse(
-                            {'success': False, 'error': f'Phòng {room_code} đã đủ chỗ ở khung giờ này (sức chứa {capacity}), vui lòng chọn phòng hoặc thời gian khác.'},
-                            status=400,
-                        )
+        # Nhóm theo (room_code, date) và check capacity qua helper
+        _cap_resp = _check_cross_capacity(_slot_list, status_code=400, conflict_flag=False)
+        if _cap_resp:
+            return _cap_resp
     except Exception as _cap_err:
         logger.warning('update-batch capacity pre-check error: %s', _cap_err)
         # Không block request nếu pre-check lỗi — validate_appointment_create trong transaction vẫn chạy
@@ -2341,7 +2334,6 @@ def api_confirm_online_request(request, booking_code):
         # validate_appointment_data chỉ check từng guest riêng lẻ với DB.
         # Khi confirm với nhiều guests mới cùng phòng cùng giờ, cần check tổng hợp.
         if len(validated) > 1:
-            from collections import defaultdict as _defaultdict
             _slot_list_confirm = []
             for idx, g, cleaned in validated:
                 room_obj  = cleaned.get('room')
@@ -2352,49 +2344,16 @@ def api_confirm_online_request(request, booking_code):
                     continue
                 start_min = _time_to_minutes(appt_time)
                 end_min   = start_min + dur
-                # Lấy appointment_code gốc (nếu có) để exclude khi check DB
                 orig_code = existing_appts[idx].appointment_code if idx < len(existing_appts) else None
                 _slot_list_confirm.append((orig_code, room_obj.code, appt_date, start_min, end_min))
 
-            _room_date_groups_confirm = _defaultdict(list)
-            for entry in _slot_list_confirm:
-                _, room_code, appt_date, start_min, end_min = entry
-                _room_date_groups_confirm[(room_code, appt_date)].append(entry)
-
-            for (room_code, appt_date), slots in _room_date_groups_confirm.items():
-                if len(slots) < 2:
-                    continue
-                try:
-                    room_obj  = Room.objects.get(code=room_code, is_active=True)
-                    capacity  = room_obj.capacity
-                except Room.DoesNotExist:
-                    continue
-
-                for orig_code, _, _, start_min, end_min in slots:
-                    db_count = _count_db_overlaps(
-                        room_code, appt_date, start_min, end_min,
-                        exclude_codes=[orig_code] if orig_code else None,
-                    )
-
-                    req_count = 0
-                    for other_orig, _, _, other_start, other_end in slots:
-                        if other_orig == orig_code:
-                            continue
-                        if start_min < other_end and other_start < end_min:
-                            req_count += 1
-
-                    total_overlap = db_count + req_count
-                    if total_overlap >= capacity:
-                        if capacity == 1:
-                            return JsonResponse(
-                                {'success': False, 'error': f'Khung giờ đã có lịch ở phòng {room_code}, vui lòng chọn thời gian khác.', 'conflict': True},
-                                status=409,
-                            )
-                        else:
-                            return JsonResponse(
-                                {'success': False, 'error': f'Phòng {room_code} đã đủ chỗ ở khung giờ này (sức chứa {capacity}), vui lòng chọn phòng hoặc thời gian khác.', 'conflict': True},
-                                status=409,
-                            )
+            _cap_resp = _check_cross_capacity(
+                _slot_list_confirm,
+                status_code=409,
+                conflict_flag=True,
+            )
+            if _cap_resp:
+                return _cap_resp
 
         with transaction.atomic():
             updated_appts = []
