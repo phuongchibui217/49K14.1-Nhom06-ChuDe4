@@ -4,6 +4,8 @@ Management command: backfill_invoice_items
 Tạo InvoiceItem cho các Invoice cũ chưa có item.
 Chạy 1 lần sau migration 0015_booking_refactor.
 
+# TODO: Xác nhận đã chạy xong trên production rồi xóa file này (risk MEDIUM).
+# Verify: python manage.py backfill_invoice_items --dry-run
 Usage:
     python manage.py backfill_invoice_items
     python manage.py backfill_invoice_items --dry-run

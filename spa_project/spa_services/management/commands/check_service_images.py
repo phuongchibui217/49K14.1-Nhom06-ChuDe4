@@ -1,6 +1,8 @@
 """
 Management command: check_service_images
 
+# TODO: Xác nhận đã chạy xong trên production rồi xóa file này (risk MEDIUM).
+
 Rà soát toàn bộ Service records và kiểm tra file ảnh có tồn tại thực sự
 trong MEDIA_ROOT hay không.
 

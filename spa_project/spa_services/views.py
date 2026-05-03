@@ -99,7 +99,7 @@ def service_detail(request, service_id):
             'service': None,
             'not_found': True,
             'related_services': [],
-        })
+        }, status=404)
     except Exception:
         # Case 2: Lỗi khi tải dữ liệu
         import traceback

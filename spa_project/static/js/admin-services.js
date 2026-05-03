@@ -81,7 +81,7 @@ function collectVariants() {
             valid = false; return;
         }
 
-        const duration = parseInt(durationVal);
+        const duration = parseInt(durationVal, 10);
         const price = parseFloat(priceVal);
 
         if (isNaN(duration) || duration <= 0) {
@@ -111,21 +111,7 @@ function escapeHtml(str) {
 
 // ===== END VARIANT MANAGEMENT =====
 
-const categoryNames = {
-    'CAT01': 'Chăm sóc da',
-    'CAT02': 'Massage',
-    'CAT05': 'Gội đầu',
-    'CAT06': 'Tẩy tế bào chết',
-};
-
-// Status Names
-const statusNames = {
-    'active': 'Đang hoạt động',
-    'inactive': 'Ngừng hoạt động'
-};
-
 // Track edit mode
-let isEditMode = false;
 let editingServiceId = null;
 let existingImageUrl = null;
 
@@ -166,23 +152,29 @@ function resetButton(btn) {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
-    loadServicesTable();
     setupFilters();
     setupFormValidation();
 
     // Show Django messages as toast
     showDjangoMessagesAsToast();
+
+    // Modal hidden event - reset form
+    const addServiceModal = document.getElementById('addServiceModal');
+    if (addServiceModal) {
+        addServiceModal.addEventListener('hidden.bs.modal', function() {
+            resetFormToAddMode();
+        });
+        // Khi mở modal ở chế độ thêm mới, đảm bảo có sẵn 1 dòng gói
+        addServiceModal.addEventListener('show.bs.modal', function() {
+            if (!isEditMode) {
+                const list = document.getElementById('variantList');
+                if (list && list.children.length === 0) {
+                    addVariantRow();
+                }
+            }
+        });
+    }
 });
-
-// Load Services Table (for AJAX calls)
-function loadServicesTable() {
-    // This function is kept for compatibility but not used in traditional flow
-    const tbody = document.getElementById('servicesTableBody');
-    if (!tbody) return;
-
-    // Check if we need to reload via AJAX
-    // For now, we use traditional Django rendering
-}
 
 // Setup Filters — UC 12.5
 // Enter trên ô tìm kiếm = nhấn nút Lọc (3a/4a)
@@ -268,52 +260,6 @@ function validateCategory(input) {
 
     if (!value) {
         showFieldError(input, 'Vui lòng chọn danh mục');
-        return false;
-    }
-
-    return true;
-}
-
-function validatePrice(input) {
-    const value = parseFloat(input.value);
-
-    clearFieldError(input);
-
-    if (isNaN(value) || input.value === '') {
-        showFieldError(input, 'Giá dịch vụ không hợp lệ');
-        return false;
-    }
-
-    if (value <= 0) {
-        showFieldError(input, 'Giá dịch vụ phải lớn hơn 0');
-        return false;
-    }
-
-    if (value > 999999999) {
-        showFieldError(input, 'Giá dịch vụ không được quá 999,999,999 VNĐ');
-        return false;
-    }
-
-    return true;
-}
-
-function validateDuration(input) {
-    const value = parseInt(input.value);
-
-    clearFieldError(input);
-
-    if (isNaN(value) || input.value === '') {
-        showFieldError(input, 'Thời gian không hợp lệ');
-        return false;
-    }
-
-    if (value <= 0) {
-        showFieldError(input, 'Thời gian phải lớn hơn 0');
-        return false;
-    }
-
-    if (value > 480) {
-        showFieldError(input, 'Thời gian không được quá 480 phút (8 tiếng)');
         return false;
     }
 
@@ -478,6 +424,7 @@ function submitServiceForm(event) {
         method: 'POST',
         body: formData,
         headers: {
+            'X-CSRFToken': getCookie('csrftoken'),
             'X-Requested-With': 'XMLHttpRequest'
         }
     })
@@ -727,7 +674,6 @@ function deleteService(serviceId) {
         });
 
         // Cập nhật reference
-        document.getElementById('confirmDeleteServiceBtn').id = 'confirmDeleteServiceBtn';
     }
 
     // Mở modal
@@ -874,22 +820,3 @@ function resetFormToAddMode() {
         codeInput.readOnly = false;
     }
 }
-
-// Modal hidden event - reset form
-document.addEventListener('DOMContentLoaded', function() {
-    const addServiceModal = document.getElementById('addServiceModal');
-    if (addServiceModal) {
-        addServiceModal.addEventListener('hidden.bs.modal', function() {
-            resetFormToAddMode();
-        });
-        // Khi mở modal ở chế độ thêm mới, đảm bảo có sẵn 1 dòng gói
-        addServiceModal.addEventListener('show.bs.modal', function() {
-            if (!isEditMode) {
-                const list = document.getElementById('variantList');
-                if (list && list.children.length === 0) {
-                    addVariantRow();
-                }
-            }
-        });
-    }
-});

@@ -1,6 +1,9 @@
 """
 Management command: backfill_service_descriptions
 
+# TODO: Xác nhận đã chạy xong trên production rồi xóa file này (risk MEDIUM).
+# Verify: python manage.py backfill_service_descriptions --dry-run
+
 Mục đích:
   - Với mỗi Service trong DB:
     1. Nếu short_description rỗng → copy description cũ vào short_description
