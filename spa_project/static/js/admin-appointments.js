@@ -206,6 +206,151 @@ async function loadBookingRequests(statusFilter = '', dateFilter = '', searchTer
 function isValidPhone(v){ return /^0\d{9}$/.test(v.replace(/\D/g,"")); }
 function isValidEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
 
+/**
+ * Hiển thị lỗi trong #modalError.
+ * Thay thế pattern lặp: modalError.textContent = msg; modalError.classList.remove("d-none");
+ */
+function _showModalError(msg) {
+  const el = document.getElementById('modalError');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.remove('d-none');
+}
+
+/**
+ * Tính discount_amount từ subtotal + type + value.
+ * Kết quả được clamp về [0, subtotal].
+ * @param {number} subtotal
+ * @param {string} dtype  - 'NONE' | 'AMOUNT' | 'PERCENT'
+ * @param {number} value
+ * @returns {number}
+ */
+function _calcDiscountAmount(subtotal, dtype, value) {
+  let amount = 0;
+  if (dtype === 'PERCENT') {
+    amount = Math.round(subtotal * value / 100);
+  } else if (dtype === 'AMOUNT') {
+    amount = Math.min(value, subtotal);
+  }
+  return Math.max(0, Math.min(amount, subtotal));
+}
+
+/**
+ * Tính payment status từ final_amount và total_paid.
+ * @param {number} finalAmount
+ * @param {number} totalPaid
+ * @returns {'UNPAID'|'PARTIAL'|'PAID'}
+ */
+function _calcPayStatus(finalAmount, totalPaid) {
+  if (finalAmount === 0) return 'PAID';           // discount 100% → PAID
+  if (totalPaid <= 0) return 'UNPAID';
+  if (totalPaid >= finalAmount) return 'PAID';
+  return 'PARTIAL';
+}
+
+/**
+ * Validate điều kiện COMPLETED phải đi kèm PAID.
+ * @param {string} apptStatus
+ * @param {string} payStatus
+ * @returns {{ ok: boolean, error: string }}
+ */
+function _validateCompletedStatus(apptStatus, payStatus) {
+  if (apptStatus === 'COMPLETED' && payStatus !== 'PAID') {
+    return { ok: false, error: 'Không thể hoàn thành lịch khi chưa thanh toán đủ' };
+  }
+  return { ok: true, error: '' };
+}
+
+/**
+ * Validate thông tin người đặt lịch (booker).
+ * Dùng chung cho cả CREATE và EDIT branch trong submit handler.
+ *
+ * @param {string} name   - họ tên người đặt
+ * @param {string} phone  - số điện thoại (raw, chưa strip)
+ * @param {string} email  - email (có thể rỗng)
+ * @returns {{ ok: boolean, error: string }}
+ */
+function _validateBookerFields(name, phone, email) {
+  if (!name) return { ok: false, error: 'Vui lòng nhập họ tên người đặt' };
+  if (!phone) return { ok: false, error: 'Số điện thoại không hợp lệ' };
+  if (!isValidPhone(phone)) return { ok: false, error: 'Số điện thoại không hợp lệ' };
+  if (email && !isValidEmail(email)) return { ok: false, error: 'Email không hợp lệ' };
+  return { ok: true, error: '' };
+}
+
+/**
+ * Validate ghi chú lịch hẹn (max 1000 ký tự).
+ * Giữ nguyên message động có số ký tự hiện tại.
+ * @param {string} note
+ * @returns {{ ok: boolean, error: string }}
+ */
+function _validateBookerNote(note) {
+  if (note && note.length > 1000) {
+    return { ok: false, error: `Ghi chú lịch hẹn quá dài (tối đa 1000 ký tự, hiện tại ${note.length})` };
+  }
+  return { ok: true, error: '' };
+}
+
+/**
+ * Validate date / time / room của 1 guest card — logic giống nhau giữa CREATE và EDIT.
+ * KHÔNG bao gồm: validate quá khứ, fallback apptId.dataset (khác nhau giữa 2 branch).
+ *
+ * @param {Object} g      - guest data từ _collectGuestCards()
+ * @param {number} index  - 0-based index
+ * @param {number} total  - tổng số cards
+ * @returns {{ ok: boolean, error: string, type: 'date'|'time'|'room'|null }}
+ *   type dùng để caller quyết định có gọi _markRowError không.
+ */
+function _validateGuestDateTimeRoom(g, index, total) {
+  const label = total > 1 ? `Khách ${index + 1}: ` : '';
+  if (!g.date)   return { ok: false, error: `${label}Vui lòng chọn ngày hẹn`, type: 'date' };
+  if (!g.time)   return { ok: false, error: `${label}Vui lòng chọn giờ hẹn`,  type: 'time' };
+  if (!g.roomId) return { ok: false, error: `${label}Vui lòng chọn phòng`,     type: 'room' };
+  return { ok: true, error: '', type: null };
+}
+
+/**
+ * Validate các trường cơ bản của 1 guest card — giống nhau 100% giữa CREATE và EDIT.
+ * Bao gồm: tên, phone, email, service+variant.
+ * KHÔNG bao gồm: date, time, room, validate quá khứ (khác nhau giữa 2 branch).
+ *
+ * @param {Object} g      - guest data từ _collectGuestCards()
+ * @param {number} index  - 0-based index
+ * @param {number} total  - tổng số cards
+ * @returns {{ ok: boolean, error: string }}
+ */
+function _validateGuestBasic(g, index, total) {
+  const label = total > 1 ? `Khách ${index + 1}: ` : '';
+  if (!g.name || !g.name.trim())          return { ok: false, error: `${label}Vui lòng nhập tên khách` };
+  if (g.phone && !isValidPhone(g.phone))  return { ok: false, error: `${label}Số điện thoại khách không hợp lệ` };
+  if (g.email && !isValidEmail(g.email))  return { ok: false, error: `${label}Email không hợp lệ` };
+  if (g.serviceId && !g.variantId)        return { ok: false, error: `${label}Vui lòng chọn gói dịch vụ` };
+  return { ok: true, error: '' };
+}
+
+/**
+ * Validate thời điểm ARRIVED / COMPLETED cho từng card trong mảng.
+ * Dùng chung cho EDIT và CREATE branch.
+ *
+ * @param {Array}    cards     - mảng guest card data từ _collectGuestCards()
+ * @param {Function} getStatus - (g, i) => string — trả về apptStatus của card
+ * @param {Function} getDate   - (g, i) => string — trả về date (YYYY-MM-DD)
+ * @param {Function} getTime   - (g, i) => string — trả về time (HH:MM)
+ * @param {Function} getDur    - (g, i) => number — trả về duration (phút)
+ * @returns {{ ok: boolean, error: string }}
+ */
+function _validateAllCardsTiming(cards, getStatus, getDate, getTime, getDur) {
+  for (let i = 0; i < cards.length; i++) {
+    const g      = cards[i];
+    const label  = cards.length > 1 ? `Khách ${i + 1}: ` : '';
+    const status = getStatus(g, i);
+    if (status !== 'ARRIVED' && status !== 'COMPLETED') continue;
+    const timing = _validateStatusTiming(getDate(g, i), getTime(g, i), getDur(g, i), status);
+    if (!timing.ok) return { ok: false, error: `${label}${timing.error}` };
+  }
+  return { ok: true, error: '' };
+}
+
 // ============================================================
 // SECTION 5: TIME/DATE HELPERS
 // ============================================================
@@ -285,17 +430,7 @@ function updateBookingBadges(rows) {
       .filter(r => (r.bookingStatus || '').toUpperCase() === 'PENDING')
       .map(r => r.bookingCode)
   );
-  const pendingCount = pendingBookings.size;
-  const webCount = document.getElementById("webCount");
-  if (webCount) {
-    if (pendingCount === 0) {
-      webCount.textContent = '';
-      webCount.classList.add('d-none');
-    } else {
-      webCount.textContent = String(pendingCount);
-      webCount.classList.remove('d-none');
-    }
-  }
+  _setWebCountBadge(pendingBookings.size);
 }
 
 /**
@@ -349,6 +484,128 @@ function resetModalError(){
   const modalError = document.getElementById("modalError");
   modalError.classList.add("d-none");
   modalError.textContent = "";
+}
+
+// ===== SHARED HELPERS (TIER-1 REFACTOR) =====
+
+/**
+ * Đóng và cleanup TẤT CẢ modal Bootstrap đang mở.
+ * Dùng chung cho approveWeb và openRebookAsCreate.
+ */
+function _forceCloseAllModals() {
+  document.querySelectorAll('.modal.show').forEach(el => {
+    const inst = bootstrap.Modal.getInstance(el);
+    if (inst) inst.hide();
+  });
+  document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+  document.body.classList.remove('modal-open');
+  document.body.style.removeProperty('overflow');
+  document.body.style.removeProperty('padding-right');
+  document.body.removeAttribute('data-bs-overflow');
+}
+
+/**
+ * Kiểm tra result API có phải lỗi conflict không.
+ * Dùng chung cho edit-batch, online-confirm, create-batch.
+ * @param {Object} result - API response object
+ * @param {boolean} [checkFlag=false] - có kiểm tra result.conflict flag không
+ * @returns {boolean}
+ */
+function _isConflictError(result, checkFlag = false) {
+  const errLower = (result.error || '').toLowerCase();
+  return (checkFlag && result.conflict === true) ||
+    errLower.includes('trùng') ||
+    errLower.includes('đầy') ||
+    errLower.includes('đủ chỗ') ||
+    errLower.includes('khả dụng') ||
+    errLower.includes('capacity') ||
+    errLower.includes('conflict');
+}
+
+/**
+ * Lấy Bootstrap Modal instance hoặc tạo mới nếu chưa có.
+ * @param {HTMLElement} el
+ * @returns {bootstrap.Modal|null}
+ */
+function _getOrCreateModal(el) {
+  if (!el) return null;
+  return bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
+}
+
+/**
+ * Clone node để xóa tất cả event listener cũ, gắn lại vào DOM.
+ * Trả về node mới đã được gắn vào DOM.
+ * @param {HTMLElement} el
+ * @returns {HTMLElement}
+ */
+function _replaceWithClone(el) {
+  const clone = el.cloneNode(true);
+  el.parentNode.replaceChild(clone, el);
+  return clone;
+}
+
+/**
+ * Điền thông tin người đặt lịch vào booker panel.
+ * Dùng chung cho openCreateModal (rebook/online/pending) và openEditModalWithData.
+ *
+ * @param {Object} rb            - object chứa name, phone, email, source, note
+ * @param {string} defaultSource - fallback khi rb.source rỗng (mặc định 'DIRECT')
+ */
+function _fillBookerFields(rb, defaultSource = 'DIRECT') {
+  document.getElementById('bookerName').value   = rb.name   || '';
+  document.getElementById('bookerPhone').value  = rb.phone  || '';
+  document.getElementById('bookerEmail').value  = rb.email  || '';
+  document.getElementById('bookerSource').value = rb.source || defaultSource;
+  const bookerNoteEl = document.getElementById('bookerNote');
+  if (bookerNoteEl) bookerNoteEl.value = rb.note || '';
+}
+
+/**
+ * Cập nhật badge #webCount với số lượng pending.
+ * @param {number} count
+ */
+function _setWebCountBadge(count) {
+  const webCount = document.getElementById('webCount');
+  if (!webCount) return;
+  if (count === 0) {
+    webCount.textContent = '';
+    webCount.classList.add('d-none');
+  } else {
+    webCount.textContent = String(count);
+    webCount.classList.remove('d-none');
+  }
+}
+
+/**
+ * Điền options vào một <select> từ mảng items.
+ * Xóa toàn bộ options cũ (trừ placeholder nếu có) rồi append mới.
+ *
+ * @param {HTMLSelectElement} selectEl   - phần tử <select> cần điền
+ * @param {Array}             items      - mảng dữ liệu
+ * @param {string|Function}   valueKey   - tên field lấy value, hoặc hàm (item) => value
+ * @param {string|Function}   labelFn    - tên field lấy label, hoặc hàm (item) => label
+ * @param {string}            [placeholder] - text option đầu tiên (value=""), bỏ qua nếu null
+ */
+function _populateSelect(selectEl, items, valueKey, labelFn, placeholder = null) {
+  if (!selectEl) return;
+  selectEl.innerHTML = placeholder !== null
+    ? `<option value="">${placeholder}</option>`
+    : '';
+  items.forEach(item => {
+    const opt = document.createElement('option');
+    opt.value       = typeof valueKey === 'function' ? valueKey(item) : item[valueKey];
+    opt.textContent = typeof labelFn  === 'function' ? labelFn(item)  : item[labelFn];
+    selectEl.appendChild(opt);
+  });
+}
+
+/**
+ * Refresh cả grid lịch và tab yêu cầu đặt lịch.
+ * Dùng ở những nơi luôn cần cả 2 sau khi thay đổi dữ liệu.
+ */
+async function _refreshAll() {
+  await refreshData();
+  await renderWebRequests();
 }
 
 // ===== LOADING SKELETON CHO GRID =====
@@ -832,18 +1089,6 @@ window.approveWeb = async function(id){
     },
   };
 
-  // Đóng mọi modal đang mở rồi mở modal tạo lịch
-  const _forceCloseAllModals = () => {
-    document.querySelectorAll('.modal.show').forEach(el => {
-      const inst = bootstrap.Modal.getInstance(el);
-      if (inst) inst.hide();
-    });
-    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-    document.body.classList.remove('modal-open');
-    document.body.style.removeProperty('overflow');
-    document.body.style.removeProperty('padding-right');
-  };
-
   const isAnyModalOpen = !!document.querySelector('.modal.show') || !!document.querySelector('.modal-backdrop');
   if (isAnyModalOpen) {
     _forceCloseAllModals();
@@ -871,8 +1116,7 @@ window.rejectWeb = async function(id){
 
   // Gắn handler một lần, tránh duplicate
   const btn = document.getElementById('confirmRejectWebBtn');
-  const newBtn = btn.cloneNode(true);
-  btn.parentNode.replaceChild(newBtn, btn);
+  const newBtn = _replaceWithClone(btn);
 
   newBtn.addEventListener('click', async () => {
     modal.hide();
@@ -948,23 +1192,6 @@ function openRebookAsCreate(a) {
     },
   };
 
-  // Bước 1: Đóng và cleanup TẤT CẢ modal đang mở
-  const _forceCloseAllModals = () => {
-    // Ẩn tất cả modal đang show
-    document.querySelectorAll('.modal.show').forEach(el => {
-      const inst = bootstrap.Modal.getInstance(el);
-      if (inst) inst.hide();
-    });
-    // Force remove backdrop
-    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-    // Restore body
-    document.body.classList.remove('modal-open');
-    document.body.style.removeProperty('overflow');
-    document.body.style.removeProperty('padding-right');
-    // Remove aria-hidden từ body nếu có
-    document.body.removeAttribute('data-bs-overflow');
-  };
-
   // Bước 2: Mở modal tạo mới
   const _doOpen = () => {
     openCreateModal(prefill);
@@ -997,14 +1224,12 @@ function openRebookAsCreate(a) {
 function fillServiceFilter(){
   const sel = document.getElementById('serviceFilter');
   if (sel) {
-    sel.innerHTML = '<option value="">Tất cả dịch vụ</option>' +
-      SERVICES.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+    _populateSelect(sel, SERVICES, 'id', 'name', 'Tất cả dịch vụ');
   }
   // Điền dropdown dịch vụ cho tab Yêu cầu đặt lịch
   const webSel = document.getElementById('webServiceFilter');
   if (webSel) {
-    webSel.innerHTML = '<option value="">Tất cả dịch vụ</option>' +
-      SERVICES.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+    _populateSelect(webSel, SERVICES, 'id', 'name', 'Tất cả dịch vụ');
   }
 }
 
@@ -1015,9 +1240,6 @@ function fillServiceFilter(){
 // Autofill thông tin từ CustomerProfile khi nhập SĐT người đặt hoặc từng khách.
 // Không tự fill ghi chú lịch hẹn (bookerNote).
 // Không ghi đè dữ liệu user đã sửa tay, trừ khi SĐT thay đổi.
-
-// Lưu kết quả match đang chờ xác nhận
-let _pendingMatch = { phone: null, email: null };
 
 /**
  * Lookup CustomerProfile theo SĐT qua API /api/customers/search/?q=<phone>
@@ -1097,7 +1319,6 @@ function initCustomerSearch() {
 
 // Customer lookup stubs đã xóa — chỉ giữ _resetAllCustomerState dùng trong modal reset
 function _resetAllCustomerState() {
-  _pendingMatch = { phone: null, email: null };
   document.getElementById('selectedCustomerId').value = '';
 }
 
@@ -1428,14 +1649,6 @@ function _applyModalMode(mode) {
 }
 
 function _showSharedStatusBlock(statusValue, payValue, isEditMode) {
-  const sharedBlock = document.getElementById('sharedStatusBlock');
-  if (sharedBlock) {
-    sharedBlock.style.display = 'block';
-    sharedBlock.classList.remove('d-none');   // reset class ẩn từ request-mode
-    sharedBlock.classList.remove('hidden');
-    sharedBlock.removeAttribute('hidden');
-  }
-
   const sharedStatusSel = document.getElementById('sharedApptStatus');
   const sharedPaySel    = document.getElementById('sharedPayStatus');
   _setSelectValue(sharedStatusSel, statusValue, 'NOT_ARRIVED');
@@ -1450,30 +1663,22 @@ function _showSharedStatusBlock(statusValue, payValue, isEditMode) {
   // Shared status dropdown — hiện cả create và edit mode
   const apptStatusWrap = sharedStatusSel ? sharedStatusSel.closest('.status-form-group') : null;
 
+  // 7 dòng DOM setup giống nhau cho cả create và edit mode
+  if (apptStatusWrap) apptStatusWrap.style.display = '';
+  if (editableWrap) editableWrap.classList.add('d-none');
+  if (readonlyWrap) readonlyWrap.classList.remove('d-none');
+  if (btnWrap)      btnWrap.classList.remove('d-none');
+  if (methodWrap)   methodWrap.style.display = 'none';
+  if (amountWrap)   amountWrap.style.display = 'none';
+  if (sharedPaySel) sharedPaySel.onchange = null;
+
   if (isEditMode) {
-    // EDIT MODE: hiện sharedApptStatus dropdown (áp dụng cho toàn bộ guests)
-    if (apptStatusWrap) apptStatusWrap.style.display = '';
-    if (editableWrap) editableWrap.classList.add('d-none');
-    if (readonlyWrap) readonlyWrap.classList.remove('d-none');
-    if (btnWrap)      btnWrap.classList.remove('d-none');
-    // Ẩn payment fields (chỉ dùng ở create mode cũ, nay không dùng nữa)
-    if (methodWrap) methodWrap.style.display = 'none';
-    if (amountWrap) amountWrap.style.display = 'none';
-    // Không bind onchange — trạng thái thanh toán chỉ đổi qua invoice modal
-    if (sharedPaySel) sharedPaySel.onchange = null;
-    // Đánh giá lại trạng thái nút dựa trên dịch vụ đã chọn
+    // EDIT MODE: đánh giá lại trạng thái nút dựa trên dịch vụ đã chọn
     _updateCreatePayBtn();
     _updatePaymentSummary();
   } else {
-    // CREATE MODE: đồng bộ với edit mode — badge readonly + nút invoice
+    // CREATE MODE: badge readonly + nút invoice
     // Không nhập thanh toán trực tiếp, dùng invoice modal sau khi tạo lịch
-    if (apptStatusWrap) apptStatusWrap.style.display = '';
-    if (editableWrap) editableWrap.classList.add('d-none');
-    if (readonlyWrap) readonlyWrap.classList.remove('d-none');
-    if (btnWrap)      btnWrap.classList.remove('d-none');
-    if (methodWrap)   methodWrap.style.display = 'none';
-    if (amountWrap)   amountWrap.style.display = 'none';
-    if (sharedPaySel) sharedPaySel.onchange = null;
     // Badge luôn "Chưa thanh toán" khi tạo mới
     _setPayStatusBadge('UNPAID');
     // Đánh giá trạng thái nút dựa trên dịch vụ đã chọn
@@ -2116,8 +2321,7 @@ async function _updateCustomerNotes(cards, skipConfirm = false) {
 function _initApplyAllBar() {
   const applyAllSvc = document.getElementById('applyAllService');
   if (applyAllSvc) {
-    applyAllSvc.innerHTML = '<option value="">Dịch vụ</option>' +
-      SERVICES.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+    _populateSelect(applyAllSvc, SERVICES, 'id', 'name', 'Dịch vụ');
   }
 
   if (applyAllSvc) {
@@ -2250,12 +2454,7 @@ function openCreateModal(prefill={}){
   if (prefill._fromRebook && prefill._booker) {
     _isRebookMode = true;
     const rb = prefill._booker;
-    document.getElementById('bookerName').value   = rb.name   || '';
-    document.getElementById('bookerPhone').value  = rb.phone  || '';
-    document.getElementById('bookerEmail').value  = rb.email  || '';
-    document.getElementById('bookerSource').value = rb.source || 'DIRECT';
-    const bookerNoteEl = document.getElementById('bookerNote');
-    if (bookerNoteEl) bookerNoteEl.value = rb.note || '';
+    _fillBookerFields(rb);
     addGuestCard({
       name:        prefill._guest?.name      || '',
       phone:       prefill._guest?.phone     || '',
@@ -2272,12 +2471,7 @@ function openCreateModal(prefill={}){
     // Lưu booking request code để submit sau
     window._pendingOnlineRequestCode = prefill._bookingRequestCode || '';
     const rb = prefill._booker;
-    document.getElementById('bookerName').value   = rb.name   || '';
-    document.getElementById('bookerPhone').value  = rb.phone  || '';
-    document.getElementById('bookerEmail').value  = rb.email  || '';
-    document.getElementById('bookerSource').value = 'ONLINE';
-    const bookerNoteEl = document.getElementById('bookerNote');
-    if (bookerNoteEl) bookerNoteEl.value = rb.note || '';
+    _fillBookerFields(rb, 'ONLINE');
     // Set ngày hẹn từ request
     const reqDate = prefill._guest?.date || '';
     if (reqDate && bookingDateEl) bookingDateEl.value = reqDate;
@@ -2299,12 +2493,7 @@ function openCreateModal(prefill={}){
     _isRebookMode = false;
     if (prefill._restoreBooker) {
       const rb = prefill._restoreBooker;
-      document.getElementById('bookerName').value   = rb.name   || '';
-      document.getElementById('bookerPhone').value  = rb.phone  || '';
-      document.getElementById('bookerEmail').value  = rb.email  || '';
-      document.getElementById('bookerSource').value = rb.source || 'DIRECT';
-      const bookerNoteEl2 = document.getElementById('bookerNote');
-      if (bookerNoteEl2) bookerNoteEl2.value = rb.note || '';
+      _fillBookerFields(rb);
       // Khôi phục ngày hẹn đã lưu
       const bookingDateEl3 = document.getElementById('bookingDate');
       if (bookingDateEl3 && rb.bookingDate) bookingDateEl3.value = rb.bookingDate;
@@ -2396,8 +2585,7 @@ async function openEditModal(id){
     if (cached) {
       await _openEditModalByBooking(cached.bookingCode, id);
     } else {
-      modalError.textContent = "Không tìm thấy lịch hẹn";
-      modalError.classList.remove("d-none");
+      _showModalError("Không tìm thấy lịch hẹn");
     }
     return;
   }
@@ -2418,7 +2606,7 @@ async function _openEditModalByBooking(bookingCode, clickedApptId) {
     // Không có bookingCode → fallback edit đơn lẻ
     const result = await apiGet(`${API_BASE}/appointments/${clickedApptId}/`);
     if (result.success && result.appointment) openEditModalWithData([result.appointment], clickedApptId);
-    else { modalError.textContent = "Không tìm thấy lịch hẹn"; modalError.classList.remove("d-none"); }
+    else { _showModalError("Không tìm thấy lịch hẹn"); }
     return;
   }
 
@@ -2429,7 +2617,7 @@ async function _openEditModalByBooking(bookingCode, clickedApptId) {
     // Fallback: chỉ load appointment được click
     const result = await apiGet(`${API_BASE}/appointments/${clickedApptId}/`);
     if (result.success && result.appointment) openEditModalWithData([result.appointment], clickedApptId);
-    else { modalError.textContent = "Không tìm thấy lịch hẹn"; modalError.classList.remove("d-none"); }
+    else { _showModalError("Không tìm thấy lịch hẹn"); }
   }
 }
 
@@ -2466,7 +2654,6 @@ function openEditModalWithData(appointments, clickedApptId) {
   apptId.dataset.apptDate     = primary.date  || '';
   apptId.dataset.apptTime     = primary.start || '';
   apptId.dataset.apptDuration = primary.durationMin || '60';
-  apptId.dataset.paidAmount  = '0'; // sẽ được cập nhật sau khi load invoice
 
   // Nút Rebook / Xóa — dựa trên primary
   const btnRebook = document.getElementById('btnRebook');
@@ -2507,12 +2694,13 @@ function openEditModalWithData(appointments, clickedApptId) {
   document.getElementById('selectedCustomerId').value = primary.customerId || '';
 
   // Điền booker panel từ primary (booker info chung cho cả booking)
-  document.getElementById('bookerName').value   = primary.bookerName  || '';
-  document.getElementById('bookerPhone').value  = primary.bookerPhone || '';
-  document.getElementById('bookerEmail').value  = primary.bookerEmail || '';
-  document.getElementById('bookerSource').value = primary.source || 'DIRECT';
-  const bookerNoteEl = document.getElementById('bookerNote');
-  if (bookerNoteEl) bookerNoteEl.value = primary.bookerNotes || '';
+  _fillBookerFields({
+    name:   primary.bookerName  || '',
+    phone:  primary.bookerPhone || '',
+    email:  primary.bookerEmail || '',
+    source: primary.source      || 'DIRECT',
+    note:   primary.bookerNotes || '',
+  });
   // Set ngày hẹn chung — lấy từ appointment đầu tiên
   const bookingDateEl = document.getElementById('bookingDate');
   if (bookingDateEl) bookingDateEl.value = primary.date || appointments[0]?.date || '';
@@ -2607,59 +2795,43 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
   const apptId = document.getElementById("apptId");
   const id = apptId.value.trim();
 
+  // ── Validate booker — chung cho cả CREATE và EDIT ──
+  const nameVal  = document.getElementById('bookerName')?.value.trim() || '';
+  const phoneVal = document.getElementById('bookerPhone')?.value.trim() || '';
+  const emailVal = document.getElementById('bookerEmail')?.value.trim() || '';
+  const bookerCheck = _validateBookerFields(nameVal, phoneVal, emailVal);
+  if (!bookerCheck.ok) { _showModalError(bookerCheck.error); return; }
+
   // ── EDIT MODE — gửi 1 request batch atomic thay vì loop ──
   if (id) {
     const cards = _collectGuestCards();
-    if (!cards.length) { modalError.textContent = "Lỗi: không tìm thấy dữ liệu"; modalError.classList.remove("d-none"); return; }
-
-    const nameVal  = document.getElementById('bookerName')?.value.trim() || '';
-    const phoneVal = document.getElementById('bookerPhone')?.value.trim() || '';
-    const emailVal = document.getElementById('bookerEmail')?.value.trim() || '';
-
-    if (!nameVal) { modalError.textContent = "Vui lòng nhập họ tên người đặt"; modalError.classList.remove("d-none"); return; }
-    if (!phoneVal || !isValidPhone(phoneVal)) { modalError.textContent = "Số điện thoại không hợp lệ"; modalError.classList.remove("d-none"); return; }
-    if (emailVal && !isValidEmail(emailVal)) { modalError.textContent = "Email không hợp lệ"; modalError.classList.remove("d-none"); return; }
+    if (!cards.length) { _showModalError("Lỗi: không tìm thấy dữ liệu"); return; }
 
     // Validate từng guest card (FE-side, trước khi gửi)
     for (let i = 0; i < cards.length; i++) {
       const g = cards[i];
       const label = cards.length > 1 ? `Khách ${i + 1}: ` : '';
       const gItem = _getGuestItems()[i];
-      if (!g.date) { modalError.textContent = `${label}Vui lòng chọn ngày hẹn`; modalError.classList.remove("d-none"); return; }
-      // Validate giờ
-      if (!g.time) {
-        if (gItem) _markRowError(gItem);
-        modalError.textContent = `${label}Vui lòng chọn giờ hẹn`;
-        modalError.classList.remove("d-none"); return;
-      }
-      // Validate phòng
-      if (!g.roomId) {
-        if (gItem) _markRowError(gItem);
-        modalError.textContent = `${label}Vui lòng chọn phòng`;
-        modalError.classList.remove("d-none"); return;
+      // Validate date / time / room
+      const dtrCheck = _validateGuestDateTimeRoom(g, i, cards.length);
+      if (!dtrCheck.ok) {
+        if (gItem && (dtrCheck.type === 'time' || dtrCheck.type === 'room')) _markRowError(gItem);
+        _showModalError(dtrCheck.error); return;
       }
       // Kiểm tra thời gian quá khứ — chỉ chặn khi ngày/giờ thực sự thay đổi
       if (g.time && (g.date !== g.originalDate || g.time !== g.originalTime) && _isSlotInPast(g.date, g.time)) {
-        modalError.textContent = `${label}Không thể tạo lịch hẹn vào thời gian này (giờ đã qua)`;
-        modalError.classList.remove("d-none"); return;
+        _showModalError(`${label}Không thể tạo lịch hẹn vào thời gian này (giờ đã qua)`); return;
       }
-      if (!g.name || !g.name.trim()) { modalError.textContent = `${label}Vui lòng nhập tên khách`; modalError.classList.remove("d-none"); return; }
-      if (g.phone && !isValidPhone(g.phone)) { modalError.textContent = `${label}Số điện thoại khách không hợp lệ`; modalError.classList.remove("d-none"); return; }
-      if (g.email && !isValidEmail(g.email)) { modalError.textContent = `${label}Email không hợp lệ`; modalError.classList.remove("d-none"); return; }
-      if (g.serviceId && !g.variantId) { modalError.textContent = `${label}Vui lòng chọn gói dịch vụ`; modalError.classList.remove("d-none"); return; }
+      const basicCheck = _validateGuestBasic(g, i, cards.length);
+      if (!basicCheck.ok) { _showModalError(basicCheck.error); return; }
     }
-
-    // Validate ghi chú lịch hẹn (max 1000 ký tự)
     const editNoteVal = document.getElementById('bookerNote')?.value || '';
-    if (editNoteVal.length > 1000) {
-      modalError.textContent = `Ghi chú lịch hẹn quá dài (tối đa 1000 ký tự, hiện tại ${editNoteVal.length})`;
-      modalError.classList.remove('d-none'); return;
-    }
+    const noteCheck = _validateBookerNote(editNoteVal);
+    if (!noteCheck.ok) { _showModalError(noteCheck.error); return; }
 
     const bookingCode = apptId.dataset.bookingCode || '';
     if (!bookingCode) {
-      modalError.textContent = "Không tìm thấy mã booking. Vui lòng đóng và mở lại.";
-      modalError.classList.remove("d-none"); return;
+      _showModalError("Không tìm thấy mã booking. Vui lòng đóng và mở lại."); return;
     }
 
     // BUG-007 FIX: Validate COMPLETED + PAID cho từng guest card riêng lẻ
@@ -2668,28 +2840,19 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
     for (let i = 0; i < cards.length; i++) {
       const g = cards[i];
       const label = cards.length > 1 ? `Khách ${i + 1}: ` : '';
-      if (g.apptStatus === 'COMPLETED' && editPayStatus !== 'PAID') {
-        modalError.textContent = `${label}Không thể hoàn thành lịch khi chưa thanh toán đủ`;
-        modalError.classList.remove("d-none"); return;
-      }
+      const completedCheck = _validateCompletedStatus(g.apptStatus, editPayStatus);
+      if (!completedCheck.ok) { _showModalError(`${label}${completedCheck.error}`); return; }
     }
 
     // BUG-007 FIX: Validate thời điểm ARRIVED / COMPLETED cho từng card
-    for (let i = 0; i < cards.length; i++) {
-      const g = cards[i];
-      const label = cards.length > 1 ? `Khách ${i + 1}: ` : '';
-      if (g.apptStatus === 'ARRIVED' || g.apptStatus === 'COMPLETED') {
-        // Dùng date/time của card này (có thể đã thay đổi)
-        const _apptDate = g.date || apptId.dataset.apptDate || '';
-        const _apptTime = g.time || apptId.dataset.apptTime || '';
-        const _apptDur  = g._duration || apptId.dataset.apptDuration || '60';
-        const timingResult = _validateStatusTiming(_apptDate, _apptTime, _apptDur, g.apptStatus);
-        if (!timingResult.ok) {
-          modalError.textContent = label + timingResult.error;
-          modalError.classList.remove("d-none"); return;
-        }
-      }
-    }
+    const editTimingCheck = _validateAllCardsTiming(
+      cards,
+      (g)    => g.apptStatus,
+      (g)    => g.date || apptId.dataset.apptDate || '',
+      (g)    => g.time || apptId.dataset.apptTime || '',
+      (g)    => Number(g._duration || apptId.dataset.apptDuration || 60),
+    );
+    if (!editTimingCheck.ok) { _showModalError(editTimingCheck.error); return; }
 
     // Xây dựng payload batch — BUG-02: 1 request duy nhất, atomic
     const batchPayload = {
@@ -2727,11 +2890,7 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
       const result = await apiPost(`${API_BASE}/bookings/${bookingCode}/update-batch/`, batchPayload);
 
       if (!result.success) {
-        const errLower = (result.error || '').toLowerCase();
-        const isConflict = errLower.includes('trùng') || errLower.includes('đầy') ||
-          errLower.includes('khả dụng') || errLower.includes('capacity') || errLower.includes('conflict');
-        modalError.textContent = isConflict ? MSG_APPROVE_CONFLICT : (result.error || MSG_WEB_GENERIC_ERR);
-        modalError.classList.remove("d-none");
+        _showModalError(_isConflictError(result) ? (result.error || MSG_APPROVE_CONFLICT) : (result.error || MSG_WEB_GENERIC_ERR));
         return;
       }
 
@@ -2747,13 +2906,11 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
       if (modal) modal.hide();
       const firstDate = cards[0]?.date;
       if (firstDate && dayPicker.value !== firstDate) dayPicker.value = firstDate;
-      await refreshData();
-      await renderWebRequests();
+      await _refreshAll();
       showToast("success", "Thành công", "Cập nhật lịch hẹn thành công");
 
     } catch(err) {
-      modalError.textContent = MSG_WEB_GENERIC_ERR;
-      modalError.classList.remove("d-none");
+      _showModalError(MSG_WEB_GENERIC_ERR);
     } finally {
       isSubmitting = false;
       resetButton(btnSave);
@@ -2762,29 +2919,13 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
   }
 
   // ── CREATE MODE (batch) ──
-  const bookerName  = document.getElementById('bookerName')?.value.trim() || '';
-  const bookerPhone = document.getElementById('bookerPhone')?.value.trim() || '';
-  if (!bookerName) {
-    modalError.textContent = "Vui lòng nhập họ tên người đặt";
-    modalError.classList.remove("d-none");
-    return;
-  }
-  if (!bookerPhone || !isValidPhone(bookerPhone)) {
-    modalError.textContent = "Số điện thoại không hợp lệ";
-    modalError.classList.remove("d-none");
-    return;
-  }
-  const bookerEmail = document.getElementById('bookerEmail')?.value.trim() || '';
-  if (bookerEmail && !isValidEmail(bookerEmail)) {
-    modalError.textContent = "Email không hợp lệ";
-    modalError.classList.remove("d-none");
-    return;
-  }
+  const bookerName  = nameVal;
+  const bookerPhone = phoneVal;
+  const bookerEmail = emailVal;
 
   const guestCards = _collectGuestCards();
   if (!guestCards.length) {
-    modalError.textContent = "Vui lòng thêm ít nhất 1 khách";
-    modalError.classList.remove("d-none");
+    _showModalError("Vui lòng thêm ít nhất 1 khách");
     return;
   }
 
@@ -2792,8 +2933,7 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
   if (window._pendingOnlineRequestCode) {
     const missingRoom = guestCards.some(g => !g.roomId);
     if (missingRoom) {
-      modalError.textContent = 'Vui lòng chọn phòng trước khi xác nhận yêu cầu đặt lịch';
-      modalError.classList.remove('d-none');
+      _showModalError('Vui lòng chọn phòng trước khi xác nhận yêu cầu đặt lịch');
       return;
     }
   }
@@ -2802,11 +2942,8 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
 
   // Validate ghi chú lịch hẹn (max 1000 ký tự theo DB)
   const bookerNoteVal = document.getElementById('bookerNote')?.value || '';
-  if (bookerNoteVal.length > 1000) {
-    modalError.textContent = `Ghi chú lịch hẹn quá dài (tối đa 1000 ký tự, hiện tại ${bookerNoteVal.length})`;
-    modalError.classList.remove('d-none');
-    return;
-  }
+  const noteCheck = _validateBookerNote(bookerNoteVal);
+  if (!noteCheck.ok) { _showModalError(noteCheck.error); return; }
 
   // Lấy ngày hôm nay để check quá khứ
   const _todayStr = (() => { const t = new Date(); return `${t.getFullYear()}-${pad2(t.getMonth()+1)}-${pad2(t.getDate())}`; })();
@@ -2816,53 +2953,26 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
     const label = `Khách ${i + 1}`;
     const gItem = _getGuestItems()[i];
 
-    // Validate ngày
-    if (!g.date) {
-      modalError.textContent = guestCards.length > 1 ? `${label}: Vui lòng chọn ngày hẹn` : 'Vui lòng chọn ngày hẹn';
-      modalError.classList.remove('d-none'); return;
+    // Validate date / time / room
+    const dtrCheck = _validateGuestDateTimeRoom(g, i, guestCards.length);
+    if (!dtrCheck.ok) {
+      if (gItem && (dtrCheck.type === 'time' || dtrCheck.type === 'room')) _markRowError(gItem);
+      _showModalError(dtrCheck.error); return;
     }
     // Validate ngày quá khứ (CREATE mode)
     if (g.date < _todayStr) {
       const prefix = guestCards.length > 1 ? `${label}: ` : '';
-      modalError.textContent = `${prefix}Ngày hẹn không được nhỏ hơn ngày hôm nay`;
-      modalError.classList.remove('d-none'); return;
-    }
-    // Validate giờ
-    if (!g.time) {
-      if (gItem) _markRowError(gItem);
-      const prefix = guestCards.length > 1 ? `${label}: ` : '';
-      modalError.textContent = `${prefix}Vui lòng chọn giờ hẹn`;
-      modalError.classList.remove('d-none'); return;
+      _showModalError(`${prefix}Ngày hẹn không được nhỏ hơn ngày hôm nay`); return;
     }
     // Kiểm tra thời gian quá khứ — chặn tạo lịch vào giờ đã qua
     if (_isSlotInPast(g.date, g.time)) {
       const prefix = guestCards.length > 1 ? `${label}: ` : '';
-      modalError.textContent = `${prefix}Không thể tạo lịch hẹn vào thời gian này (giờ đã qua)`;
-      modalError.classList.remove('d-none'); return;
+      _showModalError(`${prefix}Không thể tạo lịch hẹn vào thời gian này (giờ đã qua)`); return;
     }
-    // Validate phòng
-    if (!g.roomId) {
+    const basicCheck = _validateGuestBasic(g, i, guestCards.length);
+    if (!basicCheck.ok) {
       if (gItem) _markRowError(gItem);
-      const prefix = guestCards.length > 1 ? `${label}: ` : '';
-      modalError.textContent = `${prefix}Vui lòng chọn phòng`;
-      modalError.classList.remove('d-none'); return;
-    }
-    if (!g.name || !g.name.trim()) {
-      if (gItem) _markRowError(gItem);
-      modalError.textContent = guestCards.length > 1 ? `${label}: Vui lòng nhập tên khách` : 'Vui lòng nhập tên khách';
-      modalError.classList.remove("d-none"); return;
-    }
-    if (g.phone && !isValidPhone(g.phone)) {
-      modalError.textContent = guestCards.length > 1 ? `${label}: Số điện thoại khách không hợp lệ` : 'Số điện thoại khách không hợp lệ';
-      modalError.classList.remove("d-none"); return;
-    }
-    if (g.email && !isValidEmail(g.email)) {
-      modalError.textContent = guestCards.length > 1 ? `${label}: Email không hợp lệ` : 'Email không hợp lệ';
-      modalError.classList.remove("d-none"); return;
-    }
-    if (g.serviceId && !g.variantId) {
-      modalError.textContent = guestCards.length > 1 ? `${label}: Vui lòng chọn gói dịch vụ` : 'Vui lòng chọn gói dịch vụ';
-      modalError.classList.remove("d-none"); return;
+      _showModalError(basicCheck.error); return;
     }
   }
 
@@ -2881,8 +2991,7 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
         const bStart = minutesFromStart(b.time);
         const bEnd   = bStart + durB;
         if (overlaps(aStart, aEnd, bStart, bEnd)) {
-          modalError.textContent = `Khách ${i+1} và Khách ${j+1} trùng phòng và thời gian. Vui lòng chọn phòng hoặc giờ khác.`;
-          modalError.classList.remove('d-none'); return;
+          _showModalError(`Khách ${i+1} và Khách ${j+1} trùng phòng và thời gian. Vui lòng chọn phòng hoặc giờ khác.`); return;
         }
       }
     }
@@ -2893,30 +3002,26 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
   if (createApptStatus === 'COMPLETED') {
     const hasService = guestCards.some(g => g.serviceId);
     if (!hasService) {
-      modalError.textContent = "Không thể hoàn thành lịch hẹn khi chưa có dịch vụ";
-      modalError.classList.remove("d-none"); return;
+      _showModalError("Không thể hoàn thành lịch hẹn khi chưa có dịch vụ"); return;
     }
     // BUG-001: COMPLETED phải đi kèm PAID — kiểm tra _createModePayment trước khi submit
-    if (_createModePayment.payStatus !== 'PAID') {
-      modalError.textContent = "Không thể hoàn thành lịch khi chưa thanh toán đủ. Vui lòng thanh toán trước.";
-      modalError.classList.remove("d-none"); return;
+    const completedCheck = _validateCompletedStatus('COMPLETED', _createModePayment.payStatus);
+    if (!completedCheck.ok) {
+      _showModalError(completedCheck.error + '. Vui lòng thanh toán trước.'); return;
     }
   }
 
   // Validate thời điểm chuyển trạng thái ARRIVED / COMPLETED (create mode)
   // Loop tất cả guestCards — mỗi khách có thể khác giờ/duration
   if (createApptStatus === 'ARRIVED' || createApptStatus === 'COMPLETED') {
-    for (let i = 0; i < guestCards.length; i++) {
-      const g = guestCards[i];
-      // _duration được set từ variant option dataset.duration (fallback 60)
-      const _dur = Number(g._duration) || 60;
-      const timingResult = _validateStatusTiming(g.date, g.time, _dur, createApptStatus);
-      if (!timingResult.ok) {
-        const prefix = guestCards.length > 1 ? `Khách ${i + 1}: ` : '';
-        modalError.textContent = prefix + timingResult.error;
-        modalError.classList.remove("d-none"); return;
-      }
-    }
+    const createTimingCheck = _validateAllCardsTiming(
+      guestCards,
+      ()     => createApptStatus,
+      (g)    => g.date,
+      (g)    => g.time,
+      (g)    => Number(g._duration) || 60,
+    );
+    if (!createTimingCheck.ok) { _showModalError(createTimingCheck.error); return; }
   }
 
   // UC 14.3 — Tách luồng: xác nhận request online vs tạo lịch thường
@@ -2956,20 +3061,13 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
         const firstDate = guestCards[0]?.date;
         if (firstDate && dayPicker.value !== firstDate) dayPicker.value = firstDate;
         clearPendingBlocks();
-        await refreshData();
-        await renderWebRequests();
+        await _refreshAll();
         showToast('success', 'Thành công', MSG_APPROVE_SUCCESS);
       } else {
-        const errLower = (result.error || '').toLowerCase();
-        const isConflict = result.conflict === true ||
-          errLower.includes('trùng') || errLower.includes('đủ chỗ') ||
-          errLower.includes('khả dụng') || errLower.includes('capacity');
-        modalError.textContent = isConflict ? MSG_WEB_CONFLICT : (result.error || MSG_WEB_GENERIC_ERR);
-        modalError.classList.remove('d-none');
+        _showModalError(_isConflictError(result, true) ? (result.error || MSG_WEB_CONFLICT) : (result.error || MSG_WEB_GENERIC_ERR));
       }
     } catch (err) {
-      modalError.textContent = MSG_WEB_GENERIC_ERR;
-      modalError.classList.remove('d-none');
+      _showModalError(MSG_WEB_GENERIC_ERR);
     } finally {
       isSubmitting = false;
       resetButton(btnSave);
@@ -2982,7 +3080,7 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
     booker: {
       name:          bookerName,
       phone:         bookerPhone.replace(/\D/g, ''),
-      email:         document.getElementById('bookerEmail')?.value.trim() || '',
+      email:         bookerEmail,
       source:        document.getElementById('bookerSource')?.value || 'DIRECT',
       notes:         document.getElementById('bookerNote')?.value.trim() || '',
       payStatus:     _createModePayment.payStatus     || 'UNPAID',
@@ -3015,8 +3113,7 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
       const firstDate = guestCards[0]?.date;
       if (firstDate && dayPicker.value !== firstDate) dayPicker.value = firstDate;
       clearPendingBlocks();
-      await refreshData();
-      await renderWebRequests();
+      await _refreshAll();
       const successMsg = _isRebookMode ? MSG_REBOOK_SUCCESS : (result.message || 'Tạo lịch hẹn thành công');
       _isRebookMode = false;
       showToast("success", "Thành công", successMsg);
@@ -3024,14 +3121,10 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
         setTimeout(() => showToast("warning", "Một số lỗi", result.errors.join(' | ')), 1500);
       }
     } else {
-      const errLower = (result.error || '').toLowerCase();
-      const isConflict = errLower.includes('trùng') || errLower.includes('đầy') || errLower.includes('khả dụng') || errLower.includes('capacity') || errLower.includes('conflict');
-      modalError.textContent = isConflict ? MSG_WEB_CONFLICT : (result.error || MSG_WEB_GENERIC_ERR);
-      modalError.classList.remove("d-none");
+      _showModalError(_isConflictError(result) ? (result.error || MSG_WEB_CONFLICT) : (result.error || MSG_WEB_GENERIC_ERR));
     }
     } catch(err) {
-      modalError.textContent = MSG_WEB_GENERIC_ERR;
-      modalError.classList.remove("d-none");
+      _showModalError(MSG_WEB_GENERIC_ERR);
   } finally {
     isSubmitting = false;
     resetButton(btnSave);
@@ -3084,8 +3177,7 @@ btnDelete.addEventListener("click", async ()=>{
   const confirmDeleteBtn = document.getElementById('confirmDeleteAppointmentBtn');
   if (confirmDeleteBtn) {
     // Xóa listener cũ bằng cách clone node để tránh duplicate
-    const newBtn = confirmDeleteBtn.cloneNode(true);
-    confirmDeleteBtn.parentNode.replaceChild(newBtn, confirmDeleteBtn);
+    const newBtn = _replaceWithClone(confirmDeleteBtn);
 
     newBtn.addEventListener('click', async () => {
       deleteModal.hide();
@@ -3101,8 +3193,7 @@ btnDelete.addEventListener("click", async ()=>{
             const existing = bootstrap.Modal.getInstance(modalEl);
             if (existing) existing.hide();
           }
-          await refreshData();
-          await renderWebRequests();
+          await _refreshAll();
           showToast("success", "Thành công", result.message || "Đã xóa lịch hẹn");
         } else {
           showToast("error", "Lỗi", result.error || "Không thể xóa lịch hẹn");
@@ -3218,22 +3309,12 @@ function _fillSearchDropdowns() {
   // Điền dropdown dịch vụ
   const srchSvc = document.getElementById('srchService');
   if (srchSvc && srchSvc.options.length <= 1 && SERVICES.length) {
-    SERVICES.forEach(s => {
-      const opt = document.createElement('option');
-      opt.value = s.id;
-      opt.textContent = s.name;
-      srchSvc.appendChild(opt);
-    });
+    _populateSelect(srchSvc, SERVICES, 'id', 'name', null);
   }
   // Điền dropdown phòng
   const srchRoom = document.getElementById('srchRoom');
   if (srchRoom && srchRoom.options.length <= 1 && ROOMS.length) {
-    ROOMS.forEach(r => {
-      const opt = document.createElement('option');
-      opt.value = r.id;
-      opt.textContent = `Phòng ${r.name}`;
-      srchRoom.appendChild(opt);
-    });
+    _populateSelect(srchRoom, ROOMS, 'id', r => `Phòng ${r.name}`, null);
   }
 }
 
@@ -3472,12 +3553,6 @@ document.addEventListener("DOMContentLoaded", async ()=>{
   const sidebarToggle = document.getElementById("sidebarToggle");
   const grid = document.getElementById("grid");
 
-  let modal = null;
-  let toast = null;
-
-  if (modalEl) modal = new bootstrap.Modal(modalEl);
-  if (toastEl) toast = new bootstrap.Toast(toastEl);
-
   // Initialize customer search (stub — badges đã bỏ)
   initCustomerSearch();
 
@@ -3515,15 +3590,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
       const res = await apiGet(`${API_BASE}/booking/pending-count/`);
       if (res.success && typeof res.count === 'number') {
         // Cập nhật badge
-        if (webCount) {
-          if (res.count === 0) {
-            webCount.textContent = '';
-            webCount.classList.add('d-none');
-          } else {
-            webCount.textContent = String(res.count);
-            webCount.classList.remove('d-none');
-          }
-        }
+        _setWebCountBadge(res.count);
 
         // Nếu count thay đổi so với lần trước → reload danh sách yêu cầu
         // (không reset filter, chỉ gọi lại renderWebRequests với filter hiện tại)
@@ -3759,13 +3826,9 @@ function _initInvoiceModal() {
         // Nếu có → yêu cầu lưu trước để BE và FE dùng cùng 1 nguồn dữ liệu
         const unsavedChanges = _hasUnsavedGuestChanges();
         if (unsavedChanges) {
-          const modalError = document.getElementById('modalError');
-          if (modalError) {
-            modalError.textContent = 'Vui lòng lưu lịch hẹn trước khi mở hóa đơn (có thay đổi chưa được lưu).';
-            modalError.classList.remove('d-none');
-            // Scroll lên để user thấy thông báo
-            modalError.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          }
+          _showModalError('Vui lòng lưu lịch hẹn trước khi mở hóa đơn (có thay đổi chưa được lưu).');
+          // Scroll lên để user thấy thông báo
+          document.getElementById('modalError')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
           return;
         }
         await _openInvoiceModal(bookingCode);
@@ -4014,16 +4077,8 @@ function _recalcInvoiceTotals() {
   let discountValue = parseFloat(discountInput?.value || 0) || 0;
   const dtype = discountType?.value || 'NONE';  // NONE | AMOUNT | PERCENT
 
-  let discountAmount = 0;
-  if (dtype === 'PERCENT') {
-    discountAmount = Math.round(subtotal * discountValue / 100);
-  } else if (dtype === 'AMOUNT') {
-    discountAmount = discountValue;
-  }
-  // NONE → discountAmount = 0
-
   // Clamp: 0 ≤ discount ≤ subtotal
-  discountAmount = Math.max(0, Math.min(discountAmount, subtotal));
+  const discountAmount = _calcDiscountAmount(subtotal, dtype, discountValue);
   const finalAmount = subtotal - discountAmount;
   const remaining   = Math.max(finalAmount - paidAmount, 0);
 
@@ -4089,12 +4144,7 @@ async function _submitInvoicePayment() {
   if (payAmount > 0 && !(_invoiceData._createMode)) {
     const subtotalCheck = parseFloat(_invoiceData.subtotal) || 0;
     const paidCheck     = parseFloat(_invoiceData.paidAmount) || 0;
-    let discountAmountCheck = 0;
-    if (dtype === 'PERCENT') {
-      discountAmountCheck = Math.round(subtotalCheck * discountValue / 100);
-    } else if (dtype === 'AMOUNT') {
-      discountAmountCheck = Math.min(discountValue, subtotalCheck);
-    }
+    const discountAmountCheck = _calcDiscountAmount(subtotalCheck, dtype, discountValue);
     const finalCheck     = Math.max(subtotalCheck - discountAmountCheck, 0);
     const remainingCheck = Math.max(finalCheck - paidCheck, 0);
     if (finalCheck === 0) {
@@ -4113,21 +4163,11 @@ async function _submitInvoicePayment() {
   if (_invoiceData._createMode || !bookingCode) {
     // Tính final sau discount
     const subtotal = parseFloat(_invoiceData.subtotal) || 0;
-    let discountAmount = 0;
-    if (dtype === 'PERCENT') {
-      discountAmount = Math.round(subtotal * discountValue / 100);
-    } else if (dtype === 'AMOUNT') {
-      discountAmount = Math.min(discountValue, subtotal);
-    }
+    const discountAmount = _calcDiscountAmount(subtotal, dtype, discountValue);
     const finalAmount = subtotal - discountAmount;
 
     // Xác định payStatus
-    let payStatus = 'UNPAID';
-    if (payAmount >= finalAmount && finalAmount > 0) {
-      payStatus = 'PAID';
-    } else if (payAmount > 0) {
-      payStatus = 'PARTIAL';
-    }
+    const payStatus = _calcPayStatus(finalAmount, payAmount);
 
     // Lưu vào state tạm
     _createModePayment = {
@@ -4189,8 +4229,7 @@ async function _submitInvoicePayment() {
     _updatePaymentSummary();
 
     // Refresh grid
-    await refreshData();
-    await renderWebRequests();
+    await _refreshAll();
 
     const statusLabels = { UNPAID: 'Chưa thanh toán', PARTIAL: 'Thanh toán một phần', PAID: 'Đã thanh toán' };
     showToast('success', 'Thanh toán thành công', statusLabels[result.paymentStatus] || result.paymentStatus);
@@ -4252,8 +4291,7 @@ async function _submitInvoiceRefund() {
     _updatePaymentSummary();
 
     // Refresh grid
-    await refreshData();
-    await renderWebRequests();
+    await _refreshAll();
 
     showToast('success', 'Hoàn tiền thành công', 'Đã hoàn tiền hóa đơn');
 

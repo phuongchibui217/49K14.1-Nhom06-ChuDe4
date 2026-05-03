@@ -14,6 +14,8 @@ Author: Spa ANA Team
 
 import json
 import re
+import traceback
+import logging
 from datetime import datetime
 from decimal import Decimal
 
@@ -21,6 +23,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.db.models import Q
 from django.db import transaction
+from django.utils import timezone
 
 from .models import Appointment, Booking, Room, Invoice, InvoiceItem, InvoicePayment
 from customers.models import CustomerProfile
@@ -29,6 +32,10 @@ from spa_services.models import ServiceVariant
 from .serializers import serialize_appointment, serialize_booking
 from .services import validate_appointment_create, _get_appt_duration
 from core.api_response import staff_api, get_or_404
+
+logger = logging.getLogger(__name__)
+
+_EMAIL_RE = re.compile(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
 
 
 # ============================================================
@@ -51,6 +58,170 @@ def _get_variant_price(service_variant):
         return Decimal(str(service_variant.price))
     return Decimal('0')
 
+
+# ── Pure-function helpers (no side effects) ──────────────────────────────────
+
+def _normalize_discount_type(dtype):
+    """
+    Normalize discount type string về một trong {'NONE', 'AMOUNT', 'PERCENT'}.
+    Chấp nhận alias cũ 'VND' → 'AMOUNT'.
+    Fallback về 'NONE' nếu giá trị không hợp lệ.
+    """
+    raw = str(dtype or 'NONE').strip().upper()
+    if raw == 'VND':
+        raw = 'AMOUNT'
+    if raw not in {'NONE', 'AMOUNT', 'PERCENT'}:
+        raw = 'NONE'
+    return raw
+
+
+def _calc_discount(subtotal, dtype, dvalue):
+    """
+    Tính discount_amount từ subtotal + type + value.
+    Kết quả được clamp về [0, subtotal].
+
+    dtype  : 'NONE' | 'AMOUNT' | 'PERCENT'  (đã normalize)
+    dvalue : Decimal
+    Returns: (discount_amount: Decimal, effective_dtype: str, effective_dvalue: Decimal)
+             effective_dtype/dvalue phản ánh giá trị thực tế sau khi tính
+             (NONE nếu kết quả = 0).
+    """
+    if dtype == 'PERCENT' and dvalue:
+        amount = (subtotal * dvalue / Decimal('100')).quantize(Decimal('1'))
+        amount = max(Decimal('0'), min(amount, subtotal))
+    elif dtype == 'AMOUNT' and dvalue:
+        amount = min(dvalue, subtotal)
+        amount = max(Decimal('0'), amount)
+    else:
+        amount = Decimal('0')
+
+    if amount == Decimal('0'):
+        return Decimal('0'), 'NONE', Decimal('0')
+    return amount, dtype, dvalue
+
+
+def _calc_payment_status(final_amount, total_paid, has_any_service):
+    """
+    Tính payment status từ final_amount, total_paid và has_any_service.
+
+    Rules (BUG-06):
+    - final == 0 VÀ có dịch vụ → PAID (discount 100%)
+    - total_paid <= 0           → UNPAID
+    - total_paid >= final       → PAID
+    - còn lại                   → PARTIAL
+    """
+    if final_amount == Decimal('0') and has_any_service:
+        return 'PAID'
+    if total_paid <= Decimal('0'):
+        return 'UNPAID'
+    if total_paid >= final_amount:
+        return 'PAID'
+    return 'PARTIAL'
+
+
+def _is_valid_vn_phone(phone):
+    """
+    Kiểm tra phone VN hợp lệ: 10 số, bắt đầu bằng 0.
+    phone phải đã được strip về digits trước khi gọi.
+    """
+    return bool(re.match(r'^0\d{9}$', phone or ''))
+
+
+def _time_to_minutes(t):
+    """Chuyển time object sang số phút từ 00:00."""
+    return t.hour * 60 + t.minute
+
+
+def _count_db_overlaps(room_code, appt_date, start_min, end_min, exclude_codes=None):
+    """
+    Đếm số Appointment trong DB overlap với slot (room_code, appt_date, start_min, end_min).
+
+    Exclude:
+    - status='CANCELLED'
+    - booking__status IN ('CANCELLED', 'REJECTED')
+    - appointment_code IN exclude_codes (nếu có)
+
+    Returns: int — số lịch overlap trong DB.
+    """
+    qs = Appointment.objects.filter(
+        room__code=room_code,
+        appointment_date=appt_date,
+        deleted_at__isnull=True,
+    ).exclude(
+        status='CANCELLED'
+    ).exclude(
+        booking__status__in=['CANCELLED', 'REJECTED']
+    )
+    if exclude_codes:
+        qs = qs.exclude(appointment_code__in=exclude_codes)
+
+    count = 0
+    for ex in qs:
+        ex_start = _time_to_minutes(ex.appointment_time)
+        ex_end   = ex_start + _get_appt_duration(ex)
+        if start_min < ex_end and ex_start < end_min:
+            count += 1
+    return count
+
+
+def _resolve_customer_from_guest(g, cleaned):
+    """
+    Resolve CustomerProfile từ dữ liệu guest.
+
+    Thứ tự ưu tiên:
+    1. g['customerId'] → CustomerProfile.objects.get(id=...) — raise nếu không tìm thấy
+    2. cleaned phone/email → _resolve_or_create_customer — raise nếu lỗi
+    3. Không có gì → return None
+
+    Exceptions KHÔNG được nuốt — caller tự quyết định xử lý:
+    - create_batch: catch DoesNotExist / Exception → append error + continue
+    - confirm_online_request: wrap try/except riêng để silent nếu cần
+    """
+    cust_id = g.get('customerId')
+    phone   = cleaned.get('phone') or ''
+    email   = cleaned.get('email') or ''
+    name    = cleaned.get('customer_name', '')
+
+    if cust_id:
+        return CustomerProfile.objects.get(id=cust_id)
+    if phone or email:
+        return _resolve_or_create_customer(phone=phone, email=email, customer_name=name)
+    return None
+
+
+def _create_invoice_items(invoice, appointments):
+    """
+    Tạo InvoiceItem cho từng appointment thuộc invoice.
+    Dùng chung cho _create_invoice_and_payment và _rebuild_invoice.
+
+    Logic giữ nguyên:
+    - unit_price  = _get_variant_price(appt.service_variant)
+    - description = "{service.name} — {variant.label}" nếu có service_id,
+                    ngược lại = variant.label hoặc ''
+    - quantity    = 1
+    - line_total  = unit_price
+    """
+    for appt in appointments:
+        unit_price = _get_variant_price(appt.service_variant)
+        desc = ''
+        if appt.service_variant_id:
+            try:
+                sv = appt.service_variant
+                desc = f"{sv.service.name} — {sv.label}" if sv.service_id else sv.label or ''
+            except Exception:
+                pass
+        InvoiceItem.objects.create(
+            invoice=invoice,
+            appointment=appt,
+            service_variant=appt.service_variant,
+            description=desc,
+            quantity=1,
+            unit_price=unit_price,
+            line_total=unit_price,
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 
 def _resolve_or_create_customer(phone=None, email=None, customer_name=''):
     """
@@ -142,24 +313,10 @@ def _create_invoice_and_payment(booking, appointments, pay_status, payment_data,
         subtotal += _get_variant_price(appt.service_variant)
 
     # BUG-001 FIX: Tính discount từ tham số truyền vào (thay vì hardcode 0)
-    raw_dtype = str(discount_type or 'NONE').strip().upper()
-    if raw_dtype == 'VND':
-        raw_dtype = 'AMOUNT'
-    if raw_dtype not in {'NONE', 'AMOUNT', 'PERCENT'}:
-        raw_dtype = 'NONE'
-
+    raw_dtype  = _normalize_discount_type(discount_type)
     raw_dvalue = Decimal(str(discount_value)) if discount_value is not None else Decimal('0')
 
-    if raw_dtype == 'PERCENT' and raw_dvalue:
-        discount = (subtotal * raw_dvalue / Decimal('100')).quantize(Decimal('1'))
-        discount = max(Decimal('0'), min(discount, subtotal))
-    elif raw_dtype == 'AMOUNT' and raw_dvalue:
-        discount = min(raw_dvalue, subtotal)
-        discount = max(Decimal('0'), discount)
-    else:
-        discount = Decimal('0')
-        raw_dtype  = 'NONE'
-        raw_dvalue = Decimal('0')
+    discount, raw_dtype, raw_dvalue = _calc_discount(subtotal, raw_dtype, raw_dvalue)
 
     final = max(subtotal - discount, Decimal('0'))
 
@@ -176,24 +333,7 @@ def _create_invoice_and_payment(booking, appointments, pay_status, payment_data,
     )
 
     # Tạo InvoiceItem cho từng appointment
-    for appt in appointments:
-        unit_price = _get_variant_price(appt.service_variant)
-        desc = ''
-        if appt.service_variant_id:
-            try:
-                sv = appt.service_variant
-                desc = f"{sv.service.name} — {sv.label}" if sv.service_id else sv.label or ''
-            except Exception:
-                pass
-        InvoiceItem.objects.create(
-            invoice=invoice,
-            appointment=appt,
-            service_variant=appt.service_variant,
-            description=desc,
-            quantity=1,
-            unit_price=unit_price,
-            line_total=unit_price,
-        )
+    _create_invoice_items(invoice, appointments)
 
     # Tạo InvoicePayment nếu có tiền thu
     if pay_status not in ('UNPAID', 'REFUNDED'):
@@ -220,14 +360,7 @@ def _create_invoice_and_payment(booking, appointments, pay_status, payment_data,
         p.amount for p in invoice.payments.filter(transaction_status='SUCCESS')
     )
     has_any_service = any(a.service_variant_id for a in appointments)
-    if final == Decimal('0') and has_any_service:
-        actual_status = 'PAID'
-    elif total_paid <= Decimal('0'):
-        actual_status = 'UNPAID'
-    elif total_paid >= final:
-        actual_status = 'PAID'
-    else:
-        actual_status = 'PARTIAL'
+    actual_status = _calc_payment_status(final, total_paid, has_any_service)
 
     invoice.status = actual_status
     invoice.save(update_fields=['status'])
@@ -253,11 +386,10 @@ def _validate_status_timing(appt_date, appt_time, duration_minutes, new_status):
     if new_status not in ('ARRIVED', 'COMPLETED'):
         return True, ''
 
-    from django.utils import timezone as _tz
     import datetime as _dt
 
     # Dùng timezone local của server (settings.TIME_ZONE)
-    now_local = _tz.localtime(_tz.now())
+    now_local = timezone.localtime(timezone.now())
     now_date  = now_local.date()
     now_time  = now_local.time()
 
@@ -305,9 +437,6 @@ def _validate_payment_data(pay_status, payment_data, final_amount=None):
 
 def _validate_appointment_data(data):
     """Validate dữ liệu appointment (khách/dịch vụ/phòng/giờ) trước khi tạo."""
-    import re
-    _EMAIL_RE = re.compile(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
-
     errors = []
     cleaned = {}
 
@@ -320,7 +449,7 @@ def _validate_appointment_data(data):
 
     # SĐT khách (tuỳ chọn — nhưng nếu có phải đúng format VN)
     phone = ''.join(filter(str.isdigit, data.get('phone', '')))
-    if phone and not re.match(r'^0\d{9}$', phone):
+    if phone and not _is_valid_vn_phone(phone):
         errors.append('Số điện thoại khách không hợp lệ (phải có 10 số và bắt đầu bằng 0)')
     else:
         cleaned['phone'] = phone or None
@@ -496,15 +625,9 @@ def _rebuild_invoice(booking, appointments=None, discount_type=None, discount_va
     # ── 4. Xác định discount_type / discount_value ────────────────────────────
     # Normalize alias cũ 'VND' → 'AMOUNT' (dù từ request hay từ DB)
     if discount_type is not None:
-        raw_dtype = str(discount_type).strip().upper()
-        if raw_dtype == 'VND':
-            raw_dtype = 'AMOUNT'
-        if raw_dtype not in {'NONE', 'AMOUNT', 'PERCENT'}:
-            raw_dtype = 'NONE'
+        raw_dtype = _normalize_discount_type(discount_type)
     else:
-        raw_dtype = inv.discount_type or 'NONE'
-        if raw_dtype == 'VND':
-            raw_dtype = 'AMOUNT'
+        raw_dtype = _normalize_discount_type(inv.discount_type or 'NONE')
 
     if discount_value is not None:
         raw_dvalue = Decimal(str(discount_value))
@@ -512,16 +635,7 @@ def _rebuild_invoice(booking, appointments=None, discount_type=None, discount_va
         raw_dvalue = inv.discount_value or Decimal('0')
 
     # ── 5. Tính discount_amount (clamp) ──────────────────────────────────────
-    if raw_dtype == 'PERCENT' and raw_dvalue:
-        discount_amount = (subtotal * raw_dvalue / Decimal('100')).quantize(Decimal('1'))
-        discount_amount = max(Decimal('0'), min(discount_amount, subtotal))
-    elif raw_dtype == 'AMOUNT' and raw_dvalue:
-        discount_amount = min(raw_dvalue, subtotal)
-        discount_amount = max(Decimal('0'), discount_amount)
-    else:
-        discount_amount = Decimal('0')
-        raw_dtype  = 'NONE'
-        raw_dvalue = Decimal('0')  # BUG-A07 FIX: reset value về 0 khi type là NONE
+    discount_amount, raw_dtype, raw_dvalue = _calc_discount(subtotal, raw_dtype, raw_dvalue)
 
     final_amount = max(subtotal - discount_amount, Decimal('0'))
 
@@ -540,24 +654,7 @@ def _rebuild_invoice(booking, appointments=None, discount_type=None, discount_va
     if not is_new:
         inv.items.all().delete()
 
-    for appt in appointments:
-        unit_price = _get_variant_price(appt.service_variant)
-        desc = ''
-        if appt.service_variant_id:
-            try:
-                sv = appt.service_variant
-                desc = f"{sv.service.name} — {sv.label}" if sv.service_id else sv.label or ''
-            except Exception:
-                pass
-        InvoiceItem.objects.create(
-            invoice=inv,
-            appointment=appt,
-            service_variant=appt.service_variant,
-            description=desc,
-            quantity=1,
-            unit_price=unit_price,
-            line_total=unit_price,
-        )
+    _create_invoice_items(inv, appointments)
 
     # ── 7. Tính total_paid ────────────────────────────────────────────────────
     if is_new:
@@ -570,14 +667,7 @@ def _rebuild_invoice(booking, appointments=None, discount_type=None, discount_va
     # ── 8. Xác định payment_status ────────────────────────────────────────────
     # BUG-06: Chỉ auto-PAID khi final_amount == 0 VÀ có ít nhất 1 dịch vụ
     has_any_service = any(a.service_variant_id for a in appointments)
-    if final_amount == Decimal('0') and has_any_service:
-        pay_status = 'PAID'
-    elif total_paid <= Decimal('0'):
-        pay_status = 'UNPAID'
-    elif total_paid >= final_amount:
-        pay_status = 'PAID'
-    else:
-        pay_status = 'PARTIAL'
+    pay_status = _calc_payment_status(final_amount, total_paid, has_any_service)
 
     # ── 9. Save Invoice ───────────────────────────────────────────────────────
     inv.subtotal_amount = subtotal
@@ -801,7 +891,6 @@ def api_appointments_list(request):
         qs = qs.order_by('appointment_date', 'appointment_time')
         return JsonResponse({'success': True, 'appointments': [serialize_appointment(a) for a in qs]})
     except Exception:
-        import traceback
         traceback.print_exc()
         return JsonResponse({'success': False, 'error': 'Không thể tải lịch hẹn. Vui lòng thử lại sau.'}, status=500)
 
@@ -839,7 +928,6 @@ def api_booking_detail(request, booking_code):
         .select_related('booking', 'customer', 'service_variant__service', 'room')
         .order_by('appointment_date', 'appointment_time')
     )
-    from .serializers import serialize_booking
     return JsonResponse({
         'success': True,
         'booking': serialize_booking(booking),
@@ -912,14 +1000,7 @@ def api_booking_invoice(request, booking_code):
 
     # Luôn recalculate discount_amount từ discount_type + discount_value + subtotal hiện tại
     # (không dùng discount_amount cũ trong DB — subtotal có thể đã thay đổi do đổi variant)
-    if discount_type == 'PERCENT' and discount_value:
-        discount_amount = (subtotal * discount_value / Decimal('100')).quantize(Decimal('1'))
-        discount_amount = max(Decimal('0'), min(discount_amount, subtotal))
-    elif discount_type == 'AMOUNT' and discount_value:
-        discount_amount = min(discount_value, subtotal)
-        discount_amount = max(Decimal('0'), discount_amount)
-    else:
-        discount_amount = Decimal('0')
+    discount_amount, _, _ = _calc_discount(subtotal, discount_type, discount_value)
 
     # Tính lại final từ subtotal hiện tại — không được âm
     final     = max(subtotal - discount_amount, Decimal('0'))
@@ -983,13 +1064,7 @@ def api_booking_invoice_pay(request, booking_code):
         return JsonResponse({'success': False, 'error': 'Dữ liệu không hợp lệ'}, status=400)
 
     # ── Đọc & validate input ─────────────────────────────────────────────────
-    raw_dtype = (raw.get('discountType') or 'NONE').strip().upper()
-    # Chấp nhận cả alias cũ 'VND' → 'AMOUNT'
-    if raw_dtype == 'VND':
-        raw_dtype = 'AMOUNT'
-    valid_dtypes = {'NONE', 'AMOUNT', 'PERCENT'}
-    if raw_dtype not in valid_dtypes:
-        raw_dtype = 'NONE'
+    raw_dtype = _normalize_discount_type(raw.get('discountType') or 'NONE')
 
     try:
         discount_value = Decimal(str(raw.get('discountValue') or 0))
@@ -1066,14 +1141,7 @@ def api_booking_invoice_pay(request, booking_code):
             a.service_variant_id
             for a in Appointment.objects.filter(booking=locked_booking, deleted_at__isnull=True)
         )
-        if final_amount == Decimal('0') and has_any_service:
-            new_pay_status = 'PAID'
-        elif total_paid <= Decimal('0'):
-            new_pay_status = 'UNPAID'
-        elif total_paid >= final_amount:
-            new_pay_status = 'PAID'
-        else:
-            new_pay_status = 'PARTIAL'
+        new_pay_status = _calc_payment_status(final_amount, total_paid, has_any_service)
 
         inv.status = new_pay_status
         inv.save(update_fields=['status'])
@@ -1171,11 +1239,10 @@ def api_appointment_create_batch(request):
 
         if not booker_name:
             return JsonResponse({'success': False, 'error': 'Vui lòng nhập họ tên người đặt'}, status=400)
-        if not booker_phone or not re.match(r'^0\d{9}$', booker_phone):
+        if not booker_phone or not _is_valid_vn_phone(booker_phone):
             return JsonResponse({'success': False, 'error': 'Số điện thoại người đặt không hợp lệ (phải có 10 số và bắt đầu bằng 0)'}, status=400)
         if booker_email:
-            import re as _re
-            if not _re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', booker_email):
+            if not _EMAIL_RE.match(booker_email):
                 return JsonResponse({'success': False, 'error': 'Email không hợp lệ'}, status=400)
 
         valid_sources = {'DIRECT', 'ONLINE', 'PHONE', 'FACEBOOK', 'ZALO'}
@@ -1198,11 +1265,7 @@ def api_appointment_create_batch(request):
             booking_pay_status = 'UNPAID'
 
         # BUG-001 FIX: Đọc discount từ booker payload (FE gửi từ _createModePayment)
-        booking_discount_type  = (booker.get('discountType') or 'NONE').strip().upper()
-        if booking_discount_type == 'VND':
-            booking_discount_type = 'AMOUNT'
-        if booking_discount_type not in {'NONE', 'AMOUNT', 'PERCENT'}:
-            booking_discount_type = 'NONE'
+        booking_discount_type  = _normalize_discount_type(booker.get('discountType') or 'NONE')
         try:
             booking_discount_value = Decimal(str(booker.get('discountValue') or 0))
         except Exception:
@@ -1238,10 +1301,6 @@ def api_appointment_create_batch(request):
         # V-11: Cross-guest conflict check — không cho 2 khách cùng phòng cùng giờ overlap
         if len(validated_guests) > 1:
             from datetime import datetime as _dt, timedelta as _td, date as _date
-            def _to_minutes(t):
-                """Chuyển time object sang số phút từ 00:00."""
-                return t.hour * 60 + t.minute
-
             for i in range(len(validated_guests)):
                 for j in range(i + 1, len(validated_guests)):
                     _, _, ci = validated_guests[i]
@@ -1264,9 +1323,9 @@ def api_appointment_create_batch(request):
                     dur_j  = cj.get('duration_minutes', 60)
                     if not time_i or not time_j:
                         continue
-                    start_i = _to_minutes(time_i)
+                    start_i = _time_to_minutes(time_i)
                     end_i   = start_i + dur_i
-                    start_j = _to_minutes(time_j)
+                    start_j = _time_to_minutes(time_j)
                     end_j   = start_j + dur_j
                     if start_i < end_j and start_j < end_i:
                         return JsonResponse(
@@ -1283,10 +1342,6 @@ def api_appointment_create_batch(request):
         # BUG-002 FIX: Capacity check tổng hợp — DB slots + request slots cùng phòng/giờ
         # validate_appointment_create chỉ check từng khách riêng lẻ với DB, không tính
         # các khách khác trong cùng request (chưa được lưu). Cần cộng dồn thủ công.
-        from .services import check_room_availability as _check_room
-        def _to_minutes_cap(t):
-            return t.hour * 60 + t.minute
-
         # Nhóm validated_guests theo (room_code, date) để check capacity từng nhóm
         from collections import defaultdict
         room_date_groups = defaultdict(list)  # key=(room_code, date) → list of (idx, start_min, end_min)
@@ -1297,7 +1352,7 @@ def api_appointment_create_batch(request):
             dur = cleaned.get('duration_minutes', 60)
             if not room or not appt_date or not appt_time:
                 continue
-            start_min = _to_minutes_cap(appt_time)
+            start_min = _time_to_minutes(appt_time)
             end_min   = start_min + dur
             room_date_groups[(room.code, appt_date)].append((idx_g + 1, start_min, end_min, room))
 
@@ -1309,28 +1364,7 @@ def api_appointment_create_batch(request):
 
             for slot_idx, (guest_num, start_min, end_min, _) in enumerate(slots):
                 # Đếm số lịch trong DB overlap với slot này (exclude CANCELLED/REJECTED)
-                from .services import _calc_end_time as _cet
-                import datetime as _datetime_mod
-                appt_time_obj = _datetime_mod.time(start_min // 60, start_min % 60)
-                dur_min = end_min - start_min
-
-                db_count = 0
-                existing_qs = Appointment.objects.filter(
-                    room__code=room_code,
-                    appointment_date=appt_date,
-                    deleted_at__isnull=True,
-                ).exclude(
-                    status='CANCELLED'
-                ).exclude(
-                    booking__status__in=['CANCELLED', 'REJECTED']
-                )
-                for ex in existing_qs:
-                    from .services import _get_appt_duration as _gad
-                    ex_dur = _gad(ex)
-                    ex_start = ex.appointment_time.hour * 60 + ex.appointment_time.minute
-                    ex_end   = ex_start + ex_dur
-                    if start_min < ex_end and ex_start < end_min:
-                        db_count += 1
+                db_count = _count_db_overlaps(room_code, appt_date, start_min, end_min)
 
                 # Đếm số khách trong request overlap với slot này (không tính chính nó)
                 request_count = 0
@@ -1393,19 +1427,11 @@ def api_appointment_create_batch(request):
 
             for idx, g, cleaned in validated_guests:
                 label = f"Khach {idx + 1}"
-                customer_id  = g.get('customerId')
-                guest_phone  = cleaned.get('phone') or ''
-                guest_email  = cleaned.get('email') or ''
-                guest_name   = cleaned.get('customer_name', '')
+                guest_name = cleaned.get('customer_name', '')
 
                 customer = None
                 try:
-                    if customer_id:
-                        customer = CustomerProfile.objects.get(id=customer_id)
-                    elif guest_phone or guest_email:
-                        customer = _resolve_or_create_customer(
-                            phone=guest_phone, email=guest_email, customer_name=guest_name,
-                        )
+                    customer = _resolve_customer_from_guest(g, cleaned)
                 except CustomerProfile.DoesNotExist:
                     errors.append(f"{label}: Không tìm thấy khách hàng")
                     continue
@@ -1464,7 +1490,6 @@ def api_appointment_create_batch(request):
         })
 
     except Exception as e:
-        import traceback
         traceback.print_exc()
         return JsonResponse({'success': False, 'error': str(e) or 'Không thể tạo lịch hẹn. Vui lòng thử lại sau'}, status=400)
 
@@ -1483,8 +1508,7 @@ def api_appointment_update(request, appointment_code):
     Lý do: update-batch là atomic (1 transaction cho toàn booking),
     tự rebuild invoice, và là endpoint duy nhất frontend sử dụng.
     """
-    import logging as _logging
-    _logging.getLogger(__name__).error(
+    logger.error(
         '[REMOVED] api_appointment_update (%s) bị gọi — client phải dùng update-batch',
         appointment_code,
     )
@@ -1564,7 +1588,7 @@ def api_booking_update_batch(request, booking_code):
 
     if not new_booker_name:
         return JsonResponse({'success': False, 'error': 'Vui lòng nhập họ tên người đặt'}, status=400)
-    if not new_booker_phone or not re.match(r'^0\d{9}$', new_booker_phone):
+    if not new_booker_phone or not _is_valid_vn_phone(new_booker_phone):
         return JsonResponse({'success': False, 'error': 'Số điện thoại người đặt không hợp lệ (phải có 10 số và bắt đầu bằng 0)'}, status=400)
 
     valid_appt_statuses = {choice[0] for choice in Appointment.STATUS_CHOICES}
@@ -1586,13 +1610,12 @@ def api_booking_update_batch(request, booking_code):
 
         # Validate phone nếu có
         phone = ''.join(filter(str.isdigit, g.get('phone', '')))
-        if phone and not re.match(r'^0\d{9}$', phone):
+        if phone and not _is_valid_vn_phone(phone):
             pre_errors.append(f'{label}Số điện thoại khách không hợp lệ (phải có 10 số và bắt đầu bằng 0)')
 
         # Validate email nếu có
-        import re as _re
         email = g.get('email', '').strip()
-        if email and not _re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
+        if email and not _EMAIL_RE.match(email):
             pre_errors.append(f'{label}Email không hợp lệ')
 
         # Validate service/variant: có serviceId nhưng không có variantId → lỗi
@@ -1670,7 +1693,7 @@ def api_booking_update_batch(request, booking_code):
 
             if not room_code:
                 continue
-            start_min = appt_time.hour * 60 + appt_time.minute
+            start_min = _time_to_minutes(appt_time)
             end_min   = start_min + dur
             _slot_list.append((appt_code, room_code, appt_date, start_min, end_min))
 
@@ -1691,24 +1714,10 @@ def api_booking_update_batch(request, booking_code):
 
             for appt_code, _, _, start_min, end_min in slots:
                 # Đếm DB slots overlap (exclude chính appointment này)
-                db_count = 0
-                existing_qs = Appointment.objects.filter(
-                    room__code=room_code,
-                    appointment_date=appt_date,
-                    deleted_at__isnull=True,
-                ).exclude(
-                    status='CANCELLED'
-                ).exclude(
-                    booking__status__in=['CANCELLED', 'REJECTED']
-                ).exclude(
-                    appointment_code=appt_code
+                db_count = _count_db_overlaps(
+                    room_code, appt_date, start_min, end_min,
+                    exclude_codes=[appt_code],
                 )
-                for ex in existing_qs:
-                    ex_dur   = _get_appt_duration(ex)
-                    ex_start = ex.appointment_time.hour * 60 + ex.appointment_time.minute
-                    ex_end   = ex_start + ex_dur
-                    if start_min < ex_end and ex_start < end_min:
-                        db_count += 1
 
                 # Đếm các guest khác trong request overlap với slot này
                 req_count = 0
@@ -1731,8 +1740,7 @@ def api_booking_update_batch(request, booking_code):
                             status=400,
                         )
     except Exception as _cap_err:
-        import logging as _log
-        _log.getLogger(__name__).warning('update-batch capacity pre-check error: %s', _cap_err)
+        logger.warning('update-batch capacity pre-check error: %s', _cap_err)
         # Không block request nếu pre-check lỗi — validate_appointment_create trong transaction vẫn chạy
 
     # ── Thực hiện trong 1 transaction atomic ─────────────────────────────────
@@ -1935,18 +1943,16 @@ def api_booking_update_batch(request, booking_code):
                     )
 
         # Serialize kết quả sau transaction
-        from .serializers import serialize_appointment as _sa
         return JsonResponse({
             'success':      True,
             'message':      f'Đã cập nhật {len(updated_appts)} lịch hẹn',
-            'appointments': [_sa(a) for a in updated_appts],
+            'appointments': [serialize_appointment(a) for a in updated_appts],
             'bookingCode':  booking_code,
         })
 
     except ValueError as ve:
         return JsonResponse({'success': False, 'error': str(ve)}, status=400)
     except Exception as e:
-        import traceback
         traceback.print_exc()
         return JsonResponse({'success': False, 'error': f'Lỗi: {str(e)}'}, status=500)
 
@@ -1997,7 +2003,6 @@ def api_appointment_status(request, appointment_code):
 
             if new_status == 'CONFIRMED':
                 # Xac nhan: kiem tra trung lich cho tung appointment trong booking
-                from .services import validate_appointment_create, _get_appt_duration
                 all_appts = list(booking.appointments.filter(deleted_at__isnull=True))
                 for appt_to_check in all_appts:
                     duration  = _get_appt_duration(appt_to_check)
@@ -2022,7 +2027,6 @@ def api_appointment_status(request, appointment_code):
                 ).exclude(status='COMPLETED').update(status='NOT_ARRIVED')
 
             if new_status == 'CANCELLED':
-                from django.utils import timezone
                 booking.cancelled_at = timezone.now()
                 # Huy tat ca appointment chua hoan thanh
                 booking.appointments.filter(
@@ -2087,7 +2091,6 @@ def api_appointment_status(request, appointment_code):
 @staff_api
 def api_appointment_delete(request, appointment_code):
     """[TAB 1] POST /api/appointments/<code>/delete/ - Xoa mem lich hen."""
-    from django.utils import timezone
     try:
         appointment = Appointment.objects.get(appointment_code=appointment_code, deleted_at__isnull=True)
     except Appointment.DoesNotExist:
@@ -2347,7 +2350,7 @@ def api_confirm_online_request(request, booking_code):
                 dur       = cleaned.get('duration_minutes', 60)
                 if not room_obj or not appt_date or not appt_time:
                     continue
-                start_min = appt_time.hour * 60 + appt_time.minute
+                start_min = _time_to_minutes(appt_time)
                 end_min   = start_min + dur
                 # Lấy appointment_code gốc (nếu có) để exclude khi check DB
                 orig_code = existing_appts[idx].appointment_code if idx < len(existing_appts) else None
@@ -2368,24 +2371,10 @@ def api_confirm_online_request(request, booking_code):
                     continue
 
                 for orig_code, _, _, start_min, end_min in slots:
-                    db_count = 0
-                    existing_qs = Appointment.objects.filter(
-                        room__code=room_code,
-                        appointment_date=appt_date,
-                        deleted_at__isnull=True,
-                    ).exclude(
-                        status='CANCELLED'
-                    ).exclude(
-                        booking__status__in=['CANCELLED', 'REJECTED']
+                    db_count = _count_db_overlaps(
+                        room_code, appt_date, start_min, end_min,
+                        exclude_codes=[orig_code] if orig_code else None,
                     )
-                    if orig_code:
-                        existing_qs = existing_qs.exclude(appointment_code=orig_code)
-                    for ex in existing_qs:
-                        ex_dur   = _get_appt_duration(ex)
-                        ex_start = ex.appointment_time.hour * 60 + ex.appointment_time.minute
-                        ex_end   = ex_start + ex_dur
-                        if start_min < ex_end and ex_start < end_min:
-                            db_count += 1
 
                     req_count = 0
                     for other_orig, _, _, other_start, other_end in slots:
@@ -2424,22 +2413,11 @@ def api_confirm_online_request(request, booking_code):
                     appt.status                 = 'NOT_ARRIVED'
 
                     # Resolve customer profile
-                    phone = cleaned.get('phone') or ''
-                    email = cleaned.get('email') or ''
-                    cust_id = g.get('customerId')
-                    if cust_id:
-                        try:
-                            appt.customer = CustomerProfile.objects.get(id=cust_id)
-                        except CustomerProfile.DoesNotExist:
-                            pass
-                    elif phone or email:
-                        try:
-                            appt.customer = _resolve_or_create_customer(
-                                phone=phone, email=email,
-                                customer_name=cleaned['customer_name'],
-                            )
-                        except Exception:
-                            pass
+                    try:
+                        resolved = _resolve_customer_from_guest(g, cleaned)
+                    except Exception:
+                        resolved = None
+                    appt.customer = resolved or appt.customer
 
                     appt.save(update_fields=[
                         'service_variant', 'room', 'appointment_date', 'appointment_time',
@@ -2449,23 +2427,10 @@ def api_confirm_online_request(request, booking_code):
                     updated_appts.append(appt)
                 else:
                     # Tao them appointment moi neu guest nhieu hon appointment goc
-                    phone = cleaned.get('phone') or ''
-                    email = cleaned.get('email') or ''
-                    cust_id = g.get('customerId')
-                    customer = None
-                    if cust_id:
-                        try:
-                            customer = CustomerProfile.objects.get(id=cust_id)
-                        except CustomerProfile.DoesNotExist:
-                            pass
-                    elif phone or email:
-                        try:
-                            customer = _resolve_or_create_customer(
-                                phone=phone, email=email,
-                                customer_name=cleaned['customer_name'],
-                            )
-                        except Exception:
-                            pass
+                    try:
+                        customer = _resolve_customer_from_guest(g, cleaned)
+                    except Exception:
+                        customer = None
 
                     appt = Appointment.objects.create(
                         booking=booking,
@@ -2482,9 +2447,8 @@ def api_confirm_online_request(request, booking_code):
                     updated_appts.append(appt)
 
             # Soft-delete cac appointment goc thua (neu guest it hon appointment goc)
-            from django.utils import timezone as _tz
             for extra_appt in existing_appts[len(validated):]:
-                extra_appt.deleted_at = _tz.now()
+                extra_appt.deleted_at = timezone.now()
                 extra_appt.deleted_by_user = request.user
                 extra_appt.save(update_fields=['deleted_at', 'deleted_by_user'])
 
@@ -2510,7 +2474,6 @@ def api_confirm_online_request(request, booking_code):
         })
 
     except Exception as e:
-        import traceback
         traceback.print_exc()
         return JsonResponse({'success': False, 'error': str(e) or 'Không thể xác nhận yêu cầu'}, status=400)
 
@@ -2521,7 +2484,6 @@ def api_booking_pending_count(request):
     if not _is_staff(request.user):
         return _deny()
     try:
-        from django.utils import timezone
         count = Booking.objects.filter(
             source='ONLINE',
             status='PENDING',
@@ -2541,9 +2503,9 @@ def api_customer_cancelled_recent(request):
     if not _is_staff(request.user):
         return _deny()
 
-    from django.utils import timezone
+    from datetime import timedelta
     minutes = int(request.GET.get('minutes', 10))
-    since   = timezone.now() - __import__('datetime').timedelta(minutes=minutes)
+    since   = timezone.now() - timedelta(minutes=minutes)
 
     bookings = Booking.objects.filter(
         source='ONLINE',
@@ -2583,7 +2545,7 @@ def api_customer_note_update(request, phone):
     Không ảnh hưởng đến booking hay appointment.
     """
     phone_digits = ''.join(filter(str.isdigit, phone or ''))
-    if not phone_digits or not re.match(r'^0\d{9}$', phone_digits):
+    if not phone_digits or not _is_valid_vn_phone(phone_digits):
         return JsonResponse({'success': False, 'error': 'Số điện thoại không hợp lệ (phải có 10 số và bắt đầu bằng 0)'}, status=400)
 
     try:
