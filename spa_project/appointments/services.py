@@ -106,7 +106,7 @@ def check_room_availability(
     ).exclude(
         status='CANCELLED'
     ).exclude(
-        booking__status__in=['CANCELLED', 'REJECTED']
+        booking__status__in=['CANCELLED', 'REJECTED', 'PENDING']
     )
 
     if exclude_appointment_code:

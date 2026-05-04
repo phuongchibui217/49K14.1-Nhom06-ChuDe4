@@ -881,11 +881,12 @@ function renderGrid(){
   }
 
   ROOMS.forEach((r)=>{
-    // Lọc lịch theo phòng — dùng roomCode (khớp với serializer)
-    // Hiển thị tất cả trừ CANCELLED/REJECTED
+    // Lọc lịch theo phòng — chỉ hiển thị lịch đã CONFIRMED
+    // PENDING không hiển thị trên grid (chỉ ở tab Yêu cầu đặt lịch)
     let appts = APPOINTMENTS.filter(a =>
       a.date === day &&
       a.roomCode === r.id &&
+      (a.bookingStatus || '').toUpperCase() === 'CONFIRMED' &&
       !['CANCELLED', 'REJECTED'].includes((a.apptStatus || '').toUpperCase())
     );
 
@@ -918,13 +919,8 @@ function renderGrid(){
         const a = p.appt;
         const block = document.createElement("div");
 
-        // BUG-07: ONLINE PENDING → hiển thị với class riêng, không cho click sửa
-        const isOnlinePending = (a.source || '').toUpperCase() === 'ONLINE'
-          && (a.bookingStatus || '').toUpperCase() === 'PENDING';
-
-        block.className = isOnlinePending
-          ? 'appt appt-online-pending'
-          : `appt ${statusClass(a.apptStatus)}`;
+        // Tab Lịch theo phòng chỉ hiển thị CONFIRMED — không có pending ở đây nữa
+        block.className = `appt ${statusClass(a.apptStatus)}`;
         block.dataset.id = a.id;
 
         const leftMin = minutesFromStart(a.start);
@@ -946,23 +942,10 @@ function renderGrid(){
         const svcText   = a.serviceCode || a.service || '';
         const custText  = a.customerName || '';
 
-        if (isOnlinePending) {
-          // ONLINE PENDING: hiển thị icon web + tên khách, tooltip hướng dẫn
-          const titleText = custText || svcText || 'Đặt online';
-          block.title = `Yêu cầu online đang chờ xác nhận — ${a.start}–${endLabel}\nVào tab "Yêu cầu đặt lịch" để xử lý`;
-          block.innerHTML = `<div class="appt-content"><div class="t1"><i class="fas fa-globe" style="font-size:.65rem;opacity:.8;margin-right:3px;"></i>${titleText}</div><div class="t2">${a.start}–${endLabel}</div></div>`;
-          // Click → chuyển sang tab Yêu cầu đặt lịch thay vì mở edit modal
-          block.addEventListener("click", (ev) => {
-            ev.stopPropagation();
-            const tabWeb = document.getElementById('tab-web');
-            if (tabWeb) tabWeb.click();
-          });
-        } else {
-          const titleText = svcText && custText ? `${svcText} · ${custText}` : (svcText || custText || 'Chưa chọn DV');
-          block.innerHTML = `<div class="appt-content"><div class="t1">${titleText}</div><div class="t2">${a.start}–${endLabel}</div></div>${paidIcon}`;
-          // click vào lịch ==> sửa
-          block.addEventListener("click", (ev)=>{ ev.stopPropagation(); openEditModal(a.id); });
-        }
+        const titleText = svcText && custText ? `${svcText} · ${custText}` : (svcText || custText || 'Chưa chọn DV');
+        block.innerHTML = `<div class="appt-content"><div class="t1">${titleText}</div><div class="t2">${a.start}–${endLabel}</div></div>${paidIcon}`;
+        // click vào lịch ==> sửa
+        block.addEventListener("click", (ev)=>{ ev.stopPropagation(); openEditModal(a.id); });
 
         slotsEl.appendChild(block);
       });
