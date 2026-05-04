@@ -2014,6 +2014,44 @@ def api_appointment_status(request, appointment_code):
                             'error': f'Lịch {appt_to_check.appointment_code}: {validation["errors"][0]}',
                             'conflict': True,
                         }, status=409)
+
+                # CAP-01 FIX: Cross-capacity check toan bo appointments trong booking.
+                # validate_appointment_create o tren chi check tung appointment rieng le
+                # voi DB — khong tinh cac appointments khac trong cung booking nay (vi
+                # chung dang PENDING nen bi exclude khoi DB count).
+                # Vi du: capacity=2, DB co 1 confirmed, booking nay co 2 guests cung phong/gio
+                # -> moi guest check rieng thay DB=1 < 2 -> pass, nhung sau confirm tong = 3 > 2.
+                _confirm_slot_list = []
+                for appt_to_check in all_appts:
+                    if not appt_to_check.room_id:
+                        continue
+                    dur       = _get_appt_duration(appt_to_check)
+                    start_min = _time_to_minutes(appt_to_check.appointment_time)
+                    end_min   = start_min + dur
+                    _confirm_slot_list.append((
+                        appt_to_check.appointment_code,
+                        appt_to_check.room.code,
+                        appt_to_check.appointment_date,
+                        start_min,
+                        end_min,
+                    ))
+
+                if _confirm_slot_list:
+                    _cap_resp = _check_cross_capacity(
+                        _confirm_slot_list,
+                        status_code=409,
+                        conflict_flag=True,
+                        capacity1_msg_fn=lambda code, room, cap: (
+                            f'Lich {code}: Khung gio da co lich o phong {room}, vui long chon thoi gian khac.'
+                        ),
+                        capacityN_msg_fn=lambda code, room, cap: (
+                            f'Lich {code}: Phong {room} da du cho o khung gio nay '
+                            f'(suc chua {cap}), vui long chon phong hoac thoi gian khac.'
+                        ),
+                    )
+                    if _cap_resp:
+                        return _cap_resp
+
                 # Xac nhan OK: chuyen tat ca appointment chua hoan thanh sang NOT_ARRIVED
                 booking.appointments.filter(
                     deleted_at__isnull=True
