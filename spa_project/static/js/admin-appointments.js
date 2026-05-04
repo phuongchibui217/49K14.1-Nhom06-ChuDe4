@@ -185,10 +185,10 @@ async function loadAppointments(date = '') {
   }
 }
 
-async function loadBookingRequests(statusFilter = '', dateFilter = '', searchTerm = '', serviceFilter = '') {
+async function loadBookingRequests(dateFilter = '', searchTerm = '', serviceFilter = '') {
   let url = `${API_BASE}/booking-requests/`;
   const queryParams = [];
-  if (statusFilter)  queryParams.push(`status=${encodeURIComponent(statusFilter)}`);
+  // Backend chỉ trả về PENDING bookings - không cần status filter
   if (dateFilter)    queryParams.push(`date=${encodeURIComponent(dateFilter)}`);
   if (searchTerm)    queryParams.push(`q=${encodeURIComponent(searchTerm)}`);
   if (serviceFilter) queryParams.push(`service=${encodeURIComponent(serviceFilter)}`);
@@ -362,7 +362,11 @@ function pad2(n){ return String(n).padStart(2,"0"); }
 function minutesFromStart(t){ const [h,m]=t.split(":").map(Number); return (h-START_HOUR)*60 + m; }
 
 function addMinutesToTime(t, add){
-  const [h,m]=t.split(":").map(Number);
+  // Extract HH:MM from time string in case it contains date or other info
+  const timeMatch = t.match(/(\d{1,2}):(\d{2})/);
+  if (!timeMatch) return t;
+  const h = parseInt(timeMatch[1], 10);
+  const m = parseInt(timeMatch[2], 10);
   const total = h*60+m+add;
   return `${pad2(Math.floor(total/60))}:${pad2(total%60)}`;
 }
@@ -1002,13 +1006,13 @@ function startCurrentTimeLineInterval() {
 // ============================================================
 // SECTION 9: TAB 2 - YÊU CẦU ĐẶT LỊCH (WEB REQUESTS)
 // ============================================================
-// vẽ bảng yêu cầu đặt lịch online
+// vẽ bảng yêu cầu đặt lịch online (CHỈ PENDING - chờ xác nhận)
 async function renderWebRequests(){
   const dateFilter    = (document.getElementById("webDateFilter")     || {}).value || '';
   const searchTerm    = ((document.getElementById("webSearchInput")   || {}).value || '').trim();
   const serviceFilter = (document.getElementById("webServiceFilter")  || {}).value || '';
 
-  let rows = await loadBookingRequests('', dateFilter, searchTerm, serviceFilter);
+  let rows = await loadBookingRequests(dateFilter, searchTerm, serviceFilter);
 
   updateBookingBadges(rows);
   window._webAppts = rows;
@@ -1019,66 +1023,175 @@ async function renderWebRequests(){
     return;
   }
   webTbody.innerHTML = rows.map(a => {
-    // bookingStatus = Booking.status (PENDING, CONFIRMED, CANCELLED, REJECTED)
-    const bkSt = (a.bookingStatus || '').toUpperCase();
-    let actionBtn = '';
-    if (bkSt === 'PENDING') {
-      actionBtn = `<div class="action-buttons">
-        <button type="button" class="web-action-btn web-action-btn-approve" data-id="${a.id}" onclick="approveWeb('${a.id}')"><i class="fas fa-check"></i><span>Xác nhận</span></button>
-        <button type="button" class="web-action-btn web-action-btn-reject" data-id="${a.id}" onclick="rejectWeb('${a.id}')"><i class="fas fa-xmark"></i><span>Từ chối</span></button>
-      </div>`;
-    } else if (bkSt === 'CANCELLED' || bkSt === 'REJECTED') {
-      actionBtn = `<div class="action-buttons"><button type="button" class="web-action-btn web-action-btn-rebook" data-id="${a.id}" onclick="rebookAppointment('${a.id}')"><i class="fas fa-redo"></i><span>Đặt lại</span></button></div>`;
-    } else {
-      actionBtn = `<div class="action-buttons"><button type="button" class="web-action-btn web-action-btn-edit" data-id="${a.id}" onclick="openEditModal('${a.id}')"><i class="fas fa-pen"></i><span>Xem/Sửa</span></button></div>`;
-    }
+    // Backend chỉ trả về PENDINGS bookings - không cần check status
+    // Escape appointment code để tránh XSS trong onclick
+    const safeId = _esc(a.id);
+    // Chỉ có action Xác nhận và Từ chối cho PENDING bookings
+    const actionBtn = `<div class="action-buttons">
+      <button type="button" class="web-action-btn web-action-btn-approve" data-id="${safeId}" onclick="approveWeb('${safeId}')"><i class="fas fa-check"></i><span>Xác nhận</span></button>
+      <button type="button" class="web-action-btn web-action-btn-reject" data-id="${safeId}" onclick="rejectWeb('${safeId}')"><i class="fas fa-xmark"></i><span>Từ chối</span></button>
+    </div>`;
+
+    // Escape tất cả user input để tránh XSS
     return `<tr>
-      <td class="fw-semibold">${a.id}</td><td>${a.customerName}</td><td>${a.phone}</td><td>${a.service}</td>
-      <td>${a.date}</td><td>${a.start} - ${a.end}</td><td>${a.durationMin||""} phút</td>
+      <td class="fw-semibold">${safeId}</td><td>${_esc(a.customerName)}</td><td>${_esc(a.phone)}</td><td>${_esc(a.service)}</td>
+      <td>${_esc(a.date)}</td><td>${_esc(a.start)} - ${_esc(a.end)}</td><td>${_esc(a.durationMin||"")} phút</td>
       <td class="action-cell">${actionBtn}</td>
     </tr>`;
   }).join("");
 }
 
+//Flow: Click "Xác nhận" → Tìm appt data → Mở modal với prefill → Staff chọn phòng/giờ → Submit
 window.approveWeb = async function(id){
-  // UC 14.3 — Xác nhận yêu cầu online: KHÔNG confirm trực tiếp.
-  // Mở modal Tạo lịch hẹn với dữ liệu prefill từ request để staff chọn phòng/giờ.
+  // Tìm appointment data từ cache
   const appt = (window._webAppts || []).find(a => a.id === id);
   if (!appt) {
     showToast('error', 'Lỗi', MSG_WEB_GENERIC_ERR);
     return;
   }
+  openConfirmOnlineRequestModal(appt);
+}
 
-  const prefill = {
-    _fromOnlineRequest: true,
-    _bookingRequestCode: appt.bookingCode || '',
-    _booker: {
-      name:   appt.bookerName  || appt.customerName || '',
-      phone:  appt.bookerPhone || appt.phone        || '',
-      email:  appt.bookerEmail || appt.email        || '',
-      source: 'ONLINE',
-      note:   appt.bookerNotes || '',
-    },
-    _guest: {
-      name:      appt.customerName || appt.bookerName || '',
-      phone:     appt.phone        || appt.bookerPhone || '',
-      email:     appt.email        || appt.bookerEmail || '',
-      serviceId: appt.serviceId    || null,
-      variantId: appt.variantId    || null,
-      // Prefill ngày/giờ khách yêu cầu — staff có thể chỉnh
-      date:      appt.date         || '',
-      time:      appt.start        || '',
-      // Không prefill roomId — staff phải chọn phòng
-    },
-  };
 
-  const isAnyModalOpen = !!document.querySelector('.modal.show') || !!document.querySelector('.modal-backdrop');
-  if (isAnyModalOpen) {
-    _forceCloseAllModals();
-    setTimeout(() => openCreateModal(prefill), 100);
-  } else {
-    openCreateModal(prefill);
+function openConfirmOnlineRequestModal(appt) {
+  // ── STEP 1: Validate input ──
+  if (!appt) {
+    showToast('error', 'Lỗi', 'Không tìm thấy thông tin đặt lịch');
+    return;
   }
+
+  // ── STEP 2: Get modal elements ──
+  const modalEl = document.getElementById("apptModal");
+  const modalTitle = document.getElementById("modalTitle");
+  const btnSaveText = document.getElementById("btnSaveText");
+
+  if (!modalEl || !modalTitle) {
+    showToast('error', 'Lỗi', 'Không tìm thấy modal form');
+    return;
+  }
+
+  // ── STEP 3: Reset modal state ──
+  resetModalError();
+  modalTitle.textContent = "Xác nhận yêu cầu đặt lịch";
+  if (btnSaveText) btnSaveText.textContent = "Xác nhận & Tạo lịch";
+
+  document.getElementById("apptId").value = "";
+  document.getElementById("btnDelete").classList.add("d-none");
+  document.getElementById('btnRebook')?.classList.add('d-none');
+
+  // Set online request mode flag
+  window._pendingOnlineRequestCode = appt.bookingCode || ''; // lưu bookingCode của online request đang được xác nhận
+  window._isRebookMode = false; // Để biết Model đang ở mode "Đặt lại lịch" hay không, nếu false là update status của lịch đó 
+
+  // Show form
+  _showSharedForm(); // hiển thị form lên 
+  _setCreateOnlyVisible(false);
+
+  // ── STEP 4: Fill booker info (người đặt) ──
+  document.getElementById('bookerName').value = appt.bookerName || appt.customerName || '';
+  document.getElementById('bookerPhone').value = appt.bookerPhone || appt.phone || '';
+  document.getElementById('bookerEmail').value = appt.bookerEmail || appt.email || '';
+  document.getElementById('bookerSource').value = 'ONLINE';
+  const bookerNoteEl = document.getElementById('bookerNote');
+  if (bookerNoteEl) bookerNoteEl.value = appt.bookerNotes || '';
+
+  // ── STEP 5: Set booking date (ngày hẹn) ──
+  const bookingDateEl = document.getElementById('bookingDate');
+  if (bookingDateEl) {
+    bookingDateEl.value = appt.date || '';
+  }
+
+  // ── STEP 6: Clear old guests & Add new guest card ──
+  _guestCount = 0;
+  document.getElementById('guestList').innerHTML = '';
+
+  addOnlineRequestGuestCard(appt);
+
+  // ── STEP 7: Ẩn nút ba chấm (gc-expand-btn) ──
+  // Trong mode xác nhận, không cần nút expand detail
+  const expandBtns = document.querySelectorAll('.gc-expand-btn');
+  expandBtns.forEach(btn => btn.classList.add('d-none'));
+
+  // ── STEP 7.5: Ẩn khối Trạng thái & Thanh toán ──
+  // Tab "Yêu cầu đặt lịch" chỉ xử lý PENDING → không cần status dropdown
+  _applyModalMode('request');
+
+  // ── STEP 8: Show modal ──
+  const existing = bootstrap.Modal.getInstance(modalEl);
+  const modal = existing || new bootstrap.Modal(modalEl);
+  modal.show();
+
+  // Show info toast
+  showToast('info', 'Xác nhận yêu cầu', 'Vui lòng chọn phòng và kiểm tra thông tin trước khi lưu');
+}
+
+
+function addOnlineRequestGuestCard(onlineAppt) {
+  const list = document.getElementById('guestList');
+  if (!list) return;
+
+  // Tạo guest item mới
+  const idx = _guestCount++;
+  const item = _buildGuestItem(idx, {});
+  list.appendChild(item);
+
+  // Fill info khách hàng
+  const nameInp = item.querySelector('.gc-name');
+  if (nameInp) nameInp.value = onlineAppt.customerName || onlineAppt.bookerName || '';
+
+  const phoneInp = item.querySelector('.gc-phone');
+  if (phoneInp) phoneInp.value = onlineAppt.phone || onlineAppt.bookerPhone || '';
+
+  const emailInp = item.querySelector('.gc-email');
+  if (emailInp) emailInp.value = onlineAppt.email || onlineAppt.bookerEmail || '';
+
+  // Fill service + variant
+  if (onlineAppt.serviceId) {
+    const svcSel = item.querySelector('.gc-service');
+    if (svcSel) {
+      svcSel.value = onlineAppt.serviceId;
+      _loadGuestVariants(item, onlineAppt.serviceId, onlineAppt.variantId);
+    }
+  }
+
+  // Fill date/time
+  if (onlineAppt.date) {
+    item.dataset.slotDate = onlineAppt.date;
+    const dateInp = item.querySelector('.gc-date');
+    if (dateInp) dateInp.value = onlineAppt.date;
+  }
+
+  if (onlineAppt.start) {
+    item.dataset.slotTime = onlineAppt.start;
+    const timeHid = item.querySelector('.gc-time');
+    if (timeHid) timeHid.value = onlineAppt.start;
+    const startInp = item.querySelector('.gc-time-input');
+    if (startInp) startInp.value = onlineAppt.start;
+
+    // Update time-range display để user thấy giờ đã đặt
+    const disp = item.querySelector('.gc-time-range-display');
+    if (disp) {
+      // Tính giờ kết thúc (nếu có duration từ variant thì dùng, default 60 phút)
+      let duration = 60; // default 60 phút
+      if (onlineAppt.variantId) {
+        // Try to get duration from variant
+        const variant = SERVICES.find(s => s.id === onlineAppt.serviceId)
+          ?.variants?.find(v => v.id === onlineAppt.variantId);
+        if (variant && variant.duration) {
+          duration = variant.duration;
+        }
+      }
+      const endTime = addMinutesToTime(onlineAppt.start, duration);
+      // Extract HH:MM from start time in case it contains extra info
+      const startTimeMatch = onlineAppt.start.match(/(\d{1,2}:\d{2})/);
+      const startTimeDisplay = startTimeMatch ? startTimeMatch[1] : onlineAppt.start;
+      disp.innerHTML = startTimeDisplay + '<span class="gc-time-range-sep"> – </span>' + (endTime || '--:--');
+    }
+  }
+
+  // Cập nhật UI
+  // Online request chỉ có 1 khách → không cần đánh số, progress bar (bị ẩn), delete button
+  _markRowValidity(item);  // Highlight border để user biết dòng đã đủ info chưa
 }
 
 window.rejectWeb = async function(id){
@@ -1407,7 +1520,7 @@ function _loadGuestVariants(item, serviceId, selectedVariantId) {
   varSel.style.color      = '#9ca3af';
   varSel.style.background = '#f9fafb';
 
-  const svc = SERVICES.find(s => s.id == serviceId);
+  const svc = SERVICES.find(s => s.id === parseInt(serviceId, 10));
   if (!svc || !svc.variants?.length) {
     // Không có variant → giữ disabled nhưng placeholder rõ ràng
     varSel.innerHTML = '<option value="">-- Chọn dịch vụ trước --</option>';
@@ -1419,7 +1532,7 @@ function _loadGuestVariants(item, serviceId, selectedVariantId) {
     opt.value = v.id;
     opt.textContent = variantLabel(v);
     opt.dataset.duration = v.duration_minutes;
-    if (selectedVariantId && v.id == selectedVariantId) opt.selected = true;
+    if (selectedVariantId && v.id === parseInt(selectedVariantId, 10)) opt.selected = true;
     varSel.appendChild(opt);
   });
 
@@ -1637,7 +1750,7 @@ function _buildGuestItem(idx, prefill) {
   var roomOpts = '<option value="" disabled' + (selectedRoomId ? '' : ' selected') + ' hidden>Chọn phòng</option>' +
     ROOMS.map(function(r){
       var roomId = r.id || r.code || '';
-      var isSel = (roomId == selectedRoomId) ? ' selected' : '';
+      var isSel = (String(roomId) === String(selectedRoomId)) ? ' selected' : '';
       var label = _roomShortLabel(r);
       var capacity = r.capacity || '';
       var title = label + (capacity ? ' - ' + capacity + ' giường' : '');
@@ -2201,7 +2314,7 @@ function _initApplyAllBar() {
       varSel.disabled  = true;
       varSel.style.color      = '#9ca3af';
       varSel.style.background = '#f9fafb';
-      const svc = SERVICES.find(s => s.id == this.value);
+      const svc = SERVICES.find(s => String(s.id) === this.value);
       if (!svc || !svc.variants?.length) return;
       svc.variants.forEach(v => {
         const opt = document.createElement('option');
@@ -3445,8 +3558,8 @@ document.addEventListener("DOMContentLoaded", async ()=>{
   // ===== POLLING: cập nhật badge pending count mỗi 15 giây =====
   // Track count lần trước để phát hiện thay đổi
   let _lastPendingCount = -1;
-
-  setInterval(async () => {
+  // Store interval reference để cleanup khi rời trang
+  const _pendingCountInterval = setInterval(async () => {
     try {
       const res = await apiGet(`${API_BASE}/booking/pending-count/`);
       if (res.success && typeof res.count === 'number') {
@@ -3462,6 +3575,12 @@ document.addEventListener("DOMContentLoaded", async ()=>{
       }
     } catch(e) { /* silent */ }
   }, 15000);
+
+  // Cleanup khi rời trang để tránh memory leak
+  window.addEventListener('beforeunload', () => {
+    clearInterval(_pendingCountInterval);
+    clearInterval(_ctlInterval);
+  });
 
   if(btnToday) btnToday.addEventListener("click", ()=> setDay(todayISO()));
   if(btnPrev) btnPrev.addEventListener("click", ()=> shiftDay(-1));
@@ -3515,8 +3634,6 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 
   // ===== INVOICE MODAL =====
   _initInvoiceModal();
-
-  window.openEditModal = openEditModal;
 });
 
 // ============================================================
@@ -3739,8 +3856,8 @@ function _buildLinesFromGuestCards() {
   readyGuests.forEach(item => {
     const svcSel  = item.querySelector('.gc-service');
     const varSel  = item.querySelector('.gc-variant');
-    const svc     = SERVICES.find(s => s.id == svcSel?.value);
-    const variant = svc?.variants?.find(v => v.id == varSel?.value);
+    const svc     = SERVICES.find(s => String(s.id) === svcSel?.value);
+    const variant = svc?.variants?.find(v => String(v.id) === varSel?.value);
     const price   = parseFloat(variant?.price || svc?.price || 0);
     const name    = item.querySelector('.gc-name')?.value.trim() || '—';
     subtotal += price;
