@@ -153,26 +153,11 @@ LOGOUT_REDIRECT_URL = '/'
 # Session - dùng DB thay vì signed_cookies để tránh giới hạn kích thước
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
 
-# ── Email — Quên mật khẩu ────────────────────────────────────────────────────
-# Dùng SendGrid SMTP relay: không cần thêm thư viện, chỉ cần API key.
-# Nếu SENDGRID_API_KEY chưa được set → fallback console (in ra terminal khi dev).
-_sendgrid_api_key = os.environ.get('SENDGRID_API_KEY', '')
-
-if _sendgrid_api_key:
-    # Gửi email thật qua SendGrid SMTP relay
-    EMAIL_BACKEND    = 'django.core.mail.backends.smtp.EmailBackend'
-    EMAIL_HOST       = 'smtp.sendgrid.net'
-    EMAIL_PORT       = 587
-    EMAIL_USE_TLS    = True
-    EMAIL_HOST_USER  = 'apikey'          # SendGrid yêu cầu username cố định là "apikey"
-    EMAIL_HOST_PASSWORD = _sendgrid_api_key
-else:
-    # Dev fallback: in email ra terminal, không cần cấu hình gì thêm
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-
-# Địa chỉ "From" hiển thị trong email — phải là sender đã verify trên SendGrid
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'Spa ANA <noreply@spaana.com>')
+# ── Email — Quên mật khẩu (SendGrid API backend) ─────────────────────────────
+EMAIL_BACKEND            = 'sendgrid_backend.SendgridBackend'
+SENDGRID_API_KEY         = os.environ.get('SENDGRID_API_KEY', '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')
+SENDGRID_SANDBOX_MODE_IN_DEBUG = False  # gửi thật dù DEBUG=True
+DEFAULT_FROM_EMAIL       = 'Spa ANA <nguyenlebaochau157@gmail.com>'
 
 # Thời gian hiệu lực của link đặt lại mật khẩu: 15 phút (tính bằng giây)
-# Django mặc định là 259200 giây (3 ngày) — override lại ở đây
 PASSWORD_RESET_TIMEOUT = 60 * 15  # 900 giây = 15 phút
