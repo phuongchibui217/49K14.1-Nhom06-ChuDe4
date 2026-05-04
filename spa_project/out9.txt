@@ -1,0 +1,432 @@
+7: // SECTION 4:  HÀM VALIDATION                 (Line ~204) - Kiểm tra form
+46: // ===== HELPER: format variant label — tránh lặp "90 phút — 90 phút" =====
+49: if (!v.label || v.label.trim() === dur) return dur;
+60: // Dữ liệu ( lấy từ API) ==> lưu dữ liệu load từ DB để render giao diện, validate form, tính toán trùng lịch
+65: // Biến theo dõi trạng thái đang submit để tránh submit lặp
+73: // UC 14.3 — track rebook mode để hiển thị đúng message sau khi tạo lịch
+91: try {
+96: return { success: true, ok: true, status: response.status };
+98: try {
+109: error: !response.ok ? `HTTP error ${response.status}: Máy chủ trả về phản hồi không hợp lệ` : 'Invalid JSON response'
+119: try {
+123: body: JSON.stringify(payload),
+128: return { success: true, ok: true, status: response.status };
+130: try {
+141: error: !response.ok ? `HTTP error ${response.status}: Máy chủ trả về phản hồi không hợp lệ` : 'Invalid JSON response'
+167: // _gridLoadError: true khi lần load gần nhất bị lỗi — dùng để renderGrid hiển thị error state
+182: // API trả error hoặc network lỗi — UC 14.2 exception flow 5a
+184: _gridLoadError = true;
+192: // Backend chỉ trả về PENDING bookings - không cần status filter
+214: * Hiển thị lỗi trong #modalError.
+228: * @param {string} dtype  - 'NONE' | 'AMOUNT' | 'PERCENT'
+257: * @param {string} apptStatus
+258: * @param {string} payStatus
+259: * @returns {{ ok: boolean, error: string }}
+265: return { ok: true, error: '' };
+270: * Dùng chung cho cả CREATE và EDIT branch trong submit handler.
+272: * @param {string} name   - họ tên người đặt
+273: * @param {string} phone  - số điện thoại (raw, chưa strip)
+274: * @param {string} email  - email (có thể rỗng)
+275: * @returns {{ ok: boolean, error: string }}
+282: return { ok: true, error: '' };
+288: * @param {string} note
+289: * @returns {{ ok: boolean, error: string }}
+295: return { ok: true, error: '' };
+305: * @returns {{ ok: boolean, error: string, type: 'date'|'time'|'room'|null }}
+313: return { ok: true, error: '', type: null };
+317: * Validate các trường cơ bản của 1 guest card — giống nhau 100% giữa CREATE và EDIT.
+324: * @returns {{ ok: boolean, error: string }}
+328: if (!g.name || !g.name.trim())          return { ok: false, error: `${label}Vui lòng nhập tên khách` };
+332: return { ok: true, error: '' };
+336: * Validate thời điểm ARRIVED / COMPLETED cho từng card trong mảng.
+340: * @param {Function} getStatus - (g, i) => string — trả về apptStatus của card
+341: * @param {Function} getDate   - (g, i) => string — trả về date (YYYY-MM-DD)
+342: * @param {Function} getTime   - (g, i) => string — trả về time (HH:MM)
+343: * @param {Function} getDur    - (g, i) => number — trả về duration (phút)
+344: * @returns {{ ok: boolean, error: string }}
+355: return { ok: true, error: '' };
+361: function pad2(n){ return String(n).padStart(2,"0"); }
+366: // Extract HH:MM from time string in case it contains date or other info
+397: else if(type==="warning"){ header.classList.add("bg-warning","text-dark"); if(icon) icon.className="fas fa-exclamation-triangle me-2"; }
+404: // Lấy instance Bootstrap Toast từ element, không dùng window.toast
+406: const toast = bootstrap.Toast.getInstance(toastEl) || new bootstrap.Toast(toastEl);
+447: * @param {string} loadingText - Text hiển thị khi loading
+448: * @param {string} originalText - Text gốc để restore sau này
+458: btn.disabled = true;
+463: * Tắt loading state và restore button về trạng thái ban đầu
+478: * @param {string} title - Tiêu đề
+479: * @param {string} message - Nội dung xác nhận
+480: * @param {string} confirmText - Text nút xác nhận
+481: * @param {string} cancelText - Text nút hủy
+482: * @returns {Promise<boolean>} - true nếu người dùng xác nhận
+500: * Đóng và cleanup TẤT CẢ modal Bootstrap đang mở.
+505: const inst = bootstrap.Modal.getInstance(el);
+512: document.body.removeAttribute('data-bs-overflow');
+516: * Kiểm tra result API có phải lỗi conflict không.
+519: * @param {boolean} [checkFlag=false] - có kiểm tra result.conflict flag không
+524: return (checkFlag && result.conflict === true) ||
+525: errLower.includes('trùng') ||
+534: * Lấy Bootstrap Modal instance hoặc tạo mới nếu chưa có.
+536: * @returns {bootstrap.Modal|null}
+547: const clone = el.cloneNode(true);
+557: * @param {string} defaultSource - fallback khi rb.source rỗng (mặc định 'DIRECT')
+579: webCount.textContent = String(count);
+586: * Xóa toàn bộ options cũ (trừ placeholder nếu có) rồi append mới.
+590: * @param {string|Function}   valueKey   - tên field lấy value, hoặc hàm (item) => value
+591: * @param {string|Function}   labelFn    - tên field lấy label, hoặc hàm (item) => label
+592: * @param {string}            [placeholder] - text option đầu tiên (value=""), bỏ qua nếu null
+620: // Hiện 5 dòng skeleton để layout không bị trống trong lúc fetch
+637: * Kiểm tra slot có nằm trong quá khứ không.
+642: const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+643: if (day > todayStr) return false;
+644: if (day < todayStr) return true;
+653: * Toggle slot: click ô trống → chọn, click lại block xanh → bỏ chọn.
+662: // Kiểm tra ngoài giờ
+668: // Chặn slot trong quá khứ
+670: showToast("warning", "Không thể chọn slot này", "Không thể tạo lịch hẹn trong quá khứ");
+674: // Tìm pending block trùng slot này (cùng room + lane + day + time)
+690: // ── TOGGLE ON: kiểm tra conflict rồi thêm ──
+710: // Conflict với pending block khác trong cùng lane
+740: if (badge) badge.textContent = String(count);
+769: block.dataset.pendingId = String(pb.id);
+836: // Đảm bảo end > start (tránh block width = 0)
+869: // PENDING không hiển thị trên grid (chỉ ở tab Yêu cầu đặt lịch)
+889: // click vào ô trống → toggle slot (chọn hoặc bỏ chọn)
+954: * Tạo hoặc cập nhật vị trí đường đỏ thời gian hiện tại.
+967: const todayStr = `${now.getFullYear()}-${pad2(now.getMonth()+1)}-${pad2(now.getDate())}`;
+970: if (viewDay !== todayStr) {
+990: line.innerHTML = '<span class="ctl-label" style="position:absolute;top:4px;left:50%;transform:translateX(-50%);background:#ef4444;color:#fff;font-size:.6rem;font-weight:700;padding:1px 5px;border-radius:4px;white-space:nowrap;line-height:1.5;"></span>';
+994: // Cập nhật vị trí và label
+1013: const searchTerm    = ((document.getElementById("webSearchInput")   || {}).value || '').trim();
+1023: webTbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">${MSG_WEB_EMPTY}</td></tr>`;
+1027: // Backend chỉ trả về PENDINGS bookings - không cần check status
+1035: return `<tr>
+1044: </tr>`;
+1091: _setAddGuestBarVisible(true);
+1123: const existing = bootstrap.Modal.getInstance(modalEl);
+1124: const modal = existing || new bootstrap.Modal(modalEl);
+1128: showToast('info', 'Xác nhận yêu cầu', 'Vui lòng chọn phòng và kiểm tra thông tin trước khi lưu');
+1188: // Extract HH:MM from start time in case it contains extra info
+1210: }, { once: true });
+1213: }, { once: true });
+1214: const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+1216: // Gắn handler một lần, tránh duplicate
+1222: try {
+1240: // Guard: tránh double-click mở nhiều modal trong khi đang fetch
+1242: console.warn('[Rebook] Đang xử lý, bỏ qua click thừa — nếu bị kẹt, reload trang');
+1247: window._rebookInProgress = true;
+1248: try {
+1268: * Strategy: force-cleanup mọi modal/backdrop đang mở, sau đó mở modal mới.
+1269: * Dùng requestAnimationFrame để đảm bảo DOM đã cleanup trước khi Bootstrap
+1274: _fromRebook: true,
+1279: // Rebook luôn là admin tạo trực tiếp → source DIRECT, không copy source cũ
+1280: // (tránh trường hợp booking gốc là ONLINE → booking mới bị coi là online pending)
+1308: }, { once: true });
+1309: const inst = bootstrap.Modal.getInstance(modalEl);
+1340: // Không ghi đè dữ liệu user đã sửa tay, trừ khi SĐT thay đổi.
+1349: try {
+1361: // Bind blur trên bookerPhone → autofill booker info
+1368: const phone = bookerPhoneEl.value.trim();
+1386: const isNewProfile = String(customer.id) !== prevCustId;
+1388: // Fill tên/email: ghi đè khi profile mới khác, hoặc ô đang trống
+1389: if (nameEl  && (isNewProfile || !nameEl.value.trim()))  nameEl.value  = customer.fullName || '';
+1390: if (emailEl && (isNewProfile || !emailEl.value.trim())) emailEl.value = customer.email    || '';
+1393: document.getElementById('selectedCustomerId').value = String(customer.id);
+1404: const isNewGuestProfile = String(customer.id) !== prevGuestCustId;
+1407: if (custIdI) custIdI.value = String(customer.id);
+1408: item.dataset.customerId = String(customer.id);
+1409: // Ghi đè ghi chú hồ sơ khách khi profile mới khác, hoặc ô đang trống
+1410: if (noteI && (isNewGuestProfile || !noteI.value.trim())) {
+1412: item.dataset.originalNote = (customer.notes || '').trim();
+1418: // Customer lookup stubs đã xóa — chỉ giữ _resetAllCustomerState dùng trong modal reset
+1426: // Escape HTML để tránh XSS
+1427: function _esc(str) {
+1428: return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+1432: var raw = String(room?.id || room?.code || room?.name || '').trim();
+1449: /** Kiểm tra 1 guest row đã đủ trường bắt buộc chưa */
+1460: /** Highlight ô thiếu trong 1 row */
+1483: nameInp.style.borderColor = nameInp.value.trim() ? '#d1d5db' : '#ef4444';
+1484: nameInp.style.background  = nameInp.value.trim() ? '#fff'    : '#fef2f2';
+1505: if (icon) icon.style.transform = '';
+1510: if (icon) icon.style.transform = 'rotate(90deg)';
+1520: varSel.disabled  = true;
+1527: varSel.innerHTML = '<option value="">-- Chọn dịch vụ trước --</option>';
+1536: if (selectedVariantId && v.id === parseInt(selectedVariantId, 10)) opt.selected = true;
+1579: * Validate thời điểm chuyển trạng thái ARRIVED / COMPLETED.
+1581: * @param {string} dateStr   - "YYYY-MM-DD"
+1582: * @param {string} timeStr   - "HH:MM"
+1584: * @param {string} newStatus - "ARRIVED" | "COMPLETED" | ...
+1585: * @returns {{ ok: boolean, error: string }}
+1587: function _validateStatusTiming(dateStr, timeStr, durationMin, newStatus) {
+1588: if (newStatus !== 'ARRIVED' && newStatus !== 'COMPLETED') return { ok: true, error: '' };
+1593: const [y, mo, d]  = (dateStr || '').split('-').map(Number);
+1594: const [h, mi]     = (timeStr || '00:00').split(':').map(Number);
+1595: if (!y || !mo || !d) return { ok: true, error: '' }; // không đủ data → bỏ qua
+1607: return { ok: true, error: '' };
+1611: * Cập nhật badge trạng thái thanh toán và label nút invoice trong edit modal.
+1612: * Không còn hiển thị Tổng/Đã trả/Còn lại trong modal chỉnh lịch.
+1616: const isEdit = !!(apptId && apptId.value.trim());
+1643: * Cập nhật badge hiển thị trạng thái thanh toán (readonly).
+1663: return Number(amount).toLocaleString('vi-VN') + 'đ';
+1669: // <input type="hidden"> không có .options — set value trực tiếp
+1684: * Reset hoàn toàn trạng thái ẩn/hiện cũ trước khi apply mode mới,
+1685: * tránh trạng thái từ lần mở trước bị giữ lại.
+1696: // normal-mode: hiện lại — xóa mọi class/style ẩn từ lần trước
+1700: sharedStatusBlock.removeAttribute('hidden');
+1722: // EDIT MODE: đánh giá lại trạng thái nút dựa trên dịch vụ đã chọn
+1727: // Không nhập thanh toán trực tiếp, dùng invoice modal sau khi tạo lịch
+1730: // Đánh giá trạng thái nút dựa trên dịch vụ đã chọn
+1784: var isSel = (String(roomId) === String(selectedRoomId)) ? ' selected' : '';
+1851: + '<div class="gc-variant-cell"><select class="gc-variant" style="' + sel + '" disabled><option value="">-- Chọn dịch vụ trước --</option></select></div>'
+1856: + ' style="height:36px;width:36px;padding:0;font-size:15px;background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;">'
+1859: + ' style="height:36px;width:36px;padding:0;font-size:15px;background:#fff5f5;border:1px solid #fecaca;color:#ef4444;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,opacity .15s;">'
+1860: + '<i class="fas fa-trash-alt"></i></button>'
+1874: // Dropdown trạng thái riêng từng khách — đã chuyển lên gc-row-grid (col 7) để hiện rõ trong edit mode
+1875: // Trong create mode, trạng thái dùng sharedApptStatus ở footer
+1920: nameInp.style.borderColor = nameInp.value.trim() ? '#d1d5db' : '';
+1930: const phone  = phoneInp.value.trim();
+1951: const isNewProfile = String(customer.id) !== prevCustId;
+1953: if (nameI  && (isNewProfile || !nameI.value.trim()))  nameI.value  = customer.fullName || '';
+1954: if (emailI && (isNewProfile || !emailI.value.trim())) emailI.value = customer.email    || '';
+1957: if (custIdI) custIdI.value = String(customer.id);
+1958: item.dataset.customerId = String(customer.id);
+1960: // Ghi đè ghi chú hồ sơ khách khi profile mới khác, hoặc ô đang trống
+1961: if (noteI && (isNewProfile || !noteI.value.trim())) {
+1963: item.dataset.originalNote = (customer.notes || '').trim();
+1979: if (nameI)  nameI.value  = document.getElementById('bookerName')?.value.trim()  || '';
+1980: if (phoneI) phoneI.value = document.getElementById('bookerPhone')?.value.trim() || '';
+1981: if (emailI) emailI.value = document.getElementById('bookerEmail')?.value.trim() || '';
+1982: if (nameI)  nameI.readOnly  = true;
+1983: if (phoneI) phoneI.readOnly = true;
+1985: // (booker customerId được lưu trong #selectedCustomerId)
+1989: // Ghi chú hồ sơ khách: fill từ CustomerProfile của booker nếu có và ô đang trống
+1992: if (noteI && !noteI.value.trim()) {
+1995: if (c && noteI && !noteI.value.trim()) {
+1997: item.dataset.originalNote = (c.notes || '').trim();
+2006: // Bỏ tick → khách là người khác, xóa customerId để tránh update nhầm profile người đặt
+2063: if (e.target.tagName === 'INPUT') return; // đang trong input thì không toggle
+2103: item.dataset.customerId = String(prefill.customerId);
+2105: // originalNote: lưu note gốc từ profile để so sánh trước khi gọi API
+2106: item.dataset.originalNote = (prefill.customerNote || '').trim();
+2114: item.dataset.originalVariantId = prefill.variantId ? String(prefill.variantId) : '';
+2161: // Lấy _apptId từ dataset (được set khi build guest card trong edit mode)
+2180: const customerName = item.querySelector('.gc-name')?.value.trim() || 'khách này';
+2189: // Disable nút xóa trong lúc đang gọi API
+2191: if (deleteBtn) { deleteBtn.disabled = true; deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+2193: try {
+2203: if (deleteBtn) { deleteBtn.disabled = false; deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>'; }
+2207: if (deleteBtn) { deleteBtn.disabled = false; deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>'; }
+2233: const bookerNote = document.getElementById('bookerNote')?.value.trim() || '';
+2236: // Đọc trạng thái từ block footer (dùng cho CREATE mode)
+2247: name:               item.querySelector('.gc-name')?.value.trim() || '',
+2248: phone:              item.querySelector('.gc-phone')?.value.trim() || '',
+2249: email:              item.querySelector('.gc-email')?.value.trim() || '',
+2257: customerNote:       item.querySelector('.gc-customer-note')?.value.trim() || '',
+2278: * 4. Nếu xóa note (originalNote ≠ '' và newNote = '') → hỏi confirm trước
+2282: * @param {boolean} [skipConfirm=false] - bỏ qua confirm xóa note (dùng khi đã confirm trước)
+2286: const newNote      = (g.customerNote || '').trim();
+2287: const originalNote = (g.originalNote || '').trim();
+2288: const customerId   = (g.customerId || '').toString().trim();
+2302: // Xóa note (originalNote có giá trị, newNote rỗng) → hỏi confirm
+2315: try {
+2339: varSel.disabled  = true;
+2342: const svc = SERVICES.find(s => String(s.id) === this.value);
+2411: _editMode:  true,
+2418: _addingSlotMode = true;
+2422: const existing = bootstrap.Modal.getInstance(modalEl);
+2423: modal = existing || new bootstrap.Modal(modalEl);
+2426: showToast('info', 'Chọn thêm slot', 'Hãy chọn thêm 1 slot trên lịch để thêm khách mới, rồi bấm "Tiếp tục"');
+2446: try {
+2466: _setAddGuestBarVisible(true);
+2479: // Set ngày hẹn chung — mặc định là ngày đang xem trên grid
+2488: _isRebookMode = true;
+2500: _setAddGuestBarVisible(true);
+2519: // roomId sẽ để trống — staff phải chọn
+2523: _setAddGuestBarVisible(true);
+2524: showToast('info', 'Xác nhận yêu cầu', 'Vui lòng chọn phòng và kiểm tra thông tin trước khi lưu');
+2569: const existing = bootstrap.Modal.getInstance(modalEl);
+2570: modal = existing || new bootstrap.Modal(modalEl);
+2573: console.error('[openCreateModal] Không khởi tạo được Bootstrap Modal instance');
+2578: // XÓA nút ba chấm và XÓA HOÀN TOÀN Email + Ghi chú trong form "Xác nhận" và "Đặt lại"
+2588: }, { once: true });
+2595: /** Mở modal tạo lịch từ pending blocks đã chọn trên grid */
+2624: _setAddGuestBarVisible(true);
+2668: true
+2675: const existing = bootstrap.Modal.getInstance(modalEl);
+2676: modal = existing || new bootstrap.Modal(modalEl);
+2682: openCreateModal({ _fromPending: true, _blocks: [...pendingBlocks], _restoreBooker: _savedBookerInfo });
+2686: openCreateModal({ _fromPending: true, _blocks: [...pendingBlocks] });
+2691: try {
+2698: // Fallback: tìm trong APPOINTMENTS cache
+2716: * Fetch toàn bộ appointments trong booking rồi mở modal edit.
+2717: * @param {string} bookingCode - mã booking
+2718: * @param {string} clickedApptId - appointment_code được click (để set apptId)
+2745: * @param {string} clickedApptId - appointment_code được click (dùng để set apptId chính)
+2748: try {
+2771: apptId.dataset.allApptIds   = JSON.stringify(appointments.map(a => a.id));
+2777: // Nút Rebook / Xóa — dựa trên primary
+2799: _setAddGuestBarVisible(true);
+2802: // Luôn apply normal-mode trước để reset mọi trạng thái ẩn từ request-mode
+2804: _showSharedStatusBlock(primary.apptStatus || 'NOT_ARRIVED', primary.payStatus || 'UNPAID', true);
+2827: // Thêm 1 guest card cho MỖI appointment trong booking
+2843: _editMode:    true,
+2850: const existing = bootstrap.Modal.getInstance(modalEl);
+2851: modal = existing || new bootstrap.Modal(modalEl);
+2865: * Load invoice summary từ API và cập nhật payment summary trong edit modal.
+2866: * Disable nút Xóa và Thanh toán trong lúc load để tránh race condition.
+2871: // Disable các nút nhạy cảm trong lúc load
+2874: if (btnDelete)  { btnDelete._invoiceLoading  = true; btnDelete.disabled  = true; }
+2875: if (btnInvoice) { btnInvoice._invoiceLoading = true; btnInvoice.disabled = true; }
+2877: try {
+2889: // Không có invoice → giữ nguyên trạng thái mặc định
+2900: // Gọi lại _updateCreatePayBtn để set đúng trạng thái enable/disable theo dịch vụ
+2909: // Trigger submit trên form
+2911: if (f) f.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+2924: const id = apptId.value.trim();
+2927: const nameVal  = document.getElementById('bookerName')?.value.trim() || '';
+2928: const phoneVal = document.getElementById('bookerPhone')?.value.trim() || '';
+2929: const emailVal = document.getElementById('bookerEmail')?.value.trim() || '';
+2938: // Validate từng guest card (FE-side, trước khi gửi)
+2944: const dtrCheck = _validateGuestDateTimeRoom(g, i, cards.length);
+2945: if (!dtrCheck.ok) {
+2946: if (gItem && (dtrCheck.type === 'time' || dtrCheck.type === 'room')) _markRowError(gItem);
+2947: _showModalError(dtrCheck.error); return;
+2949: // Kiểm tra thời gian quá khứ — chỉ chặn khi ngày/giờ thực sự thay đổi
+2966: // (không dùng sharedApptStatus nữa — mỗi khách có trạng thái riêng)
+2990: bookerNotes: document.getElementById('bookerNote')?.value.trim() || '',
+3013: isSubmitting = true;
+3016: try {
+3017: // BUG-02: 1 request duy nhất → atomic trên backend
+3031: const existing = bootstrap.Modal.getInstance(modalEl);
+3032: modal = existing || new bootstrap.Modal(modalEl);
+3064: _showModalError('Vui lòng chọn phòng trước khi xác nhận yêu cầu đặt lịch');
+3077: const _todayStr = (() => { const t = new Date(); return `${t.getFullYear()}-${pad2(t.getMonth()+1)}-${pad2(t.getDate())}`; })();
+3085: const dtrCheck = _validateGuestDateTimeRoom(g, i, guestCards.length);
+3086: if (!dtrCheck.ok) {
+3087: if (gItem && (dtrCheck.type === 'time' || dtrCheck.type === 'room')) _markRowError(gItem);
+3088: _showModalError(dtrCheck.error); return;
+3091: if (!window._pendingOnlineRequestCode && g.date < _todayStr) {
+3095: // Kiểm tra thời gian quá khứ — bỏ qua khi xác nhận online request (staff chỉ confirm, không tạo mới)
+3122: _showModalError(`Khách ${i+1} và Khách ${j+1} trùng phòng và thời gian. Vui lòng chọn phòng hoặc giờ khác.`); return;
+3128: // Validate trạng thái "Hoàn thành"
+3135: // BUG-001: COMPLETED phải đi kèm PAID — kiểm tra _createModePayment trước khi submit
+3138: _showModalError(completedCheck.error + '. Vui lòng thanh toán trước.'); return;
+3142: // Validate thời điểm chuyển trạng thái ARRIVED / COMPLETED (create mode)
+3175: isSubmitting = true;
+3177: try {
+3182: const existing = modalEl ? bootstrap.Modal.getInstance(modalEl) : null;
+3183: const modal = existing || (modalEl ? new bootstrap.Modal(modalEl) : null);
+3196: _showModalError(_isConflictError(result, true) ? (result.error || MSG_WEB_CONFLICT) : (result.error || MSG_WEB_GENERIC_ERR));
+3214: notes:         document.getElementById('bookerNote')?.value.trim() || '',
+3221: fromAdmin:     true,  // Admin tạo/rebook → backend set CONFIRMED, không cần xác nhận
+3226: isSubmitting = true;
+3228: try {
+3237: const existing = bootstrap.Modal.getInstance(modalEl);
+3238: modal = existing || new bootstrap.Modal(modalEl);
+3264: // ===== NÚT ĐẶT LẠI trong modal =====
+3267: const id = apptId.value.trim();
+3275: const id = apptId.value.trim();
+3278: // Kiểm tra hóa đơn đã thanh toán hoặc đã hoàn tiền — không cho phép xóa
+3290: const customerNameVal = firstCard?.querySelector('.gc-name')?.value.trim()
+3291: || document.getElementById('bookerName')?.value.trim() || '';
+3303: // Dùng instance đã khởi tạo sẵn — tránh lỗi Bootstrap tạo nhiều instance
+3305: || new bootstrap.Modal(document.getElementById('deleteAppointmentModal'));
+3309: // Xóa listener cũ bằng cách clone node để tránh duplicate
+3315: isSubmitting = true;
+3318: try {
+3323: const existing = bootstrap.Modal.getInstance(modalEl);
+3358: try {
+3364: _gridLoadError = true;
+3377: const searchModal = new bootstrap.Modal(searchModalEl);
+3405: // Enter trong các input → trigger search
+3459: const name      = (document.getElementById('srchName')     || {}).value?.trim() || '';
+3460: const phone     = (document.getElementById('srchPhone')    || {}).value?.trim() || '';
+3461: const email     = (document.getElementById('srchEmail')    || {}).value?.trim() || '';
+3462: const code      = (document.getElementById('srchCode')     || {}).value?.trim() || '';
+3471: _setSearchWarning(true, 'Vui lòng nhập điều kiện tìm kiếm');
+3476: _setSearchWarning(true, 'Khoảng ngày tìm kiếm không hợp lệ.');
+3499: if (searchModalEl) searchModalEl.dataset.currentFilters = params.toString();
+3501: const result = await apiGet(`${API_BASE}/appointments/search/?${params.toString()}`);
+3527: style="cursor:pointer;transition:background .15s;"
+3538: <div class="fw-semibold text-truncate">${_esc(a.customerName || a.bookerName || '—')}</div>
+3539: <div class="text-muted small text-truncate">${svcDisplay}</div>
+3551: <span class="small text-muted"><i class="fas fa-list me-1"></i>Tìm thấy <strong>${appts.length}</strong> kết quả${appts.length === 100 ? ' (hiển thị tối đa 100)' : ''}</span>
+3552: <span class="small text-muted">Click vào kết quả để xem trên lịch</span>
+3574: const searchModal = bootstrap.Modal.getInstance(searchModalEl);
+3584: // Highlight block trên grid
+3604: const id = `ct_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+3643: s.textContent = `@keyframes slideInToast{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}`;
+3651: try {
+3667: // Chạy lần đầu sau 5s (tránh spam khi mới load), sau đó mỗi 30s
+3691: window.deleteAppointmentModal = new bootstrap.Modal(deleteModalEl);
+3696: // ── Render header timeline NGAY LẬP TỨC trước khi fetch ──
+3697: // Để layout ổn định, không bị trống trong lúc chờ API
+3700: showGridLoading();   // hiện skeleton trong vùng grid
+3714: // Track count lần trước để phát hiện thay đổi
+3716: // Store interval reference để cleanup khi rời trang
+3718: try {
+3724: // Nếu count thay đổi so với lần trước → reload danh sách yêu cầu
+3734: // Cleanup khi rời trang để tránh memory leak
+3772: try {
+3822: * Lưu trạng thái thanh toán tạm thời cho create mode.
+3823: * Được set khi user xác nhận trong _openCreatePayModal(),
+3833: * Cập nhật trạng thái enable/disable nút "Thanh toán" trong create mode.
+3851: : 'Vui lòng chọn dịch vụ và gói dịch vụ trước khi thanh toán';
+3853: // Hiển thị rõ trạng thái disabled/enabled
+3869: * Tính tiền từ guestCards hiện tại (dựa trên SERVICES data),
+3873: // Kiểm tra lại — phải có ít nhất 1 khách đủ dịch vụ + gói
+3876: showToast('warning', 'Chưa đủ thông tin', 'Vui lòng chọn dịch vụ và gói dịch vụ trước khi thanh toán.');
+3885: _createMode:    true,
+3888: bookerName:     document.getElementById('bookerName')?.value.trim() || '',
+3889: bookerPhone:    document.getElementById('bookerPhone')?.value.trim() || '',
+3891: subtotal:       String(subtotal),
+3895: finalAmount:    String(subtotal),
+3896: paidAmount:     String(_createModePayment.paymentAmount || 0),
+3897: remaining:      String(Math.max(subtotal - (_createModePayment.paymentAmount || 0), 0)),
+3908: const invoiceModal   = bootstrap.Modal.getInstance(invoiceModalEl) || new bootstrap.Modal(invoiceModalEl);
+3913: * BUG-008 FIX: Kiểm tra xem có guest card nào trong edit mode có thay đổi chưa lưu không.
+3915: * So sánh giá trị hiện tại của variant, room, date, time với giá trị gốc
+3916: * được lưu trong dataset khi modal mở (originalVariantId, originalRoom,
+3919: * Cũng kiểm tra booker info (name, phone, email, notes) so với giá trị
+3922: * @returns {boolean} true nếu có thay đổi chưa lưu
+3926: // Chỉ áp dụng trong edit mode (có bookingCode)
+3933: if (currentVariant !== originalVariant) return true;
+3937: if (currentRoom !== originalRoom) return true;
+3941: // sẽ luôn trả true cho các khách có ngày khác nhau dù không có thay đổi thực sự.
+3947: if (originalDate && currentDate !== originalDate) return true;
+3954: if (originalTime && currentTime !== originalTime) return true;
+3956: // Check trạng thái chung — so sánh sharedApptStatus với originalApptStatus của card đầu tiên
+3959: if (originalStatus && currentStatus !== originalStatus) return true;
+3974: // EDIT MODE: BUG-008 FIX — kiểm tra form có thay đổi chưa lưu không
+3975: // Nếu có → yêu cầu lưu trước để BE và FE dùng cùng 1 nguồn dữ liệu
+3978: _showModalError('Vui lòng lưu lịch hẹn trước khi mở hóa đơn (có thay đổi chưa được lưu).');
+3985: // CREATE MODE: mở modal thanh toán tạm dựa trên guestCards hiện tại
+4015: * Build danh sách lines từ guest cards hiện tại trên form.
+4031: const svc     = SERVICES.find(s => String(s.id) === svcSel?.value);
+4032: const variant = svc?.variants?.find(v => String(v.id) === varSel?.value);
+4034: const name    = item.querySelector('.gc-name')?.value.trim() || '—';
+4041: unitPrice:    String(price),
+4043: lineTotal:    String(price),
+4062: if (btnConfirm) btnConfirm.disabled = true;
+4075: // Caller (_initInvoiceModal) đã đảm bảo không có unsaved changes trước khi gọi hàm này.
+4082: const invoiceModal = bootstrap.Modal.getInstance(invoiceModalEl) || new bootstrap.Modal(invoiceModalEl);
+4110: tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Chưa có dịch vụ</td></tr>';
+4126: return `<tr>
+4133: </tr>`;
+4169: // Reset trạng thái trước
+4193: errEl.textContent = 'Chưa có dịch vụ nào được chọn. Vui lòng lưu lịch hẹn với dịch vụ trước khi thanh toán.';
+4244: * Cập nhật hiển thị các dòng tổng trong invoice modal.
+4300: if (errEl) { errEl.textContent = 'Chưa có dịch vụ nào được chọn. Vui lòng lưu lịch hẹn với dịch vụ trước khi thanh toán.'; errEl.classList.remove('d-none'); }
+4304: if (errEl) { errEl.textContent = `Số tiền thanh toán (${_fmtVND(payAmount)}) vượt quá số tiền còn lại (${_fmtVND(remainingCheck)}). Vui lòng kiểm tra lại.`; errEl.classList.remove('d-none'); }
+4333: // Cập nhật badge trong create modal
+4344: const invoiceModal   = bootstrap.Modal.getInstance(invoiceModalEl);
+4353: // Loading state — chỉ đổi text trong span, không ghi đè innerHTML nút
+4355: if (btnConfirm) btnConfirm.disabled = true;
+4358: try {
+4373: const invoiceModal = bootstrap.Modal.getInstance(invoiceModalEl);
+4376: // Cập nhật hidden select + badge trong edit modal
+4413: // Confirm trước khi hoàn tiền
+4422: if (btnRefund) btnRefund.disabled = true;
+4425: try {
+4435: const invoiceModal = bootstrap.Modal.getInstance(invoiceModalEl);
+4438: // Cập nhật trạng thái thanh toán trong edit modal

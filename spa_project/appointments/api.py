@@ -1369,46 +1369,6 @@ def api_appointment_create_batch(request):
         if not validated_guests and errors:
             return JsonResponse({'success': False, 'error': '; '.join(errors)}, status=400)
 
-        # V-11: Cross-guest conflict check — không cho 2 khách cùng phòng cùng giờ overlap
-        if len(validated_guests) > 1:
-            from datetime import datetime as _dt, timedelta as _td, date as _date
-            for i in range(len(validated_guests)):
-                for j in range(i + 1, len(validated_guests)):
-                    _, _, ci = validated_guests[i]
-                    _, _, cj = validated_guests[j]
-                    room_i = ci.get('room')
-                    room_j = cj.get('room')
-                    if not room_i or not room_j:
-                        continue
-                    if room_i.code != room_j.code:
-                        continue
-                    # Cùng phòng — check ngày
-                    date_i = ci.get('appointment_date')
-                    date_j = cj.get('appointment_date')
-                    if date_i != date_j:
-                        continue
-                    # Cùng ngày — check giờ overlap
-                    time_i = ci.get('appointment_time')
-                    time_j = cj.get('appointment_time')
-                    dur_i  = ci.get('duration_minutes', 60)
-                    dur_j  = cj.get('duration_minutes', 60)
-                    if not time_i or not time_j:
-                        continue
-                    start_i = _time_to_minutes(time_i)
-                    end_i   = start_i + dur_i
-                    start_j = _time_to_minutes(time_j)
-                    end_j   = start_j + dur_j
-                    if start_i < end_j and start_j < end_i:
-                        return JsonResponse(
-                            {
-                                'success': False,
-                                'error': (
-                                    f'Khách {i+1} và Khách {j+1} trùng phòng và thời gian. '
-                                    'Các khách trong cùng lịch hẹn không được trùng phòng và thời gian.'
-                                ),
-                            },
-                            status=400,
-                        )
 
         # BUG-002 FIX: Capacity check tổng hợp — DB slots + request slots cùng phòng/giờ
         # validate_appointment_create chỉ check từng khách riêng lẻ với DB, không tính

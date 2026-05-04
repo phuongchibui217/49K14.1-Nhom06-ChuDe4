@@ -35,12 +35,11 @@ const API_BASE = '/api';
 const MSG_LOAD_APPT_ERROR = 'Không thể tải lịch hẹn. Vui lòng thử lại sau.';
 
 // ===== UC 14.3 — Messages chuẩn hóa =====
-const MSG_APPROVE_SUCCESS  = 'Xác nhận yêu cầu thành công';
-const MSG_REJECT_SUCCESS   = 'Từ chối yêu cầu thành công';
-const MSG_REBOOK_SUCCESS   = 'Đặt lại lịch hẹn thành công';
-const MSG_WEB_EMPTY        = 'Hiện chưa có yêu cầu đặt lịch nào.';
-const MSG_WEB_GENERIC_ERR  = 'Không thể xử lý yêu cầu. Vui lòng thử lại sau.';
-const MSG_WEB_CONFLICT     = 'Không thể xử lý do khung giờ hoặc phòng không khả dụng.';
+const MSG_APPROVE_SUCCESS = 'Xác nhận yêu cầu thành công';
+const MSG_REJECT_SUCCESS = 'Từ chối yêu cầu thành công';
+const MSG_WEB_EMPTY = 'Hiện chưa có yêu cầu đặt lịch nào.';
+const MSG_WEB_GENERIC_ERR = 'Không thể xử lý yêu cầu. Vui lòng thử lại sau.';
+const MSG_WEB_CONFLICT = 'Không thể xử lý do khung giờ hoặc phòng không khả dụng.';
 const MSG_APPROVE_CONFLICT = 'Không thể xác nhận do khung giờ hoặc phòng không khả dụng.';
 
 // ===== HELPER: format variant label — tránh lặp "90 phút — 90 phút" =====
@@ -190,8 +189,8 @@ async function loadBookingRequests(dateFilter = '', searchTerm = '', serviceFilt
   let url = `${API_BASE}/booking-requests/`;
   const queryParams = [];
   // Backend chỉ trả về PENDING bookings - không cần status filter
-  if (dateFilter)    queryParams.push(`date=${encodeURIComponent(dateFilter)}`);
-  if (searchTerm)    queryParams.push(`q=${encodeURIComponent(searchTerm)}`);
+  if (dateFilter) queryParams.push(`date=${encodeURIComponent(dateFilter)}`);
+  if (searchTerm) queryParams.push(`q=${encodeURIComponent(searchTerm)}`);
   if (serviceFilter) queryParams.push(`service=${encodeURIComponent(serviceFilter)}`);
   if (queryParams.length > 0) url += '?' + queryParams.join('&');
 
@@ -207,8 +206,8 @@ async function loadBookingRequests(dateFilter = '', searchTerm = '', serviceFilt
 // ============================================================
 // SECTION 4: VALIDATION HELPERS
 // ============================================================
-function isValidPhone(v){ return /^0\d{9}$/.test(v.replace(/\D/g,"")); }
-function isValidEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
+function isValidPhone(v) { return /^0\d{9}$/.test(v.replace(/\D/g, "")); }
+function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
 
 /**
  * Hiển thị lỗi trong #modalError.
@@ -307,9 +306,9 @@ function _validateBookerNote(note) {
  */
 function _validateGuestDateTimeRoom(g, index, total) {
   const label = total > 1 ? `Khách ${index + 1}: ` : '';
-  if (!g.date)   return { ok: false, error: `${label}Vui lòng chọn ngày hẹn`, type: 'date' };
-  if (!g.time)   return { ok: false, error: `${label}Vui lòng chọn giờ hẹn`,  type: 'time' };
-  if (!g.roomId) return { ok: false, error: `${label}Vui lòng chọn phòng`,     type: 'room' };
+  if (!g.date) return { ok: false, error: `${label}Vui lòng chọn ngày hẹn`, type: 'date' };
+  if (!g.time) return { ok: false, error: `${label}Vui lòng chọn giờ hẹn`, type: 'time' };
+  if (!g.roomId) return { ok: false, error: `${label}Vui lòng chọn phòng`, type: 'room' };
   return { ok: true, error: '', type: null };
 }
 
@@ -325,10 +324,10 @@ function _validateGuestDateTimeRoom(g, index, total) {
  */
 function _validateGuestBasic(g, index, total) {
   const label = total > 1 ? `Khách ${index + 1}: ` : '';
-  if (!g.name || !g.name.trim())          return { ok: false, error: `${label}Vui lòng nhập tên khách` };
-  if (g.phone && !isValidPhone(g.phone))  return { ok: false, error: `${label}Số điện thoại khách không hợp lệ` };
-  if (g.email && !isValidEmail(g.email))  return { ok: false, error: `${label}Email không hợp lệ` };
-  if (g.serviceId && !g.variantId)        return { ok: false, error: `${label}Vui lòng chọn gói dịch vụ` };
+  if (!g.name || !g.name.trim()) return { ok: false, error: `${label}Vui lòng nhập tên khách` };
+  if (g.phone && !isValidPhone(g.phone)) return { ok: false, error: `${label}Số điện thoại khách không hợp lệ` };
+  if (g.email && !isValidEmail(g.email)) return { ok: false, error: `${label}Email không hợp lệ` };
+  if (g.serviceId && !g.variantId) return { ok: false, error: `${label}Vui lòng chọn gói dịch vụ` };
   return { ok: true, error: '' };
 }
 
@@ -345,8 +344,8 @@ function _validateGuestBasic(g, index, total) {
  */
 function _validateAllCardsTiming(cards, getStatus, getDate, getTime, getDur) {
   for (let i = 0; i < cards.length; i++) {
-    const g      = cards[i];
-    const label  = cards.length > 1 ? `Khách ${i + 1}: ` : '';
+    const g = cards[i];
+    const label = cards.length > 1 ? `Khách ${i + 1}: ` : '';
     const status = getStatus(g, i);
     if (status !== 'ARRIVED' && status !== 'COMPLETED') continue;
     const timing = _validateStatusTiming(getDate(g, i), getTime(g, i), getDur(g, i), status);
@@ -358,32 +357,32 @@ function _validateAllCardsTiming(cards, getStatus, getDate, getTime, getDur) {
 // ============================================================
 // SECTION 5: TIME/DATE HELPERS
 // ============================================================
-function pad2(n){ return String(n).padStart(2,"0"); }
+function pad2(n) { return String(n).padStart(2, "0"); }
 
-function minutesFromStart(t){ const [h,m]=t.split(":").map(Number); return (h-START_HOUR)*60 + m; }
+function minutesFromStart(t) { const [h, m] = t.split(":").map(Number); return (h - START_HOUR) * 60 + m; }
 
-function addMinutesToTime(t, add){
+function addMinutesToTime(t, add) {
   // Extract HH:MM from time string in case it contains date or other info
   const timeMatch = t.match(/(\d{1,2}):(\d{2})/);
   if (!timeMatch) return t;
   const h = parseInt(timeMatch[1], 10);
   const m = parseInt(timeMatch[2], 10);
-  const total = h*60+m+add;
-  return `${pad2(Math.floor(total/60))}:${pad2(total%60)}`;
+  const total = h * 60 + m + add;
+  return `${pad2(Math.floor(total / 60))}:${pad2(total % 60)}`;
 }
 
-function overlaps(aStart,aEnd,bStart,bEnd){ return aStart < bEnd && bStart < aEnd; }
+function overlaps(aStart, aEnd, bStart, bEnd) { return aStart < bEnd && bStart < aEnd; }
 
 // Tổng số phút của toàn bộ timeline (9:00 → 21:00 = 720 phút)
-function totalTimelineMinutes(){ return (END_HOUR - START_HOUR) * 60; }
+function totalTimelineMinutes() { return (END_HOUR - START_HOUR) * 60; }
 
 // Chuyển số phút từ START_HOUR sang % chiều ngang của vùng slots
-function minutesToPercent(minutes){ return (minutes / totalTimelineMinutes()) * 100; }
+function minutesToPercent(minutes) { return (minutes / totalTimelineMinutes()) * 100; }
 
 // ============================================================
 // SECTION 6: UI HELPERS
 // ============================================================
-function showToast(type, title, message){
+function showToast(type, title, message) {
   const toastEl = document.getElementById("toast");
   if (!toastEl) return;
   const header = toastEl.querySelector(".toast-header");
@@ -393,10 +392,10 @@ function showToast(type, title, message){
 
   if (header) {
     header.className = "toast-header";
-    if(type==="success"){ header.classList.add("bg-success","text-white"); if(icon) icon.className="fas fa-check-circle me-2"; }
-    else if(type==="warning"){ header.classList.add("bg-warning","text-dark"); if(icon) icon.className="fas fa-exclamation-triangle me-2"; }
-    else if(type==="error"){ header.classList.add("bg-danger","text-white"); if(icon) icon.className="fas fa-times-circle me-2"; }
-    else { header.classList.add("bg-info","text-white"); if(icon) icon.className="fas fa-info-circle me-2"; }
+    if (type === "success") { header.classList.add("bg-success", "text-white"); if (icon) icon.className = "fas fa-check-circle me-2"; }
+    else if (type === "warning") { header.classList.add("bg-warning", "text-dark"); if (icon) icon.className = "fas fa-exclamation-triangle me-2"; }
+    else if (type === "error") { header.classList.add("bg-danger", "text-white"); if (icon) icon.className = "fas fa-times-circle me-2"; }
+    else { header.classList.add("bg-info", "text-white"); if (icon) icon.className = "fas fa-info-circle me-2"; }
   }
   if (toastTitle) toastTitle.textContent = title;
   if (toastBody) toastBody.textContent = message;
@@ -407,26 +406,26 @@ function showToast(type, title, message){
   toast.show();
 }
 
-function statusClass(s){
-  const sl = (s||'').toLowerCase();
-  if(sl==="not_arrived") return "status-not_arrived";
-  if(sl==="arrived") return "status-arrived";
-  if(sl==="completed") return "status-completed";
-  if(sl==="cancelled") return "status-cancelled";
-  if(sl==="rejected") return "status-rejected";
-  if(sl==="confirmed") return "status-not_arrived";
+function statusClass(s) {
+  const sl = (s || '').toLowerCase();
+  if (sl === "not_arrived") return "status-not_arrived";
+  if (sl === "arrived") return "status-arrived";
+  if (sl === "completed") return "status-completed";
+  if (sl === "cancelled") return "status-cancelled";
+  if (sl === "rejected") return "status-rejected";
+  if (sl === "confirmed") return "status-not_arrived";
   return "status-pending";
 }
 
-function statusLabel(s){
-  const sl = (s||'').toLowerCase();
-  if(sl==="pending") return "Chờ xác nhận";
-  if(sl==="confirmed") return "Đã xác nhận";
-  if(sl==="not_arrived") return "Chưa đến";
-  if(sl==="arrived") return "Đã đến";
-  if(sl==="completed") return "Hoàn thành";
-  if(sl==="cancelled") return "Đã hủy";
-  if(sl==="rejected") return "Đã từ chối";
+function statusLabel(s) {
+  const sl = (s || '').toLowerCase();
+  if (sl === "pending") return "Chờ xác nhận";
+  if (sl === "confirmed") return "Đã xác nhận";
+  if (sl === "not_arrived") return "Chưa đến";
+  if (sl === "arrived") return "Đã đến";
+  if (sl === "completed") return "Hoàn thành";
+  if (sl === "cancelled") return "Đã hủy";
+  if (sl === "rejected") return "Đã từ chối";
   return s;
 }
 
@@ -488,7 +487,7 @@ async function confirmAction(title, message, confirmText = 'Xác nhận', cancel
   return false;
 }
 
-function resetModalError(){
+function resetModalError() {
   const modalError = document.getElementById("modalError");
   modalError.classList.add("d-none");
   modalError.textContent = "";
@@ -557,9 +556,9 @@ function _replaceWithClone(el) {
  * @param {string} defaultSource - fallback khi rb.source rỗng (mặc định 'DIRECT')
  */
 function _fillBookerFields(rb, defaultSource = 'DIRECT') {
-  document.getElementById('bookerName').value   = rb.name   || '';
-  document.getElementById('bookerPhone').value  = rb.phone  || '';
-  document.getElementById('bookerEmail').value  = rb.email  || '';
+  document.getElementById('bookerName').value = rb.name || '';
+  document.getElementById('bookerPhone').value = rb.phone || '';
+  document.getElementById('bookerEmail').value = rb.email || '';
   document.getElementById('bookerSource').value = rb.source || defaultSource;
   const bookerNoteEl = document.getElementById('bookerNote');
   if (bookerNoteEl) bookerNoteEl.value = rb.note || '';
@@ -598,8 +597,8 @@ function _populateSelect(selectEl, items, valueKey, labelFn, placeholder = null)
     : '';
   items.forEach(item => {
     const opt = document.createElement('option');
-    opt.value       = typeof valueKey === 'function' ? valueKey(item) : item[valueKey];
-    opt.textContent = typeof labelFn  === 'function' ? labelFn(item)  : item[labelFn];
+    opt.value = typeof valueKey === 'function' ? valueKey(item) : item[valueKey];
+    opt.textContent = typeof labelFn === 'function' ? labelFn(item) : item[labelFn];
     selectEl.appendChild(opt);
   });
 }
@@ -614,12 +613,12 @@ async function _refreshAll() {
 }
 
 // ===== LOADING SKELETON CHO GRID =====
-function showGridLoading(){
+function showGridLoading() {
   const grid = document.getElementById("grid");
   if (!grid) return;
   // Hiện 5 dòng skeleton để layout không bị trống trong lúc fetch
   const rowH = getComputedStyle(document.documentElement).getPropertyValue('--rowH') || '72px';
-  grid.innerHTML = Array.from({length: 5}, (_, i) => `
+  grid.innerHTML = Array.from({ length: 5 }, (_, i) => `
     <div class="lane-row" style="opacity:.45;">
       <div class="roomcell"><span class="dot"></span>—</div>
       <div class="slots" style="background: repeating-linear-gradient(90deg,#f3f4f6 0,#f3f4f6 40%,#e9eaec 40%,#e9eaec 100%) 0 0 / 120px 100%;"></div>
@@ -639,13 +638,13 @@ function _nextPendingId() {
  */
 function _isSlotInPast(day, time) {
   const now = new Date();
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   if (day > todayStr) return false;
   if (day < todayStr) return true;
   // Cùng ngày hôm nay — so sánh giờ
   const [h, m] = time.split(':').map(Number);
   const slotMinutes = h * 60 + m;
-  const nowMinutes  = now.getHours() * 60 + now.getMinutes();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
   return slotMinutes <= nowMinutes;
 }
 
@@ -655,9 +654,9 @@ function _isSlotInPast(day, time) {
  */
 function handleToggleSlot({ roomId, laneIndex, day, time, slotsEl }) {
   const duration = DEFAULT_DURATION;
-  const endTime  = addMinutesToTime(time, duration);
+  const endTime = addMinutesToTime(time, duration);
   const startMin = minutesFromStart(time);
-  const endMin   = minutesFromStart(endTime);
+  const endMin = minutesFromStart(endTime);
 
   // Kiểm tra ngoài giờ
   if (startMin < 0 || endMin > totalTimelineMinutes()) {
@@ -730,7 +729,7 @@ function clearPendingBlocks() {
 }
 
 function _syncActionBar() {
-  const bar   = document.getElementById("pendingActionBar");
+  const bar = document.getElementById("pendingActionBar");
   const badge = document.getElementById("pbCountBadge");
   const label = document.getElementById("pbCountLabel");
   const btnContinue = document.getElementById("btnContinuePending");
@@ -777,8 +776,8 @@ function _mountPendingBlock(pb, slotsEl) {
   block.style.cssText = "position:absolute;top:0;height:var(--rowH);z-index:30;cursor:pointer;";
 
   const leftMin = minutesFromStart(pb.time);
-  const durMin  = Math.max(SLOT_MIN, minutesFromStart(pb.endTime) - leftMin);
-  block.style.left  = `calc(${minutesToPercent(leftMin)}% + 1px)`;
+  const durMin = Math.max(SLOT_MIN, minutesFromStart(pb.endTime) - leftMin);
+  block.style.left = `calc(${minutesToPercent(leftMin)}% + 1px)`;
   block.style.width = `calc(${minutesToPercent(durMin)}% - 2px)`;
 
   // Click vào block xanh → toggle off (bỏ chọn)
@@ -786,11 +785,11 @@ function _mountPendingBlock(pb, slotsEl) {
     e.stopPropagation();
     const sEl = block.closest(".slots");
     handleToggleSlot({
-      roomId:     pb.roomId,
-      laneIndex:  pb.laneIndex,
-      day:        pb.day,
-      time:       pb.time,
-      slotsEl:    sEl,
+      roomId: pb.roomId,
+      laneIndex: pb.laneIndex,
+      day: pb.day,
+      time: pb.time,
+      slotsEl: sEl,
     });
   });
 
@@ -809,46 +808,46 @@ function renderPendingBlocks(slotsEl, roomId, laneIndex, day) {
 // ============================================================
 // SECTION 8: TAB 1 - LỊCH THEO PHÒNG (GRID)
 // ============================================================
-function renderHeader(){
+function renderHeader() {
   const timeHeader = document.getElementById("timeHeader");
-  const totalSlots = ((END_HOUR-START_HOUR)*60)/SLOT_MIN;
+  const totalSlots = ((END_HOUR - START_HOUR) * 60) / SLOT_MIN;
   document.documentElement.style.setProperty("--totalSlots", totalSlots);
   let html = `<div class="leftcell">Phòng</div><div class="slots">`;
-  for(let i=0;i<totalSlots;i++){
-    const mins = i*SLOT_MIN, hour = START_HOUR + Math.floor(mins/60), minute = mins%60;
-    html += `<div class="slot ${minute===0?'major':''}">${minute===0?`${hour}:00`:''}</div>`;
+  for (let i = 0; i < totalSlots; i++) {
+    const mins = i * SLOT_MIN, hour = START_HOUR + Math.floor(mins / 60), minute = mins % 60;
+    html += `<div class="slot ${minute === 0 ? 'major' : ''}">${minute === 0 ? `${hour}:00` : ''}</div>`;
   }
   html += `</div>`;
   timeHeader.innerHTML = html;
 }
 
-function allocateRoomLanes(roomId, day, appts){
-  const cap = (ROOMS.find(r=>r.id===roomId)?.capacity) || 1;
-  const laneIntervals = Array.from({length: cap}, ()=>[]);
-  const sorted = [...appts].sort((a,b)=> minutesFromStart(a.start)-minutesFromStart(b.start));
+function allocateRoomLanes(roomId, day, appts) {
+  const cap = (ROOMS.find(r => r.id === roomId)?.capacity) || 1;
+  const laneIntervals = Array.from({ length: cap }, () => []);
+  const sorted = [...appts].sort((a, b) => minutesFromStart(a.start) - minutesFromStart(b.start));
   const placements = [];
-  for(const a of sorted){
-    const need = Math.max(1, Number(a.guests)||1);
+  for (const a of sorted) {
+    const need = Math.max(1, Number(a.guests) || 1);
     const s = minutesFromStart(a.start);
     // Tính end: ưu tiên a.end, fallback về durationMin
     const rawE = a.end ? minutesFromStart(a.end) : NaN;
     const e = (!isNaN(rawE) && rawE > s) ? rawE : s + Math.max(SLOT_MIN, Number(a.durationMin) || SLOT_MIN);
     // Đảm bảo end > start (tránh block width = 0)
     const eFixed = e > s ? e : s + SLOT_MIN;
-    for(let g=0; g<need; g++){
+    for (let g = 0; g < need; g++) {
       let foundLane = -1;
-      for(let li=0; li<cap; li++){
-        if(!laneIntervals[li].some(it => overlaps(s, eFixed, it.startMin, it.endMin))){ foundLane = li; break; }
+      for (let li = 0; li < cap; li++) {
+        if (!laneIntervals[li].some(it => overlaps(s, eFixed, it.startMin, it.endMin))) { foundLane = li; break; }
       }
-      if(foundLane === -1) foundLane = 0; // fallback: lane 0 nếu hết chỗ
-      laneIntervals[foundLane].push({startMin:s, endMin:eFixed, apptId:a.id});
+      if (foundLane === -1) foundLane = 0; // fallback: lane 0 nếu hết chỗ
+      laneIntervals[foundLane].push({ startMin: s, endMin: eFixed, apptId: a.id });
       placements.push({ appt: a, laneIndex: foundLane });
     }
   }
   return { cap, placements };
 }
 
-function renderGrid(){
+function renderGrid() {
   const grid = document.getElementById("grid");
   const dayPicker = document.getElementById("dayPicker");
   grid.innerHTML = "";
@@ -864,7 +863,7 @@ function renderGrid(){
     return;
   }
 
-  ROOMS.forEach((r)=>{
+  ROOMS.forEach((r) => {
     // Lọc lịch theo phòng — chỉ hiển thị lịch đã CONFIRMED
     // PENDING không hiển thị trên grid (chỉ ở tab Yêu cầu đặt lịch)
     let appts = APPOINTMENTS.filter(a =>
@@ -876,30 +875,30 @@ function renderGrid(){
 
     // Phân bổ Lane (dòng) cho từng khách
     const { cap, placements } = allocateRoomLanes(r.id, day, appts);
-    for(let lane=0; lane<cap; lane++){
+    for (let lane = 0; lane < cap; lane++) {
       const laneRow = document.createElement("div");
       laneRow.className = "lane-row";
       laneRow.dataset.roomId = r.id;
       laneRow.dataset.lane = lane;
 
       // tên phòng
-      laneRow.innerHTML = `${lane===0?`<div class="roomcell"><span class="dot"></span>${r.name}</div>`:`<div class="roomcell muted"><span class="dot"></span>${r.name}</div>`}<div class="slots" data-room="${r.id}" data-lane="${lane}"></div>`;
+      laneRow.innerHTML = `${lane === 0 ? `<div class="roomcell"><span class="dot"></span>${r.name}</div>` : `<div class="roomcell muted"><span class="dot"></span>${r.name}</div>`}<div class="slots" data-room="${r.id}" data-lane="${lane}"></div>`;
       const slotsEl = laneRow.querySelector(".slots");
 
       // click vào ô trống → toggle slot (chọn hoặc bỏ chọn)
       slotsEl.addEventListener("click", (e) => {
         if (e.target.closest('.appt') || e.target.closest('.appt-pending')) return;
 
-        const rect        = slotsEl.getBoundingClientRect();
-        const ratio       = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-        const minutes     = Math.floor(ratio * totalTimelineMinutes() / SLOT_MIN) * SLOT_MIN;
+        const rect = slotsEl.getBoundingClientRect();
+        const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        const minutes = Math.floor(ratio * totalTimelineMinutes() / SLOT_MIN) * SLOT_MIN;
         const clickedTime = `${pad2(START_HOUR + Math.floor(minutes / 60))}:${pad2(minutes % 60)}`;
 
         handleToggleSlot({ roomId: r.id, laneIndex: lane, day: dayPicker.value, time: clickedTime, slotsEl });
       });
 
       // vẽ block lịch hẹn
-      placements.filter(p => p.laneIndex === lane).forEach(p=>{
+      placements.filter(p => p.laneIndex === lane).forEach(p => {
         const a = p.appt;
         const block = document.createElement("div");
 
@@ -909,27 +908,27 @@ function renderGrid(){
 
         const leftMin = minutesFromStart(a.start);
         // Tính durMin: ưu tiên end - start, fallback về durationMin, tối thiểu SLOT_MIN
-        const endMin  = a.end ? minutesFromStart(a.end) : NaN;
-        const durMin  = (!isNaN(endMin) && endMin > leftMin)
+        const endMin = a.end ? minutesFromStart(a.end) : NaN;
+        const durMin = (!isNaN(endMin) && endMin > leftMin)
           ? endMin - leftMin
           : Math.max(SLOT_MIN, Number(a.durationMin) || SLOT_MIN);
         const endLabel = a.end || addMinutesToTime(a.start, durMin);
         // Dùng % thay vì px → tự co giãn theo chiều rộng thực tế của vùng slots
-        const leftPct  = minutesToPercent(leftMin);
+        const leftPct = minutesToPercent(leftMin);
         const widthPct = minutesToPercent(durMin);
-        block.style.left  = `calc(${leftPct}% + 2px)`;
+        block.style.left = `calc(${leftPct}% + 2px)`;
         block.style.width = `calc(${widthPct}% - 4px)`;
 
         const paidIcon = (a.payStatus || '').toUpperCase() === 'PAID'
           ? `<span class="appt-paid-icon" title="Đã thanh toán"><i class="fas fa-receipt"></i></span>`
           : '';
-        const svcText   = a.serviceCode || a.service || '';
-        const custText  = a.customerName || '';
+        const svcText = a.serviceCode || a.service || '';
+        const custText = a.customerName || '';
 
         const titleText = svcText && custText ? `${svcText} · ${custText}` : (svcText || custText || 'Chưa chọn DV');
         block.innerHTML = `<div class="appt-content"><div class="t1">${titleText}</div><div class="t2">${a.start}–${endLabel}</div></div>${paidIcon}`;
         // click vào lịch ==> sửa
-        block.addEventListener("click", (ev)=>{
+        block.addEventListener("click", (ev) => {
           ev.stopPropagation();
           openEditModal(a.id).catch(err => console.error('[openEditModal] threw:', err));
         });
@@ -962,9 +961,9 @@ function updateCurrentTimeLine() {
   // Lấy hoặc tạo element (chỉ tạo 1 lần duy nhất)
   let line = grid.querySelector('.current-time-line');
 
-  const viewDay  = dayPicker ? dayPicker.value : '';
-  const now      = new Date();
-  const todayStr = `${now.getFullYear()}-${pad2(now.getMonth()+1)}-${pad2(now.getDate())}`;
+  const viewDay = dayPicker ? dayPicker.value : '';
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
 
   // Chỉ hiện khi đang xem đúng ngày hôm nay
   if (viewDay !== todayStr) {
@@ -973,7 +972,7 @@ function updateCurrentTimeLine() {
   }
 
   const nowMinutes = now.getHours() * 60 + now.getMinutes() - START_HOUR * 60;
-  const pct        = (nowMinutes / totalTimelineMinutes()) * 100;
+  const pct = (nowMinutes / totalTimelineMinutes()) * 100;
 
   // Ngoài khung giờ → ẩn
   if (pct <= 0 || pct >= 100) {
@@ -993,7 +992,7 @@ function updateCurrentTimeLine() {
 
   // Cập nhật vị trí và label
   line.style.display = '';
-  line.style.left    = `calc(var(--leftCol) + ${pct} * (100% - var(--leftCol)) / 100)`;
+  line.style.left = `calc(var(--leftCol) + ${pct} * (100% - var(--leftCol)) / 100)`;
   const labelEl = line.querySelector('.ctl-label');
   if (labelEl) labelEl.textContent = label;
 }
@@ -1008,10 +1007,10 @@ function startCurrentTimeLineInterval() {
 // SECTION 9: TAB 2 - YÊU CẦU ĐẶT LỊCH (WEB REQUESTS)
 // ============================================================
 // vẽ bảng yêu cầu đặt lịch online (CHỈ PENDING - chờ xác nhận)
-async function renderWebRequests(){
-  const dateFilter    = (document.getElementById("webDateFilter")     || {}).value || '';
-  const searchTerm    = ((document.getElementById("webSearchInput")   || {}).value || '').trim();
-  const serviceFilter = (document.getElementById("webServiceFilter")  || {}).value || '';
+async function renderWebRequests() {
+  const dateFilter = (document.getElementById("webDateFilter") || {}).value || '';
+  const searchTerm = ((document.getElementById("webSearchInput") || {}).value || '').trim();
+  const serviceFilter = (document.getElementById("webServiceFilter") || {}).value || '';
 
   let rows = await loadBookingRequests(dateFilter, searchTerm, serviceFilter);
 
@@ -1019,7 +1018,7 @@ async function renderWebRequests(){
   window._webAppts = rows;
 
   const webTbody = document.getElementById("webTbody");
-  if(rows.length === 0){
+  if (rows.length === 0) {
     webTbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">${MSG_WEB_EMPTY}</td></tr>`;
     return;
   }
@@ -1039,14 +1038,14 @@ async function renderWebRequests(){
       <td>${a.service}</td>
       <td>${a.date}</td>
       <td>${a.start} - ${a.end}</td>
-      <td>${a.durationMin||""} phút</td>
+      <td>${a.durationMin || ""} phút</td>
       <td class="action-cell">${actionBtn}</td>
     </tr>`;
   }).join("");
 }
 
 //Flow: Click "Xác nhận" → Tìm appt data → Mở modal với prefill → Staff chọn phòng/giờ → Submit
-window.approveWeb = async function(id){
+window.approveWeb = async function (id) {
   // Tìm appointment data từ cache
   const appt = (window._webAppts || []).find(a => a.id === id);
   if (!appt) {
@@ -1197,7 +1196,7 @@ function addOnlineRequestGuestCard(onlineAppt) {
   _markRowValidity(item);  // Highlight border để user biết dòng đã đủ info chưa
 }
 
-window.rejectWeb = async function(id){
+window.rejectWeb = async function (id) {
   const appt = (window._webAppts || []).find(a => a.id === id);
   const info = appt ? `${appt.customerName || appt.bookerName || ''} — ${appt.date} ${appt.start}` : id;
 
@@ -1236,7 +1235,7 @@ window.rejectWeb = async function(id){
   modal.show();
 }
 
-window.rebookAppointment = async function(id) {
+window.rebookAppointment = async function (id) {
   // Guard: tránh double-click mở nhiều modal trong khi đang fetch
   if (window._rebookInProgress) {
     console.warn('[Rebook] Đang xử lý, bỏ qua click thừa — nếu bị kẹt, reload trang');
@@ -1273,20 +1272,20 @@ function openRebookAsCreate(a) {
   const prefill = {
     _fromRebook: true,
     _booker: {
-      name:   a.bookerName  || '',
-      phone:  a.bookerPhone || '',
-      email:  a.bookerEmail || '',
+      name: a.bookerName || '',
+      phone: a.bookerPhone || '',
+      email: a.bookerEmail || '',
       // Rebook luôn là admin tạo trực tiếp → source DIRECT, không copy source cũ
       // (tránh trường hợp booking gốc là ONLINE → booking mới bị coi là online pending)
       source: 'DIRECT',
-      note:   a.bookerNotes || '',
+      note: a.bookerNotes || '',
     },
     _guest: {
-      name:      a.customerName || '',
-      phone:     a.phone        || '',
-      email:     a.email        || '',
-      serviceId: a.serviceId    || null,
-      variantId: a.variantId    || null,
+      name: a.customerName || '',
+      phone: a.phone || '',
+      email: a.email || '',
+      serviceId: a.serviceId || null,
+      variantId: a.variantId || null,
       // Không copy: roomId, date, time, status, appointment_code, booking_code, invoice
     },
   };
@@ -1320,7 +1319,7 @@ function openRebookAsCreate(a) {
 }
 
 // Điền dropdown dịch vụ cho filter bar scheduler
-function fillServiceFilter(){
+function fillServiceFilter() {
   const sel = document.getElementById('serviceFilter');
   if (sel) {
     _populateSelect(sel, SERVICES.filter(s => s.status === 'ACTIVE'), 'id', 'name', 'Tất cả dịch vụ');
@@ -1364,7 +1363,7 @@ function initCustomerSearch() {
 
   let _lastBookerPhone = '';
 
-  bookerPhoneEl.addEventListener('blur', async function() {
+  bookerPhoneEl.addEventListener('blur', async function () {
     const phone = bookerPhoneEl.value.trim();
     const digits = phone.replace(/\D/g, '');
     // Không lookup nếu SĐT không đổi hoặc quá ngắn
@@ -1380,14 +1379,14 @@ function initCustomerSearch() {
 
     // Tìm thấy → autofill booker
     // Ghi đè nếu profile mới khác profile cũ (đổi SĐT sang khách khác)
-    const nameEl    = document.getElementById('bookerName');
-    const emailEl   = document.getElementById('bookerEmail');
+    const nameEl = document.getElementById('bookerName');
+    const emailEl = document.getElementById('bookerEmail');
     const prevCustId = document.getElementById('selectedCustomerId').value || '';
     const isNewProfile = String(customer.id) !== prevCustId;
 
     // Fill tên/email: ghi đè khi profile mới khác, hoặc ô đang trống
-    if (nameEl  && (isNewProfile || !nameEl.value.trim()))  nameEl.value  = customer.fullName || '';
-    if (emailEl && (isNewProfile || !emailEl.value.trim())) emailEl.value = customer.email    || '';
+    if (nameEl && (isNewProfile || !nameEl.value.trim())) nameEl.value = customer.fullName || '';
+    if (emailEl && (isNewProfile || !emailEl.value.trim())) emailEl.value = customer.email || '';
 
     // Lưu customerId của booker
     document.getElementById('selectedCustomerId').value = String(customer.id);
@@ -1396,14 +1395,14 @@ function initCustomerSearch() {
     _getGuestItems().forEach(item => {
       const chk = item.querySelector('.gc-same-as-booker');
       if (!chk || !chk.checked) return;
-      const nameI   = item.querySelector('.gc-name');
-      const emailI  = item.querySelector('.gc-email');
+      const nameI = item.querySelector('.gc-name');
+      const emailI = item.querySelector('.gc-email');
       const custIdI = item.querySelector('.gc-customer-id');
-      const noteI   = item.querySelector('.gc-customer-note');
+      const noteI = item.querySelector('.gc-customer-note');
       const prevGuestCustId = (custIdI?.value || item.dataset.customerId || '');
       const isNewGuestProfile = String(customer.id) !== prevGuestCustId;
-      if (nameI)  nameI.value  = customer.fullName || '';
-      if (emailI) emailI.value = customer.email    || '';
+      if (nameI) nameI.value = customer.fullName || '';
+      if (emailI) emailI.value = customer.email || '';
       if (custIdI) custIdI.value = String(customer.id);
       item.dataset.customerId = String(customer.id);
       // Ghi đè ghi chú hồ sơ khách khi profile mới khác, hoặc ô đang trống
@@ -1425,7 +1424,7 @@ function _resetAllCustomerState() {
 // ============================================================
 // Escape HTML để tránh XSS
 function _esc(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function _roomShortLabel(room) {
@@ -1449,7 +1448,7 @@ function _getGuestItem(idx) {
 /** Kiểm tra 1 guest row đã đủ trường bắt buộc chưa */
 function _isGuestComplete(item) {
   if (!item) return false;
-  const svc  = item.querySelector('.gc-service')?.value;
+  const svc = item.querySelector('.gc-service')?.value;
   const vari = item.querySelector('.gc-variant')?.value;
   const room = item.dataset.slotRoom || item.querySelector('.gc-room')?.value;
   const date = document.getElementById('bookingDate')?.value || item.dataset.slotDate || item.querySelector('.gc-date')?.value;
@@ -1463,7 +1462,7 @@ function _markRowValidity(item) {
   const row = item.querySelector('.gc-row');
   if (row) {
     const complete = _isGuestComplete(item);
-    row.style.background      = '#fff';
+    row.style.background = '#fff';
     row.style.borderLeftColor = complete ? '#86efac' : '#fca5a5';
   }
 }
@@ -1476,12 +1475,12 @@ function _markRowError(item) {
   [svcSel, varSel].forEach(el => {
     if (!el) return;
     el.style.borderColor = el.value ? '#d1d5db' : '#ef4444';
-    el.style.background  = el.value ? '#fff'    : '#fef2f2';
+    el.style.background = el.value ? '#fff' : '#fef2f2';
   });
   const nameInp = item.querySelector('.gc-name');
   if (nameInp) {
     nameInp.style.borderColor = nameInp.value.trim() ? '#d1d5db' : '#ef4444';
-    nameInp.style.background  = nameInp.value.trim() ? '#fff'    : '#fef2f2';
+    nameInp.style.background = nameInp.value.trim() ? '#fff' : '#fef2f2';
   }
 }
 
@@ -1491,12 +1490,12 @@ function _updateGuestProgress() {
 }
 
 /** Load variants cho 1 guest card */
-window.toggleGuestCard = function(idx) {
+window.toggleGuestCard = function (idx) {
   const item = _getGuestItem(idx);
   if (!item) return;
-  const wrap   = item.querySelector('.gc-detail-wrap');
+  const wrap = item.querySelector('.gc-detail-wrap');
   const detail = item.querySelector('.gc-detail');
-  const icon   = item.querySelector('.gc-expand-btn i');
+  const icon = item.querySelector('.gc-expand-btn i');
   if (!wrap || !detail) return;
   const isOpen = wrap.style.maxHeight && wrap.style.maxHeight !== '0px' && wrap.style.maxHeight !== '0';
   if (isOpen) {
@@ -1517,8 +1516,8 @@ function _loadGuestVariants(item, serviceId, selectedVariantId) {
   const varSel = item.querySelector('.gc-variant');
   if (!varSel) return;
   varSel.innerHTML = '<option value="">-- Chọn gói --</option>';
-  varSel.disabled  = true;
-  varSel.style.color      = '#9ca3af';
+  varSel.disabled = true;
+  varSel.style.color = '#9ca3af';
   varSel.style.background = '#f9fafb';
 
   const svc = SERVICES.find(s => s.id === parseInt(serviceId, 10));
@@ -1538,10 +1537,10 @@ function _loadGuestVariants(item, serviceId, selectedVariantId) {
   });
 
   // Enable + reset style về bình thường
-  varSel.disabled         = false;
-  varSel.style.color      = '#111827';
+  varSel.disabled = false;
+  varSel.style.color = '#111827';
   varSel.style.background = '#fff';
-  varSel.style.opacity    = '1';
+  varSel.style.opacity = '1';
 
   if (!selectedVariantId && svc.variants.length === 1) {
     varSel.value = svc.variants[0].id;
@@ -1590,13 +1589,13 @@ function _validateStatusTiming(dateStr, timeStr, durationMin, newStatus) {
   const dur = parseInt(durationMin, 10) || 60;
 
   // Parse start datetime (local)
-  const [y, mo, d]  = (dateStr || '').split('-').map(Number);
-  const [h, mi]     = (timeStr || '00:00').split(':').map(Number);
+  const [y, mo, d] = (dateStr || '').split('-').map(Number);
+  const [h, mi] = (timeStr || '00:00').split(':').map(Number);
   if (!y || !mo || !d) return { ok: true, error: '' }; // không đủ data → bỏ qua
 
   const startMs = new Date(y, mo - 1, d, h, mi, 0).getTime();
-  const endMs   = startMs + dur * 60 * 1000;
-  const nowMs   = Date.now();
+  const endMs = startMs + dur * 60 * 1000;
+  const nowMs = Date.now();
 
   if (newStatus === 'ARRIVED' && nowMs < startMs) {
     return { ok: false, error: 'Chưa đến giờ hẹn, không thể chuyển sang Đã đến' };
@@ -1623,7 +1622,7 @@ function _updatePaymentSummary() {
 
   // Cập nhật label + style nút invoice
   const btnLabel = document.getElementById('btnInvoiceLabel');
-  const btn      = document.getElementById('btnOpenInvoice');
+  const btn = document.getElementById('btnOpenInvoice');
   if (payStatus === 'PAID') {
     if (btnLabel) btnLabel.textContent = 'Xem hóa đơn';
     if (btn) btn.className = 'btn-invoice-action btn-invoice-view';
@@ -1647,14 +1646,14 @@ function _setPayStatusBadge(payStatus) {
   if (!badge) return;
 
   const MAP = {
-    UNPAID:   { text: 'Chưa thanh toán', cls: 'pay-status-unpaid'   },
-    PARTIAL:  { text: 'Một phần',         cls: 'pay-status-partial'  },
-    PAID:     { text: 'Đã thanh toán',    cls: 'pay-status-paid'     },
-    REFUNDED: { text: 'Đã hoàn tiền',     cls: 'pay-status-refunded' },
+    UNPAID: { text: 'Chưa thanh toán', cls: 'pay-status-unpaid' },
+    PARTIAL: { text: 'Một phần', cls: 'pay-status-partial' },
+    PAID: { text: 'Đã thanh toán', cls: 'pay-status-paid' },
+    REFUNDED: { text: 'Đã hoàn tiền', cls: 'pay-status-refunded' },
   };
   const info = MAP[payStatus] || MAP.UNPAID;
   badge.textContent = info.text;
-  badge.className   = `pay-status-badge ${info.cls}`;
+  badge.className = `pay-status-badge ${info.cls}`;
 }
 
 /** Format số tiền VNĐ */
@@ -1703,19 +1702,19 @@ function _applyModalMode(mode) {
 
 function _showSharedStatusBlock(statusValue, payValue, isEditMode) {
   const sharedStatusSel = document.getElementById('sharedApptStatus');
-  const sharedPaySel    = document.getElementById('sharedPayStatus');
+  const sharedPaySel = document.getElementById('sharedPayStatus');
   _setSelectValue(sharedStatusSel, statusValue, 'NOT_ARRIVED');
-  _setSelectValue(sharedPaySel,    payValue,    'UNPAID');
+  _setSelectValue(sharedPaySel, payValue, 'UNPAID');
 
-  const readonlyWrap  = document.getElementById('payStatusReadonlyWrap');
-  const btnWrap       = document.getElementById('btnInvoiceWrap');
+  const readonlyWrap = document.getElementById('payStatusReadonlyWrap');
+  const btnWrap = document.getElementById('btnInvoiceWrap');
 
   // Shared status dropdown — hiện cả create và edit mode
   const apptStatusWrap = sharedStatusSel ? sharedStatusSel.closest('.status-form-group') : null;
 
   if (apptStatusWrap) apptStatusWrap.style.display = '';
   if (readonlyWrap) readonlyWrap.classList.remove('d-none');
-  if (btnWrap)      btnWrap.classList.remove('d-none');
+  if (btnWrap) btnWrap.classList.remove('d-none');
   if (sharedPaySel) sharedPaySel.onchange = null;
 
   if (isEditMode) {
@@ -1749,7 +1748,7 @@ function _syncBookerToGuests() {
       const phoneI = item.querySelector('.gc-phone');
       const emailI = item.querySelector('.gc-email');
       const custIdI = item.querySelector('.gc-customer-id');
-      
+
       if (nameI) nameI.value = name;
       if (phoneI) phoneI.value = phone;
       if (emailI) emailI.value = email;
@@ -1763,23 +1762,23 @@ function _syncBookerToGuests() {
 function _buildGuestItem(idx, prefill) {
   prefill = prefill || {};
   const dayPicker = document.getElementById("dayPicker");
-  var dateVal  = prefill.date || document.getElementById('bookingDate')?.value || dayPicker.value;
-  var timeVal  = prefill.time || '';
-  var endTime  = (timeVal && prefill.pendingDuration) ? addMinutesToTime(timeVal, prefill.pendingDuration) : '';
+  var dateVal = prefill.date || document.getElementById('bookingDate')?.value || dayPicker.value;
+  var timeVal = prefill.time || '';
+  var endTime = (timeVal && prefill.pendingDuration) ? addMinutesToTime(timeVal, prefill.pendingDuration) : '';
 
   var svcOpts = '<option value="">Dịch vụ</option>' +
-    SERVICES.filter(s => s.status === 'ACTIVE').map(function(s){ return '<option value="' + s.id + '">' + s.name + '</option>'; }).join('');
+    SERVICES.filter(s => s.status === 'ACTIVE').map(function (s) { return '<option value="' + s.id + '">' + s.name + '</option>'; }).join('');
 
   var inp = 'width:100%;height:36px;padding:0 12px;font-size:14px;border:1px solid #d1d5db;border-radius:6px;outline:none;background:#fff;box-sizing:border-box;font-family:inherit;color:#111827;display:block;';
   var sel = 'width:100%;height:36px;padding:0 10px;font-size:14px;border:1px solid #d1d5db;border-radius:6px;outline:none;background:#fff;box-sizing:border-box;font-family:inherit;color:#111827;display:block;appearance:auto;';
   var roomSelectCss = sel.replace('width:100%;', 'width:112px;max-width:100%;');
   var sInp = 'width:100%;height:32px;padding:0 10px;font-size:13px;border:1px solid #e5e7eb;border-radius:5px;outline:none;background:#fff;box-sizing:border-box;font-family:inherit;color:#374151;display:block;';
-  var lbl  = 'font-size:13px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;white-space:nowrap;';
+  var lbl = 'font-size:13px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;white-space:nowrap;';
   var selectedRoomId = prefill.roomId || '';
 
   // Slot badge: phòng dropdown + time-range field gọn đẹp
   var roomOpts = '<option value="" disabled' + (selectedRoomId ? '' : ' selected') + ' hidden>Chọn phòng</option>' +
-    ROOMS.map(function(r){
+    ROOMS.map(function (r) {
       var roomId = r.id || r.code || '';
       var isSel = (String(roomId) === String(selectedRoomId)) ? ' selected' : '';
       var label = _roomShortLabel(r);
@@ -1791,38 +1790,38 @@ function _buildGuestItem(idx, prefill) {
   var slotBadge = '<div class="gc-slot-badge">'
     + '<select class="gc-room-select" required style="' + roomSelectCss + '">' + roomOpts + '</select>'
     + '<div class="gc-time-range-field" title="Click để chỉnh giờ">'
-      + '<i class="far fa-clock gc-time-range-icon"></i>'
-      + '<span class="gc-time-range-display">'
-        + (timeVal ? _esc(timeVal) : '--:--')
-        + '<span class="gc-time-range-sep"> – </span>'
-        + (endTime ? _esc(endTime) : '--:--')
-      + '</span>'
-      + '<div class="gc-time-range-inputs">'
-        + '<input type="time" class="gc-time-input" value="' + _esc(timeVal) + '" title="Giờ bắt đầu" />'
-      + '</div>'
+    + '<i class="far fa-clock gc-time-range-icon"></i>'
+    + '<span class="gc-time-range-display">'
+    + (timeVal ? _esc(timeVal) : '--:--')
+    + '<span class="gc-time-range-sep"> – </span>'
+    + (endTime ? _esc(endTime) : '--:--')
+    + '</span>'
+    + '<div class="gc-time-range-inputs">'
+    + '<input type="time" class="gc-time-input" value="' + _esc(timeVal) + '" title="Giờ bắt đầu" />'
     + '</div>'
-  + '</div>';
+    + '</div>'
+    + '</div>';
 
   var item = document.createElement('div');
   item.className = 'gc-item';
-  item.dataset.idx      = idx;
+  item.dataset.idx = idx;
   item.dataset.slotTime = timeVal;
   item.dataset.slotDate = dateVal;
   item.dataset.slotRoom = selectedRoomId;
-  item.dataset.endTime  = endTime;
+  item.dataset.endTime = endTime;
   item.dataset.detailOpen = '0';
   item.style.cssText = 'border-bottom:1px solid #eef0f3;';
 
   item.innerHTML =
     '<input type="hidden" class="gc-room" value="' + _esc(selectedRoomId) + '" />'
-  + '<input type="hidden" class="gc-date" value="' + _esc(dateVal) + '" />'
-  + '<input type="hidden" class="gc-time" value="' + _esc(timeVal) + '" />'
-  + '<input type="hidden" class="gc-time-end" value="' + _esc(endTime) + '" />'
-  + '<input type="hidden" class="gc-customer-id" value="' + _esc(prefill.customerId || '') + '" />'
+    + '<input type="hidden" class="gc-date" value="' + _esc(dateVal) + '" />'
+    + '<input type="hidden" class="gc-time" value="' + _esc(timeVal) + '" />'
+    + '<input type="hidden" class="gc-time-end" value="' + _esc(endTime) + '" />'
+    + '<input type="hidden" class="gc-customer-id" value="' + _esc(prefill.customerId || '') + '" />'
 
-  // ── DÒNG CHÍNH ──
-  // Grid: # | Phòng·Giờ | Tên khách (+ checkbox) | SĐT | Dịch vụ | Gói | Actions
-  + '<div class="gc-row gc-row-grid">'
+    // ── DÒNG CHÍNH ──
+    // Grid: # | Phòng·Giờ | Tên khách (+ checkbox) | SĐT | Dịch vụ | Gói | Actions
+    + '<div class="gc-row gc-row-grid">'
 
     // Col 1 — số thứ tự
     + '<div class="gc-num" style="text-align:center;font-size:13px;font-weight:700;color:#94a3b8;">—</div>'
@@ -1832,13 +1831,13 @@ function _buildGuestItem(idx, prefill) {
 
     // Col 3 — tên khách + checkbox "= người đặt"
     + '<div class="gc-name-cell">'
-      + '<div class="gc-name-inline">'
-        + '<input class="gc-name" style="' + inp + 'flex:1 1 220px;min-width:0;" placeholder="Tên khách *" value="' + _esc(prefill.name || '') + '" />'
-        + '<label class="gc-same-booker-label" title="Điền từ người đặt">'
-          + '<input type="checkbox" class="gc-same-as-booker" style="width:14px;height:14px;cursor:pointer;accent-color:#1d4ed8;margin:0;" />'
-          + '<span>= người đặt</span>'
-        + '</label>'
-      + '</div>'
+    + '<div class="gc-name-inline">'
+    + '<input class="gc-name" style="' + inp + 'flex:1 1 220px;min-width:0;" placeholder="Tên khách *" value="' + _esc(prefill.name || '') + '" />'
+    + '<label class="gc-same-booker-label" title="Điền từ người đặt">'
+    + '<input type="checkbox" class="gc-same-as-booker" style="width:14px;height:14px;cursor:pointer;accent-color:#1d4ed8;margin:0;" />'
+    + '<span>= người đặt</span>'
+    + '</label>'
+    + '</div>'
     + '</div>'
 
     // Col 4 — SĐT
@@ -1852,38 +1851,38 @@ function _buildGuestItem(idx, prefill) {
 
     // Col 7 — actions
     + '<div class="gc-actions-cell" style="display:flex;align-items:center;justify-content:center;gap:6px;">'
-      + '<button type="button" class="gc-expand-btn" onclick="toggleGuestCard(' + idx + ')" title="Email & ghi chú"'
-      + ' style="height:36px;width:36px;padding:0;font-size:15px;background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;">'
-      + '<i class="fas fa-ellipsis-h"></i></button>'
-      + '<button type="button" class="gc-delete-btn" onclick="removeGuestCard(' + idx + ')" title="Xóa khách"'
-      + ' style="height:36px;width:36px;padding:0;font-size:15px;background:#fff5f5;border:1px solid #fecaca;color:#ef4444;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,opacity .15s;">'
-      + '<i class="fas fa-trash-alt"></i></button>'
+    + '<button type="button" class="gc-expand-btn" onclick="toggleGuestCard(' + idx + ')" title="Email & ghi chú"'
+    + ' style="height:36px;width:36px;padding:0;font-size:15px;background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;">'
+    + '<i class="fas fa-ellipsis-h"></i></button>'
+    + '<button type="button" class="gc-delete-btn" onclick="removeGuestCard(' + idx + ')" title="Xóa khách"'
+    + ' style="height:36px;width:36px;padding:0;font-size:15px;background:#fff5f5;border:1px solid #fecaca;color:#ef4444;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,opacity .15s;">'
+    + '<i class="fas fa-trash-alt"></i></button>'
     + '</div>'
 
-  + '</div>'
+    + '</div>'
 
-  // gc-sub-row đã chuyển thành block chung ở footer — không render per-guest anymore
+    // gc-sub-row đã chuyển thành block chung ở footer — không render per-guest anymore
 
-  // ── PHẦN MỞ RỘNG — Email + Ghi chú hồ sơ khách + Trạng thái (toggle bằng dấu 3 chấm) ──
-  + '<div class="gc-detail-wrap">'
+    // ── PHẦN MỞ RỘNG — Email + Ghi chú hồ sơ khách + Trạng thái (toggle bằng dấu 3 chấm) ──
+    + '<div class="gc-detail-wrap">'
     + '<div class="gc-detail">'
-      + '<div style="display:flex;flex-direction:column;gap:2px;min-width:150px;flex:1;">'
-        + '<label style="' + lbl + '">Email</label>'
-        + '<input type="email" class="gc-email" style="' + sInp + '" placeholder="Email (nếu có)" value="' + _esc(prefill.email || '') + '" />'
-      + '</div>'
-      // Dropdown trạng thái riêng từng khách — đã chuyển lên gc-row-grid (col 7) để hiện rõ trong edit mode
-      // Trong create mode, trạng thái dùng sharedApptStatus ở footer
-      + '<div style="display:flex;flex-direction:column;gap:2px;flex:3;min-width:180px;">'
-        + '<label style="' + lbl + '">Ghi chú hồ sơ khách <span style="font-weight:400;color:#9ca3af;font-size:12px;">(lưu vào hồ sơ nếu khách có hồ sơ)</span></label>'
-        + '<input class="gc-customer-note" style="' + sInp + '" placeholder="Ghi chú lâu dài từ hồ sơ khách..." value="' + _esc(prefill.customerNote || '') + '" title="Ghi chú lâu dài từ hồ sơ khách — sẽ được cập nhật vào hồ sơ khi lưu (nếu khách có hồ sơ)" />'
-      + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:2px;min-width:150px;flex:1;">'
+    + '<label style="' + lbl + '">Email</label>'
+    + '<input type="email" class="gc-email" style="' + sInp + '" placeholder="Email (nếu có)" value="' + _esc(prefill.email || '') + '" />'
     + '</div>'
-  + '</div>';
+    // Dropdown trạng thái riêng từng khách — đã chuyển lên gc-row-grid (col 7) để hiện rõ trong edit mode
+    // Trong create mode, trạng thái dùng sharedApptStatus ở footer
+    + '<div style="display:flex;flex-direction:column;gap:2px;flex:3;min-width:180px;">'
+    + '<label style="' + lbl + '">Ghi chú hồ sơ khách <span style="font-weight:400;color:#9ca3af;font-size:12px;">(lưu vào hồ sơ nếu khách có hồ sơ)</span></label>'
+    + '<input class="gc-customer-note" style="' + sInp + '" placeholder="Ghi chú lâu dài từ hồ sơ khách..." value="' + _esc(prefill.customerNote || '') + '" title="Ghi chú lâu dài từ hồ sơ khách — sẽ được cập nhật vào hồ sơ khi lưu (nếu khách có hồ sơ)" />'
+    + '</div>'
+    + '</div>'
+    + '</div>';
 
   // Bind events
   var roomSel = item.querySelector('.gc-room-select');
   if (roomSel) {
-    roomSel.addEventListener('change', function() {
+    roomSel.addEventListener('change', function () {
       item.dataset.slotRoom = roomSel.value;
       var roomInp = item.querySelector('.gc-room');
       if (roomInp) roomInp.value = roomSel.value;
@@ -1895,9 +1894,9 @@ function _buildGuestItem(idx, prefill) {
   var svcSel = item.querySelector('.gc-service');
   var varSel = item.querySelector('.gc-variant');
   if (svcSel) {
-    svcSel.addEventListener('change', function() {
+    svcSel.addEventListener('change', function () {
       svcSel.style.borderColor = svcSel.value ? '#d1d5db' : '';
-      svcSel.style.background  = '#fff';
+      svcSel.style.background = '#fff';
       _loadGuestVariants(item, svcSel.value, null);
       _markRowValidity(item);
       _updateGuestProgress();
@@ -1905,10 +1904,10 @@ function _buildGuestItem(idx, prefill) {
     });
   }
   if (varSel) {
-    varSel.addEventListener('change', function() {
+    varSel.addEventListener('change', function () {
       varSel.style.borderColor = varSel.value ? '#d1d5db' : '';
-      varSel.style.background  = '#fff';
-      varSel.style.color       = varSel.value ? '#111827' : '#9ca3af';
+      varSel.style.background = '#fff';
+      varSel.style.color = varSel.value ? '#111827' : '#9ca3af';
       _updateGuestEndTime(item);
       _markRowValidity(item);
       _updateGuestProgress();
@@ -1916,9 +1915,9 @@ function _buildGuestItem(idx, prefill) {
     });
   }
   var nameInp = item.querySelector('.gc-name');
-  if (nameInp) nameInp.addEventListener('input', function() {
+  if (nameInp) nameInp.addEventListener('input', function () {
     nameInp.style.borderColor = nameInp.value.trim() ? '#d1d5db' : '';
-    nameInp.style.background  = '#fff';
+    nameInp.style.background = '#fff';
     _updateGuestProgress();
   });
 
@@ -1926,8 +1925,8 @@ function _buildGuestItem(idx, prefill) {
   var phoneInp = item.querySelector('.gc-phone');
   if (phoneInp) {
     let _lastGuestPhone = '';
-    phoneInp.addEventListener('blur', async function() {
-      const phone  = phoneInp.value.trim();
+    phoneInp.addEventListener('blur', async function () {
+      const phone = phoneInp.value.trim();
       const digits = phone.replace(/\D/g, '');
       if (digits === _lastGuestPhone || digits.length < 10) return;
       _lastGuestPhone = digits;
@@ -1943,15 +1942,15 @@ function _buildGuestItem(idx, prefill) {
 
       // Tìm thấy → autofill đúng dòng này
       // Ghi đè nếu profile mới khác profile cũ (đổi SĐT sang khách khác)
-      const nameI   = item.querySelector('.gc-name');
-      const emailI  = item.querySelector('.gc-email');
+      const nameI = item.querySelector('.gc-name');
+      const emailI = item.querySelector('.gc-email');
       const custIdI = item.querySelector('.gc-customer-id');
-      const noteI   = item.querySelector('.gc-customer-note');
+      const noteI = item.querySelector('.gc-customer-note');
       const prevCustId = custIdI?.value || item.dataset.customerId || '';
       const isNewProfile = String(customer.id) !== prevCustId;
 
-      if (nameI  && (isNewProfile || !nameI.value.trim()))  nameI.value  = customer.fullName || '';
-      if (emailI && (isNewProfile || !emailI.value.trim())) emailI.value = customer.email    || '';
+      if (nameI && (isNewProfile || !nameI.value.trim())) nameI.value = customer.fullName || '';
+      if (emailI && (isNewProfile || !emailI.value.trim())) emailI.value = customer.email || '';
 
       // Lưu customerId vào hidden field và dataset
       if (custIdI) custIdI.value = String(customer.id);
@@ -1970,16 +1969,16 @@ function _buildGuestItem(idx, prefill) {
   // Checkbox "= người đặt" — sync tên + SĐT + email từ booker khi tick
   var sameChk = item.querySelector('.gc-same-as-booker');
   if (sameChk) {
-    sameChk.addEventListener('change', function() {
-      var nameI  = item.querySelector('.gc-name');
+    sameChk.addEventListener('change', function () {
+      var nameI = item.querySelector('.gc-name');
       var phoneI = item.querySelector('.gc-phone');
       var emailI = item.querySelector('.gc-email');
       var custIdI = item.querySelector('.gc-customer-id');
       if (sameChk.checked) {
-        if (nameI)  nameI.value  = document.getElementById('bookerName')?.value.trim()  || '';
+        if (nameI) nameI.value = document.getElementById('bookerName')?.value.trim() || '';
         if (phoneI) phoneI.value = document.getElementById('bookerPhone')?.value.trim() || '';
         if (emailI) emailI.value = document.getElementById('bookerEmail')?.value.trim() || '';
-        if (nameI)  nameI.readOnly  = true;
+        if (nameI) nameI.readOnly = true;
         if (phoneI) phoneI.readOnly = true;
         // Khi tick "= người đặt": copy customerId của booker vào guest
         // (booker customerId được lưu trong #selectedCustomerId)
@@ -2000,7 +1999,7 @@ function _buildGuestItem(idx, prefill) {
           }
         }
       } else {
-        if (nameI)  { nameI.value  = ''; nameI.readOnly  = false; }
+        if (nameI) { nameI.value = ''; nameI.readOnly = false; }
         if (phoneI) { phoneI.value = ''; phoneI.readOnly = false; }
         if (emailI) emailI.readOnly = false;
         // Bỏ tick → khách là người khác, xóa customerId để tránh update nhầm profile người đặt
@@ -2017,8 +2016,8 @@ function _buildGuestItem(idx, prefill) {
 
   // ── Bind time inputs — sync về hidden fields + dataset ──
   var startInp = item.querySelector('.gc-time-input');
-  var timeHid  = item.querySelector('.gc-time');
-  var endHid   = item.querySelector('.gc-time-end');
+  var timeHid = item.querySelector('.gc-time');
+  var endHid = item.querySelector('.gc-time-end');
 
   function _syncTimeDisplay() {
     var disp = item.querySelector('.gc-time-range-display');
@@ -2036,7 +2035,7 @@ function _buildGuestItem(idx, prefill) {
   }
 
   if (startInp) {
-    startInp.addEventListener('change', function() {
+    startInp.addEventListener('change', function () {
       var v = startInp.value;
       item.dataset.slotTime = v;
       if (timeHid) timeHid.value = v;
@@ -2059,13 +2058,13 @@ function _buildGuestItem(idx, prefill) {
   // ── Click vào cụm time-range → toggle editing mode ──
   var timeRangeField = item.querySelector('.gc-time-range-field');
   if (timeRangeField) {
-    timeRangeField.addEventListener('click', function(e) {
+    timeRangeField.addEventListener('click', function (e) {
       if (e.target.tagName === 'INPUT') return; // đang trong input thì không toggle
       var isEditing = timeRangeField.classList.contains('is-editing');
       if (!isEditing) {
         timeRangeField.classList.add('is-editing');
         // Focus vào input giờ bắt đầu
-        setTimeout(function() {
+        setTimeout(function () {
           var inp = timeRangeField.querySelector('.gc-time-input');
           if (inp) inp.focus();
         }, 30);
@@ -2075,7 +2074,7 @@ function _buildGuestItem(idx, prefill) {
     // Enter từ input → đóng editing
     var startTimeInp = timeRangeField.querySelector('.gc-time-input');
     if (startTimeInp) {
-      startTimeInp.addEventListener('keydown', function(e) {
+      startTimeInp.addEventListener('keydown', function (e) {
         if (e.key === 'Enter') {
           timeRangeField.classList.remove('is-editing');
         }
@@ -2089,7 +2088,7 @@ function _buildGuestItem(idx, prefill) {
 function addGuestCard(prefill = {}) {
   const list = document.getElementById('guestList');
   if (!list) return;
-  const idx  = _guestCount++;
+  const idx = _guestCount++;
   const item = _buildGuestItem(idx, prefill);
   list.appendChild(item);
 
@@ -2107,9 +2106,9 @@ function addGuestCard(prefill = {}) {
 
   // Lưu date/time/room gốc để edit submit chỉ gửi khi thực sự thay đổi
   if (prefill._editMode) {
-    item.dataset.originalDate    = prefill.date    || '';
-    item.dataset.originalTime    = prefill.time    || '';
-    item.dataset.originalRoom    = prefill.roomId  || '';
+    item.dataset.originalDate = prefill.date || '';
+    item.dataset.originalTime = prefill.time || '';
+    item.dataset.originalRoom = prefill.roomId || '';
     // Lưu variantId gốc để detect khi variant đổi → gửi kèm roomId cho BE validate overlap
     item.dataset.originalVariantId = prefill.variantId ? String(prefill.variantId) : '';
     // Lưu status gốc để _hasUnsavedGuestChanges detect thay đổi (so sánh với sharedApptStatus)
@@ -2153,9 +2152,9 @@ function addGuestCard(prefill = {}) {
   _updateDeleteBtnState();
 }
 
-window.removeGuestCard = async function(idx) {
+window.removeGuestCard = async function (idx) {
   const items = _getGuestItems();
-  const item  = _getGuestItem(idx);
+  const item = _getGuestItem(idx);
   if (!item) return;
 
   // Lấy _apptId từ dataset (được set khi build guest card trong edit mode)
@@ -2224,8 +2223,8 @@ function _updateDeleteBtnState() {
     const btn = item.querySelector('.gc-delete-btn');
     if (!btn) return;
     btn.disabled = onlyOne;
-    btn.style.opacity  = onlyOne ? '0.3' : '1';
-    btn.style.cursor   = onlyOne ? 'not-allowed' : 'pointer';
+    btn.style.opacity = onlyOne ? '0.3' : '1';
+    btn.style.cursor = onlyOne ? 'not-allowed' : 'pointer';
   });
 }
 
@@ -2234,7 +2233,7 @@ function _collectGuestCards() {
   // Ngày hẹn chung cho toàn booking — đọc từ field #bookingDate ở booker section
   const sharedDate = document.getElementById('bookingDate')?.value || '';
   // Đọc trạng thái từ block footer (dùng cho CREATE mode)
-  const sharedStatus  = document.getElementById('sharedApptStatus')?.value  || 'NOT_ARRIVED';
+  const sharedStatus = document.getElementById('sharedApptStatus')?.value || 'NOT_ARRIVED';
   return _getGuestItems().map(item => {
     const variantSel = item.querySelector('.gc-variant');
     const selectedVariantOpt = variantSel?.options[variantSel.selectedIndex];
@@ -2244,26 +2243,26 @@ function _collectGuestCards() {
     // sharedDate chỉ dùng làm fallback khi per-card date rỗng.
     const resolvedDate = perCardDate || sharedDate;
     return {
-      name:               item.querySelector('.gc-name')?.value.trim() || '',
-      phone:              item.querySelector('.gc-phone')?.value.trim() || '',
-      email:              item.querySelector('.gc-email')?.value.trim() || '',
-      serviceId:          item.querySelector('.gc-service')?.value || '',
-      variantId:          variantSel?.value || '',
-      roomId:             item.dataset.slotRoom || item.querySelector('.gc-room')?.value || '',
-      date:               resolvedDate,
-      time:               item.querySelector('.gc-time-input')?.value || item.dataset.slotTime || item.querySelector('.gc-time')?.value || '',
-      apptStatus:         sharedStatus,
-      note:               bookerNote,
-      customerNote:       item.querySelector('.gc-customer-note')?.value.trim() || '',
-      customerId:         item.querySelector('.gc-customer-id')?.value || item.dataset.customerId || '',
-      originalNote:       item.dataset.originalNote || '',
-      originalDate:       item.dataset.originalDate || '',
-      originalTime:       item.dataset.originalTime || '',
-      originalRoom:       item.dataset.originalRoom || '',
+      name: item.querySelector('.gc-name')?.value.trim() || '',
+      phone: item.querySelector('.gc-phone')?.value.trim() || '',
+      email: item.querySelector('.gc-email')?.value.trim() || '',
+      serviceId: item.querySelector('.gc-service')?.value || '',
+      variantId: variantSel?.value || '',
+      roomId: item.dataset.slotRoom || item.querySelector('.gc-room')?.value || '',
+      date: resolvedDate,
+      time: item.querySelector('.gc-time-input')?.value || item.dataset.slotTime || item.querySelector('.gc-time')?.value || '',
+      apptStatus: sharedStatus,
+      note: bookerNote,
+      customerNote: item.querySelector('.gc-customer-note')?.value.trim() || '',
+      customerId: item.querySelector('.gc-customer-id')?.value || item.dataset.customerId || '',
+      originalNote: item.dataset.originalNote || '',
+      originalDate: item.dataset.originalDate || '',
+      originalTime: item.dataset.originalTime || '',
+      originalRoom: item.dataset.originalRoom || '',
       _originalVariantId: item.dataset.originalVariantId || '',
-      _duration:          selectedVariantOpt?.dataset?.duration || 60,
-      _finalAmount:       item.dataset.finalAmount || 0,
-      _apptId:            item.dataset.apptId || '',   // appointment_code nếu là edit mode
+      _duration: selectedVariantOpt?.dataset?.duration || 60,
+      _finalAmount: item.dataset.finalAmount || 0,
+      _apptId: item.dataset.apptId || '',   // appointment_code nếu là edit mode
     };
   });
 }
@@ -2283,10 +2282,10 @@ function _collectGuestCards() {
  */
 async function _updateCustomerNotes(cards, skipConfirm = false) {
   for (const g of cards) {
-    const newNote      = (g.customerNote || '').trim();
+    const newNote = (g.customerNote || '').trim();
     const originalNote = (g.originalNote || '').trim();
-    const customerId   = (g.customerId || '').toString().trim();
-    const guestLabel   = g.name ? ` (${g.name})` : '';
+    const customerId = (g.customerId || '').toString().trim();
+    const guestLabel = g.name ? ` (${g.name})` : '';
 
     // Không thay đổi → không gọi API
     if (newNote === originalNote) continue;
@@ -2332,12 +2331,12 @@ function _initApplyAllBar() {
   }
 
   if (applyAllSvc) {
-    applyAllSvc.onchange = function() {
+    applyAllSvc.onchange = function () {
       const varSel = document.getElementById('applyAllVariant');
       if (!varSel) return;
       varSel.innerHTML = '<option value="">-- Gói --</option>';
-      varSel.disabled  = true;
-      varSel.style.color      = '#9ca3af';
+      varSel.disabled = true;
+      varSel.style.color = '#9ca3af';
       varSel.style.background = '#f9fafb';
       const svc = SERVICES.find(s => String(s.id) === this.value);
       if (!svc || !svc.variants?.length) return;
@@ -2348,17 +2347,17 @@ function _initApplyAllBar() {
         opt.dataset.duration = v.duration_minutes;
         varSel.appendChild(opt);
       });
-      varSel.disabled         = false;
-      varSel.style.color      = '#111827';
+      varSel.disabled = false;
+      varSel.style.color = '#111827';
       varSel.style.background = '#fff';
-      varSel.style.opacity    = '1';
+      varSel.style.opacity = '1';
       if (svc.variants.length === 1) varSel.value = svc.variants[0].id;
     };
   }
 
   const btnApply = document.getElementById('btnApplyAll');
   if (btnApply) {
-    btnApply.onclick = function() {
+    btnApply.onclick = function () {
       const svcVal = document.getElementById('applyAllService')?.value;
       const varVal = document.getElementById('applyAllVariant')?.value;
       if (!svcVal) return;
@@ -2376,40 +2375,40 @@ function _initApplyAllBar() {
 
   const btnAdd = document.getElementById('btnAddGuest');
   if (btnAdd) {
-    btnAdd.onclick = function() {
+    btnAdd.onclick = function () {
       const apptIdEl = document.getElementById('apptId');
       const bookingCode = apptIdEl?.dataset.bookingCode || '';
-      const allApptIds  = apptIdEl?.dataset.allApptIds  || '';
+      const allApptIds = apptIdEl?.dataset.allApptIds || '';
 
       _savedBookerInfo = {
-        name:        document.getElementById('bookerName')?.value   || '',
-        phone:       document.getElementById('bookerPhone')?.value  || '',
-        email:       document.getElementById('bookerEmail')?.value  || '',
-        source:      document.getElementById('bookerSource')?.value || 'DIRECT',
-        note:        document.getElementById('bookerNote')?.value   || '',
-        bookingDate: document.getElementById('bookingDate')?.value  || '',
+        name: document.getElementById('bookerName')?.value || '',
+        phone: document.getElementById('bookerPhone')?.value || '',
+        email: document.getElementById('bookerEmail')?.value || '',
+        source: document.getElementById('bookerSource')?.value || 'DIRECT',
+        note: document.getElementById('bookerNote')?.value || '',
+        bookingDate: document.getElementById('bookingDate')?.value || '',
       };
 
       // Lưu context edit mode (nếu có bookingCode thì đang ở edit)
       _addingSlotEditBookingCode = bookingCode || null;
       if (bookingCode) {
         // Lưu lại toàn bộ guest cards hiện tại để restore sau
-        _savedBookerInfo._allApptIds  = allApptIds;
+        _savedBookerInfo._allApptIds = allApptIds;
         _savedBookerInfo._bookingCode = bookingCode;
         // Snapshot các guest card hiện tại
         _savedBookerInfo._existingGuests = _getGuestItems().map(item => ({
-          name:       item.querySelector('.gc-name')?.value       || '',
-          phone:      item.querySelector('.gc-phone')?.value      || '',
-          email:      item.querySelector('.gc-email')?.value      || '',
-          serviceId:  item.querySelector('.gc-service')?.value    || '',
-          variantId:  item.querySelector('.gc-variant')?.value    || '',
-          roomId:     item.querySelector('.gc-room')?.value       || '',
-          date:       item.querySelector('.gc-date')?.value       || '',
-          time:       item.querySelector('.gc-time')?.value       || '',
-          apptStatus: item.dataset.originalApptStatus             || 'NOT_ARRIVED',
-          customerId: item.dataset.customerId                     || '',
-          _editMode:  true,
-          _apptId:    item.dataset.apptId                         || '',
+          name: item.querySelector('.gc-name')?.value || '',
+          phone: item.querySelector('.gc-phone')?.value || '',
+          email: item.querySelector('.gc-email')?.value || '',
+          serviceId: item.querySelector('.gc-service')?.value || '',
+          variantId: item.querySelector('.gc-variant')?.value || '',
+          roomId: item.querySelector('.gc-room')?.value || '',
+          date: item.querySelector('.gc-date')?.value || '',
+          time: item.querySelector('.gc-time')?.value || '',
+          apptStatus: item.dataset.originalApptStatus || 'NOT_ARRIVED',
+          customerId: item.dataset.customerId || '',
+          _editMode: true,
+          _apptId: item.dataset.apptId || '',
         }));
       } else {
         _addingSlotEditBookingCode = null;
@@ -2442,151 +2441,151 @@ function _setAddGuestBarVisible(visible) {
   if (bar) bar.style.display = visible ? 'flex' : 'none';
 }
 
-function openCreateModal(prefill={}){
+function openCreateModal(prefill = {}) {
   try {
-  const modalEl = document.getElementById("apptModal");
-  const modalTitle = document.getElementById("modalTitle");
-  const apptId = document.getElementById("apptId");
-  const btnDelete = document.getElementById("btnDelete");
-  const dayPicker = document.getElementById("dayPicker");
+    const modalEl = document.getElementById("apptModal");
+    const modalTitle = document.getElementById("modalTitle");
+    const apptId = document.getElementById("apptId");
+    const btnDelete = document.getElementById("btnDelete");
+    const dayPicker = document.getElementById("dayPicker");
 
-  resetModalError();
-  modalTitle.textContent = "Tạo lịch hẹn";
-  apptId.value = "";
-  btnDelete.classList.add("d-none");
-  document.getElementById('btnRebook')?.classList.add('d-none');
-  // Reset online request state
-  window._pendingOnlineRequestCode = '';
+    resetModalError();
+    modalTitle.textContent = "Tạo lịch hẹn";
+    apptId.value = "";
+    btnDelete.classList.add("d-none");
+    document.getElementById('btnRebook')?.classList.add('d-none');
+    // Reset online request state
+    window._pendingOnlineRequestCode = '';
 
-  const btnSaveText = document.getElementById("btnSaveText");
-  if (btnSaveText) btnSaveText.textContent = "Tạo lịch hẹn";
+    const btnSaveText = document.getElementById("btnSaveText");
+    if (btnSaveText) btnSaveText.textContent = "Tạo lịch hẹn";
 
-  // Hiện shared form, bật create-only bar
-  _showSharedForm();
-  _setAddGuestBarVisible(true);
-
-  // Label panel
-  const lbl = document.getElementById('bookerPanelLabel');
-  if (lbl) lbl.textContent = 'Người đặt lịch';
-
-  // Reset người đặt
-  document.getElementById('bookerName').value   = '';
-  document.getElementById('bookerPhone').value  = '';
-  document.getElementById('bookerEmail').value  = '';
-  document.getElementById('bookerSource').value = 'DIRECT';
-  const bookerNoteEl = document.getElementById('bookerNote');
-  if (bookerNoteEl) bookerNoteEl.value = '';
-  // Set ngày hẹn chung — mặc định là ngày đang xem trên grid
-  const bookingDateEl = document.getElementById('bookingDate');
-  if (bookingDateEl) bookingDateEl.value = prefill.day || dayPicker.value || '';
-
-  // Reset danh sách khách
-  _guestCount = 0;
-  document.getElementById('guestList').innerHTML = '';
-
-  if (prefill._fromRebook && prefill._booker) {
-    _isRebookMode = true;
-    const rb = prefill._booker;
-    _fillBookerFields(rb);
-    addGuestCard({
-      name:        prefill._guest?.name      || '',
-      phone:       prefill._guest?.phone     || '',
-      email:       prefill._guest?.email     || '',
-      serviceId:   prefill._guest?.serviceId || null,
-      variantId:   prefill._guest?.variantId || null,
-      date:        dayPicker.value,
-    });
-    modalTitle.textContent = 'Đặt lại lịch hẹn';
+    // Hiện shared form, bật create-only bar
+    _showSharedForm();
     _setAddGuestBarVisible(true);
-    showToast('info', 'Đặt lại', 'Vui lòng chọn ngày, giờ và phòng mới');
-  } else if (prefill._fromOnlineRequest && prefill._booker) {
-    _isRebookMode = false;
-    // Lưu booking request code để submit sau
-    window._pendingOnlineRequestCode = prefill._bookingRequestCode || '';
-    const rb = prefill._booker;
-    _fillBookerFields(rb, 'ONLINE');
-    // Set ngày hẹn từ request
-    const reqDate = prefill._guest?.date || '';
-    if (reqDate && bookingDateEl) bookingDateEl.value = reqDate;
-    addGuestCard({
-      name:        prefill._guest?.name      || '',
-      phone:       prefill._guest?.phone     || '',
-      email:       prefill._guest?.email     || '',
-      serviceId:   prefill._guest?.serviceId || null,
-      variantId:   prefill._guest?.variantId || null,
-      date:        reqDate || dayPicker.value || '',
-      time:        prefill._guest?.time      || '',
-      // roomId sẽ để trống — staff phải chọn
-    });
-    modalTitle.textContent = 'Xác nhận yêu cầu đặt lịch';
-    if (btnSaveText) btnSaveText.textContent = 'Xác nhận & Tạo lịch';
-    _setAddGuestBarVisible(true);
-    showToast('info', 'Xác nhận yêu cầu', 'Vui lòng chọn phòng và kiểm tra thông tin trước khi lưu');
-  } else if (prefill._fromPending && prefill._blocks && prefill._blocks.length > 0) {
-    _isRebookMode = false;
-    if (prefill._restoreBooker) {
-      const rb = prefill._restoreBooker;
+
+    // Label panel
+    const lbl = document.getElementById('bookerPanelLabel');
+    if (lbl) lbl.textContent = 'Người đặt lịch';
+
+    // Reset người đặt
+    document.getElementById('bookerName').value = '';
+    document.getElementById('bookerPhone').value = '';
+    document.getElementById('bookerEmail').value = '';
+    document.getElementById('bookerSource').value = 'DIRECT';
+    const bookerNoteEl = document.getElementById('bookerNote');
+    if (bookerNoteEl) bookerNoteEl.value = '';
+    // Set ngày hẹn chung — mặc định là ngày đang xem trên grid
+    const bookingDateEl = document.getElementById('bookingDate');
+    if (bookingDateEl) bookingDateEl.value = prefill.day || dayPicker.value || '';
+
+    // Reset danh sách khách
+    _guestCount = 0;
+    document.getElementById('guestList').innerHTML = '';
+
+    if (prefill._fromRebook && prefill._booker) {
+      _isRebookMode = true;
+      const rb = prefill._booker;
       _fillBookerFields(rb);
-      // Khôi phục ngày hẹn đã lưu
-      const bookingDateEl3 = document.getElementById('bookingDate');
-      if (bookingDateEl3 && rb.bookingDate) bookingDateEl3.value = rb.bookingDate;
-    }
-    // Set ngày hẹn chung từ block đầu tiên
-    const bookingDateEl2 = document.getElementById('bookingDate');
-    if (bookingDateEl2 && prefill._blocks[0]?.day) bookingDateEl2.value = prefill._blocks[0].day;
-    prefill._blocks.forEach(pb => {
-      addGuestCard({ date: pb.day, time: pb.time, roomId: pb.roomId, pendingDuration: pb.duration });
-    });
-  } else {
-    _isRebookMode = false;
-    addGuestCard({
-      date: prefill.day || dayPicker.value,
-      time: prefill.time || '',
-      roomId: prefill.roomId || ''
-    });
-  }
-
-  _initApplyAllBar();
-  _updateGuestProgress();
-  _resetAllCustomerState();
-
-  // Xác định mode và apply TRƯỚC KHI show modal — không bị nhá UI
-  const _isOnlineRequestMode = !!(prefill._fromOnlineRequest);
-  const _isRebookModeLocal   = !!(prefill._fromRebook);
-  const _shouldHideStatus    = _isOnlineRequestMode || _isRebookModeLocal;
-
-  if (_shouldHideStatus) {
-    _applyModalMode('request');
-  } else {
-    _applyModalMode('normal');
-    _showSharedStatusBlock('NOT_ARRIVED', 'UNPAID', false);
-  }
-  // Reset payment tạm mỗi lần mở modal tạo mới
-  _createModePayment = { payStatus: 'UNPAID', paymentMethod: '', paymentAmount: 0 };
-
-  let modal = null;
-  if (modalEl) {
-    const existing = bootstrap.Modal.getInstance(modalEl);
-    modal = existing || new bootstrap.Modal(modalEl);
-  }
-  if (!modal) {
-    console.error('[openCreateModal] Không khởi tạo được Bootstrap Modal instance');
-    return;
-  }
-  modalEl.addEventListener('shown.bs.modal', () => {
-
-    // XÓA nút ba chấm và XÓA HOÀN TOÀN Email + Ghi chú trong form "Xác nhận" và "Đặt lại"
-    if (_shouldHideStatus) {
-      const guestItems = document.querySelectorAll('.gc-item');
-      guestItems.forEach(item => {
-        const expandBtn = item.querySelector('.gc-expand-btn');
-        if (expandBtn) expandBtn.remove();
-        const detailWrap = item.querySelector('.gc-detail-wrap');
-        if (detailWrap) detailWrap.remove();
+      addGuestCard({
+        name: prefill._guest?.name || '',
+        phone: prefill._guest?.phone || '',
+        email: prefill._guest?.email || '',
+        serviceId: prefill._guest?.serviceId || null,
+        variantId: prefill._guest?.variantId || null,
+        date: dayPicker.value,
+      });
+      modalTitle.textContent = 'Đặt lại lịch hẹn';
+      _setAddGuestBarVisible(true);
+      showToast('info', 'Đặt lại', 'Vui lòng chọn ngày, giờ và phòng mới');
+    } else if (prefill._fromOnlineRequest && prefill._booker) {
+      _isRebookMode = false;
+      // Lưu booking request code để submit sau
+      window._pendingOnlineRequestCode = prefill._bookingRequestCode || '';
+      const rb = prefill._booker;
+      _fillBookerFields(rb, 'ONLINE');
+      // Set ngày hẹn từ request
+      const reqDate = prefill._guest?.date || '';
+      if (reqDate && bookingDateEl) bookingDateEl.value = reqDate;
+      addGuestCard({
+        name: prefill._guest?.name || '',
+        phone: prefill._guest?.phone || '',
+        email: prefill._guest?.email || '',
+        serviceId: prefill._guest?.serviceId || null,
+        variantId: prefill._guest?.variantId || null,
+        date: reqDate || dayPicker.value || '',
+        time: prefill._guest?.time || '',
+        // roomId sẽ để trống — staff phải chọn
+      });
+      modalTitle.textContent = 'Xác nhận yêu cầu đặt lịch';
+      if (btnSaveText) btnSaveText.textContent = 'Xác nhận & Tạo lịch';
+      _setAddGuestBarVisible(true);
+      showToast('info', 'Xác nhận yêu cầu', 'Vui lòng chọn phòng và kiểm tra thông tin trước khi lưu');
+    } else if (prefill._fromPending && prefill._blocks && prefill._blocks.length > 0) {
+      _isRebookMode = false;
+      if (prefill._restoreBooker) {
+        const rb = prefill._restoreBooker;
+        _fillBookerFields(rb);
+        // Khôi phục ngày hẹn đã lưu
+        const bookingDateEl3 = document.getElementById('bookingDate');
+        if (bookingDateEl3 && rb.bookingDate) bookingDateEl3.value = rb.bookingDate;
+      }
+      // Set ngày hẹn chung từ block đầu tiên
+      const bookingDateEl2 = document.getElementById('bookingDate');
+      if (bookingDateEl2 && prefill._blocks[0]?.day) bookingDateEl2.value = prefill._blocks[0].day;
+      prefill._blocks.forEach(pb => {
+        addGuestCard({ date: pb.day, time: pb.time, roomId: pb.roomId, pendingDuration: pb.duration });
+      });
+    } else {
+      _isRebookMode = false;
+      addGuestCard({
+        date: prefill.day || dayPicker.value,
+        time: prefill.time || '',
+        roomId: prefill.roomId || ''
       });
     }
-  }, { once: true });
-  modal.show();
+
+    _initApplyAllBar();
+    _updateGuestProgress();
+    _resetAllCustomerState();
+
+    // Xác định mode và apply TRƯỚC KHI show modal — không bị nhá UI
+    const _isOnlineRequestMode = !!(prefill._fromOnlineRequest);
+    const _isRebookModeLocal = !!(prefill._fromRebook);
+    const _shouldHideStatus = _isOnlineRequestMode || _isRebookModeLocal;
+
+    if (_shouldHideStatus) {
+      _applyModalMode('request');
+    } else {
+      _applyModalMode('normal');
+      _showSharedStatusBlock('NOT_ARRIVED', 'UNPAID', false);
+    }
+    // Reset payment tạm mỗi lần mở modal tạo mới
+    _createModePayment = { payStatus: 'UNPAID', paymentMethod: '', paymentAmount: 0 };
+
+    let modal = null;
+    if (modalEl) {
+      const existing = bootstrap.Modal.getInstance(modalEl);
+      modal = existing || new bootstrap.Modal(modalEl);
+    }
+    if (!modal) {
+      console.error('[openCreateModal] Không khởi tạo được Bootstrap Modal instance');
+      return;
+    }
+    modalEl.addEventListener('shown.bs.modal', () => {
+
+      // XÓA nút ba chấm và XÓA HOÀN TOÀN Email + Ghi chú trong form "Xác nhận" và "Đặt lại"
+      if (_shouldHideStatus) {
+        const guestItems = document.querySelectorAll('.gc-item');
+        guestItems.forEach(item => {
+          const expandBtn = item.querySelector('.gc-expand-btn');
+          if (expandBtn) expandBtn.remove();
+          const detailWrap = item.querySelector('.gc-detail-wrap');
+          if (detailWrap) detailWrap.remove();
+        });
+      }
+    }, { once: true });
+    modal.show();
   } catch (err) {
     console.error('[openCreateModal] LỖI EXCEPTION:', err);
   }
@@ -2603,22 +2602,22 @@ function openCreateModalFromPending() {
       // ── EDIT MODE: restore edit modal + append slot mới ──
       const booker = _savedBookerInfo;
       const existingGuests = booker._existingGuests || [];
-      const bookingCode    = booker._bookingCode;
-      const allApptIds     = booker._allApptIds;
+      const bookingCode = booker._bookingCode;
+      const allApptIds = booker._allApptIds;
 
       _savedBookerInfo = null;
       _addingSlotEditBookingCode = null;
 
       // Rebuild edit modal với guests cũ + pending blocks mới
-      const modalEl    = document.getElementById("apptModal");
+      const modalEl = document.getElementById("apptModal");
       const modalTitle = document.getElementById("modalTitle");
-      const apptId     = document.getElementById("apptId");
+      const apptId = document.getElementById("apptId");
 
       resetModalError();
       modalTitle.textContent = `Chỉnh sửa • ${bookingCode}`;
       apptId.value = existingGuests[0]?._apptId || '';
       apptId.dataset.bookingCode = bookingCode;
-      apptId.dataset.allApptIds  = allApptIds;
+      apptId.dataset.allApptIds = allApptIds;
 
       _showSharedForm();
       _setAddGuestBarVisible(true);
@@ -2632,11 +2631,11 @@ function openCreateModalFromPending() {
       _resetAllCustomerState();
 
       _fillBookerFields({
-        name:   booker.name,
-        phone:  booker.phone,
-        email:  booker.email,
+        name: booker.name,
+        phone: booker.phone,
+        email: booker.email,
         source: booker.source || 'DIRECT',
-        note:   booker.note,
+        note: booker.note,
       });
       const bookingDateEl = document.getElementById('bookingDate');
       if (bookingDateEl) bookingDateEl.value = booker.bookingDate || '';
@@ -2647,8 +2646,8 @@ function openCreateModalFromPending() {
       // Append guest mới từ pending blocks
       pendingBlocks.forEach(pb => {
         addGuestCard({
-          date:   pb.day,
-          time:   pb.time,
+          date: pb.day,
+          time: pb.time,
           roomId: pb.roomId,
           pendingDuration: pb.duration,
           _editMode: false,  // guest mới — chưa có apptId
@@ -2687,27 +2686,27 @@ function openCreateModalFromPending() {
   }
 }
 
-async function openEditModal(id){
+async function openEditModal(id) {
   try {
-  const modalError = document.getElementById("modalError");
-  resetModalError();
+    const modalError = document.getElementById("modalError");
+    resetModalError();
 
-  // Bước 1: fetch appointment đơn để lấy bookingCode
-  const result = await apiGet(`${API_BASE}/appointments/${id}/`);
-  if (!result.success || !result.appointment) {
-    // Fallback: tìm trong APPOINTMENTS cache
-    const cached = APPOINTMENTS.find(x => x.id === id);
-    if (cached) {
-      await _openEditModalByBooking(cached.bookingCode, id);
-    } else {
-      _showModalError("Không tìm thấy lịch hẹn");
+    // Bước 1: fetch appointment đơn để lấy bookingCode
+    const result = await apiGet(`${API_BASE}/appointments/${id}/`);
+    if (!result.success || !result.appointment) {
+      // Fallback: tìm trong APPOINTMENTS cache
+      const cached = APPOINTMENTS.find(x => x.id === id);
+      if (cached) {
+        await _openEditModalByBooking(cached.bookingCode, id);
+      } else {
+        _showModalError("Không tìm thấy lịch hẹn");
+      }
+      return;
     }
-    return;
-  }
 
-  const bookingCode = result.appointment.bookingCode;
-  await _openEditModalByBooking(bookingCode, id);
-  } catch(err) {
+    const bookingCode = result.appointment.bookingCode;
+    await _openEditModalByBooking(bookingCode, id);
+  } catch (err) {
     console.error('[openEditModal] threw:', err);
   }
 }
@@ -2746,117 +2745,117 @@ async function _openEditModalByBooking(bookingCode, clickedApptId) {
  */
 function openEditModalWithData(appointments, clickedApptId) {
   try {
-  // Lấy appointment đầu tiên làm "primary" để lấy booker info
-  const primary = appointments.find(a => a.id === clickedApptId) || appointments[0];
-  if (!primary) return;
+    // Lấy appointment đầu tiên làm "primary" để lấy booker info
+    const primary = appointments.find(a => a.id === clickedApptId) || appointments[0];
+    if (!primary) return;
 
-  const modalEl    = document.getElementById("apptModal");
-  const modalTitle = document.getElementById("modalTitle");
-  const apptId     = document.getElementById("apptId");
-  const btnDelete  = document.getElementById("btnDelete");
+    const modalEl = document.getElementById("apptModal");
+    const modalTitle = document.getElementById("modalTitle");
+    const apptId = document.getElementById("apptId");
+    const btnDelete = document.getElementById("btnDelete");
 
-  resetModalError();
+    resetModalError();
 
-  // Title hiển thị booking code nếu có nhiều khách
-  if (appointments.length > 1) {
-    modalTitle.textContent = `Chỉnh sửa • ${primary.bookingCode || primary.id} (${appointments.length} khách)`;
-  } else {
-    modalTitle.textContent = `Chỉnh sửa • ${primary.id}`;
-  }
-
-  // apptId lưu appointment_code được click (dùng khi submit 1 appt)
-  // Với multi-appt, lưu thêm bookingCode để submit handler biết
-  apptId.value = primary.id;
-  apptId.dataset.bookingCode  = primary.bookingCode || '';
-  apptId.dataset.allApptIds   = JSON.stringify(appointments.map(a => a.id));
-  // Lưu date/time/duration để validate timing khi submit
-  apptId.dataset.apptDate     = primary.date  || '';
-  apptId.dataset.apptTime     = primary.start || '';
-  apptId.dataset.apptDuration = primary.durationMin || '60';
-
-  // Nút Rebook / Xóa — dựa trên primary
-  const btnRebook = document.getElementById('btnRebook');
-  const st   = (primary.apptStatus  || '').toUpperCase();
-  const bkSt = (primary.bookingStatus || '').toUpperCase();
-
-  if (st === 'COMPLETED') {
-    btnDelete.classList.add("d-none");
-  } else {
-    btnDelete.classList.remove("d-none");
-  }
-  if (btnRebook) {
-    if (st === 'CANCELLED' || bkSt === 'CANCELLED' || bkSt === 'REJECTED') {
-      btnRebook.classList.remove('d-none');
+    // Title hiển thị booking code nếu có nhiều khách
+    if (appointments.length > 1) {
+      modalTitle.textContent = `Chỉnh sửa • ${primary.bookingCode || primary.id} (${appointments.length} khách)`;
     } else {
-      btnRebook.classList.add('d-none');
+      modalTitle.textContent = `Chỉnh sửa • ${primary.id}`;
     }
-  }
 
-  const btnSaveText = document.getElementById("btnSaveText");
-  if (btnSaveText) btnSaveText.textContent = "Lưu lịch hẹn";
+    // apptId lưu appointment_code được click (dùng khi submit 1 appt)
+    // Với multi-appt, lưu thêm bookingCode để submit handler biết
+    apptId.value = primary.id;
+    apptId.dataset.bookingCode = primary.bookingCode || '';
+    apptId.dataset.allApptIds = JSON.stringify(appointments.map(a => a.id));
+    // Lưu date/time/duration để validate timing khi submit
+    apptId.dataset.apptDate = primary.date || '';
+    apptId.dataset.apptTime = primary.start || '';
+    apptId.dataset.apptDuration = primary.durationMin || '60';
 
-  _showSharedForm();
-  _setAddGuestBarVisible(true);
+    // Nút Rebook / Xóa — dựa trên primary
+    const btnRebook = document.getElementById('btnRebook');
+    const st = (primary.apptStatus || '').toUpperCase();
+    const bkSt = (primary.bookingStatus || '').toUpperCase();
 
-  // Trạng thái & thanh toán dùng của primary (hoặc appointment được click)
-  // Luôn apply normal-mode trước để reset mọi trạng thái ẩn từ request-mode
-  _applyModalMode('normal');
-  _showSharedStatusBlock(primary.apptStatus || 'NOT_ARRIVED', primary.payStatus || 'UNPAID', true);
+    if (st === 'COMPLETED') {
+      btnDelete.classList.add("d-none");
+    } else {
+      btnDelete.classList.remove("d-none");
+    }
+    if (btnRebook) {
+      if (st === 'CANCELLED' || bkSt === 'CANCELLED' || bkSt === 'REJECTED') {
+        btnRebook.classList.remove('d-none');
+      } else {
+        btnRebook.classList.add('d-none');
+      }
+    }
 
-  const lbl = document.getElementById('bookerPanelLabel');
-  if (lbl) lbl.textContent = 'Người đặt lịch';
+    const btnSaveText = document.getElementById("btnSaveText");
+    if (btnSaveText) btnSaveText.textContent = "Lưu lịch hẹn";
 
-  // Reset guest list
-  _guestCount = 0;
-  document.getElementById('guestList').innerHTML = '';
-  _resetAllCustomerState();
-  document.getElementById('selectedCustomerId').value = primary.customerId || '';
+    _showSharedForm();
+    _setAddGuestBarVisible(true);
 
-  // Điền booker panel từ primary (booker info chung cho cả booking)
-  _fillBookerFields({
-    name:   primary.bookerName  || '',
-    phone:  primary.bookerPhone || '',
-    email:  primary.bookerEmail || '',
-    source: primary.source      || 'DIRECT',
-    note:   primary.bookerNotes || '',
-  });
-  // Set ngày hẹn chung — lấy từ appointment đầu tiên
-  const bookingDateEl = document.getElementById('bookingDate');
-  if (bookingDateEl) bookingDateEl.value = primary.date || appointments[0]?.date || '';
+    // Trạng thái & thanh toán dùng của primary (hoặc appointment được click)
+    // Luôn apply normal-mode trước để reset mọi trạng thái ẩn từ request-mode
+    _applyModalMode('normal');
+    _showSharedStatusBlock(primary.apptStatus || 'NOT_ARRIVED', primary.payStatus || 'UNPAID', true);
 
-  // Thêm 1 guest card cho MỖI appointment trong booking
-  appointments.forEach(a => {
-    addGuestCard({
-      name:         a.customerName || '',
-      phone:        a.phone || '',
-      email:        a.email || '',
-      serviceId:    a.serviceId,
-      variantId:    a.variantId,
-      roomId:       a.roomCode || a.roomId || '',
-      date:         a.date || '',
-      time:         a.start || '',
-      apptStatus:   a.apptStatus || 'NOT_ARRIVED',
-      payStatus:    a.payStatus || 'UNPAID',
-      note:         a.bookerNotes || '',
-      customerNote: a.customerNote || '',
-      customerId:   a.customerId || '',
-      _editMode:    true,
-      _apptId:      a.id,   // lưu appointment_code vào card để submit đúng
+    const lbl = document.getElementById('bookerPanelLabel');
+    if (lbl) lbl.textContent = 'Người đặt lịch';
+
+    // Reset guest list
+    _guestCount = 0;
+    document.getElementById('guestList').innerHTML = '';
+    _resetAllCustomerState();
+    document.getElementById('selectedCustomerId').value = primary.customerId || '';
+
+    // Điền booker panel từ primary (booker info chung cho cả booking)
+    _fillBookerFields({
+      name: primary.bookerName || '',
+      phone: primary.bookerPhone || '',
+      email: primary.bookerEmail || '',
+      source: primary.source || 'DIRECT',
+      note: primary.bookerNotes || '',
     });
-  });
+    // Set ngày hẹn chung — lấy từ appointment đầu tiên
+    const bookingDateEl = document.getElementById('bookingDate');
+    if (bookingDateEl) bookingDateEl.value = primary.date || appointments[0]?.date || '';
 
-  let modal = null;
-  if (modalEl) {
-    const existing = bootstrap.Modal.getInstance(modalEl);
-    modal = existing || new bootstrap.Modal(modalEl);
-  }
-  if (modal) modal.show();
+    // Thêm 1 guest card cho MỖI appointment trong booking
+    appointments.forEach(a => {
+      addGuestCard({
+        name: a.customerName || '',
+        phone: a.phone || '',
+        email: a.email || '',
+        serviceId: a.serviceId,
+        variantId: a.variantId,
+        roomId: a.roomCode || a.roomId || '',
+        date: a.date || '',
+        time: a.start || '',
+        apptStatus: a.apptStatus || 'NOT_ARRIVED',
+        payStatus: a.payStatus || 'UNPAID',
+        note: a.bookerNotes || '',
+        customerNote: a.customerNote || '',
+        customerId: a.customerId || '',
+        _editMode: true,
+        _apptId: a.id,   // lưu appointment_code vào card để submit đúng
+      });
+    });
 
-  // Load invoice summary sau khi modal mở (để cập nhật paid amount)
-  if (primary.bookingCode) {
-    _loadInvoiceSummary(primary.bookingCode);
-  }
-  } catch(err) {
+    let modal = null;
+    if (modalEl) {
+      const existing = bootstrap.Modal.getInstance(modalEl);
+      modal = existing || new bootstrap.Modal(modalEl);
+    }
+    if (modal) modal.show();
+
+    // Load invoice summary sau khi modal mở (để cập nhật paid amount)
+    if (primary.bookingCode) {
+      _loadInvoiceSummary(primary.bookingCode);
+    }
+  } catch (err) {
     console.error('[openEditModalWithData] threw:', err);
   }
 }
@@ -2869,9 +2868,9 @@ async function _loadInvoiceSummary(bookingCode) {
   if (!bookingCode) return;
 
   // Disable các nút nhạy cảm trong lúc load
-  const btnDelete   = document.getElementById('btnDelete');
-  const btnInvoice  = document.getElementById('btnOpenInvoice');
-  if (btnDelete)  { btnDelete._invoiceLoading  = true; btnDelete.disabled  = true; }
+  const btnDelete = document.getElementById('btnDelete');
+  const btnInvoice = document.getElementById('btnOpenInvoice');
+  if (btnDelete) { btnDelete._invoiceLoading = true; btnDelete.disabled = true; }
   if (btnInvoice) { btnInvoice._invoiceLoading = true; btnInvoice.disabled = true; }
 
   try {
@@ -2889,7 +2888,7 @@ async function _loadInvoiceSummary(bookingCode) {
     // Không có invoice → giữ nguyên trạng thái mặc định
   } finally {
     // Re-enable nút sau khi load xong (chỉ nếu chính hàm này đã disable)
-    if (btnDelete  && btnDelete._invoiceLoading)  {
+    if (btnDelete && btnDelete._invoiceLoading) {
       const paidLocked = ['PAID', 'PARTIAL', 'REFUNDED'].includes(
         document.getElementById('sharedPayStatus')?.value
       );
@@ -2905,14 +2904,14 @@ async function _loadInvoiceSummary(bookingCode) {
 }
 
 const btnSave = document.getElementById("btnSave");
-btnSave.addEventListener("click", ()=> {
+btnSave.addEventListener("click", () => {
   // Trigger submit trên form
   const f = document.getElementById('apptForm');
   if (f) f.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
 });
 
 // Validate Form
-document.getElementById('apptForm').addEventListener("submit", async (e)=>{
+document.getElementById('apptForm').addEventListener("submit", async (e) => {
   e.preventDefault();
   const modalError = document.getElementById("modalError");
   const dayPicker = document.getElementById("dayPicker");
@@ -2924,7 +2923,7 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
   const id = apptId.value.trim();
 
   // ── Validate booker — chung cho cả CREATE và EDIT ──
-  const nameVal  = document.getElementById('bookerName')?.value.trim() || '';
+  const nameVal = document.getElementById('bookerName')?.value.trim() || '';
   const phoneVal = document.getElementById('bookerPhone')?.value.trim() || '';
   const emailVal = document.getElementById('bookerEmail')?.value.trim() || '';
   const bookerCheck = _validateBookerFields(nameVal, phoneVal, emailVal);
@@ -2975,29 +2974,29 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
     // BUG-007 FIX: Validate thời điểm ARRIVED / COMPLETED cho từng card
     const editTimingCheck = _validateAllCardsTiming(
       cards,
-      (g)    => g.apptStatus,
-      (g)    => g.date || apptId.dataset.apptDate || '',
-      (g)    => g.time || apptId.dataset.apptTime || '',
-      (g)    => Number(g._duration || apptId.dataset.apptDuration || 60),
+      (g) => g.apptStatus,
+      (g) => g.date || apptId.dataset.apptDate || '',
+      (g) => g.time || apptId.dataset.apptTime || '',
+      (g) => Number(g._duration || apptId.dataset.apptDuration || 60),
     );
     if (!editTimingCheck.ok) { _showModalError(editTimingCheck.error); return; }
 
     // Xây dựng payload batch — BUG-02: 1 request duy nhất, atomic
     const batchPayload = {
-      bookerName:  nameVal,
+      bookerName: nameVal,
       bookerPhone: phoneVal.replace(/\D/g, ''),
       bookerEmail: emailVal,
       bookerNotes: document.getElementById('bookerNote')?.value.trim() || '',
       guests: cards.map(g => {
         const guest = {
           appointmentCode: g._apptId || '',
-          customerName:    g.name || '',
-          phone:           (g.phone || '').replace(/\D/g, ''),
-          email:           g.email || '',
-          variantId:       g.variantId || null,
-          serviceId:       g.serviceId || null,
-          customerId:      g.customerId || null,
-          apptStatus:      g.apptStatus || 'NOT_ARRIVED',
+          customerName: g.name || '',
+          phone: (g.phone || '').replace(/\D/g, ''),
+          email: g.email || '',
+          variantId: g.variantId || null,
+          serviceId: g.serviceId || null,
+          customerId: g.customerId || null,
+          apptStatus: g.apptStatus || 'NOT_ARRIVED',
         };
         // Chỉ gửi date/time/roomId khi thực sự thay đổi
         // Ngoại lệ: nếu variantId thay đổi, luôn gửi roomId hiện tại để backend
@@ -3037,7 +3036,7 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
       await _refreshAll();
       showToast("success", "Thành công", "Cập nhật lịch hẹn thành công");
 
-    } catch(err) {
+    } catch (err) {
       _showModalError(MSG_WEB_GENERIC_ERR);
     } finally {
       isSubmitting = false;
@@ -3047,7 +3046,7 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
   }
 
   // ── CREATE MODE (batch) ──
-  const bookerName  = nameVal;
+  const bookerName = nameVal;
   const bookerPhone = phoneVal;
   const bookerEmail = emailVal;
 
@@ -3074,7 +3073,7 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
   if (!noteCheck.ok) { _showModalError(noteCheck.error); return; }
 
   // Lấy ngày hôm nay để check quá khứ
-  const _todayStr = (() => { const t = new Date(); return `${t.getFullYear()}-${pad2(t.getMonth()+1)}-${pad2(t.getDate())}`; })();
+  const _todayStr = (() => { const t = new Date(); return `${t.getFullYear()}-${pad2(t.getMonth() + 1)}-${pad2(t.getDate())}`; })();
 
   for (let i = 0; i < guestCards.length; i++) {
     const g = guestCards[i];
@@ -3104,26 +3103,7 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
     }
   }
 
-  // V-11: Check cross-guest conflict — 2 khách cùng phòng cùng giờ overlap
-  if (guestCards.length > 1) {
-    for (let i = 0; i < guestCards.length; i++) {
-      for (let j = i + 1; j < guestCards.length; j++) {
-        const a = guestCards[i], b = guestCards[j];
-        if (!a.roomId || !b.roomId || a.roomId !== b.roomId) continue;
-        if (!a.time || !b.time) continue;
-        // Tính duration từ variant (fallback 60)
-        const durA = Number(a._duration) || 60;
-        const durB = Number(b._duration) || 60;
-        const aStart = minutesFromStart(a.time);
-        const aEnd   = aStart + durA;
-        const bStart = minutesFromStart(b.time);
-        const bEnd   = bStart + durB;
-        if (overlaps(aStart, aEnd, bStart, bEnd)) {
-          _showModalError(`Khách ${i+1} và Khách ${j+1} trùng phòng và thời gian. Vui lòng chọn phòng hoặc giờ khác.`); return;
-        }
-      }
-    }
-  }
+
 
   // Validate trạng thái "Hoàn thành"
   const createApptStatus = document.getElementById('sharedApptStatus')?.value || '';
@@ -3144,10 +3124,10 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
   if (createApptStatus === 'ARRIVED' || createApptStatus === 'COMPLETED') {
     const createTimingCheck = _validateAllCardsTiming(
       guestCards,
-      ()     => createApptStatus,
-      (g)    => g.date,
-      (g)    => g.time,
-      (g)    => Number(g._duration) || 60,
+      () => createApptStatus,
+      (g) => g.date,
+      (g) => g.time,
+      (g) => Number(g._duration) || 60,
     );
     if (!createTimingCheck.ok) { _showModalError(createTimingCheck.error); return; }
   }
@@ -3160,14 +3140,14 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
     // Gọi endpoint riêng: update appointment gốc + confirm booking gốc (không tạo booking mới)
     const confirmPayload = {
       guests: guestCards.map(g => ({
-        name:      g.name,
-        phone:     g.phone,
-        email:     g.email,
+        name: g.name,
+        phone: g.phone,
+        email: g.email,
         serviceId: g.serviceId || null,
         variantId: g.variantId || null,
-        roomId:    g.roomId,
-        date:      g.date,
-        time:      g.time,
+        roomId: g.roomId,
+        date: g.date,
+        time: g.time,
         customerId: g.customerId || null,
       })),
     };
@@ -3207,18 +3187,18 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
   // ── LUỒNG TẠO LỊCH THƯỜNG ──
   const batchPayload = {
     booker: {
-      name:          bookerName,
-      phone:         bookerPhone.replace(/\D/g, ''),
-      email:         bookerEmail,
-      source:        document.getElementById('bookerSource')?.value || 'DIRECT',
-      notes:         document.getElementById('bookerNote')?.value.trim() || '',
-      payStatus:     _createModePayment.payStatus     || 'UNPAID',
+      name: bookerName,
+      phone: bookerPhone.replace(/\D/g, ''),
+      email: bookerEmail,
+      source: document.getElementById('bookerSource')?.value || 'DIRECT',
+      notes: document.getElementById('bookerNote')?.value.trim() || '',
+      payStatus: _createModePayment.payStatus || 'UNPAID',
       paymentMethod: _createModePayment.paymentMethod || '',
       paymentAmount: _createModePayment.paymentAmount || 0,
       // BUG-001 FIX: Gửi discount để backend áp dụng khi tạo invoice
-      discountType:  _createModePayment.discountType  || 'NONE',
+      discountType: _createModePayment.discountType || 'NONE',
       discountValue: _createModePayment.discountValue || 0,
-      fromAdmin:     true,  // Admin tạo/rebook → backend set CONFIRMED, không cần xác nhận
+      fromAdmin: true,  // Admin tạo/rebook → backend set CONFIRMED, không cần xác nhận
     },
     guests: guestCards,
   };
@@ -3237,7 +3217,7 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
         const existing = bootstrap.Modal.getInstance(modalEl);
         modal = existing || new bootstrap.Modal(modalEl);
       }
-      if (modal) modal.hide();      _addingSlotMode = false;
+      if (modal) modal.hide(); _addingSlotMode = false;
       _savedBookerInfo = null;
       _addingSlotEditBookingCode = null;
       const firstDate = guestCards[0]?.date;
@@ -3253,8 +3233,8 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
     } else {
       _showModalError(_isConflictError(result) ? (result.error || MSG_WEB_CONFLICT) : (result.error || MSG_WEB_GENERIC_ERR));
     }
-    } catch(err) {
-      _showModalError(MSG_WEB_GENERIC_ERR);
+  } catch (err) {
+    _showModalError(MSG_WEB_GENERIC_ERR);
   } finally {
     isSubmitting = false;
     resetButton(btnSave);
@@ -3270,7 +3250,7 @@ document.getElementById('btnRebook')?.addEventListener('click', async () => {
 });
 
 const btnDelete = document.getElementById("btnDelete");
-btnDelete.addEventListener("click", async ()=>{
+btnDelete.addEventListener("click", async () => {
   const apptId = document.getElementById("apptId");
   const id = apptId.value.trim();
   if (isSubmitting || !id) return;
@@ -3349,12 +3329,12 @@ const btnPrev = document.getElementById("btnPrev");
 const btnNext = document.getElementById("btnNext");
 const btnToday = document.getElementById("btnToday");
 
-function setDay(d){ dayPicker.value = d; refreshData(); }
-function todayISO(){ const t = new Date(); return `${t.getFullYear()}-${pad2(t.getMonth()+1)}-${pad2(t.getDate())}`; }
-function shiftDay(delta){ const d = new Date(dayPicker.value + "T00:00:00"); d.setDate(d.getDate()+delta); setDay(`${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`); }
+function setDay(d) { dayPicker.value = d; refreshData(); }
+function todayISO() { const t = new Date(); return `${t.getFullYear()}-${pad2(t.getMonth() + 1)}-${pad2(t.getDate())}`; }
+function shiftDay(delta) { const d = new Date(dayPicker.value + "T00:00:00"); d.setDate(d.getDate() + delta); setDay(`${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`); }
 
 // ===== REFRESH DATA =====
-async function refreshData(){
+async function refreshData() {
   try {
     await loadAppointments(dayPicker.value);
   } catch (err) {
@@ -3403,7 +3383,7 @@ function initSearchModal() {
   }
 
   // Enter trong các input → trigger search
-  ['srchName','srchPhone','srchEmail','srchCode','srchDateFrom','srchDateTo'].forEach(id => {
+  ['srchName', 'srchPhone', 'srchEmail', 'srchCode', 'srchDateFrom', 'srchDateTo'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') _doSearch(); });
   });
@@ -3456,15 +3436,15 @@ function _setSearchWarning(show, text) {
 }
 
 async function _doSearch() {
-  const name      = (document.getElementById('srchName')     || {}).value?.trim() || '';
-  const phone     = (document.getElementById('srchPhone')    || {}).value?.trim() || '';
-  const email     = (document.getElementById('srchEmail')    || {}).value?.trim() || '';
-  const code      = (document.getElementById('srchCode')     || {}).value?.trim() || '';
-  const service   = (document.getElementById('srchService')  || {}).value || '';
-  const status    = (document.getElementById('srchStatus')   || {}).value || '';
-  const source    = (document.getElementById('srchSource')   || {}).value || '';
-  const dateFrom  = (document.getElementById('srchDateFrom') || {}).value || '';
-  const dateTo    = (document.getElementById('srchDateTo')   || {}).value || '';
+  const name = (document.getElementById('srchName') || {}).value?.trim() || '';
+  const phone = (document.getElementById('srchPhone') || {}).value?.trim() || '';
+  const email = (document.getElementById('srchEmail') || {}).value?.trim() || '';
+  const code = (document.getElementById('srchCode') || {}).value?.trim() || '';
+  const service = (document.getElementById('srchService') || {}).value || '';
+  const status = (document.getElementById('srchStatus') || {}).value || '';
+  const source = (document.getElementById('srchSource') || {}).value || '';
+  const dateFrom = (document.getElementById('srchDateFrom') || {}).value || '';
+  const dateTo = (document.getElementById('srchDateTo') || {}).value || '';
 
   const hasCondition = name || phone || email || code || service || status || source || dateFrom || dateTo;
   if (!hasCondition) {
@@ -3485,15 +3465,15 @@ async function _doSearch() {
   }
 
   const params = new URLSearchParams();
-  if (name)     params.append('name', name);
-  if (phone)    params.append('phone', phone);
-  if (email)    params.append('email', email);
-  if (code)     params.append('code', code);
-  if (service)  params.append('service', service);
-  if (status)   params.append('status', status);
-  if (source)   params.append('source', source);
+  if (name) params.append('name', name);
+  if (phone) params.append('phone', phone);
+  if (email) params.append('email', email);
+  if (code) params.append('code', code);
+  if (service) params.append('service', service);
+  if (status) params.append('status', status);
+  if (source) params.append('source', source);
   if (dateFrom) params.append('date_from', dateFrom);
-  if (dateTo)   params.append('date_to', dateTo);
+  if (dateTo) params.append('date_to', dateTo);
 
   const searchModalEl = document.getElementById('searchModal');
   if (searchModalEl) searchModalEl.dataset.currentFilters = params.toString();
@@ -3529,7 +3509,7 @@ async function _doSearch() {
            onclick="window._srchGoToAppt('${_esc(a.id)}', '${_esc(a.date)}')">
         <div style="min-width:80px;">
           <div class="fw-semibold small">${_esc(a.date)}</div>
-          <div class="text-muted small">${_esc(a.start)}${a.end ? '–'+_esc(a.end) : ''}</div>
+          <div class="text-muted small">${_esc(a.start)}${a.end ? '–' + _esc(a.end) : ''}</div>
         </div>
         <div style="min-width:70px;" class="text-muted small">
           <i class="fas fa-door-open me-1"></i>${_esc(a.roomName || a.roomCode || '—')}
@@ -3557,17 +3537,17 @@ async function _doSearch() {
 
 function _srchStatusBadgeClass(s) {
   const sl = (s || '').toLowerCase();
-  if (sl === 'pending')   return 'bg-warning text-dark';
+  if (sl === 'pending') return 'bg-warning text-dark';
   if (sl === 'confirmed') return 'bg-info text-dark';
   if (sl === 'not_arrived') return 'bg-secondary';
-  if (sl === 'arrived')   return 'bg-info text-dark';
+  if (sl === 'arrived') return 'bg-info text-dark';
   if (sl === 'completed') return 'bg-success';
   if (sl === 'cancelled') return 'bg-secondary';
-  if (sl === 'rejected')  return 'bg-danger';
+  if (sl === 'rejected') return 'bg-danger';
   return 'bg-secondary';
 }
 
-window._srchGoToAppt = async function(apptId, apptDate) {
+window._srchGoToAppt = async function (apptId, apptDate) {
   // Đóng modal tìm kiếm
   const searchModalEl = document.getElementById('searchModal');
   if (searchModalEl) {
@@ -3674,7 +3654,7 @@ window._srchGoToAppt = async function(apptId, apptDate) {
 // ============================================================
 // SECTION 15: INITIALIZATION
 // ============================================================
-document.addEventListener("DOMContentLoaded", async ()=>{
+document.addEventListener("DOMContentLoaded", async () => {
   const modalEl = document.getElementById("apptModal");
   const toastEl = document.getElementById("toast");
   const webCount = document.getElementById("webCount");
@@ -3691,7 +3671,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
     window.deleteAppointmentModal = new bootstrap.Modal(deleteModalEl);
   }
 
-  if(sidebarToggle) sidebarToggle.addEventListener("click", ()=> sidebar.classList.toggle("show"));
+  if (sidebarToggle) sidebarToggle.addEventListener("click", () => sidebar.classList.toggle("show"));
 
   // ── Render header timeline NGAY LẬP TỨC trước khi fetch ──
   // Để layout ổn định, không bị trống trong lúc chờ API
@@ -3728,7 +3708,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
         }
         _lastPendingCount = res.count;
       }
-    } catch(e) { /* silent */ }
+    } catch (e) { /* silent */ }
   }, 15000);
 
   // Cleanup khi rời trang để tránh memory leak
@@ -3737,10 +3717,10 @@ document.addEventListener("DOMContentLoaded", async ()=>{
     clearInterval(_ctlInterval);
   });
 
-  if(btnToday) btnToday.addEventListener("click", ()=> setDay(todayISO()));
-  if(btnPrev) btnPrev.addEventListener("click", ()=> shiftDay(-1));
-  if(btnNext) btnNext.addEventListener("click", ()=> shiftDay(1));
-  if(dayPicker) dayPicker.addEventListener("change", ()=> { clearPendingBlocks(); refreshData(); updateCurrentTimeLine(); });
+  if (btnToday) btnToday.addEventListener("click", () => setDay(todayISO()));
+  if (btnPrev) btnPrev.addEventListener("click", () => shiftDay(-1));
+  if (btnNext) btnNext.addEventListener("click", () => shiftDay(1));
+  if (dayPicker) dayPicker.addEventListener("change", () => { clearPendingBlocks(); refreshData(); updateCurrentTimeLine(); });
 
   // Sync booker data to guests when editing
   ['bookerName', 'bookerPhone', 'bookerEmail'].forEach(id => {
@@ -3753,7 +3733,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
   window.addEventListener('resize', updateCurrentTimeLine);
 
   // ===== ACTION BAR — Pending blocks =====
-  const btnCancelPending   = document.getElementById('btnCancelPending');
+  const btnCancelPending = document.getElementById('btnCancelPending');
   const btnContinuePending = document.getElementById('btnContinuePending');
 
   if (btnCancelPending) {
@@ -3771,7 +3751,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
       if (!pendingBlocks.length) return;
       try {
         openCreateModalFromPending();
-      } catch(err) {
+      } catch (err) {
         console.error('[btnContinuePending] openCreateModalFromPending threw:', err);
       }
     });
@@ -3789,10 +3769,10 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 
   // Filter bar — tab Yêu cầu đặt lịch (dùng FilterManager chung)
   const webFM = new FilterManager({
-    fields:   ['webSearchInput', 'webServiceFilter', 'webDateFilter'],
-    btnId:    'webFilterBtn',
+    fields: ['webSearchInput', 'webServiceFilter', 'webDateFilter'],
+    btnId: 'webFilterBtn',
     searchId: 'webSearchInput',
-    onApply:  () => renderWebRequests(),
+    onApply: () => renderWebRequests(),
   });
 
   document.querySelectorAll('[data-bs-toggle="pill"]').forEach(tab => {
@@ -3824,7 +3804,7 @@ let _invoiceData = null; // dữ liệu invoice hiện tại
  * được đọc khi submit batchPayload.
  */
 let _createModePayment = {
-  payStatus:     'UNPAID',
+  payStatus: 'UNPAID',
   paymentMethod: '',
   paymentAmount: 0,
 };
@@ -3846,21 +3826,21 @@ function _updateCreatePayBtn() {
   });
 
   btnOpen.disabled = !hasReadyGuest;
-  btnOpen.title    = hasReadyGuest
+  btnOpen.title = hasReadyGuest
     ? 'Nhập thông tin thanh toán'
     : 'Vui lòng chọn dịch vụ và gói dịch vụ trước khi thanh toán';
 
   // Hiển thị rõ trạng thái disabled/enabled
   if (hasReadyGuest) {
-    btnOpen.style.opacity        = '';
-    btnOpen.style.filter         = '';
-    btnOpen.style.cursor         = '';
-    btnOpen.style.pointerEvents  = '';
+    btnOpen.style.opacity = '';
+    btnOpen.style.filter = '';
+    btnOpen.style.cursor = '';
+    btnOpen.style.pointerEvents = '';
   } else {
-    btnOpen.style.opacity        = '0.5';
-    btnOpen.style.filter         = '';
-    btnOpen.style.cursor         = 'not-allowed';
-    btnOpen.style.pointerEvents  = 'none';
+    btnOpen.style.opacity = '0.5';
+    btnOpen.style.filter = '';
+    btnOpen.style.cursor = 'not-allowed';
+    btnOpen.style.pointerEvents = 'none';
   }
 }
 
@@ -3881,21 +3861,21 @@ function _openCreatePayModal() {
 
   // Dùng lại invoiceModal với data tạm — không cần bookingCode
   _invoiceData = {
-    _bookingCode:   '',   // rỗng = create mode
-    _createMode:    true,
-    invoiceCode:    '',
-    bookingCode:    '',
-    bookerName:     document.getElementById('bookerName')?.value.trim() || '',
-    bookerPhone:    document.getElementById('bookerPhone')?.value.trim() || '',
+    _bookingCode: '',   // rỗng = create mode
+    _createMode: true,
+    invoiceCode: '',
+    bookingCode: '',
+    bookerName: document.getElementById('bookerName')?.value.trim() || '',
+    bookerPhone: document.getElementById('bookerPhone')?.value.trim() || '',
     lines,
-    subtotal:       String(subtotal),
-    discountType:   'NONE',
-    discountValue:  '0',
+    subtotal: String(subtotal),
+    discountType: 'NONE',
+    discountValue: '0',
     discountAmount: '0',
-    finalAmount:    String(subtotal),
-    paidAmount:     String(_createModePayment.paymentAmount || 0),
-    remaining:      String(Math.max(subtotal - (_createModePayment.paymentAmount || 0), 0)),
-    paymentStatus:  _createModePayment.payStatus || 'UNPAID',
+    finalAmount: String(subtotal),
+    paidAmount: String(_createModePayment.paymentAmount || 0),
+    remaining: String(Math.max(subtotal - (_createModePayment.paymentAmount || 0), 0)),
+    paymentStatus: _createModePayment.payStatus || 'UNPAID',
   };
 
   _renderInvoiceModal(_invoiceData);
@@ -3905,7 +3885,7 @@ function _openCreatePayModal() {
   if (btnLbl) btnLbl.textContent = 'Xác nhận';
 
   const invoiceModalEl = document.getElementById('invoiceModal');
-  const invoiceModal   = bootstrap.Modal.getInstance(invoiceModalEl) || new bootstrap.Modal(invoiceModalEl);
+  const invoiceModal = bootstrap.Modal.getInstance(invoiceModalEl) || new bootstrap.Modal(invoiceModalEl);
   invoiceModal.show();
 }
 
@@ -3967,7 +3947,7 @@ function _initInvoiceModal() {
   const btnOpen = document.getElementById('btnOpenInvoice');
   if (btnOpen) {
     btnOpen.addEventListener('click', async () => {
-      const apptIdEl    = document.getElementById('apptId');
+      const apptIdEl = document.getElementById('apptId');
       const bookingCode = apptIdEl?.dataset.bookingCode || '';
 
       if (bookingCode) {
@@ -3990,9 +3970,9 @@ function _initInvoiceModal() {
 
   // Tự động tính lại khi thay đổi discount
   const discountInput = document.getElementById('invDiscountValue');
-  const discountType  = document.getElementById('invDiscountType');
+  const discountType = document.getElementById('invDiscountType');
   if (discountInput) discountInput.addEventListener('input', () => _recalcInvoiceTotals());
-  if (discountType)  discountType.addEventListener('change', () => _recalcInvoiceTotals());
+  if (discountType) discountType.addEventListener('change', () => _recalcInvoiceTotals());
 
   // Nút xác nhận thanh toán
   const btnConfirm = document.getElementById('btnConfirmPayment');
@@ -4019,28 +3999,28 @@ function _buildLinesFromGuestCards() {
   const items = _getGuestItems();
   const readyGuests = items.filter(item => {
     return (item.querySelector('.gc-service')?.value || '') &&
-           (item.querySelector('.gc-variant')?.value || '');
+      (item.querySelector('.gc-variant')?.value || '');
   });
   if (!readyGuests.length) return null;
 
   let subtotal = 0;
   const lines = [];
   readyGuests.forEach(item => {
-    const svcSel  = item.querySelector('.gc-service');
-    const varSel  = item.querySelector('.gc-variant');
-    const svc     = SERVICES.find(s => String(s.id) === svcSel?.value);
+    const svcSel = item.querySelector('.gc-service');
+    const varSel = item.querySelector('.gc-variant');
+    const svc = SERVICES.find(s => String(s.id) === svcSel?.value);
     const variant = svc?.variants?.find(v => String(v.id) === varSel?.value);
-    const price   = parseFloat(variant?.price || svc?.price || 0);
-    const name    = item.querySelector('.gc-name')?.value.trim() || '—';
+    const price = parseFloat(variant?.price || svc?.price || 0);
+    const name = item.querySelector('.gc-name')?.value.trim() || '—';
     subtotal += price;
     lines.push({
       customerName: name,
-      serviceName:  svc?.name || '',
+      serviceName: svc?.name || '',
       variantLabel: variant?.label || '',
-      durationMin:  variant?.duration_minutes || null,
-      unitPrice:    String(price),
-      quantity:     1,
-      lineTotal:    String(price),
+      durationMin: variant?.duration_minutes || null,
+      unitPrice: String(price),
+      quantity: 1,
+      lineTotal: String(price),
     });
   });
   return { lines, subtotal };
@@ -4100,7 +4080,7 @@ function _renderInvoiceModal(inv) {
   const bnEl = document.getElementById('invBookerName');
   const bpEl = document.getElementById('invBookerPhone');
   if (bcEl) bcEl.textContent = inv.bookingCode || '';
-  if (bnEl) bnEl.textContent = inv.bookerName  || '';
+  if (bnEl) bnEl.textContent = inv.bookerName || '';
   if (bpEl) bpEl.textContent = inv.bookerPhone || '';
 
   // Lines
@@ -4137,7 +4117,7 @@ function _renderInvoiceModal(inv) {
 
   // Reset discount fields — khôi phục từ invoice đã lưu
   const discountInput = document.getElementById('invDiscountValue');
-  const discountType  = document.getElementById('invDiscountType');
+  const discountType = document.getElementById('invDiscountType');
   if (discountInput) {
     const dv = parseFloat(inv.discountValue) || 0;
     discountInput.value = dv > 0 ? dv : '';
@@ -4150,27 +4130,27 @@ function _renderInvoiceModal(inv) {
 
   // Totals
   _updateInvoiceTotalsDisplay(
-    parseFloat(inv.subtotal)       || 0,
+    parseFloat(inv.subtotal) || 0,
     parseFloat(inv.discountAmount) || 0,
-    parseFloat(inv.finalAmount)    || 0,
-    parseFloat(inv.paidAmount)     || 0,
-    parseFloat(inv.remaining)      || 0,
+    parseFloat(inv.finalAmount) || 0,
+    parseFloat(inv.paidAmount) || 0,
+    parseFloat(inv.remaining) || 0,
   );
 
   // Pay input section
-  const payStatus  = inv.paymentStatus || 'UNPAID';
+  const payStatus = inv.paymentStatus || 'UNPAID';
   const paidAmount = parseFloat(inv.paidAmount) || 0;
   const payInputWrap = document.getElementById('invPayInputWrap');
-  const btnConfirm   = document.getElementById('btnConfirmPayment');
-  const btnLabel     = document.getElementById('btnConfirmPaymentLabel');
-  const btnRefund    = document.getElementById('btnRefundPayment');
-  const refundedMsg  = document.getElementById('invRefundedMsg');
+  const btnConfirm = document.getElementById('btnConfirmPayment');
+  const btnLabel = document.getElementById('btnConfirmPaymentLabel');
+  const btnRefund = document.getElementById('btnRefundPayment');
+  const refundedMsg = document.getElementById('invRefundedMsg');
 
   // Reset trạng thái trước
   if (payInputWrap) payInputWrap.style.display = 'none';
-  if (btnConfirm)   btnConfirm.style.display   = 'none';
-  if (btnRefund)    btnRefund.style.display     = 'none';
-  if (refundedMsg)  refundedMsg.style.display   = 'none';
+  if (btnConfirm) btnConfirm.style.display = 'none';
+  if (btnRefund) btnRefund.style.display = 'none';
+  if (refundedMsg) refundedMsg.style.display = 'none';
 
   if (payStatus === 'REFUNDED') {
     // Đã hoàn tiền → chỉ hiện thông báo, ẩn tất cả nút
@@ -4184,7 +4164,7 @@ function _renderInvoiceModal(inv) {
     // UNPAID / PARTIAL → hiện form nhập thanh toán
     // BUG-002 FIX: PARTIAL có tiền đã thu → hiện thêm nút Hoàn tiền
     const finalAmount = parseFloat(inv.finalAmount) || 0;
-    const remaining   = parseFloat(inv.remaining)   || 0;
+    const remaining = parseFloat(inv.remaining) || 0;
 
     // Nếu final = 0 (chưa có dịch vụ) → ẩn form, hiện thông báo
     if (finalAmount === 0 && payStatus === 'UNPAID') {
@@ -4197,7 +4177,7 @@ function _renderInvoiceModal(inv) {
       if (btnConfirm) btnConfirm.style.display = 'none';
     } else {
       if (payInputWrap) payInputWrap.style.display = 'block';
-      if (btnConfirm)   btnConfirm.style.display   = '';
+      if (btnConfirm) btnConfirm.style.display = '';
       if (payStatus === 'PARTIAL' && paidAmount > 0) {
         if (btnRefund) btnRefund.style.display = '';
       }
@@ -4218,10 +4198,10 @@ function _renderInvoiceModal(inv) {
 function _recalcInvoiceTotals() {
   if (!_invoiceData) return;
 
-  const subtotal      = parseFloat(_invoiceData.subtotal) || 0;
+  const subtotal = parseFloat(_invoiceData.subtotal) || 0;
   const discountInput = document.getElementById('invDiscountValue');
-  const discountType  = document.getElementById('invDiscountType');
-  const paidAmount    = parseFloat(_invoiceData.paidAmount) || 0;
+  const discountType = document.getElementById('invDiscountType');
+  const paidAmount = parseFloat(_invoiceData.paidAmount) || 0;
 
   let discountValue = parseFloat(discountInput?.value || 0) || 0;
   const dtype = discountType?.value || 'NONE';  // NONE | AMOUNT | PERCENT
@@ -4229,7 +4209,7 @@ function _recalcInvoiceTotals() {
   // Clamp: 0 ≤ discount ≤ subtotal
   const discountAmount = _calcDiscountAmount(subtotal, dtype, discountValue);
   const finalAmount = subtotal - discountAmount;
-  const remaining   = Math.max(finalAmount - paidAmount, 0);
+  const remaining = Math.max(finalAmount - paidAmount, 0);
 
   _updateInvoiceTotalsDisplay(subtotal, discountAmount, finalAmount, paidAmount, remaining);
 
@@ -4248,10 +4228,10 @@ function _updateInvoiceTotalsDisplay(subtotal, discount, final, paid, remaining)
     const el = document.getElementById(id);
     if (el) el.textContent = _fmtVND(val);
   };
-  set('invSubtotal',  subtotal);
-  set('invDiscount',  discount);
-  set('invFinal',     final);
-  set('invPaid',      paid);
+  set('invSubtotal', subtotal);
+  set('invDiscount', discount);
+  set('invFinal', final);
+  set('invPaid', paid);
   set('invRemaining', remaining);
 }
 
@@ -4265,15 +4245,15 @@ async function _submitInvoicePayment() {
   if (errEl) { errEl.textContent = ''; errEl.classList.add('d-none'); }
 
   const discountInput = document.getElementById('invDiscountValue');
-  const discountType  = document.getElementById('invDiscountType');
+  const discountType = document.getElementById('invDiscountType');
   const payAmountInput = document.getElementById('invPayAmount');
-  const payMethodSel   = document.getElementById('invPayMethod');
-  const btnConfirm     = document.getElementById('btnConfirmPayment');
+  const payMethodSel = document.getElementById('invPayMethod');
+  const btnConfirm = document.getElementById('btnConfirmPayment');
 
   const discountValue = parseFloat(discountInput?.value || 0) || 0;
-  const dtype         = discountType?.value || 'NONE';  // NONE | AMOUNT | PERCENT
-  const payAmount     = parseFloat(payAmountInput?.value || 0) || 0;
-  const payMethod     = payMethodSel?.value || '';
+  const dtype = discountType?.value || 'NONE';  // NONE | AMOUNT | PERCENT
+  const payAmount = parseFloat(payAmountInput?.value || 0) || 0;
+  const payMethod = payMethodSel?.value || '';
 
   // Validate
   if (payAmount > 0 && !payMethod) {
@@ -4292,9 +4272,9 @@ async function _submitInvoicePayment() {
   // Validate remaining (tính từ _invoiceData + discount hiện tại)
   if (payAmount > 0 && !(_invoiceData._createMode)) {
     const subtotalCheck = parseFloat(_invoiceData.subtotal) || 0;
-    const paidCheck     = parseFloat(_invoiceData.paidAmount) || 0;
+    const paidCheck = parseFloat(_invoiceData.paidAmount) || 0;
     const discountAmountCheck = _calcDiscountAmount(subtotalCheck, dtype, discountValue);
-    const finalCheck     = Math.max(subtotalCheck - discountAmountCheck, 0);
+    const finalCheck = Math.max(subtotalCheck - discountAmountCheck, 0);
     const remainingCheck = Math.max(finalCheck - paidCheck, 0);
     if (finalCheck === 0) {
       if (errEl) { errEl.textContent = 'Chưa có dịch vụ nào được chọn. Vui lòng lưu lịch hẹn với dịch vụ trước khi thanh toán.'; errEl.classList.remove('d-none'); }
@@ -4324,7 +4304,7 @@ async function _submitInvoicePayment() {
       payStatus,
       paymentMethod: payMethod,
       paymentAmount: payAmount,
-      discountType:  dtype,
+      discountType: dtype,
       discountValue,
       discountAmount,
       finalAmount,
@@ -4334,14 +4314,14 @@ async function _submitInvoicePayment() {
     _setPayStatusBadge(payStatus);
     const btnInvoiceLabel = document.getElementById('btnInvoiceLabel');
     if (btnInvoiceLabel) {
-      if (payStatus === 'PAID')         btnInvoiceLabel.textContent = 'Xem hóa đơn';
+      if (payStatus === 'PAID') btnInvoiceLabel.textContent = 'Xem hóa đơn';
       else if (payStatus === 'PARTIAL') btnInvoiceLabel.textContent = 'Thu thêm';
-      else                              btnInvoiceLabel.textContent = 'Thanh toán';
+      else btnInvoiceLabel.textContent = 'Thanh toán';
     }
 
     // Đóng invoice modal
     const invoiceModalEl = document.getElementById('invoiceModal');
-    const invoiceModal   = bootstrap.Modal.getInstance(invoiceModalEl);
+    const invoiceModal = bootstrap.Modal.getInstance(invoiceModalEl);
     if (invoiceModal) invoiceModal.hide();
 
     showToast('success', 'Đã ghi nhận', `Thanh toán: ${_fmtVND(payAmount)} — sẽ lưu khi tạo lịch`);
@@ -4357,9 +4337,9 @@ async function _submitInvoicePayment() {
 
   try {
     const result = await apiPost(`${API_BASE}/bookings/${bookingCode}/invoice/pay/`, {
-      discountType:  dtype,
+      discountType: dtype,
       discountValue: discountValue,
-      payAmount:     payAmount,
+      payAmount: payAmount,
       paymentMethod: payMethod,
     });
 
@@ -4404,9 +4384,9 @@ async function _submitInvoiceRefund() {
   const bookingCode = _invoiceData._bookingCode;
   if (!bookingCode) return;
 
-  const errEl    = document.getElementById('invoiceModalError');
+  const errEl = document.getElementById('invoiceModalError');
   const btnRefund = document.getElementById('btnRefundPayment');
-  const btnLbl    = document.getElementById('btnRefundPaymentLabel');
+  const btnLbl = document.getElementById('btnRefundPaymentLabel');
 
   if (errEl) { errEl.textContent = ''; errEl.classList.add('d-none'); }
 
@@ -4420,7 +4400,7 @@ async function _submitInvoiceRefund() {
   if (!confirmed) return;
 
   if (btnRefund) btnRefund.disabled = true;
-  if (btnLbl)    btnLbl.textContent = 'Đang xử lý...';
+  if (btnLbl) btnLbl.textContent = 'Đang xử lý...';
 
   try {
     const result = await apiPost(`${API_BASE}/bookings/${bookingCode}/invoice/refund/`, {});
@@ -4449,12 +4429,12 @@ async function _submitInvoiceRefund() {
     if (errEl) { errEl.textContent = 'Có lỗi xảy ra, vui lòng thử lại'; errEl.classList.remove('d-none'); }
   } finally {
     if (btnRefund) btnRefund.disabled = false;
-    if (btnLbl)    btnLbl.textContent = 'Hoàn tiền';
+    if (btnLbl) btnLbl.textContent = 'Hoàn tiền';
   }
 }
 
 // Global click outside listener to close time range inputs
-document.addEventListener('click', function(e) {
+document.addEventListener('click', function (e) {
   document.querySelectorAll('.gc-time-range-field.is-editing').forEach(field => {
     if (!field.contains(e.target)) {
       field.classList.remove('is-editing');
