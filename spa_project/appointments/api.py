@@ -1637,9 +1637,24 @@ def api_booking_update_batch(request, booking_code):
     for i, g in enumerate(guests):
         label = f'Khách {i + 1}: ' if len(guests) > 1 else ''
         appt_code = (g.get('appointmentCode') or '').strip()
+
+        # Guest không có appointmentCode → là khách mới thêm vào booking
+        # Validate như create: bắt buộc room + date + time
         if not appt_code:
-            pre_errors.append(f'{label}Thiếu mã lịch hẹn')
-            continue
+            if not g.get('roomId'):
+                pre_errors.append(f'{label}Vui lòng chọn phòng')
+            if not g.get('date'):
+                pre_errors.append(f'{label}Vui lòng chọn ngày hẹn')
+            if not g.get('time'):
+                pre_errors.append(f'{label}Vui lòng chọn giờ hẹn')
+            # Validate service/variant cho guest mới
+            service_id_new = g.get('serviceId') or g.get('service_id')
+            variant_id_new = g.get('variantId') or g.get('variant_id')
+            service_id_new = service_id_new if service_id_new else None
+            variant_id_new = variant_id_new if variant_id_new else None
+            if service_id_new and not variant_id_new:
+                pre_errors.append(f'{label}Vui lòng chọn gói dịch vụ')
+            continue  # bỏ qua các validate dành cho appointment đã có
 
         # Validate apptStatus nếu có
         appt_status = (g.get('apptStatus') or '').strip().upper()
@@ -1763,6 +1778,87 @@ def api_booking_update_batch(request, booking_code):
             for i, g in enumerate(guests):
                 label = f'Khách {i + 1}: ' if len(guests) > 1 else ''
                 appt_code = (g.get('appointmentCode') or '').strip()
+
+                # ── Guest mới (không có appointmentCode) → tạo appointment mới ──
+                if not appt_code:
+                    new_name  = g.get('customerName', '').strip()
+                    new_phone = ''.join(filter(str.isdigit, g.get('phone', '')))
+                    new_email = g.get('email', '').strip() or None
+                    new_room_id   = g.get('roomId', '')
+                    new_date_str  = g.get('date', '')
+                    new_time_str  = g.get('time', '')
+                    variant_id    = g.get('variantId') or g.get('variant_id')
+                    variant_id    = variant_id if variant_id else None
+                    new_cust_id   = g.get('customerId')
+
+                    # Resolve room
+                    try:
+                        new_room = Room.objects.get(code=new_room_id)
+                    except Room.DoesNotExist:
+                        raise ValueError(f'{label}Phòng không tồn tại')
+
+                    # Parse date/time
+                    try:
+                        new_date = datetime.strptime(new_date_str, '%Y-%m-%d').date()
+                    except (ValueError, TypeError):
+                        raise ValueError(f'{label}Định dạng ngày không hợp lệ')
+                    try:
+                        new_time = datetime.strptime(new_time_str, '%H:%M').time()
+                    except (ValueError, TypeError):
+                        raise ValueError(f'{label}Định dạng giờ không hợp lệ')
+
+                    # Resolve variant
+                    new_variant = None
+                    if variant_id:
+                        try:
+                            new_variant = ServiceVariant.objects.get(id=variant_id)
+                        except ServiceVariant.DoesNotExist:
+                            raise ValueError(f'{label}Gói dịch vụ không tồn tại')
+
+                    duration = new_variant.duration_minutes if new_variant else 60
+
+                    # Validate conflict/capacity
+                    val_result = validate_appointment_create(
+                        appointment_date=new_date,
+                        appointment_time=new_time,
+                        duration_minutes=duration,
+                        room_code=new_room_id,
+                        exclude_appointment_code=None,
+                        is_staff_confirm=False,
+                    )
+                    if not val_result['valid']:
+                        raise ValueError(f'{label}{val_result["errors"][0]}')
+
+                    # Resolve customer
+                    new_customer = None
+                    if new_cust_id:
+                        try:
+                            new_customer = CustomerProfile.objects.get(id=int(new_cust_id))
+                        except (CustomerProfile.DoesNotExist, ValueError, TypeError):
+                            pass
+                    elif new_phone and len(new_phone) >= 10:
+                        try:
+                            new_customer = CustomerProfile.objects.get(phone=new_phone)
+                        except CustomerProfile.DoesNotExist:
+                            new_customer = _resolve_or_create_customer(
+                                phone=new_phone, email=new_email, customer_name=new_name
+                            )
+
+                    # Tạo appointment mới gắn vào booking hiện có
+                    new_appt = Appointment.objects.create(
+                        booking=locked_booking,
+                        room=new_room,
+                        appointment_date=new_date,
+                        appointment_time=new_time,
+                        service_variant=new_variant,
+                        status='NOT_ARRIVED',
+                        customer=new_customer,
+                        customer_name_snapshot=new_name or '',
+                        customer_phone_snapshot=new_phone or None,
+                        customer_email_snapshot=new_email or None,
+                    )
+                    updated_appts.append(new_appt)
+                    continue  # bỏ qua phần update bên dưới
 
                 # Lock appointment — phải thuộc booking này
                 try:
@@ -1896,24 +1992,25 @@ def api_booking_update_batch(request, booking_code):
                     # ở bước Variant phía trên), không dùng service_variant_id từ DB cũ.
                     effective_variant = locked_appt.service_variant
                     if appt_status == 'COMPLETED' and not effective_variant:
-                        raise ValueError(f'{label}Không thể hoàn thành khi chưa có dịch vụ')
+                        raise ValueError('Không thể hoàn thành khi chưa có dịch vụ')
                     # BUG-A12 FIX: Chặn cancel appointment khi booking đã có payment.
                     # Nếu cancel khi PAID/PARTIAL → tiền đã thu không được hoàn tự động,
                     # staff phải hoàn tiền trước qua invoice/refund.
                     if appt_status == 'CANCELLED' and locked_booking.payment_status in ('PAID', 'PARTIAL'):
                         raise ValueError(
-                            f'{label}Không thể hủy lịch khi booking đã có thanh toán '
+                            f'Không thể hủy lịch khi booking đã có thanh toán '
                             f'(trạng thái: {locked_booking.payment_status}). '
                             'Vui lòng hoàn tiền trước.'
                         )
                     # NOTE: check COMPLETED + PAID được thực hiện SAU khi invoice rebuild
                     # (xem bên dưới) để dùng payment_status mới nhất, không dùng state cũ.
                     # Validate thời điểm chuyển trạng thái
+                    # Trạng thái là shared cho toàn booking → không dùng label (không phải lỗi riêng 1 khách)
                     timing_ok, timing_err = _validate_status_timing(
                         val_date, val_time, val_duration, appt_status
                     )
                     if not timing_ok:
-                        raise ValueError(f'{label}{timing_err}')
+                        raise ValueError(timing_err)
                     locked_appt.status = appt_status
 
                 locked_appt.save()

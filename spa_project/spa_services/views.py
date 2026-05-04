@@ -329,7 +329,7 @@ def api_services_list(request):
             Q(name__icontains=search_query) | Q(code__icontains=search_query)
         )
     else:
-        services = Service.objects.all().order_by('-created_at')
+        services = Service.objects.filter(status='ACTIVE').order_by('-created_at')
 
     services = services.prefetch_related('variants')
 
