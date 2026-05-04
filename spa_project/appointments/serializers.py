@@ -138,7 +138,3 @@ def serialize_appointment(appointment):
         # Ghi chú khách: chỉ lấy từ profile nếu profile đó đúng là khách sử dụng dịch vụ
         'customerNote': _resolve_customer_note(appointment),
     }
-
-
-def serialize_appointments(appointments):
-    return [serialize_appointment(appt) for appt in appointments]

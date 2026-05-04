@@ -217,11 +217,3 @@ def get_available_rooms_for_slot(appointment_date, start_time, duration_minutes)
         if is_available:
             available.append(room)
     return available
-
-
-def get_today_str():
-    return timezone.now().strftime('%Y-%m-%d')
-
-
-def get_min_booking_date():
-    return timezone.now().date()

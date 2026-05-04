@@ -2501,6 +2501,9 @@ def api_customer_note_update(request, phone):
     [SHARED] POST /api/customers/<phone>/note/
     Cập nhật ghi chú hồ sơ khách theo SĐT.
 
+    TODO: endpoint này không còn được FE sử dụng (FE đã chuyển sang
+          POST /api/customers/id/<id>/note/). Cân nhắc xóa sau khi kiểm tra logs.
+
     Body JSON:
         { "note": "..." }
 
