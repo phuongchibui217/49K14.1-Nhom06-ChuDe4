@@ -399,21 +399,7 @@
               </button>
             </div>
 
-            {# PAYMENT FIELDS — chỉ dùng ở CREATE MODE #}
-            <div id="sharedPayMethodWrap" class="status-form-group">
-              <label class="status-label">Phương thức <span class="required-field">*</span></label>
-              <select id="sharedPayMethod" class="status-select">
-                <option value="">-- Chọn --</option>
-                <option value="CASH">Tiền mặt</option>
-                <option value="CARD">Thẻ</option>
-                <option value="BANK_TRANSFER">Chuyển khoản</option>
-                <option value="E_WALLET">Ví điện tử</option>
-              </select>
-            </div>
-            <div id="sharedPayAmountWrap" class="status-form-group">
-              <label class="status-label">Số tiền đã trả <span class="required-field">*</span></label>
-              <input type="number" id="sharedPayAmount" class="status-input" placeholder="0" min="1" step="1000" />
-            </div>
+            {# PAYMENT FIELDS đã chuyển sang Invoice Modal #}
 
           </div>
         </div>
