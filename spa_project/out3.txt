@@ -1,0 +1,4 @@
+1243:     // Reset để không bị kẹt mãi
+2725:  * @param {string} bookingCode - mã booking
+2964:       _showModalError("Không tìm thấy mã booking. Vui lòng đóng và mở lại."); return;
+3601:   // Lưu các mã lịch đã toast để không hiện lại

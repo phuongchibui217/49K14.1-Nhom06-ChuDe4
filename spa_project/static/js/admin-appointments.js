@@ -1088,7 +1088,7 @@ function openConfirmOnlineRequestModal(appt) {
 
   // Show form
   _showSharedForm(); // hiển thị form lên 
-  _setCreateOnlyVisible(false);
+  _setAddGuestBarVisible(true);
 
   // ── STEP 4: Fill booker info (người đặt) ──
   document.getElementById('bookerName').value = appt.bookerName || appt.customerName || '';
@@ -1180,8 +1180,8 @@ function addOnlineRequestGuestCard(onlineAppt) {
         // Try to get duration from variant
         const variant = SERVICES.find(s => s.id === onlineAppt.serviceId)
           ?.variants?.find(v => v.id === onlineAppt.variantId);
-        if (variant && variant.duration) {
-          duration = variant.duration;
+        if (variant && variant.duration_minutes) {
+          duration = variant.duration_minutes;
         }
       }
       const endTime = addMinutesToTime(onlineAppt.start, duration);
@@ -1323,12 +1323,12 @@ function openRebookAsCreate(a) {
 function fillServiceFilter(){
   const sel = document.getElementById('serviceFilter');
   if (sel) {
-    _populateSelect(sel, SERVICES, 'id', 'name', 'Tất cả dịch vụ');
+    _populateSelect(sel, SERVICES.filter(s => s.status === 'ACTIVE'), 'id', 'name', 'Tất cả dịch vụ');
   }
   // Điền dropdown dịch vụ cho tab Yêu cầu đặt lịch
   const webSel = document.getElementById('webServiceFilter');
   if (webSel) {
-    _populateSelect(webSel, SERVICES, 'id', 'name', 'Tất cả dịch vụ');
+    _populateSelect(webSel, SERVICES.filter(s => s.status === 'ACTIVE'), 'id', 'name', 'Tất cả dịch vụ');
   }
 }
 
@@ -1734,6 +1734,31 @@ function _showSharedStatusBlock(statusValue, payValue, isEditMode) {
   }
 }
 
+/** Đồng bộ thông tin người đặt xuống các khách đang tick "= người đặt" */
+function _syncBookerToGuests() {
+  const name = document.getElementById('bookerName')?.value || '';
+  const phone = document.getElementById('bookerPhone')?.value || '';
+  const email = document.getElementById('bookerEmail')?.value || '';
+  const custId = document.getElementById('selectedCustomerId')?.value || '';
+
+  const items = _getGuestItems();
+  items.forEach(item => {
+    const sameChk = item.querySelector('.gc-same-as-booker');
+    if (sameChk && sameChk.checked) {
+      const nameI = item.querySelector('.gc-name');
+      const phoneI = item.querySelector('.gc-phone');
+      const emailI = item.querySelector('.gc-email');
+      const custIdI = item.querySelector('.gc-customer-id');
+      
+      if (nameI) nameI.value = name;
+      if (phoneI) phoneI.value = phone;
+      if (emailI) emailI.value = email;
+      if (custIdI) custIdI.value = custId;
+      item.dataset.customerId = custId;
+    }
+  });
+}
+
 /** Build 1 compact guest row — detail panel ẩn mặc định, toggle bằng JS */
 function _buildGuestItem(idx, prefill) {
   prefill = prefill || {};
@@ -1743,7 +1768,7 @@ function _buildGuestItem(idx, prefill) {
   var endTime  = (timeVal && prefill.pendingDuration) ? addMinutesToTime(timeVal, prefill.pendingDuration) : '';
 
   var svcOpts = '<option value="">Dịch vụ</option>' +
-    SERVICES.map(function(s){ return '<option value="' + s.id + '">' + s.name + '</option>'; }).join('');
+    SERVICES.filter(s => s.status === 'ACTIVE').map(function(s){ return '<option value="' + s.id + '">' + s.name + '</option>'; }).join('');
 
   var inp = 'width:100%;height:36px;padding:0 12px;font-size:14px;border:1px solid #d1d5db;border-radius:6px;outline:none;background:#fff;box-sizing:border-box;font-family:inherit;color:#111827;display:block;';
   var sel = 'width:100%;height:36px;padding:0 10px;font-size:14px;border:1px solid #d1d5db;border-radius:6px;outline:none;background:#fff;box-sizing:border-box;font-family:inherit;color:#111827;display:block;appearance:auto;';
@@ -2046,12 +2071,7 @@ function _buildGuestItem(idx, prefill) {
         }, 30);
       }
     });
-    // Click ra ngoài → đóng editing
-    document.addEventListener('click', function _closeTimeRange(e) {
-      if (!timeRangeField.contains(e.target)) {
-        timeRangeField.classList.remove('is-editing');
-      }
-    });
+
     // Enter từ input → đóng editing
     var startTimeInp = timeRangeField.querySelector('.gc-time-input');
     if (startTimeInp) {
@@ -2308,7 +2328,7 @@ async function _updateCustomerNotes(cards, skipConfirm = false) {
 function _initApplyAllBar() {
   const applyAllSvc = document.getElementById('applyAllService');
   if (applyAllSvc) {
-    _populateSelect(applyAllSvc, SERVICES, 'id', 'name', 'Dịch vụ');
+    _populateSelect(applyAllSvc, SERVICES.filter(s => s.status === 'ACTIVE'), 'id', 'name', 'Dịch vụ');
   }
 
   if (applyAllSvc) {
@@ -2415,14 +2435,11 @@ function _showSharedForm() {
   const f = document.getElementById('apptForm');
   if (f) { f.style.display = 'flex'; }
 }
-function _hideSharedForm() {
-  const f = document.getElementById('apptForm');
-  if (f) { f.style.display = 'none'; }
-}
-function _setCreateOnlyVisible(visible) {
+
+function _setAddGuestBarVisible(visible) {
   // Nút "Thêm khách" hiện cả create lẫn edit mode
   const bar = document.getElementById('createOnlyBar');
-  if (bar) bar.style.display = 'flex';
+  if (bar) bar.style.display = visible ? 'flex' : 'none';
 }
 
 function openCreateModal(prefill={}){
@@ -2446,7 +2463,7 @@ function openCreateModal(prefill={}){
 
   // Hiện shared form, bật create-only bar
   _showSharedForm();
-  _setCreateOnlyVisible(true);
+  _setAddGuestBarVisible(true);
 
   // Label panel
   const lbl = document.getElementById('bookerPanelLabel');
@@ -2480,7 +2497,7 @@ function openCreateModal(prefill={}){
       date:        dayPicker.value,
     });
     modalTitle.textContent = 'Đặt lại lịch hẹn';
-    _setCreateOnlyVisible(false);
+    _setAddGuestBarVisible(true);
     showToast('info', 'Đặt lại', 'Vui lòng chọn ngày, giờ và phòng mới');
   } else if (prefill._fromOnlineRequest && prefill._booker) {
     _isRebookMode = false;
@@ -2503,7 +2520,7 @@ function openCreateModal(prefill={}){
     });
     modalTitle.textContent = 'Xác nhận yêu cầu đặt lịch';
     if (btnSaveText) btnSaveText.textContent = 'Xác nhận & Tạo lịch';
-    _setCreateOnlyVisible(false);
+    _setAddGuestBarVisible(true);
     showToast('info', 'Xác nhận yêu cầu', 'Vui lòng chọn phòng và kiểm tra thông tin trước khi lưu');
   } else if (prefill._fromPending && prefill._blocks && prefill._blocks.length > 0) {
     _isRebookMode = false;
@@ -2604,7 +2621,7 @@ function openCreateModalFromPending() {
       apptId.dataset.allApptIds  = allApptIds;
 
       _showSharedForm();
-      _setCreateOnlyVisible(true);
+      _setAddGuestBarVisible(true);
       _applyModalMode('normal');
 
       const lbl = document.getElementById('bookerPanelLabel');
@@ -2779,7 +2796,7 @@ function openEditModalWithData(appointments, clickedApptId) {
   if (btnSaveText) btnSaveText.textContent = "Lưu lịch hẹn";
 
   _showSharedForm();
-  _setCreateOnlyVisible(false);
+  _setAddGuestBarVisible(true);
 
   // Trạng thái & thanh toán dùng của primary (hoặc appointment được click)
   // Luôn apply normal-mode trước để reset mọi trạng thái ẩn từ request-mode
@@ -2872,7 +2889,13 @@ async function _loadInvoiceSummary(bookingCode) {
     // Không có invoice → giữ nguyên trạng thái mặc định
   } finally {
     // Re-enable nút sau khi load xong (chỉ nếu chính hàm này đã disable)
-    if (btnDelete  && btnDelete._invoiceLoading)  { btnDelete.disabled  = false; delete btnDelete._invoiceLoading; }
+    if (btnDelete  && btnDelete._invoiceLoading)  {
+      const paidLocked = ['PAID', 'PARTIAL', 'REFUNDED'].includes(
+        document.getElementById('sharedPayStatus')?.value
+      );
+      btnDelete.disabled = paidLocked;
+      delete btnDelete._invoiceLoading;
+    }
     if (btnInvoice && btnInvoice._invoiceLoading) {
       // Gọi lại _updateCreatePayBtn để set đúng trạng thái enable/disable theo dịch vụ
       _updateCreatePayBtn();
@@ -3416,7 +3439,7 @@ function _fillSearchDropdowns() {
   // Điền dropdown dịch vụ
   const srchSvc = document.getElementById('srchService');
   if (srchSvc && srchSvc.options.length <= 1 && SERVICES.length) {
-    _populateSelect(srchSvc, SERVICES, 'id', 'name', 'Tất cả dịch vụ');
+    _populateSelect(srchSvc, SERVICES.filter(s => s.status === 'ACTIVE'), 'id', 'name', 'Tất cả dịch vụ');
   }
 }
 
@@ -3719,6 +3742,12 @@ document.addEventListener("DOMContentLoaded", async ()=>{
   if(btnNext) btnNext.addEventListener("click", ()=> shiftDay(1));
   if(dayPicker) dayPicker.addEventListener("change", ()=> { clearPendingBlocks(); refreshData(); updateCurrentTimeLine(); });
 
+  // Sync booker data to guests when editing
+  ['bookerName', 'bookerPhone', 'bookerEmail'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', _syncBookerToGuests);
+  });
+
   // ── Current time line: interval realtime + resize ──
   startCurrentTimeLineInterval();
   window.addEventListener('resize', updateCurrentTimeLine);
@@ -3764,6 +3793,15 @@ document.addEventListener("DOMContentLoaded", async ()=>{
     btnId:    'webFilterBtn',
     searchId: 'webSearchInput',
     onApply:  () => renderWebRequests(),
+  });
+
+  document.querySelectorAll('[data-bs-toggle="pill"]').forEach(tab => {
+    tab.addEventListener('shown.bs.tab', () => {
+      _addingSlotMode = false;
+      _savedBookerInfo = null;
+      _addingSlotEditBookingCode = null;
+      clearPendingBlocks();
+    });
   });
 
   // ===== SEARCH MODAL =====
@@ -4415,4 +4453,11 @@ async function _submitInvoiceRefund() {
   }
 }
 
-
+// Global click outside listener to close time range inputs
+document.addEventListener('click', function(e) {
+  document.querySelectorAll('.gc-time-range-field.is-editing').forEach(field => {
+    if (!field.contains(e.target)) {
+      field.classList.remove('is-editing');
+    }
+  });
+});

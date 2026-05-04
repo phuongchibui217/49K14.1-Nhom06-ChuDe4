@@ -1,0 +1,1 @@
+102:             messages.success(request, f'Đặt lịch thành công! Mã đặt lịch: {bk.booking_code}. Vui lòng chờ xác nhận.')

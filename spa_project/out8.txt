@@ -1,0 +1,4 @@
+2075: document.addEventListener('click', function _closeTimeRange(e) {
+2443: function _hideSharedForm() {
+2865: _loadInvoiceSummary(primary.bookingCode);
+2876: async function _loadInvoiceSummary(bookingCode) {

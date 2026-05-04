@@ -2237,52 +2237,51 @@ def api_appointment_delete(request, appointment_code):
     if appointment.status == 'COMPLETED':
         return JsonResponse({'success': False, 'error': 'Không thể xóa lịch hẹn đã hoàn thành dịch vụ.'}, status=400)
 
-    # BUG-04: Chặn xóa lịch đã thanh toán, thanh toán một phần, hoặc đã hoàn tiền
-    booking_pay_status = ''
-    if appointment.booking_id:
-        try:
-            booking_pay_status = appointment.booking.payment_status or ''
-        except Exception:
-            pass
-    if booking_pay_status in ('PAID', 'PARTIAL', 'REFUNDED'):
-        if booking_pay_status == 'PAID':
-            err_msg = 'Không thể xóa lịch đã thanh toán. Vui lòng hoàn tiền trước nếu cần hủy.'
-        elif booking_pay_status == 'PARTIAL':
-            err_msg = 'Không thể xóa lịch khi booking đang có thanh toán một phần. Vui lòng hoàn tiền trước nếu cần hủy.'
-        else:
-            err_msg = 'Không thể xóa lịch đã hoàn tiền. Vui lòng giữ lại để đối soát.'
-        return JsonResponse({'success': False, 'error': err_msg}, status=400)
-
     try:
         customer_name  = appointment.customer_name_snapshot or 'Khach hang'
         appointment_id = appointment.id
-        booking        = appointment.booking
+        booking_id     = appointment.booking_id
 
         with transaction.atomic():
+            # BUG-04 & Race condition fix: Lock booking before checking payment status
+            booking = None
+            if booking_id:
+                booking = Booking.objects.select_for_update().get(id=booking_id)
+                booking_pay_status = booking.payment_status or ''
+                if booking_pay_status in ('PAID', 'PARTIAL', 'REFUNDED'):
+                    if booking_pay_status == 'PAID':
+                        err_msg = 'Không thể xóa lịch đã thanh toán. Vui lòng hoàn tiền trước nếu cần hủy.'
+                    elif booking_pay_status == 'PARTIAL':
+                        err_msg = 'Không thể xóa lịch khi booking đang có thanh toán một phần. Vui lòng hoàn tiền trước nếu cần hủy.'
+                    else:
+                        err_msg = 'Không thể xóa lịch đã hoàn tiền. Vui lòng giữ lại để đối soát.'
+                    return JsonResponse({'success': False, 'error': err_msg}, status=400)
+
             appointment.deleted_at      = timezone.now()
             appointment.deleted_by_user = request.user
             appointment.save(update_fields=['deleted_at', 'deleted_by_user', 'updated_at'])
 
             # BUG-003 FIX: Nếu booking không còn appointment nào → soft-delete booking luôn
             # để tránh booking rỗng tồn tại trong DB gây nhầm lẫn.
-            remaining_count = Appointment.objects.filter(
-                booking=booking,
-                deleted_at__isnull=True,
-            ).count()
             booking_deleted = False
-            if remaining_count == 0:
-                booking.deleted_at      = timezone.now()
-                booking.deleted_by_user = request.user
-                booking.save(update_fields=['deleted_at', 'deleted_by_user', 'updated_at'])
-                booking_deleted = True
-            else:
-                # BUG-A06 FIX: Booking còn appointment khác → rebuild invoice để
-                # subtotal/final/payment_status phản ánh đúng appointments còn lại.
-                try:
-                    Invoice.objects.get(booking=booking)  # chỉ rebuild nếu invoice đã tồn tại
-                    _rebuild_invoice(booking=booking)
-                except Invoice.DoesNotExist:
-                    pass
+            if booking:
+                remaining_count = Appointment.objects.filter(
+                    booking=booking,
+                    deleted_at__isnull=True,
+                ).count()
+                if remaining_count == 0:
+                    booking.deleted_at      = timezone.now()
+                    booking.deleted_by_user = request.user
+                    booking.save(update_fields=['deleted_at', 'deleted_by_user', 'updated_at'])
+                    booking_deleted = True
+                else:
+                    # BUG-A06 FIX: Booking còn appointment khác → rebuild invoice để
+                    # subtotal/final/payment_status phản ánh đúng appointments còn lại.
+                    try:
+                        Invoice.objects.get(booking=booking)  # chỉ rebuild nếu invoice đã tồn tại
+                        _rebuild_invoice(booking=booking)
+                    except Invoice.DoesNotExist:
+                        pass
 
         return JsonResponse({
             'success':        True,

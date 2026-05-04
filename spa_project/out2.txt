@@ -1,0 +1,2 @@
+2355:             Q(booking__booking_code__icontains=search) |           # Mã booking: BK0001
+2358:             Q(appointment_code__icontains=search) |                # Mã lịch hẹn: APP0001
