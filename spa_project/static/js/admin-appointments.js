@@ -1,79 +1,79 @@
-﻿// ============================================================
-// ADMIN APPOINTMENTS - Má»¤C Lá»¤C
 // ============================================================
-// SECTION 1:  Cáº¤U HÃŒNH & Háº°NG Sá»            (Line ~25)  - Constants, URLs, Messages
-// SECTION 2:  BIáº¾N TRáº NG THÃI (STATE)       (Line ~33)  - Quáº£n lÃ½ state toÃ n cá»¥c
-// SECTION 3:  HÃ€M API                        (Line ~60)  - Gá»i HTTP, táº£i dá»¯ liá»‡u
-// SECTION 4:  HÃ€M VALIDATION                 (Line ~204) - Kiá»ƒm tra form
-// SECTION 5:  HÃ€M Xá»¬ LÃ THá»œI GIAN            (Line ~355) - DateTime utilities
-// SECTION 6:  HÃ€M GIAO DIá»†N (UI)            (Line ~376) - Toast, buttons, modals
-// SECTION 7:  QUáº¢N LÃ PENDING BLOCKS         (Line ~625) - Slot Ä‘ang chá»n
-// SECTION 8:  TAB 1 - Lá»ŠCH THEO PHÃ’NG        (Line ~805) - Grid hiá»ƒn thá»‹ lá»‹ch
-// SECTION 9:  TAB 2 - YÃŠU Cáº¦U Äáº¶T Lá»ŠCH      (Line ~1017)- Xá»­ lÃ½ booking online
-// SECTION 10: TÃŒM KIáº¾M KHÃCH HÃ€NG           (Line ~1238)- Tra cá»©u khÃ¡ch theo SÄT
+// ADMIN APPOINTMENTS - MỤC LỤC
+// ============================================================
+// SECTION 1:  CẤU HÌNH & HẰNG SỐ            (Line ~25)  - Constants, URLs, Messages
+// SECTION 2:  BIẾN TRẠNG THÁI (STATE)       (Line ~33)  - Quản lý state toàn cục
+// SECTION 3:  HÀM API                        (Line ~60)  - Gọi HTTP, tải dữ liệu
+// SECTION 4:  HÀM VALIDATION                 (Line ~204) - Kiểm tra form
+// SECTION 5:  HÀM XỬ LÝ THỜI GIAN            (Line ~355) - DateTime utilities
+// SECTION 6:  HÀM GIAO DIỆN (UI)            (Line ~376) - Toast, buttons, modals
+// SECTION 7:  QUẢN LÝ PENDING BLOCKS         (Line ~625) - Slot đang chọn
+// SECTION 8:  TAB 1 - LỊCH THEO PHÒNG        (Line ~805) - Grid hiển thị lịch
+// SECTION 9:  TAB 2 - YÊU CẦU ĐẶT LỊCH      (Line ~1017)- Xử lý booking online
+// SECTION 10: TÌM KIẾM KHÁCH HÀNG           (Line ~1238)- Tra cứu khách theo SĐT
 // SECTION 11: MODAL & FORM                   (Line ~1326)- Dialog & form helpers
-// SECTION 12: CHá»ŒN NGÃ€Y (DATE NAVIGATION)    (Line ~3215)- DatePicker
-// SECTION 13: MODAL TÃŒM KIáº¾M                (Line ~3241)- TÃ¬m kiáº¿m lá»‹ch háº¹n
-// SECTION 14: AUTO-REFRESH CANCEL            (Line ~3467)- Cáº­p nháº­t khÃ¡ch há»§y
-// SECTION 15: KHá»žI Táº O APP                  (Line ~3546)- Startup & event listeners
-// SECTION 16: MODAL HÃ“A ÄÆ N (INVOICE)        (Line ~3663)- Thanh toÃ¡n
+// SECTION 12: CHỌN NGÀY (DATE NAVIGATION)    (Line ~3215)- DatePicker
+// SECTION 13: MODAL TÌM KIẾM                (Line ~3241)- Tìm kiếm lịch hẹn
+// SECTION 14: AUTO-REFRESH CANCEL            (Line ~3467)- Cập nhật khách hủy
+// SECTION 15: KHỞI TẠO APP                  (Line ~3546)- Startup & event listeners
+// SECTION 16: MODAL HÓA ĐƠN (INVOICE)        (Line ~3663)- Thanh toán
 // ============================================================
 
 // ============================================================
 // SECTION 1: SETTINGS & CONSTANTS
 // ============================================================
 console.log("ADMIN APPOINTMENTS JS LOADED v20260501-005");
-const START_HOUR = 9;  // Giá» má»Ÿ cá»­a (9:00 sÃ¡ng)
-const END_HOUR = 21;   // Giá» Ä‘Ã³ng cá»­a (21:00 tá»‘i)
-const SLOT_MIN = 30; // 1 Ã´ lá»‹ch = 30 phÃºt
-const DEFAULT_DURATION = 60; // Thá»i lÆ°á»£ng máº·c Ä‘á»‹nh cho pending block (phÃºt)
+const START_HOUR = 9;  // Giờ mở cửa (9:00 sáng)
+const END_HOUR = 21;   // Giờ đóng cửa (21:00 tối)
+const SLOT_MIN = 30; // 1 ô lịch = 30 phút
+const DEFAULT_DURATION = 60; // Thời lượng mặc định cho pending block (phút)
 
-// ===== API BASE URL- Ä‘Æ°á»ng dáº«n API Ä‘á»ƒ gá»i BE =====
+// ===== API BASE URL- đường dẫn API để gọi BE =====
 const API_BASE = '/api';
 
-// Constant dÃ¹ng chung cho táº¥t cáº£ lá»—i táº£i lá»‹ch háº¹n â€” UC 14.2 exception flow 5a
-const MSG_LOAD_APPT_ERROR = 'KhÃ´ng thá»ƒ táº£i lá»‹ch háº¹n. Vui lÃ²ng thá»­ láº¡i sau.';
+// Constant dùng chung cho tất cả lỗi tải lịch hẹn — UC 14.2 exception flow 5a
+const MSG_LOAD_APPT_ERROR = 'Không thể tải lịch hẹn. Vui lòng thử lại sau.';
 
-// ===== UC 14.3 â€” Messages chuáº©n hÃ³a =====
-const MSG_APPROVE_SUCCESS  = 'XÃ¡c nháº­n yÃªu cáº§u thÃ nh cÃ´ng';
-const MSG_REJECT_SUCCESS   = 'Tá»« chá»‘i yÃªu cáº§u thÃ nh cÃ´ng';
-const MSG_REBOOK_SUCCESS   = 'Äáº·t láº¡i lá»‹ch háº¹n thÃ nh cÃ´ng';
-const MSG_WEB_EMPTY        = 'Hiá»‡n chÆ°a cÃ³ yÃªu cáº§u Ä‘áº·t lá»‹ch nÃ o.';
-const MSG_WEB_GENERIC_ERR  = 'KhÃ´ng thá»ƒ xá»­ lÃ½ yÃªu cáº§u. Vui lÃ²ng thá»­ láº¡i sau.';
-const MSG_WEB_CONFLICT     = 'KhÃ´ng thá»ƒ xá»­ lÃ½ do khung giá» hoáº·c phÃ²ng khÃ´ng kháº£ dá»¥ng.';
-const MSG_APPROVE_CONFLICT = 'KhÃ´ng thá»ƒ xÃ¡c nháº­n do khung giá» hoáº·c phÃ²ng khÃ´ng kháº£ dá»¥ng.';
+// ===== UC 14.3 — Messages chuẩn hóa =====
+const MSG_APPROVE_SUCCESS  = 'Xác nhận yêu cầu thành công';
+const MSG_REJECT_SUCCESS   = 'Từ chối yêu cầu thành công';
+const MSG_REBOOK_SUCCESS   = 'Đặt lại lịch hẹn thành công';
+const MSG_WEB_EMPTY        = 'Hiện chưa có yêu cầu đặt lịch nào.';
+const MSG_WEB_GENERIC_ERR  = 'Không thể xử lý yêu cầu. Vui lòng thử lại sau.';
+const MSG_WEB_CONFLICT     = 'Không thể xử lý do khung giờ hoặc phòng không khả dụng.';
+const MSG_APPROVE_CONFLICT = 'Không thể xác nhận do khung giờ hoặc phòng không khả dụng.';
 
-// ===== HELPER: format variant label â€” trÃ¡nh láº·p "90 phÃºt â€” 90 phÃºt" =====
+// ===== HELPER: format variant label — tránh lặp "90 phút — 90 phút" =====
 function variantLabel(v) {
-  const dur = `${v.duration_minutes} phÃºt`;
+  const dur = `${v.duration_minutes} phút`;
   if (!v.label || v.label.trim() === dur) return dur;
-  return `${v.label} â€” ${dur}`;
+  return `${v.label} — ${dur}`;
 }
 
 // ============================================================
 // SECTION 2: STATE VARIABLES
 // ============================================================
-// PENDING BLOCKS STATE â€” Flow 2 bÆ°á»›c táº¡o lá»‹ch háº¹n
+// PENDING BLOCKS STATE — Flow 2 bước tạo lịch hẹn
 let pendingBlocks = [];
 let _pendingIdCounter = 0;
 
-// Dá»¯ liá»‡u ( láº¥y tá»« API) ==> lÆ°u dá»¯ liá»‡u load tá»« DB Ä‘á»ƒ render giao diá»‡n, validate form, tÃ­nh toÃ¡n trÃ¹ng lá»‹ch
-let ROOMS = []; // danh sÃ¡ch phÃ²ng
-let SERVICES = []; //dÃ¡nh sÃ¡ch dá»‹ch vá»¥
-let APPOINTMENTS = []; // danh sÃ¡ch lá»‹ch háº¹n
+// Dữ liệu ( lấy từ API) ==> lưu dữ liệu load từ DB để render giao diện, validate form, tính toán trùng lịch
+let ROOMS = []; // danh sách phòng
+let SERVICES = []; //dánh sách dịch vụ
+let APPOINTMENTS = []; // danh sách lịch hẹn
 
-// Biáº¿n theo dÃµi tráº¡ng thÃ¡i Ä‘ang submit Ä‘á»ƒ trÃ¡nh submit láº·p
+// Biến theo dõi trạng thái đang submit để tránh submit lặp
 let isSubmitting = false;
 
-// State: Ä‘ang á»Ÿ cháº¿ Ä‘á»™ "quay vá» grid Ä‘á»ƒ chá»n thÃªm slot"
+// State: đang ở chế độ "quay về grid để chọn thêm slot"
 let _addingSlotMode = false;
-let _savedBookerInfo = null;  // lÆ°u táº¡m booker info khi quay vá» grid
-let _addingSlotEditBookingCode = null; // náº¿u Ä‘ang thÃªm slot tá»« edit mode, lÆ°u bookingCode Ä‘á»ƒ quay láº¡i
+let _savedBookerInfo = null;  // lưu tạm booker info khi quay về grid
+let _addingSlotEditBookingCode = null; // nếu đang thêm slot từ edit mode, lưu bookingCode để quay lại
 
-// UC 14.3 â€” track rebook mode Ä‘á»ƒ hiá»ƒn thá»‹ Ä‘Ãºng message sau khi táº¡o lá»‹ch
+// UC 14.3 — track rebook mode để hiển thị đúng message sau khi tạo lịch
 let _isRebookMode = false;
 
-// CREATE MODE â€” ACCORDION GUEST CARDS
+// CREATE MODE — ACCORDION GUEST CARDS
 let _guestCount = 0;
 // Current time line interval
 let _ctlInterval = null;
@@ -106,7 +106,7 @@ async function apiGet(url) {
         success: false,
         ok: response.ok,
         status: response.status,
-        error: !response.ok ? `HTTP error ${response.status}: MÃ¡y chá»§ tráº£ vá» pháº£n há»“i khÃ´ng há»£p lá»‡` : 'Invalid JSON response'
+        error: !response.ok ? `HTTP error ${response.status}: Máy chủ trả về phản hồi không hợp lệ` : 'Invalid JSON response'
       };
     }
   } catch (error) {
@@ -138,7 +138,7 @@ async function apiPost(url, payload) {
         success: false,
         ok: response.ok,
         status: response.status,
-        error: !response.ok ? `HTTP error ${response.status}: MÃ¡y chá»§ tráº£ vá» pháº£n há»“i khÃ´ng há»£p lá»‡` : 'Invalid JSON response'
+        error: !response.ok ? `HTTP error ${response.status}: Máy chủ trả về phản hồi không hợp lệ` : 'Invalid JSON response'
       };
     }
   } catch (error) {
@@ -164,7 +164,7 @@ async function loadServices() {
   }
 }
 
-// _gridLoadError: true khi láº§n load gáº§n nháº¥t bá»‹ lá»—i â€” dÃ¹ng Ä‘á»ƒ renderGrid hiá»ƒn thá»‹ error state
+// _gridLoadError: true khi lần load gần nhất bị lỗi — dùng để renderGrid hiển thị error state
 let _gridLoadError = false;
 
 async function loadAppointments(date = '') {
@@ -179,17 +179,17 @@ async function loadAppointments(date = '') {
     APPOINTMENTS = result.appointments;
     _gridLoadError = false;
   } else {
-    // API tráº£ error hoáº·c network lá»—i â€” UC 14.2 exception flow 5a
+    // API trả error hoặc network lỗi — UC 14.2 exception flow 5a
     APPOINTMENTS = [];
     _gridLoadError = true;
-    showToast('error', 'Lá»—i', result.error || MSG_LOAD_APPT_ERROR);
+    showToast('error', 'Lỗi', result.error || MSG_LOAD_APPT_ERROR);
   }
 }
 
 async function loadBookingRequests(dateFilter = '', searchTerm = '', serviceFilter = '') {
   let url = `${API_BASE}/booking-requests/`;
   const queryParams = [];
-  // Backend chá»‰ tráº£ vá» PENDING bookings - khÃ´ng cáº§n status filter
+  // Backend chỉ trả về PENDING bookings - không cần status filter
   if (dateFilter)    queryParams.push(`date=${encodeURIComponent(dateFilter)}`);
   if (searchTerm)    queryParams.push(`q=${encodeURIComponent(searchTerm)}`);
   if (serviceFilter) queryParams.push(`service=${encodeURIComponent(serviceFilter)}`);
@@ -199,8 +199,8 @@ async function loadBookingRequests(dateFilter = '', searchTerm = '', serviceFilt
   if (result && result.success) {
     return result.appointments || [];
   }
-  //lá»—i táº£i khÃ´ng Ä‘Æ°á»£c im láº·ng
-  showToast('error', 'Lá»—i', MSG_WEB_GENERIC_ERR);
+  //lỗi tải không được im lặng
+  showToast('error', 'Lỗi', MSG_WEB_GENERIC_ERR);
   return [];
 }
 
@@ -211,8 +211,8 @@ function isValidPhone(v){ return /^0\d{9}$/.test(v.replace(/\D/g,"")); }
 function isValidEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
 
 /**
- * Hiá»ƒn thá»‹ lá»—i trong #modalError.
- * Thay tháº¿ pattern láº·p: modalError.textContent = msg; modalError.classList.remove("d-none");
+ * Hiển thị lỗi trong #modalError.
+ * Thay thế pattern lặp: modalError.textContent = msg; modalError.classList.remove("d-none");
  */
 function _showModalError(msg) {
   const el = document.getElementById('modalError');
@@ -222,8 +222,8 @@ function _showModalError(msg) {
 }
 
 /**
- * TÃ­nh discount_amount tá»« subtotal + type + value.
- * Káº¿t quáº£ Ä‘Æ°á»£c clamp vá» [0, subtotal].
+ * Tính discount_amount từ subtotal + type + value.
+ * Kết quả được clamp về [0, subtotal].
  * @param {number} subtotal
  * @param {string} dtype  - 'NONE' | 'AMOUNT' | 'PERCENT'
  * @param {number} value
@@ -240,117 +240,117 @@ function _calcDiscountAmount(subtotal, dtype, value) {
 }
 
 /**
- * TÃ­nh payment status tá»« final_amount vÃ  total_paid.
+ * Tính payment status từ final_amount và total_paid.
  * @param {number} finalAmount
  * @param {number} totalPaid
  * @returns {'UNPAID'|'PARTIAL'|'PAID'}
  */
 function _calcPayStatus(finalAmount, totalPaid, hasAnyService = false) {
-  if (finalAmount === 0 && hasAnyService) return 'PAID';  // discount 100% + cÃ³ dá»‹ch vá»¥
+  if (finalAmount === 0 && hasAnyService) return 'PAID';  // discount 100% + có dịch vụ
   if (totalPaid <= 0) return 'UNPAID';
   if (totalPaid >= finalAmount && finalAmount > 0) return 'PAID';
   return 'PARTIAL';
 }
 
 /**
- * Validate Ä‘iá»u kiá»‡n COMPLETED pháº£i Ä‘i kÃ¨m PAID.
+ * Validate điều kiện COMPLETED phải đi kèm PAID.
  * @param {string} apptStatus
  * @param {string} payStatus
  * @returns {{ ok: boolean, error: string }}
  */
 function _validateCompletedStatus(apptStatus, payStatus) {
   if (apptStatus === 'COMPLETED' && payStatus !== 'PAID') {
-    return { ok: false, error: 'KhÃ´ng thá»ƒ hoÃ n thÃ nh lá»‹ch khi chÆ°a thanh toÃ¡n Ä‘á»§' };
+    return { ok: false, error: 'Không thể hoàn thành lịch khi chưa thanh toán đủ' };
   }
   return { ok: true, error: '' };
 }
 
 /**
- * Validate thÃ´ng tin ngÆ°á»i Ä‘áº·t lá»‹ch (booker).
- * DÃ¹ng chung cho cáº£ CREATE vÃ  EDIT branch trong submit handler.
+ * Validate thông tin người đặt lịch (booker).
+ * Dùng chung cho cả CREATE và EDIT branch trong submit handler.
  *
- * @param {string} name   - há» tÃªn ngÆ°á»i Ä‘áº·t
- * @param {string} phone  - sá»‘ Ä‘iá»‡n thoáº¡i (raw, chÆ°a strip)
- * @param {string} email  - email (cÃ³ thá»ƒ rá»—ng)
+ * @param {string} name   - họ tên người đặt
+ * @param {string} phone  - số điện thoại (raw, chưa strip)
+ * @param {string} email  - email (có thể rỗng)
  * @returns {{ ok: boolean, error: string }}
  */
 function _validateBookerFields(name, phone, email) {
-  if (!name) return { ok: false, error: 'Vui lÃ²ng nháº­p há» tÃªn ngÆ°á»i Ä‘áº·t' };
-  if (!phone) return { ok: false, error: 'Sá»‘ Ä‘iá»‡n thoáº¡i khÃ´ng há»£p lá»‡' };
-  if (!isValidPhone(phone)) return { ok: false, error: 'Sá»‘ Ä‘iá»‡n thoáº¡i khÃ´ng há»£p lá»‡' };
-  if (email && !isValidEmail(email)) return { ok: false, error: 'Email khÃ´ng há»£p lá»‡' };
+  if (!name) return { ok: false, error: 'Vui lòng nhập họ tên người đặt' };
+  if (!phone) return { ok: false, error: 'Số điện thoại không hợp lệ' };
+  if (!isValidPhone(phone)) return { ok: false, error: 'Số điện thoại không hợp lệ' };
+  if (email && !isValidEmail(email)) return { ok: false, error: 'Email không hợp lệ' };
   return { ok: true, error: '' };
 }
 
 /**
- * Validate ghi chÃº lá»‹ch háº¹n (max 1000 kÃ½ tá»±).
- * Giá»¯ nguyÃªn message Ä‘á»™ng cÃ³ sá»‘ kÃ½ tá»± hiá»‡n táº¡i.
+ * Validate ghi chú lịch hẹn (max 1000 ký tự).
+ * Giữ nguyên message động có số ký tự hiện tại.
  * @param {string} note
  * @returns {{ ok: boolean, error: string }}
  */
 function _validateBookerNote(note) {
   if (note && note.length > 1000) {
-    return { ok: false, error: `Ghi chÃº lá»‹ch háº¹n quÃ¡ dÃ i (tá»‘i Ä‘a 1000 kÃ½ tá»±, hiá»‡n táº¡i ${note.length})` };
+    return { ok: false, error: `Ghi chú lịch hẹn quá dài (tối đa 1000 ký tự, hiện tại ${note.length})` };
   }
   return { ok: true, error: '' };
 }
 
 /**
- * Validate date / time / room cá»§a 1 guest card â€” logic giá»‘ng nhau giá»¯a CREATE vÃ  EDIT.
- * KHÃ”NG bao gá»“m: validate quÃ¡ khá»©, fallback apptId.dataset (khÃ¡c nhau giá»¯a 2 branch).
+ * Validate date / time / room của 1 guest card — logic giống nhau giữa CREATE và EDIT.
+ * KHÔNG bao gồm: validate quá khứ, fallback apptId.dataset (khác nhau giữa 2 branch).
  *
- * @param {Object} g      - guest data tá»« _collectGuestCards()
+ * @param {Object} g      - guest data từ _collectGuestCards()
  * @param {number} index  - 0-based index
- * @param {number} total  - tá»•ng sá»‘ cards
+ * @param {number} total  - tổng số cards
  * @returns {{ ok: boolean, error: string, type: 'date'|'time'|'room'|null }}
- *   type dÃ¹ng Ä‘á»ƒ caller quyáº¿t Ä‘á»‹nh cÃ³ gá»i _markRowError khÃ´ng.
+ *   type dùng để caller quyết định có gọi _markRowError không.
  */
 function _validateGuestDateTimeRoom(g, index, total) {
-  const label = total > 1 ? `KhÃ¡ch ${index + 1}: ` : '';
-  if (!g.date)   return { ok: false, error: `${label}Vui lÃ²ng chá»n ngÃ y háº¹n`, type: 'date' };
-  if (!g.time)   return { ok: false, error: `${label}Vui lÃ²ng chá»n giá» háº¹n`,  type: 'time' };
-  if (!g.roomId) return { ok: false, error: `${label}Vui lÃ²ng chá»n phÃ²ng`,     type: 'room' };
+  const label = total > 1 ? `Khách ${index + 1}: ` : '';
+  if (!g.date)   return { ok: false, error: `${label}Vui lòng chọn ngày hẹn`, type: 'date' };
+  if (!g.time)   return { ok: false, error: `${label}Vui lòng chọn giờ hẹn`,  type: 'time' };
+  if (!g.roomId) return { ok: false, error: `${label}Vui lòng chọn phòng`,     type: 'room' };
   return { ok: true, error: '', type: null };
 }
 
 /**
- * Validate cÃ¡c trÆ°á»ng cÆ¡ báº£n cá»§a 1 guest card â€” giá»‘ng nhau 100% giá»¯a CREATE vÃ  EDIT.
- * Bao gá»“m: tÃªn, phone, email, service+variant.
- * KHÃ”NG bao gá»“m: date, time, room, validate quÃ¡ khá»© (khÃ¡c nhau giá»¯a 2 branch).
+ * Validate các trường cơ bản của 1 guest card — giống nhau 100% giữa CREATE và EDIT.
+ * Bao gồm: tên, phone, email, service+variant.
+ * KHÔNG bao gồm: date, time, room, validate quá khứ (khác nhau giữa 2 branch).
  *
- * @param {Object} g      - guest data tá»« _collectGuestCards()
+ * @param {Object} g      - guest data từ _collectGuestCards()
  * @param {number} index  - 0-based index
- * @param {number} total  - tá»•ng sá»‘ cards
+ * @param {number} total  - tổng số cards
  * @returns {{ ok: boolean, error: string }}
  */
 function _validateGuestBasic(g, index, total) {
-  const label = total > 1 ? `KhÃ¡ch ${index + 1}: ` : '';
-  if (!g.name || !g.name.trim())          return { ok: false, error: `${label}Vui lÃ²ng nháº­p tÃªn khÃ¡ch` };
-  if (g.phone && !isValidPhone(g.phone))  return { ok: false, error: `${label}Sá»‘ Ä‘iá»‡n thoáº¡i khÃ¡ch khÃ´ng há»£p lá»‡` };
-  if (g.email && !isValidEmail(g.email))  return { ok: false, error: `${label}Email khÃ´ng há»£p lá»‡` };
-  if (g.serviceId && !g.variantId)        return { ok: false, error: `${label}Vui lÃ²ng chá»n gÃ³i dá»‹ch vá»¥` };
+  const label = total > 1 ? `Khách ${index + 1}: ` : '';
+  if (!g.name || !g.name.trim())          return { ok: false, error: `${label}Vui lòng nhập tên khách` };
+  if (g.phone && !isValidPhone(g.phone))  return { ok: false, error: `${label}Số điện thoại khách không hợp lệ` };
+  if (g.email && !isValidEmail(g.email))  return { ok: false, error: `${label}Email không hợp lệ` };
+  if (g.serviceId && !g.variantId)        return { ok: false, error: `${label}Vui lòng chọn gói dịch vụ` };
   return { ok: true, error: '' };
 }
 
 /**
- * Validate thá»i Ä‘iá»ƒm ARRIVED / COMPLETED cho tá»«ng card trong máº£ng.
- * DÃ¹ng chung cho EDIT vÃ  CREATE branch.
+ * Validate thời điểm ARRIVED / COMPLETED cho từng card trong mảng.
+ * Dùng chung cho EDIT và CREATE branch.
  *
- * @param {Array}    cards     - máº£ng guest card data tá»« _collectGuestCards()
- * @param {Function} getStatus - (g, i) => string â€” tráº£ vá» apptStatus cá»§a card
- * @param {Function} getDate   - (g, i) => string â€” tráº£ vá» date (YYYY-MM-DD)
- * @param {Function} getTime   - (g, i) => string â€” tráº£ vá» time (HH:MM)
- * @param {Function} getDur    - (g, i) => number â€” tráº£ vá» duration (phÃºt)
+ * @param {Array}    cards     - mảng guest card data từ _collectGuestCards()
+ * @param {Function} getStatus - (g, i) => string — trả về apptStatus của card
+ * @param {Function} getDate   - (g, i) => string — trả về date (YYYY-MM-DD)
+ * @param {Function} getTime   - (g, i) => string — trả về time (HH:MM)
+ * @param {Function} getDur    - (g, i) => number — trả về duration (phút)
  * @returns {{ ok: boolean, error: string }}
  */
 function _validateAllCardsTiming(cards, getStatus, getDate, getTime, getDur) {
   for (let i = 0; i < cards.length; i++) {
     const g      = cards[i];
+    const label  = cards.length > 1 ? `Khách ${i + 1}: ` : '';
     const status = getStatus(g, i);
     if (status !== 'ARRIVED' && status !== 'COMPLETED') continue;
     const timing = _validateStatusTiming(getDate(g, i), getTime(g, i), getDur(g, i), status);
-    // Tráº¡ng thÃ¡i lÃ  shared cho toÃ n booking â€” khÃ´ng gáº¯n "KhÃ¡ch N:" vÃ o lá»—i timing
-    if (!timing.ok) return { ok: false, error: timing.error };
+    if (!timing.ok) return { ok: false, error: `${label}${timing.error}` };
   }
   return { ok: true, error: '' };
 }
@@ -374,10 +374,10 @@ function addMinutesToTime(t, add){
 
 function overlaps(aStart,aEnd,bStart,bEnd){ return aStart < bEnd && bStart < aEnd; }
 
-// Tá»•ng sá»‘ phÃºt cá»§a toÃ n bá»™ timeline (9:00 â†’ 21:00 = 720 phÃºt)
+// Tổng số phút của toàn bộ timeline (9:00 → 21:00 = 720 phút)
 function totalTimelineMinutes(){ return (END_HOUR - START_HOUR) * 60; }
 
-// Chuyá»ƒn sá»‘ phÃºt tá»« START_HOUR sang % chiá»u ngang cá»§a vÃ¹ng slots
+// Chuyển số phút từ START_HOUR sang % chiều ngang của vùng slots
 function minutesToPercent(minutes){ return (minutes / totalTimelineMinutes()) * 100; }
 
 // ============================================================
@@ -401,8 +401,8 @@ function showToast(type, title, message){
   if (toastTitle) toastTitle.textContent = title;
   if (toastBody) toastBody.textContent = message;
 
-  // Láº¥y instance Bootstrap Toast tá»« element, khÃ´ng dÃ¹ng window.toast
-  // (window.toast cÃ³ thá»ƒ bá»‹ ghi Ä‘Ã¨ bá»Ÿi extension hoáº·c code khÃ¡c)
+  // Lấy instance Bootstrap Toast từ element, không dùng window.toast
+  // (window.toast có thể bị ghi đè bởi extension hoặc code khác)
   const toast = bootstrap.Toast.getInstance(toastEl) || new bootstrap.Toast(toastEl);
   toast.show();
 }
@@ -420,19 +420,19 @@ function statusClass(s){
 
 function statusLabel(s){
   const sl = (s||'').toLowerCase();
-  if(sl==="pending") return "Chá» xÃ¡c nháº­n";
-  if(sl==="confirmed") return "ÄÃ£ xÃ¡c nháº­n";
-  if(sl==="not_arrived") return "ChÆ°a Ä‘áº¿n";
-  if(sl==="arrived") return "ÄÃ£ Ä‘áº¿n";
-  if(sl==="completed") return "HoÃ n thÃ nh";
-  if(sl==="cancelled") return "ÄÃ£ há»§y";
-  if(sl==="rejected") return "ÄÃ£ tá»« chá»‘i";
+  if(sl==="pending") return "Chờ xác nhận";
+  if(sl==="confirmed") return "Đã xác nhận";
+  if(sl==="not_arrived") return "Chưa đến";
+  if(sl==="arrived") return "Đã đến";
+  if(sl==="completed") return "Hoàn thành";
+  if(sl==="cancelled") return "Đã hủy";
+  if(sl==="rejected") return "Đã từ chối";
   return s;
 }
 
 // ===== BOOKING BADGES UPDATE =====
 function updateBookingBadges(rows) {
-  // Äáº¿m Booking PENDING theo bookingCode (má»—i booking chá»‰ Ä‘áº¿m 1 láº§n)
+  // Đếm Booking PENDING theo bookingCode (mỗi booking chỉ đếm 1 lần)
   const pendingBookings = new Set(
     rows
       .filter(r => (r.bookingStatus || '').toUpperCase() === 'PENDING')
@@ -442,15 +442,15 @@ function updateBookingBadges(rows) {
 }
 
 /**
- * Báº­t loading state cho button
- * @param {HTMLElement} btn - Button cáº§n set loading
- * @param {string} loadingText - Text hiá»ƒn thá»‹ khi loading
- * @param {string} originalText - Text gá»‘c Ä‘á»ƒ restore sau nÃ y
+ * Bật loading state cho button
+ * @param {HTMLElement} btn - Button cần set loading
+ * @param {string} loadingText - Text hiển thị khi loading
+ * @param {string} originalText - Text gốc để restore sau này
  */
-function setButtonLoading(btn, loadingText = 'Äang xá»­ lÃ½...', originalText = null) {
+function setButtonLoading(btn, loadingText = 'Đang xử lý...', originalText = null) {
   if (!btn) return;
 
-  // LÆ°u text gá»‘c náº¿u chÆ°a cÃ³
+  // Lưu text gốc nếu chưa có
   if (!btn.dataset.originalText) {
     btn.dataset.originalText = originalText || btn.innerHTML;
   }
@@ -460,8 +460,8 @@ function setButtonLoading(btn, loadingText = 'Äang xá»­ lÃ½...', origina
 }
 
 /**
- * Táº¯t loading state vÃ  restore button vá» tráº¡ng thÃ¡i ban Ä‘áº§u
- * @param {HTMLElement} btn - Button cáº§n restore
+ * Tắt loading state và restore button về trạng thái ban đầu
+ * @param {HTMLElement} btn - Button cần restore
  */
 function resetButton(btn) {
   if (!btn) return;
@@ -474,14 +474,14 @@ function resetButton(btn) {
 }
 
 /**
- * Hiá»ƒn thá»‹ modal xÃ¡c nháº­n Ä‘á»“ng bá»™ giao diá»‡n há»‡ thá»‘ng
- * @param {string} title - TiÃªu Ä‘á»
- * @param {string} message - Ná»™i dung xÃ¡c nháº­n
- * @param {string} confirmText - Text nÃºt xÃ¡c nháº­n
- * @param {string} cancelText - Text nÃºt há»§y
- * @returns {Promise<boolean>} - true náº¿u ngÆ°á»i dÃ¹ng xÃ¡c nháº­n
+ * Hiển thị modal xác nhận đồng bộ giao diện hệ thống
+ * @param {string} title - Tiêu đề
+ * @param {string} message - Nội dung xác nhận
+ * @param {string} confirmText - Text nút xác nhận
+ * @param {string} cancelText - Text nút hủy
+ * @returns {Promise<boolean>} - true nếu người dùng xác nhận
  */
-async function confirmAction(title, message, confirmText = 'XÃ¡c nháº­n', cancelText = 'Há»§y') {
+async function confirmAction(title, message, confirmText = 'Xác nhận', cancelText = 'Hủy') {
   if (window.showConfirm) {
     return window.showConfirm(message, { title, confirmText, cancelText });
   }
@@ -497,8 +497,8 @@ function resetModalError(){
 // ===== SHARED HELPERS (TIER-1 REFACTOR) =====
 
 /**
- * ÄÃ³ng vÃ  cleanup Táº¤T Cáº¢ modal Bootstrap Ä‘ang má»Ÿ.
- * DÃ¹ng trong openRebookAsCreate khi cáº§n force close modal khÃ¡c trÆ°á»›c khi má»Ÿ modal táº¡o lá»‹ch.
+ * Đóng và cleanup TẤT CẢ modal Bootstrap đang mở.
+ * Dùng chung cho approveWeb và openRebookAsCreate.
  */
 function _forceCloseAllModals() {
   document.querySelectorAll('.modal.show').forEach(el => {
@@ -513,33 +513,33 @@ function _forceCloseAllModals() {
 }
 
 /**
- * Kiá»ƒm tra result API cÃ³ pháº£i lá»—i conflict khÃ´ng.
- * DÃ¹ng chung cho edit-batch, online-confirm, create-batch.
+ * Kiểm tra result API có phải lỗi conflict không.
+ * Dùng chung cho edit-batch, online-confirm, create-batch.
  * @param {Object} result - API response object
- * @param {boolean} [checkFlag=false] - cÃ³ kiá»ƒm tra result.conflict flag khÃ´ng
+ * @param {boolean} [checkFlag=false] - có kiểm tra result.conflict flag không
  * @returns {boolean}
  */
 function _isConflictError(result, checkFlag = false) {
   const errLower = (result.error || '').toLowerCase();
   return (checkFlag && result.conflict === true) ||
-    errLower.includes('trÃ¹ng') ||
-    errLower.includes('Ä‘áº§y') ||
-    errLower.includes('Ä‘á»§ chá»—') ||
-    errLower.includes('kháº£ dá»¥ng') ||
+    errLower.includes('trùng') ||
+    errLower.includes('đầy') ||
+    errLower.includes('đủ chỗ') ||
+    errLower.includes('khả dụng') ||
     errLower.includes('capacity') ||
     errLower.includes('conflict');
 }
 
 /**
- * Láº¥y Bootstrap Modal instance hoáº·c táº¡o má»›i náº¿u chÆ°a cÃ³.
+ * Lấy Bootstrap Modal instance hoặc tạo mới nếu chưa có.
  * @param {HTMLElement} el
  * @returns {bootstrap.Modal|null}
  */
 
 
 /**
- * Clone node Ä‘á»ƒ xÃ³a táº¥t cáº£ event listener cÅ©, gáº¯n láº¡i vÃ o DOM.
- * Tráº£ vá» node má»›i Ä‘Ã£ Ä‘Æ°á»£c gáº¯n vÃ o DOM.
+ * Clone node để xóa tất cả event listener cũ, gắn lại vào DOM.
+ * Trả về node mới đã được gắn vào DOM.
  * @param {HTMLElement} el
  * @returns {HTMLElement}
  */
@@ -550,11 +550,11 @@ function _replaceWithClone(el) {
 }
 
 /**
- * Äiá»n thÃ´ng tin ngÆ°á»i Ä‘áº·t lá»‹ch vÃ o booker panel.
- * DÃ¹ng chung cho openCreateModal (rebook/online/pending) vÃ  openEditModalWithData.
+ * Điền thông tin người đặt lịch vào booker panel.
+ * Dùng chung cho openCreateModal (rebook/online/pending) và openEditModalWithData.
  *
- * @param {Object} rb            - object chá»©a name, phone, email, source, note
- * @param {string} defaultSource - fallback khi rb.source rá»—ng (máº·c Ä‘á»‹nh 'DIRECT')
+ * @param {Object} rb            - object chứa name, phone, email, source, note
+ * @param {string} defaultSource - fallback khi rb.source rỗng (mặc định 'DIRECT')
  */
 function _fillBookerFields(rb, defaultSource = 'DIRECT') {
   document.getElementById('bookerName').value   = rb.name   || '';
@@ -566,7 +566,7 @@ function _fillBookerFields(rb, defaultSource = 'DIRECT') {
 }
 
 /**
- * Cáº­p nháº­t badge #webCount vá»›i sá»‘ lÆ°á»£ng pending.
+ * Cập nhật badge #webCount với số lượng pending.
  * @param {number} count
  */
 function _setWebCountBadge(count) {
@@ -582,14 +582,14 @@ function _setWebCountBadge(count) {
 }
 
 /**
- * Äiá»n options vÃ o má»™t <select> tá»« máº£ng items.
- * XÃ³a toÃ n bá»™ options cÅ© (trá»« placeholder náº¿u cÃ³) rá»“i append má»›i.
+ * Điền options vào một <select> từ mảng items.
+ * Xóa toàn bộ options cũ (trừ placeholder nếu có) rồi append mới.
  *
- * @param {HTMLSelectElement} selectEl   - pháº§n tá»­ <select> cáº§n Ä‘iá»n
- * @param {Array}             items      - máº£ng dá»¯ liá»‡u
- * @param {string|Function}   valueKey   - tÃªn field láº¥y value, hoáº·c hÃ m (item) => value
- * @param {string|Function}   labelFn    - tÃªn field láº¥y label, hoáº·c hÃ m (item) => label
- * @param {string}            [placeholder] - text option Ä‘áº§u tiÃªn (value=""), bá» qua náº¿u null
+ * @param {HTMLSelectElement} selectEl   - phần tử <select> cần điền
+ * @param {Array}             items      - mảng dữ liệu
+ * @param {string|Function}   valueKey   - tên field lấy value, hoặc hàm (item) => value
+ * @param {string|Function}   labelFn    - tên field lấy label, hoặc hàm (item) => label
+ * @param {string}            [placeholder] - text option đầu tiên (value=""), bỏ qua nếu null
  */
 function _populateSelect(selectEl, items, valueKey, labelFn, placeholder = null) {
   if (!selectEl) return;
@@ -605,8 +605,8 @@ function _populateSelect(selectEl, items, valueKey, labelFn, placeholder = null)
 }
 
 /**
- * Refresh cáº£ grid lá»‹ch vÃ  tab yÃªu cáº§u Ä‘áº·t lá»‹ch.
- * DÃ¹ng á»Ÿ nhá»¯ng nÆ¡i luÃ´n cáº§n cáº£ 2 sau khi thay Ä‘á»•i dá»¯ liá»‡u.
+ * Refresh cả grid lịch và tab yêu cầu đặt lịch.
+ * Dùng ở những nơi luôn cần cả 2 sau khi thay đổi dữ liệu.
  */
 async function _refreshAll() {
   await refreshData();
@@ -617,11 +617,11 @@ async function _refreshAll() {
 function showGridLoading(){
   const grid = document.getElementById("grid");
   if (!grid) return;
-  // Hiá»‡n 5 dÃ²ng skeleton Ä‘á»ƒ layout khÃ´ng bá»‹ trá»‘ng trong lÃºc fetch
+  // Hiện 5 dòng skeleton để layout không bị trống trong lúc fetch
   const rowH = getComputedStyle(document.documentElement).getPropertyValue('--rowH') || '72px';
   grid.innerHTML = Array.from({length: 5}, (_, i) => `
     <div class="lane-row" style="opacity:.45;">
-      <div class="roomcell"><span class="dot"></span>â€”</div>
+      <div class="roomcell"><span class="dot"></span>—</div>
       <div class="slots" style="background: repeating-linear-gradient(90deg,#f3f4f6 0,#f3f4f6 40%,#e9eaec 40%,#e9eaec 100%) 0 0 / 120px 100%;"></div>
     </div>`).join('');
 }
@@ -634,7 +634,7 @@ function _nextPendingId() {
 }
 
 /**
- * Kiá»ƒm tra slot cÃ³ náº±m trong quÃ¡ khá»© khÃ´ng.
+ * Kiểm tra slot có nằm trong quá khứ không.
  * day: 'YYYY-MM-DD', time: 'HH:MM'
  */
 function _isSlotInPast(day, time) {
@@ -642,7 +642,7 @@ function _isSlotInPast(day, time) {
   const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   if (day > todayStr) return false;
   if (day < todayStr) return true;
-  // CÃ¹ng ngÃ y hÃ´m nay â€” so sÃ¡nh giá»
+  // Cùng ngày hôm nay — so sánh giờ
   const [h, m] = time.split(':').map(Number);
   const slotMinutes = h * 60 + m;
   const nowMinutes  = now.getHours() * 60 + now.getMinutes();
@@ -650,8 +650,8 @@ function _isSlotInPast(day, time) {
 }
 
 /**
- * Toggle slot: click Ã´ trá»‘ng â†’ chá»n, click láº¡i block xanh â†’ bá» chá»n.
- * ÄÃ¢y lÃ  hÃ m duy nháº¥t xá»­ lÃ½ add/remove pending block.
+ * Toggle slot: click ô trống → chọn, click lại block xanh → bỏ chọn.
+ * Đây là hàm duy nhất xử lý add/remove pending block.
  */
 function handleToggleSlot({ roomId, laneIndex, day, time, slotsEl }) {
   const duration = DEFAULT_DURATION;
@@ -659,19 +659,19 @@ function handleToggleSlot({ roomId, laneIndex, day, time, slotsEl }) {
   const startMin = minutesFromStart(time);
   const endMin   = minutesFromStart(endTime);
 
-  // Kiá»ƒm tra ngoÃ i giá»
+  // Kiểm tra ngoài giờ
   if (startMin < 0 || endMin > totalTimelineMinutes()) {
-    showToast("warning", "NgoÃ i giá» hoáº¡t Ä‘á»™ng", `Spa hoáº¡t Ä‘á»™ng tá»« ${START_HOUR}:00 Ä‘áº¿n ${END_HOUR}:00`);
+    showToast("warning", "Ngoài giờ hoạt động", `Spa hoạt động từ ${START_HOUR}:00 đến ${END_HOUR}:00`);
     return;
   }
 
-  // Cháº·n slot trong quÃ¡ khá»©
+  // Chặn slot trong quá khứ
   if (_isSlotInPast(day, time)) {
-    showToast("warning", "KhÃ´ng thá»ƒ chá»n slot nÃ y", "KhÃ´ng thá»ƒ táº¡o lá»‹ch háº¹n trong quÃ¡ khá»©");
+    showToast("warning", "Không thể chọn slot này", "Không thể tạo lịch hẹn trong quá khứ");
     return;
   }
 
-  // TÃ¬m pending block trÃ¹ng slot nÃ y (cÃ¹ng room + lane + day + time)
+  // Tìm pending block trùng slot này (cùng room + lane + day + time)
   const existing = pendingBlocks.find(pb =>
     pb.roomId === roomId &&
     pb.laneIndex === laneIndex &&
@@ -680,16 +680,16 @@ function handleToggleSlot({ roomId, laneIndex, day, time, slotsEl }) {
   );
 
   if (existing) {
-    // â”€â”€ TOGGLE OFF: bá» chá»n â”€â”€
+    // ── TOGGLE OFF: bỏ chọn ──
     pendingBlocks = pendingBlocks.filter(pb => pb.id !== existing.id);
     document.querySelectorAll(`.appt-pending[data-pending-id="${existing.id}"]`).forEach(el => el.remove());
     _syncActionBar();
     return;
   }
 
-  // â”€â”€ TOGGLE ON: kiá»ƒm tra conflict rá»“i thÃªm â”€â”€
+  // ── TOGGLE ON: kiểm tra conflict rồi thêm ──
 
-  // Conflict vá»›i appointment Ä‘Ã£ cÃ³
+  // Conflict với appointment đã có
   const dayAppts = APPOINTMENTS.filter(a =>
     a.roomCode === roomId && a.date === day && !["CANCELLED", "REJECTED"].includes((a.apptStatus || "").toUpperCase())
   );
@@ -699,7 +699,7 @@ function handleToggleSlot({ roomId, laneIndex, day, time, slotsEl }) {
     overlaps(startMin, endMin, minutesFromStart(a.start), minutesFromStart(a.end))
   );
   if (conflictAppt) {
-    showToast("warning", "Slot Ä‘Ã£ cÃ³ lá»‹ch", "Khung giá» Ä‘Ã£ cÃ³ lá»‹ch, vui lÃ²ng chá»n thá»i gian khÃ¡c");
+    showToast("warning", "Slot đã có lịch", "Khung giờ đã có lịch, vui lòng chọn thời gian khác");
     if (slotsEl) {
       slotsEl.classList.add("conflict-flash");
       setTimeout(() => slotsEl.classList.remove("conflict-flash"), 450);
@@ -707,13 +707,13 @@ function handleToggleSlot({ roomId, laneIndex, day, time, slotsEl }) {
     return;
   }
 
-  // Conflict vá»›i pending block khÃ¡c trong cÃ¹ng lane
+  // Conflict với pending block khác trong cùng lane
   const conflictPending = pendingBlocks.find(pb =>
     pb.roomId === roomId && pb.laneIndex === laneIndex && pb.day === day &&
     overlaps(startMin, endMin, minutesFromStart(pb.time), minutesFromStart(pb.endTime))
   );
   if (conflictPending) {
-    showToast("warning", "TrÃ¹ng vá»›i slot Ä‘ang chá»n", `Lane nÃ y Ä‘Ã£ cÃ³ slot Ä‘ang chá»n lÃºc ${conflictPending.time}â€“${conflictPending.endTime}`);
+    showToast("warning", "Trùng với slot đang chọn", `Lane này đã có slot đang chọn lúc ${conflictPending.time}–${conflictPending.endTime}`);
     return;
   }
 
@@ -738,14 +738,14 @@ function _syncActionBar() {
 
   const count = pendingBlocks.length;
   if (badge) badge.textContent = String(count);
-  if (label) label.textContent = count === 1 ? "1 khÃ¡ch Ä‘Ã£ chá»n" : `${count} khÃ¡ch Ä‘Ã£ chá»n`;
+  if (label) label.textContent = count === 1 ? "1 khách đã chọn" : `${count} khách đã chọn`;
 
-  // Khi Ä‘ang á»Ÿ cháº¿ Ä‘á»™ thÃªm slot, Ä‘á»•i label nÃºt Tiáº¿p tá»¥c
+  // Khi đang ở chế độ thêm slot, đổi label nút Tiếp tục
   if (btnContinue) {
     if (_addingSlotMode) {
-      btnContinue.innerHTML = '<i class="fas fa-arrow-right me-1"></i>Quay láº¡i & thÃªm khÃ¡ch';
+      btnContinue.innerHTML = '<i class="fas fa-arrow-right me-1"></i>Quay lại & thêm khách';
     } else {
-      btnContinue.innerHTML = '<i class="fas fa-arrow-right me-1"></i>Tiáº¿p tá»¥c';
+      btnContinue.innerHTML = '<i class="fas fa-arrow-right me-1"></i>Tiếp tục';
     }
   }
 
@@ -761,17 +761,17 @@ function _syncActionBar() {
 function _mountPendingBlock(pb, slotsEl) {
   if (!slotsEl) return null;
 
-  // XÃ³a block cÅ© náº¿u Ä‘Ã£ tá»“n táº¡i
+  // Xóa block cũ nếu đã tồn tại
   slotsEl.querySelector(`.appt-pending[data-pending-id="${pb.id}"]`)?.remove();
 
   const block = document.createElement("div");
   block.className = "appt appt-pending";
   block.dataset.pendingId = String(pb.id);
 
-  // Chá»‰ cÃ³ top-bar xanh + hint giá» â€” khÃ´ng cÃ³ nÃºt X
+  // Chỉ có top-bar xanh + hint giờ — không có nút X
   block.innerHTML = `
     <div class="pb-selection-bar"></div>
-    <div class="pb-time-hint">${pb.time} â€“ ${pb.endTime}</div>
+    <div class="pb-time-hint">${pb.time} – ${pb.endTime}</div>
   `;
 
   block.style.cssText = "position:absolute;top:0;height:var(--rowH);z-index:30;cursor:pointer;";
@@ -781,7 +781,7 @@ function _mountPendingBlock(pb, slotsEl) {
   block.style.left  = `calc(${minutesToPercent(leftMin)}% + 1px)`;
   block.style.width = `calc(${minutesToPercent(durMin)}% - 2px)`;
 
-  // Click vÃ o block xanh â†’ toggle off (bá» chá»n)
+  // Click vào block xanh → toggle off (bỏ chọn)
   block.addEventListener("click", (e) => {
     e.stopPropagation();
     const sEl = block.closest(".slots");
@@ -807,13 +807,13 @@ function renderPendingBlocks(slotsEl, roomId, laneIndex, day) {
 }
 
 // ============================================================
-// SECTION 8: TAB 1 - Lá»ŠCH THEO PHÃ’NG (GRID)
+// SECTION 8: TAB 1 - LỊCH THEO PHÒNG (GRID)
 // ============================================================
 function renderHeader(){
   const timeHeader = document.getElementById("timeHeader");
   const totalSlots = ((END_HOUR-START_HOUR)*60)/SLOT_MIN;
   document.documentElement.style.setProperty("--totalSlots", totalSlots);
-  let html = `<div class="leftcell">PhÃ²ng</div><div class="slots">`;
+  let html = `<div class="leftcell">Phòng</div><div class="slots">`;
   for(let i=0;i<totalSlots;i++){
     const mins = i*SLOT_MIN, hour = START_HOUR + Math.floor(mins/60), minute = mins%60;
     html += `<div class="slot ${minute===0?'major':''}">${minute===0?`${hour}:00`:''}</div>`;
@@ -830,17 +830,17 @@ function allocateRoomLanes(roomId, day, appts){
   for(const a of sorted){
     const need = Math.max(1, Number(a.guests)||1);
     const s = minutesFromStart(a.start);
-    // TÃ­nh end: Æ°u tiÃªn a.end, fallback vá» durationMin
+    // Tính end: ưu tiên a.end, fallback về durationMin
     const rawE = a.end ? minutesFromStart(a.end) : NaN;
     const e = (!isNaN(rawE) && rawE > s) ? rawE : s + Math.max(SLOT_MIN, Number(a.durationMin) || SLOT_MIN);
-    // Äáº£m báº£o end > start (trÃ¡nh block width = 0)
+    // Đảm bảo end > start (tránh block width = 0)
     const eFixed = e > s ? e : s + SLOT_MIN;
     for(let g=0; g<need; g++){
       let foundLane = -1;
       for(let li=0; li<cap; li++){
         if(!laneIntervals[li].some(it => overlaps(s, eFixed, it.startMin, it.endMin))){ foundLane = li; break; }
       }
-      if(foundLane === -1) foundLane = 0; // fallback: lane 0 náº¿u háº¿t chá»—
+      if(foundLane === -1) foundLane = 0; // fallback: lane 0 nếu hết chỗ
       laneIntervals[foundLane].push({startMin:s, endMin:eFixed, apptId:a.id});
       placements.push({ appt: a, laneIndex: foundLane });
     }
@@ -854,7 +854,7 @@ function renderGrid(){
   grid.innerHTML = "";
   const day = dayPicker.value;
 
-  // UC 14.2 exception flow 5a â€” hiá»ƒn thá»‹ error state thay vÃ¬ grid rá»—ng im láº·ng
+  // UC 14.2 exception flow 5a — hiển thị error state thay vì grid rỗng im lặng
   if (_gridLoadError) {
     grid.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:center;padding:3rem 1rem;gap:.75rem;color:#b91c1c;">
@@ -865,8 +865,8 @@ function renderGrid(){
   }
 
   ROOMS.forEach((r)=>{
-    // Lá»c lá»‹ch theo phÃ²ng â€” chá»‰ hiá»ƒn thá»‹ lá»‹ch Ä‘Ã£ CONFIRMED
-    // PENDING khÃ´ng hiá»ƒn thá»‹ trÃªn grid (chá»‰ á»Ÿ tab YÃªu cáº§u Ä‘áº·t lá»‹ch)
+    // Lọc lịch theo phòng — chỉ hiển thị lịch đã CONFIRMED
+    // PENDING không hiển thị trên grid (chỉ ở tab Yêu cầu đặt lịch)
     let appts = APPOINTMENTS.filter(a =>
       a.date === day &&
       a.roomCode === r.id &&
@@ -874,7 +874,7 @@ function renderGrid(){
       !['CANCELLED', 'REJECTED'].includes((a.apptStatus || '').toUpperCase())
     );
 
-    // PhÃ¢n bá»• Lane (dÃ²ng) cho tá»«ng khÃ¡ch
+    // Phân bổ Lane (dòng) cho từng khách
     const { cap, placements } = allocateRoomLanes(r.id, day, appts);
     for(let lane=0; lane<cap; lane++){
       const laneRow = document.createElement("div");
@@ -882,11 +882,11 @@ function renderGrid(){
       laneRow.dataset.roomId = r.id;
       laneRow.dataset.lane = lane;
 
-      // tÃªn phÃ²ng
+      // tên phòng
       laneRow.innerHTML = `${lane===0?`<div class="roomcell"><span class="dot"></span>${r.name}</div>`:`<div class="roomcell muted"><span class="dot"></span>${r.name}</div>`}<div class="slots" data-room="${r.id}" data-lane="${lane}"></div>`;
       const slotsEl = laneRow.querySelector(".slots");
 
-      // click vÃ o Ã´ trá»‘ng â†’ toggle slot (chá»n hoáº·c bá» chá»n)
+      // click vào ô trống → toggle slot (chọn hoặc bỏ chọn)
       slotsEl.addEventListener("click", (e) => {
         if (e.target.closest('.appt') || e.target.closest('.appt-pending')) return;
 
@@ -898,37 +898,37 @@ function renderGrid(){
         handleToggleSlot({ roomId: r.id, laneIndex: lane, day: dayPicker.value, time: clickedTime, slotsEl });
       });
 
-      // váº½ block lá»‹ch háº¹n
+      // vẽ block lịch hẹn
       placements.filter(p => p.laneIndex === lane).forEach(p=>{
         const a = p.appt;
         const block = document.createElement("div");
 
-        // Tab Lá»‹ch theo phÃ²ng chá»‰ hiá»ƒn thá»‹ CONFIRMED â€” khÃ´ng cÃ³ pending á»Ÿ Ä‘Ã¢y ná»¯a
+        // Tab Lịch theo phòng chỉ hiển thị CONFIRMED — không có pending ở đây nữa
         block.className = `appt ${statusClass(a.apptStatus)}`;
         block.dataset.id = a.id;
 
         const leftMin = minutesFromStart(a.start);
-        // TÃ­nh durMin: Æ°u tiÃªn end - start, fallback vá» durationMin, tá»‘i thiá»ƒu SLOT_MIN
+        // Tính durMin: ưu tiên end - start, fallback về durationMin, tối thiểu SLOT_MIN
         const endMin  = a.end ? minutesFromStart(a.end) : NaN;
         const durMin  = (!isNaN(endMin) && endMin > leftMin)
           ? endMin - leftMin
           : Math.max(SLOT_MIN, Number(a.durationMin) || SLOT_MIN);
         const endLabel = a.end || addMinutesToTime(a.start, durMin);
-        // DÃ¹ng % thay vÃ¬ px â†’ tá»± co giÃ£n theo chiá»u rá»™ng thá»±c táº¿ cá»§a vÃ¹ng slots
+        // Dùng % thay vì px → tự co giãn theo chiều rộng thực tế của vùng slots
         const leftPct  = minutesToPercent(leftMin);
         const widthPct = minutesToPercent(durMin);
         block.style.left  = `calc(${leftPct}% + 2px)`;
         block.style.width = `calc(${widthPct}% - 4px)`;
 
         const paidIcon = (a.payStatus || '').toUpperCase() === 'PAID'
-          ? `<span class="appt-paid-icon" title="ÄÃ£ thanh toÃ¡n"><i class="fas fa-receipt"></i></span>`
+          ? `<span class="appt-paid-icon" title="Đã thanh toán"><i class="fas fa-receipt"></i></span>`
           : '';
         const svcText   = a.serviceCode || a.service || '';
         const custText  = a.customerName || '';
 
-        const titleText = svcText && custText ? `${svcText} Â· ${custText}` : (svcText || custText || 'ChÆ°a chá»n DV');
-        block.innerHTML = `<div class="appt-content"><div class="t1">${titleText}</div><div class="t2">${a.start}â€“${endLabel}</div></div>${paidIcon}`;
-        // click vÃ o lá»‹ch ==> sá»­a
+        const titleText = svcText && custText ? `${svcText} · ${custText}` : (svcText || custText || 'Chưa chọn DV');
+        block.innerHTML = `<div class="appt-content"><div class="t1">${titleText}</div><div class="t2">${a.start}–${endLabel}</div></div>${paidIcon}`;
+        // click vào lịch ==> sửa
         block.addEventListener("click", (ev)=>{
           ev.stopPropagation();
           openEditModal(a.id).catch(err => console.error('[openEditModal] threw:', err));
@@ -937,36 +937,36 @@ function renderGrid(){
         slotsEl.appendChild(block);
       });
 
-      // Váº½ pending blocks Ä‘Ãºng theo lane
+      // Vẽ pending blocks đúng theo lane
       renderPendingBlocks(slotsEl, r.id, lane, day);
 
       grid.appendChild(laneRow);
     }
   });
 
-  // Váº½ Ä‘Æ°á»ng dá»c thá»i Ä‘iá»ƒm hiá»‡n táº¡i â€” element Ä‘Æ°á»£c táº¡o 1 láº§n, cáº­p nháº­t bá»Ÿi updateCurrentTimeLine()
+  // Vẽ đường dọc thời điểm hiện tại — element được tạo 1 lần, cập nhật bởi updateCurrentTimeLine()
   updateCurrentTimeLine();
 }
 
-// â”€â”€ Current time line â€” realtime, khÃ´ng phá»¥ thuá»™c reload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Current time line — realtime, không phụ thuộc reload ──────────────────
 
 /**
- * Táº¡o hoáº·c cáº­p nháº­t vá»‹ trÃ­ Ä‘Æ°á»ng Ä‘á» thá»i gian hiá»‡n táº¡i.
- * Gá»i khi: renderGrid, Ä‘á»•i ngÃ y, resize, setInterval.
+ * Tạo hoặc cập nhật vị trí đường đỏ thời gian hiện tại.
+ * Gọi khi: renderGrid, đổi ngày, resize, setInterval.
  */
 function updateCurrentTimeLine() {
   const grid = document.getElementById("grid");
   const dayPicker = document.getElementById("dayPicker");
   if (!grid) return;
 
-  // Láº¥y hoáº·c táº¡o element (chá»‰ táº¡o 1 láº§n duy nháº¥t)
+  // Lấy hoặc tạo element (chỉ tạo 1 lần duy nhất)
   let line = grid.querySelector('.current-time-line');
 
   const viewDay  = dayPicker ? dayPicker.value : '';
   const now      = new Date();
   const todayStr = `${now.getFullYear()}-${pad2(now.getMonth()+1)}-${pad2(now.getDate())}`;
 
-  // Chá»‰ hiá»‡n khi Ä‘ang xem Ä‘Ãºng ngÃ y hÃ´m nay
+  // Chỉ hiện khi đang xem đúng ngày hôm nay
   if (viewDay !== todayStr) {
     if (line) line.style.display = 'none';
     return;
@@ -975,7 +975,7 @@ function updateCurrentTimeLine() {
   const nowMinutes = now.getHours() * 60 + now.getMinutes() - START_HOUR * 60;
   const pct        = (nowMinutes / totalTimelineMinutes()) * 100;
 
-  // NgoÃ i khung giá» â†’ áº©n
+  // Ngoài khung giờ → ẩn
   if (pct <= 0 || pct >= 100) {
     if (line) line.style.display = 'none';
     return;
@@ -991,23 +991,23 @@ function updateCurrentTimeLine() {
     grid.appendChild(line);
   }
 
-  // Cáº­p nháº­t vá»‹ trÃ­ vÃ  label
+  // Cập nhật vị trí và label
   line.style.display = '';
   line.style.left    = `calc(var(--leftCol) + ${pct} * (100% - var(--leftCol)) / 100)`;
   const labelEl = line.querySelector('.ctl-label');
   if (labelEl) labelEl.textContent = label;
 }
 
-// Khá»Ÿi Ä‘á»™ng interval realtime â€” cáº­p nháº­t má»—i 30 giÃ¢y
+// Khởi động interval realtime — cập nhật mỗi 30 giây
 function startCurrentTimeLineInterval() {
   if (_ctlInterval) clearInterval(_ctlInterval);
   _ctlInterval = setInterval(updateCurrentTimeLine, 30_000);
 }
 
 // ============================================================
-// SECTION 9: TAB 2 - YÃŠU Cáº¦U Äáº¶T Lá»ŠCH (WEB REQUESTS)
+// SECTION 9: TAB 2 - YÊU CẦU ĐẶT LỊCH (WEB REQUESTS)
 // ============================================================
-// váº½ báº£ng yÃªu cáº§u Ä‘áº·t lá»‹ch online (CHá»ˆ PENDING - chá» xÃ¡c nháº­n)
+// vẽ bảng yêu cầu đặt lịch online (CHỈ PENDING - chờ xác nhận)
 async function renderWebRequests(){
   const dateFilter    = (document.getElementById("webDateFilter")     || {}).value || '';
   const searchTerm    = ((document.getElementById("webSearchInput")   || {}).value || '').trim();
@@ -1024,12 +1024,12 @@ async function renderWebRequests(){
     return;
   }
   webTbody.innerHTML = rows.map(a => {
-    // Backend chá»‰ tráº£ vá» PENDINGS bookings - khÃ´ng cáº§n check status
+    // Backend chỉ trả về PENDINGS bookings - không cần check status
     const apptId = a.id;
-    // Chá»‰ cÃ³ action XÃ¡c nháº­n vÃ  Tá»« chá»‘i cho PENDING bookings
+    // Chỉ có action Xác nhận và Từ chối cho PENDING bookings
     const actionBtn = `<div class="action-buttons">
-      <button type="button" class="web-action-btn web-action-btn-approve" data-id="${apptId}" onclick="approveWeb('${apptId}')"><i class="fas fa-check"></i><span>XÃ¡c nháº­n</span></button>
-      <button type="button" class="web-action-btn web-action-btn-reject" data-id="${apptId}" onclick="rejectWeb('${apptId}')"><i class="fas fa-xmark"></i><span>Tá»« chá»‘i</span></button>
+      <button type="button" class="web-action-btn web-action-btn-approve" data-id="${apptId}" onclick="approveWeb('${apptId}')"><i class="fas fa-check"></i><span>Xác nhận</span></button>
+      <button type="button" class="web-action-btn web-action-btn-reject" data-id="${apptId}" onclick="rejectWeb('${apptId}')"><i class="fas fa-xmark"></i><span>Từ chối</span></button>
     </div>`;
 
     return `<tr>
@@ -1039,18 +1039,18 @@ async function renderWebRequests(){
       <td>${a.service}</td>
       <td>${a.date}</td>
       <td>${a.start} - ${a.end}</td>
-      <td>${a.durationMin||""} phÃºt</td>
+      <td>${a.durationMin||""} phút</td>
       <td class="action-cell">${actionBtn}</td>
     </tr>`;
   }).join("");
 }
 
-//Flow: Click "XÃ¡c nháº­n" â†’ TÃ¬m appt data â†’ Má»Ÿ modal vá»›i prefill â†’ Staff chá»n phÃ²ng/giá» â†’ Submit
+//Flow: Click "Xác nhận" → Tìm appt data → Mở modal với prefill → Staff chọn phòng/giờ → Submit
 window.approveWeb = async function(id){
-  // TÃ¬m appointment data tá»« cache
+  // Tìm appointment data từ cache
   const appt = (window._webAppts || []).find(a => a.id === id);
   if (!appt) {
-    showToast('error', 'Lá»—i', MSG_WEB_GENERIC_ERR);
+    showToast('error', 'Lỗi', MSG_WEB_GENERIC_ERR);
     return;
   }
   openConfirmOnlineRequestModal(appt);
@@ -1058,39 +1058,39 @@ window.approveWeb = async function(id){
 
 
 function openConfirmOnlineRequestModal(appt) {
-  // â”€â”€ STEP 1: Validate input â”€â”€
+  // ── STEP 1: Validate input ──
   if (!appt) {
-    showToast('error', 'Lá»—i', 'KhÃ´ng tÃ¬m tháº¥y thÃ´ng tin Ä‘áº·t lá»‹ch');
+    showToast('error', 'Lỗi', 'Không tìm thấy thông tin đặt lịch');
     return;
   }
 
-  // â”€â”€ STEP 2: Get modal elements â”€â”€
+  // ── STEP 2: Get modal elements ──
   const modalEl = document.getElementById("apptModal");
   const modalTitle = document.getElementById("modalTitle");
   const btnSaveText = document.getElementById("btnSaveText");
 
   if (!modalEl || !modalTitle) {
-    showToast('error', 'Lá»—i', 'KhÃ´ng tÃ¬m tháº¥y modal form');
+    showToast('error', 'Lỗi', 'Không tìm thấy modal form');
     return;
   }
 
-  // â”€â”€ STEP 3: Reset modal state â”€â”€
+  // ── STEP 3: Reset modal state ──
   resetModalError();
-  modalTitle.textContent = "XÃ¡c nháº­n yÃªu cáº§u Ä‘áº·t lá»‹ch";
-  if (btnSaveText) btnSaveText.textContent = "XÃ¡c nháº­n & Táº¡o lá»‹ch";
+  modalTitle.textContent = "Xác nhận yêu cầu đặt lịch";
+  if (btnSaveText) btnSaveText.textContent = "Xác nhận & Tạo lịch";
 
   document.getElementById("apptId").value = "";
   document.getElementById("btnDelete").classList.add("d-none");
   document.getElementById('btnRebook')?.classList.add('d-none');
 
   // Set online request mode flag
-  window._pendingOnlineRequestCode = appt.bookingCode || ''; // lÆ°u bookingCode cá»§a online request Ä‘ang Ä‘Æ°á»£c xÃ¡c nháº­n
+  window._pendingOnlineRequestCode = appt.bookingCode || ''; // lưu bookingCode của online request đang được xác nhận
 
   // Show form
-  _showSharedForm(); // hiá»ƒn thá»‹ form lÃªn 
-  _setAddGuestBtnVisible(false);
+  _showSharedForm(); // hiển thị form lên 
+  _setCreateOnlyVisible(false);
 
-  // â”€â”€ STEP 4: Fill booker info (ngÆ°á»i Ä‘áº·t) â”€â”€
+  // ── STEP 4: Fill booker info (người đặt) ──
   document.getElementById('bookerName').value = appt.bookerName || appt.customerName || '';
   document.getElementById('bookerPhone').value = appt.bookerPhone || appt.phone || '';
   document.getElementById('bookerEmail').value = appt.bookerEmail || appt.email || '';
@@ -1098,34 +1098,34 @@ function openConfirmOnlineRequestModal(appt) {
   const bookerNoteEl = document.getElementById('bookerNote');
   if (bookerNoteEl) bookerNoteEl.value = appt.bookerNotes || '';
 
-  // â”€â”€ STEP 5: Set booking date (ngÃ y háº¹n) â”€â”€
+  // ── STEP 5: Set booking date (ngày hẹn) ──
   const bookingDateEl = document.getElementById('bookingDate');
   if (bookingDateEl) {
     bookingDateEl.value = appt.date || '';
   }
 
-  // â”€â”€ STEP 6: Clear old guests & Add new guest card â”€â”€
+  // ── STEP 6: Clear old guests & Add new guest card ──
   _guestCount = 0;
   document.getElementById('guestList').innerHTML = '';
 
   addOnlineRequestGuestCard(appt);
 
-  // â”€â”€ STEP 7: áº¨n nÃºt ba cháº¥m (gc-expand-btn) â”€â”€
-  // Trong mode xÃ¡c nháº­n, khÃ´ng cáº§n nÃºt expand detail
+  // ── STEP 7: Ẩn nút ba chấm (gc-expand-btn) ──
+  // Trong mode xác nhận, không cần nút expand detail
   const expandBtns = document.querySelectorAll('.gc-expand-btn');
   expandBtns.forEach(btn => btn.classList.add('d-none'));
 
-  // â”€â”€ STEP 7.5: áº¨n khá»‘i Tráº¡ng thÃ¡i & Thanh toÃ¡n â”€â”€
-  // Tab "YÃªu cáº§u Ä‘áº·t lá»‹ch" chá»‰ xá»­ lÃ½ PENDING â†’ khÃ´ng cáº§n status dropdown
+  // ── STEP 7.5: Ẩn khối Trạng thái & Thanh toán ──
+  // Tab "Yêu cầu đặt lịch" chỉ xử lý PENDING → không cần status dropdown
   _applyModalMode('request');
 
-  // â”€â”€ STEP 8: Show modal â”€â”€
+  // ── STEP 8: Show modal ──
   const existing = bootstrap.Modal.getInstance(modalEl);
   const modal = existing || new bootstrap.Modal(modalEl);
   modal.show();
 
   // Show info toast
-  showToast('info', 'XÃ¡c nháº­n yÃªu cáº§u', 'Vui lÃ²ng chá»n phÃ²ng vÃ  kiá»ƒm tra thÃ´ng tin trÆ°á»›c khi lÆ°u');
+  showToast('info', 'Xác nhận yêu cầu', 'Vui lòng chọn phòng và kiểm tra thông tin trước khi lưu');
 }
 
 
@@ -1133,12 +1133,12 @@ function addOnlineRequestGuestCard(onlineAppt) {
   const list = document.getElementById('guestList');
   if (!list) return;
 
-  // Táº¡o guest item má»›i
+  // Tạo guest item mới
   const idx = _guestCount++;
   const item = _buildGuestItem(idx, {});
   list.appendChild(item);
 
-  // Fill info khÃ¡ch hÃ ng
+  // Fill info khách hàng
   const nameInp = item.querySelector('.gc-name');
   if (nameInp) nameInp.value = onlineAppt.customerName || onlineAppt.bookerName || '';
 
@@ -1171,35 +1171,35 @@ function addOnlineRequestGuestCard(onlineAppt) {
     const startInp = item.querySelector('.gc-time-input');
     if (startInp) startInp.value = onlineAppt.start;
 
-    // Update time-range display Ä‘á»ƒ user tháº¥y giá» Ä‘Ã£ Ä‘áº·t
+    // Update time-range display để user thấy giờ đã đặt
     const disp = item.querySelector('.gc-time-range-display');
     if (disp) {
-      // TÃ­nh giá» káº¿t thÃºc (náº¿u cÃ³ duration tá»« variant thÃ¬ dÃ¹ng, default 60 phÃºt)
-      let duration = 60; // default 60 phÃºt
+      // Tính giờ kết thúc (nếu có duration từ variant thì dùng, default 60 phút)
+      let duration = 60; // default 60 phút
       if (onlineAppt.variantId) {
         // Try to get duration from variant
         const variant = SERVICES.find(s => s.id === onlineAppt.serviceId)
           ?.variants?.find(v => v.id === onlineAppt.variantId);
-        if (variant && variant.duration_minutes) {
-          duration = variant.duration_minutes;
+        if (variant && variant.duration) {
+          duration = variant.duration;
         }
       }
       const endTime = addMinutesToTime(onlineAppt.start, duration);
       // Extract HH:MM from start time in case it contains extra info
       const startTimeMatch = onlineAppt.start.match(/(\d{1,2}:\d{2})/);
       const startTimeDisplay = startTimeMatch ? startTimeMatch[1] : onlineAppt.start;
-      disp.innerHTML = startTimeDisplay + '<span class="gc-time-range-sep"> â€“ </span>' + (endTime || '--:--');
+      disp.innerHTML = startTimeDisplay + '<span class="gc-time-range-sep"> – </span>' + (endTime || '--:--');
     }
   }
 
-  // Cáº­p nháº­t UI
-  // Online request chá»‰ cÃ³ 1 khÃ¡ch â†’ khÃ´ng cáº§n Ä‘Ã¡nh sá»‘, progress bar (bá»‹ áº©n), delete button
-  _markRowValidity(item);  // Highlight border Ä‘á»ƒ user biáº¿t dÃ²ng Ä‘Ã£ Ä‘á»§ info chÆ°a
+  // Cập nhật UI
+  // Online request chỉ có 1 khách → không cần đánh số, progress bar (bị ẩn), delete button
+  _markRowValidity(item);  // Highlight border để user biết dòng đã đủ info chưa
 }
 
 window.rejectWeb = async function(id){
   const appt = (window._webAppts || []).find(a => a.id === id);
-  const info = appt ? `${appt.customerName || appt.bookerName || ''} â€” ${appt.date} ${appt.start}` : id;
+  const info = appt ? `${appt.customerName || appt.bookerName || ''} — ${appt.date} ${appt.start}` : id;
 
   const infoEl = document.getElementById('rejectWebInfo');
   if (infoEl) infoEl.textContent = info;
@@ -1213,7 +1213,7 @@ window.rejectWeb = async function(id){
   }, { once: true });
   const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
 
-  // Gáº¯n handler má»™t láº§n, trÃ¡nh duplicate
+  // Gắn handler một lần, tránh duplicate
   const btn = document.getElementById('confirmRejectWebBtn');
   const newBtn = _replaceWithClone(btn);
 
@@ -1222,14 +1222,14 @@ window.rejectWeb = async function(id){
     try {
       const result = await apiPost(`${API_BASE}/appointments/${id}/status/`, { status: 'REJECTED' });
       if (result.success) {
-        showToast("success", "ThÃ nh cÃ´ng", MSG_REJECT_SUCCESS);
+        showToast("success", "Thành công", MSG_REJECT_SUCCESS);
         await renderWebRequests();
         await refreshData();
       } else {
-        showToast("error", "Lá»—i", MSG_WEB_GENERIC_ERR);
+        showToast("error", "Lỗi", MSG_WEB_GENERIC_ERR);
       }
     } catch (err) {
-      showToast("error", "Lá»—i", MSG_WEB_GENERIC_ERR);
+      showToast("error", "Lỗi", MSG_WEB_GENERIC_ERR);
     }
   });
 
@@ -1237,10 +1237,10 @@ window.rejectWeb = async function(id){
 }
 
 window.rebookAppointment = async function(id) {
-  // Guard: trÃ¡nh double-click má»Ÿ nhiá»u modal trong khi Ä‘ang fetch
+  // Guard: tránh double-click mở nhiều modal trong khi đang fetch
   if (window._rebookInProgress) {
-    console.warn('[Rebook] Äang xá»­ lÃ½, bá» qua click thá»«a â€” náº¿u bá»‹ káº¹t, reload trang');
-    // Reset Ä‘á»ƒ khÃ´ng bá»‹ káº¹t mÃ£i
+    console.warn('[Rebook] Đang xử lý, bỏ qua click thừa — nếu bị kẹt, reload trang');
+    // Reset để không bị kẹt mãi
     window._rebookInProgress = false;
     return;
   }
@@ -1248,26 +1248,26 @@ window.rebookAppointment = async function(id) {
   try {
     const result = await apiGet(`${API_BASE}/appointments/${id}/`);
     if (!result || !result.success || !result.appointment) {
-      console.error('[Rebook] API tháº¥t báº¡i:', result);
-      showToast('error', 'Lá»—i', MSG_WEB_GENERIC_ERR);
+      console.error('[Rebook] API thất bại:', result);
+      showToast('error', 'Lỗi', MSG_WEB_GENERIC_ERR);
       return;
     }
     openRebookAsCreate(result.appointment);
   } catch (err) {
-    console.error('[Rebook] Lá»—i fetch:', err);
-    showToast('error', 'Lá»—i', MSG_WEB_GENERIC_ERR);
+    console.error('[Rebook] Lỗi fetch:', err);
+    showToast('error', 'Lỗi', MSG_WEB_GENERIC_ERR);
   } finally {
     window._rebookInProgress = false;
   }
 };
 
 /**
- * Má»Ÿ modal Táº O lá»‹ch má»›i, pre-fill tá»« lá»‹ch cÅ©.
- * KhÃ´ng copy ngÃ y/giá»/phÃ²ng â€” admin pháº£i chá»n láº¡i.
+ * Mở modal TẠO lịch mới, pre-fill từ lịch cũ.
+ * Không copy ngày/giờ/phòng — admin phải chọn lại.
  *
- * Strategy: force-cleanup má»i modal/backdrop Ä‘ang má»Ÿ, sau Ä‘Ã³ má»Ÿ modal má»›i.
- * DÃ¹ng requestAnimationFrame Ä‘á»ƒ Ä‘áº£m báº£o DOM Ä‘Ã£ cleanup trÆ°á»›c khi Bootstrap
- * khá»Ÿi táº¡o modal má»›i.
+ * Strategy: force-cleanup mọi modal/backdrop đang mở, sau đó mở modal mới.
+ * Dùng requestAnimationFrame để đảm bảo DOM đã cleanup trước khi Bootstrap
+ * khởi tạo modal mới.
  */
 function openRebookAsCreate(a) {
   const prefill = {
@@ -1276,8 +1276,8 @@ function openRebookAsCreate(a) {
       name:   a.bookerName  || '',
       phone:  a.bookerPhone || '',
       email:  a.bookerEmail || '',
-      // Rebook luÃ´n lÃ  admin táº¡o trá»±c tiáº¿p â†’ source DIRECT, khÃ´ng copy source cÅ©
-      // (trÃ¡nh trÆ°á»ng há»£p booking gá»‘c lÃ  ONLINE â†’ booking má»›i bá»‹ coi lÃ  online pending)
+      // Rebook luôn là admin tạo trực tiếp → source DIRECT, không copy source cũ
+      // (tránh trường hợp booking gốc là ONLINE → booking mới bị coi là online pending)
       source: 'DIRECT',
       note:   a.bookerNotes || '',
     },
@@ -1287,11 +1287,11 @@ function openRebookAsCreate(a) {
       email:     a.email        || '',
       serviceId: a.serviceId    || null,
       variantId: a.variantId    || null,
-      // KhÃ´ng copy: roomId, date, time, status, appointment_code, booking_code, invoice
+      // Không copy: roomId, date, time, status, appointment_code, booking_code, invoice
     },
   };
 
-  // BÆ°á»›c 2: Má»Ÿ modal táº¡o má»›i
+  // Bước 2: Mở modal tạo mới
   const _doOpen = () => {
     openCreateModal(prefill);
   };
@@ -1300,8 +1300,8 @@ function openRebookAsCreate(a) {
   const isAnyModalOpen = !!document.querySelector('.modal.show') || !!document.querySelector('.modal-backdrop');
 
   if (isAnyModalOpen) {
-    // CÃ³ modal Ä‘ang má»Ÿ â†’ Ä‘á»£i apptModal hidden rá»“i má»Ÿ láº¡i
-    // Náº¿u apptModal Ä‘ang show, Ä‘Äƒng kÃ½ hidden event
+    // Có modal đang mở → đợi apptModal hidden rồi mở lại
+    // Nếu apptModal đang show, đăng ký hidden event
     if (modalEl && modalEl.classList.contains('show')) {
       modalEl.addEventListener('hidden.bs.modal', () => {
         setTimeout(_doOpen, 50);
@@ -1309,39 +1309,39 @@ function openRebookAsCreate(a) {
       const inst = bootstrap.Modal.getInstance(modalEl);
       if (inst) inst.hide();
     } else {
-      // Modal khÃ¡c Ä‘ang má»Ÿ (khÃ´ng pháº£i apptModal) â†’ force close táº¥t cáº£ rá»“i má»Ÿ ngay
+      // Modal khác đang mở (không phải apptModal) → force close tất cả rồi mở ngay
       _forceCloseAllModals();
       setTimeout(_doOpen, 100);
     }
   } else {
-    // KhÃ´ng cÃ³ modal nÃ o má»Ÿ â†’ má»Ÿ ngay
+    // Không có modal nào mở → mở ngay
     _doOpen();
   }
 }
 
-// Äiá»n dropdown dá»‹ch vá»¥ cho filter bar scheduler
+// Điền dropdown dịch vụ cho filter bar scheduler
 function fillServiceFilter(){
   const sel = document.getElementById('serviceFilter');
   if (sel) {
-    _populateSelect(sel, SERVICES, 'id', 'name', 'Táº¥t cáº£ dá»‹ch vá»¥');
+    _populateSelect(sel, SERVICES, 'id', 'name', 'Tất cả dịch vụ');
   }
-  // Äiá»n dropdown dá»‹ch vá»¥ cho tab YÃªu cáº§u Ä‘áº·t lá»‹ch
+  // Điền dropdown dịch vụ cho tab Yêu cầu đặt lịch
   const webSel = document.getElementById('webServiceFilter');
   if (webSel) {
-    _populateSelect(webSel, SERVICES, 'id', 'name', 'Táº¥t cáº£ dá»‹ch vá»¥');
+    _populateSelect(webSel, SERVICES, 'id', 'name', 'Tất cả dịch vụ');
   }
 }
 
 // ============================================================
 // SECTION 10: CUSTOMER LOOKUP
 // ============================================================
-// Autofill thÃ´ng tin tá»« CustomerProfile khi nháº­p SÄT ngÆ°á»i Ä‘áº·t hoáº·c tá»«ng khÃ¡ch.
-// KhÃ´ng tá»± fill ghi chÃº lá»‹ch háº¹n (bookerNote).
-// KhÃ´ng ghi Ä‘Ã¨ dá»¯ liá»‡u user Ä‘Ã£ sá»­a tay, trá»« khi SÄT thay Ä‘á»•i.
+// Autofill thông tin từ CustomerProfile khi nhập SĐT người đặt hoặc từng khách.
+// Không tự fill ghi chú lịch hẹn (bookerNote).
+// Không ghi đè dữ liệu user đã sửa tay, trừ khi SĐT thay đổi.
 
 /**
- * Lookup CustomerProfile theo SÄT qua API /api/customers/search/?q=<phone>
- * Tráº£ vá» customer object hoáº·c null náº¿u khÃ´ng tÃ¬m tháº¥y.
+ * Lookup CustomerProfile theo SĐT qua API /api/customers/search/?q=<phone>
+ * Trả về customer object hoặc null nếu không tìm thấy.
  */
 async function _lookupCustomerByPhone(phone) {
   const digits = (phone || '').replace(/\D/g, '');
@@ -1349,7 +1349,7 @@ async function _lookupCustomerByPhone(phone) {
   try {
     const result = await apiGet(`${API_BASE}/customers/search/?q=${encodeURIComponent(digits)}`);
     if (!result.success || !result.customers?.length) return null;
-    // TÃ¬m exact match theo phone
+    // Tìm exact match theo phone
     const exact = result.customers.find(c => (c.phone || '').replace(/\D/g, '') === digits);
     return exact || null;
   } catch (e) {
@@ -1358,7 +1358,7 @@ async function _lookupCustomerByPhone(phone) {
 }
 
 function initCustomerSearch() {
-  // Bind blur trÃªn bookerPhone â†’ autofill booker info
+  // Bind blur trên bookerPhone → autofill booker info
   const bookerPhoneEl = document.getElementById('bookerPhone');
   if (!bookerPhoneEl) return;
 
@@ -1367,32 +1367,32 @@ function initCustomerSearch() {
   bookerPhoneEl.addEventListener('blur', async function() {
     const phone = bookerPhoneEl.value.trim();
     const digits = phone.replace(/\D/g, '');
-    // KhÃ´ng lookup náº¿u SÄT khÃ´ng Ä‘á»•i hoáº·c quÃ¡ ngáº¯n
+    // Không lookup nếu SĐT không đổi hoặc quá ngắn
     if (digits === _lastBookerPhone || digits.length < 10) return;
     _lastBookerPhone = digits;
 
     const customer = await _lookupCustomerByPhone(digits);
     if (!customer) {
-      // KhÃ´ng tÃ¬m tháº¥y â†’ clear customerId, giá»¯ nguyÃªn dá»¯ liá»‡u user Ä‘ang nháº­p
+      // Không tìm thấy → clear customerId, giữ nguyên dữ liệu user đang nhập
       document.getElementById('selectedCustomerId').value = '';
       return;
     }
 
-    // TÃ¬m tháº¥y â†’ autofill booker
-    // Ghi Ä‘Ã¨ náº¿u profile má»›i khÃ¡c profile cÅ© (Ä‘á»•i SÄT sang khÃ¡ch khÃ¡c)
+    // Tìm thấy → autofill booker
+    // Ghi đè nếu profile mới khác profile cũ (đổi SĐT sang khách khác)
     const nameEl    = document.getElementById('bookerName');
     const emailEl   = document.getElementById('bookerEmail');
     const prevCustId = document.getElementById('selectedCustomerId').value || '';
     const isNewProfile = String(customer.id) !== prevCustId;
 
-    // Fill tÃªn/email: ghi Ä‘Ã¨ khi profile má»›i khÃ¡c, hoáº·c Ã´ Ä‘ang trá»‘ng
+    // Fill tên/email: ghi đè khi profile mới khác, hoặc ô đang trống
     if (nameEl  && (isNewProfile || !nameEl.value.trim()))  nameEl.value  = customer.fullName || '';
     if (emailEl && (isNewProfile || !emailEl.value.trim())) emailEl.value = customer.email    || '';
 
-    // LÆ°u customerId cá»§a booker
+    // Lưu customerId của booker
     document.getElementById('selectedCustomerId').value = String(customer.id);
 
-    // Náº¿u cÃ³ guest card nÃ o Ä‘ang tick "= ngÆ°á»i Ä‘áº·t" â†’ sync xuá»‘ng + fill customer note
+    // Nếu có guest card nào đang tick "= người đặt" → sync xuống + fill customer note
     _getGuestItems().forEach(item => {
       const chk = item.querySelector('.gc-same-as-booker');
       if (!chk || !chk.checked) return;
@@ -1406,38 +1406,16 @@ function initCustomerSearch() {
       if (emailI) emailI.value = customer.email    || '';
       if (custIdI) custIdI.value = String(customer.id);
       item.dataset.customerId = String(customer.id);
-      // Ghi Ä‘Ã¨ ghi chÃº há»“ sÆ¡ khÃ¡ch khi profile má»›i khÃ¡c, hoáº·c Ã´ Ä‘ang trá»‘ng
+      // Ghi đè ghi chú hồ sơ khách khi profile mới khác, hoặc ô đang trống
       if (noteI && (isNewGuestProfile || !noteI.value.trim())) {
         noteI.value = customer.notes || '';
         item.dataset.originalNote = (customer.notes || '').trim();
       }
     });
   });
-
-  // â”€â”€ Sync 2 chiá»u: khi booker fields thay Ä‘á»•i â†’ cáº­p nháº­t guest cards Ä‘ang tick â”€â”€
-  // DÃ¹ng 'input' Ä‘á»ƒ pháº£n há»“i ngay khi user gÃµ, khÃ´ng cáº§n blur
-  function _syncCheckedGuests() {
-    const newName  = document.getElementById('bookerName')?.value.trim()  || '';
-    const newPhone = document.getElementById('bookerPhone')?.value.trim() || '';
-    const newEmail = document.getElementById('bookerEmail')?.value.trim() || '';
-    _getGuestItems().forEach(item => {
-      const chk = item.querySelector('.gc-same-as-booker');
-      if (!chk || !chk.checked) return;
-      const nameI  = item.querySelector('.gc-name');
-      const phoneI = item.querySelector('.gc-phone');
-      const emailI = item.querySelector('.gc-email');
-      if (nameI)  nameI.value  = newName;
-      if (phoneI) phoneI.value = newPhone;
-      if (emailI) emailI.value = newEmail;
-    });
-  }
-
-  ['bookerName', 'bookerPhone', 'bookerEmail'].forEach(id => {
-    document.getElementById(id)?.addEventListener('input', _syncCheckedGuests);
-  });
 }
 
-// Customer lookup stubs Ä‘Ã£ xÃ³a â€” chá»‰ giá»¯ _resetAllCustomerState dÃ¹ng trong modal reset
+// Customer lookup stubs đã xóa — chỉ giữ _resetAllCustomerState dùng trong modal reset
 function _resetAllCustomerState() {
   document.getElementById('selectedCustomerId').value = '';
 }
@@ -1445,7 +1423,7 @@ function _resetAllCustomerState() {
 // ============================================================
 // SECTION 11: MODAL & FORM HELPERS
 // ============================================================
-// Escape HTML Ä‘á»ƒ trÃ¡nh XSS
+// Escape HTML để tránh XSS
 function _esc(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
@@ -1459,7 +1437,7 @@ function _roomShortLabel(room) {
   return raw;
 }
 
-// â”€â”€ Helpers â”€â”€
+// ── Helpers ──
 function _getGuestItems() {
   return Array.from(document.querySelectorAll('#guestList .gc-item'));
 }
@@ -1468,7 +1446,7 @@ function _getGuestItem(idx) {
   return document.querySelector(`#guestList .gc-item[data-idx="${idx}"]`);
 }
 
-/** Kiá»ƒm tra 1 guest row Ä‘Ã£ Ä‘á»§ trÆ°á»ng báº¯t buá»™c chÆ°a */
+/** Kiểm tra 1 guest row đã đủ trường bắt buộc chưa */
 function _isGuestComplete(item) {
   if (!item) return false;
   const svc  = item.querySelector('.gc-service')?.value;
@@ -1479,7 +1457,7 @@ function _isGuestComplete(item) {
   return !!(svc && vari && room && date && time);
 }
 
-/** Highlight Ã´ thiáº¿u trong 1 row */
+/** Highlight ô thiếu trong 1 row */
 function _markRowValidity(item) {
   if (!item) return;
   const row = item.querySelector('.gc-row');
@@ -1490,7 +1468,7 @@ function _markRowValidity(item) {
   }
 }
 
-/** Highlight lá»—i khi submit â€” chá»‰ gá»i khi user báº¥m LÆ°u */
+/** Highlight lỗi khi submit — chỉ gọi khi user bấm Lưu */
 function _markRowError(item) {
   if (!item) return;
   const svcSel = item.querySelector('.gc-service');
@@ -1507,7 +1485,7 @@ function _markRowError(item) {
   }
 }
 
-/** Cáº­p nháº­t progress bar */
+/** Cập nhật progress bar */
 function _updateGuestProgress() {
   _updateCreatePayBtn();
 }
@@ -1538,15 +1516,15 @@ window.toggleGuestCard = function(idx) {
 function _loadGuestVariants(item, serviceId, selectedVariantId) {
   const varSel = item.querySelector('.gc-variant');
   if (!varSel) return;
-  varSel.innerHTML = '<option value="">-- Chá»n gÃ³i --</option>';
+  varSel.innerHTML = '<option value="">-- Chọn gói --</option>';
   varSel.disabled  = true;
   varSel.style.color      = '#9ca3af';
   varSel.style.background = '#f9fafb';
 
   const svc = SERVICES.find(s => s.id === parseInt(serviceId, 10));
   if (!svc || !svc.variants?.length) {
-    // KhÃ´ng cÃ³ variant â†’ giá»¯ disabled nhÆ°ng placeholder rÃµ rÃ ng
-    varSel.innerHTML = '<option value="">-- Chá»n dá»‹ch vá»¥ trÆ°á»›c --</option>';
+    // Không có variant → giữ disabled nhưng placeholder rõ ràng
+    varSel.innerHTML = '<option value="">-- Chọn dịch vụ trước --</option>';
     return;
   }
 
@@ -1559,7 +1537,7 @@ function _loadGuestVariants(item, serviceId, selectedVariantId) {
     varSel.appendChild(opt);
   });
 
-  // Enable + reset style vá» bÃ¬nh thÆ°á»ng
+  // Enable + reset style về bình thường
   varSel.disabled         = false;
   varSel.style.color      = '#111827';
   varSel.style.background = '#fff';
@@ -1572,7 +1550,7 @@ function _loadGuestVariants(item, serviceId, selectedVariantId) {
   _updateCreatePayBtn();
 }
 
-/** TÃ­nh vÃ  lÆ°u end_time vÃ o dataset + cáº­p nháº­t hiá»ƒn thá»‹ (giá» káº¿t thÃºc auto-tÃ­nh) */
+/** Tính và lưu end_time vào dataset + cập nhật hiển thị (giờ kết thúc auto-tính) */
 function _updateGuestEndTime(item) {
   const varSel = item.querySelector('.gc-variant');
   const timeVal = item.dataset.slotTime;
@@ -1581,28 +1559,28 @@ function _updateGuestEndTime(item) {
   const dur = opt?.dataset?.duration ? Number(opt.dataset.duration) : 60;
   const newEnd = addMinutesToTime(timeVal, dur);
   item.dataset.endTime = newEnd;
-  // Cáº­p nháº­t hidden input
+  // Cập nhật hidden input
   const endHidden = item.querySelector('.gc-time-end');
   if (endHidden) endHidden.value = newEnd;
-  // Cáº­p nháº­t time-range display (giá» káº¿t thÃºc readonly)
+  // Cập nhật time-range display (giờ kết thúc readonly)
   const disp = item.querySelector('.gc-time-range-display');
   if (disp) {
     const startVal = item.dataset.slotTime || '--:--';
-    disp.innerHTML = startVal + '<span class="gc-time-range-sep"> â€“ </span>' + newEnd;
+    disp.innerHTML = startVal + '<span class="gc-time-range-sep"> – </span>' + newEnd;
   }
-  // Cáº­p nháº­t legacy gc-slot-time náº¿u cÃ²n
+  // Cập nhật legacy gc-slot-time nếu còn
   const endEl = item.querySelector('.gc-slot-time');
   if (endEl && item.dataset.slotTime) {
-    endEl.textContent = `${item.dataset.slotTime}â€“${newEnd}`;
+    endEl.textContent = `${item.dataset.slotTime}–${newEnd}`;
   }
 }
 
 /**
- * Validate thá»i Ä‘iá»ƒm chuyá»ƒn tráº¡ng thÃ¡i ARRIVED / COMPLETED.
+ * Validate thời điểm chuyển trạng thái ARRIVED / COMPLETED.
  *
  * @param {string} dateStr   - "YYYY-MM-DD"
  * @param {string} timeStr   - "HH:MM"
- * @param {number} durationMin - sá»‘ phÃºt (máº·c Ä‘á»‹nh 60)
+ * @param {number} durationMin - số phút (mặc định 60)
  * @param {string} newStatus - "ARRIVED" | "COMPLETED" | ...
  * @returns {{ ok: boolean, error: string }}
  */
@@ -1614,24 +1592,24 @@ function _validateStatusTiming(dateStr, timeStr, durationMin, newStatus) {
   // Parse start datetime (local)
   const [y, mo, d]  = (dateStr || '').split('-').map(Number);
   const [h, mi]     = (timeStr || '00:00').split(':').map(Number);
-  if (!y || !mo || !d) return { ok: true, error: '' }; // khÃ´ng Ä‘á»§ data â†’ bá» qua
+  if (!y || !mo || !d) return { ok: true, error: '' }; // không đủ data → bỏ qua
 
   const startMs = new Date(y, mo - 1, d, h, mi, 0).getTime();
   const endMs   = startMs + dur * 60 * 1000;
   const nowMs   = Date.now();
 
   if (newStatus === 'ARRIVED' && nowMs < startMs) {
-    return { ok: false, error: 'ChÆ°a Ä‘áº¿n giá» háº¹n, khÃ´ng thá»ƒ chuyá»ƒn sang ÄÃ£ Ä‘áº¿n' };
+    return { ok: false, error: 'Chưa đến giờ hẹn, không thể chuyển sang Đã đến' };
   }
   if (newStatus === 'COMPLETED' && nowMs < endMs) {
-    return { ok: false, error: 'ChÆ°a káº¿t thÃºc giá» háº¹n, khÃ´ng thá»ƒ hoÃ n thÃ nh lá»‹ch' };
+    return { ok: false, error: 'Chưa kết thúc giờ hẹn, không thể hoàn thành lịch' };
   }
   return { ok: true, error: '' };
 }
 
 /**
- * Cáº­p nháº­t badge tráº¡ng thÃ¡i thanh toÃ¡n vÃ  label nÃºt invoice trong edit modal.
- * KhÃ´ng cÃ²n hiá»ƒn thá»‹ Tá»•ng/ÄÃ£ tráº£/CÃ²n láº¡i trong modal chá»‰nh lá»‹ch.
+ * Cập nhật badge trạng thái thanh toán và label nút invoice trong edit modal.
+ * Không còn hiển thị Tổng/Đã trả/Còn lại trong modal chỉnh lịch.
  */
 function _updatePaymentSummary() {
   const apptId = document.getElementById('apptId');
@@ -1640,55 +1618,55 @@ function _updatePaymentSummary() {
 
   const payStatus = document.getElementById('sharedPayStatus')?.value || 'UNPAID';
 
-  // Cáº­p nháº­t badge
+  // Cập nhật badge
   _setPayStatusBadge(payStatus);
 
-  // Cáº­p nháº­t label + style nÃºt invoice
+  // Cập nhật label + style nút invoice
   const btnLabel = document.getElementById('btnInvoiceLabel');
   const btn      = document.getElementById('btnOpenInvoice');
   if (payStatus === 'PAID') {
-    if (btnLabel) btnLabel.textContent = 'Xem hÃ³a Ä‘Æ¡n';
+    if (btnLabel) btnLabel.textContent = 'Xem hóa đơn';
     if (btn) btn.className = 'btn-invoice-action btn-invoice-view';
   } else if (payStatus === 'REFUNDED') {
-    if (btnLabel) btnLabel.textContent = 'Xem hÃ³a Ä‘Æ¡n';
+    if (btnLabel) btnLabel.textContent = 'Xem hóa đơn';
     if (btn) btn.className = 'btn-invoice-action btn-invoice-view';
   } else if (payStatus === 'PARTIAL') {
-    if (btnLabel) btnLabel.textContent = 'Thu thÃªm';
+    if (btnLabel) btnLabel.textContent = 'Thu thêm';
     if (btn) btn.className = 'btn-invoice-action btn-invoice-more';
   } else {
-    if (btnLabel) btnLabel.textContent = 'Thanh toÃ¡n';
+    if (btnLabel) btnLabel.textContent = 'Thanh toán';
     if (btn) btn.className = 'btn-invoice-action';
   }
 }
 
 /**
- * Cáº­p nháº­t badge hiá»ƒn thá»‹ tráº¡ng thÃ¡i thanh toÃ¡n (readonly).
+ * Cập nhật badge hiển thị trạng thái thanh toán (readonly).
  */
 function _setPayStatusBadge(payStatus) {
   const badge = document.getElementById('payStatusBadge');
   if (!badge) return;
 
   const MAP = {
-    UNPAID:   { text: 'ChÆ°a thanh toÃ¡n', cls: 'pay-status-unpaid'   },
-    PARTIAL:  { text: 'Má»™t pháº§n',         cls: 'pay-status-partial'  },
-    PAID:     { text: 'ÄÃ£ thanh toÃ¡n',    cls: 'pay-status-paid'     },
-    REFUNDED: { text: 'ÄÃ£ hoÃ n tiá»n',     cls: 'pay-status-refunded' },
+    UNPAID:   { text: 'Chưa thanh toán', cls: 'pay-status-unpaid'   },
+    PARTIAL:  { text: 'Một phần',         cls: 'pay-status-partial'  },
+    PAID:     { text: 'Đã thanh toán',    cls: 'pay-status-paid'     },
+    REFUNDED: { text: 'Đã hoàn tiền',     cls: 'pay-status-refunded' },
   };
   const info = MAP[payStatus] || MAP.UNPAID;
   badge.textContent = info.text;
   badge.className   = `pay-status-badge ${info.cls}`;
 }
 
-/** Format sá»‘ tiá»n VNÄ */
+/** Format số tiền VNĐ */
 function _fmtVND(amount) {
-  if (amount === null || amount === undefined || isNaN(amount)) return 'â€”';
-  return Number(amount).toLocaleString('vi-VN') + 'Ä‘';
+  if (amount === null || amount === undefined || isNaN(amount)) return '—';
+  return Number(amount).toLocaleString('vi-VN') + 'đ';
 }
 
 function _setSelectValue(sel, value, fallback) {
   if (!sel) return;
   const wanted = value || fallback || '';
-  // <input type="hidden"> khÃ´ng cÃ³ .options â€” set value trá»±c tiáº¿p
+  // <input type="hidden"> không có .options — set value trực tiếp
   if (!sel.options) {
     sel.value = wanted;
     return;
@@ -1698,24 +1676,24 @@ function _setSelectValue(sel, value, fallback) {
 }
 
 /**
- * Ãp dá»¥ng mode cho modal lá»‹ch háº¹n â€” pháº£i gá»i TRÆ¯á»šC modal.show().
+ * Áp dụng mode cho modal lịch hẹn — phải gọi TRƯỚC modal.show().
  *
- * mode = 'request' : áº©n block Tráº¡ng thÃ¡i & Thanh toÃ¡n (xÃ¡c nháº­n online / Ä‘áº·t láº¡i tá»« request)
- * mode = 'normal'  : hiá»‡n láº¡i block Tráº¡ng thÃ¡i & Thanh toÃ¡n (táº¡o má»›i / chá»‰nh sá»­a bÃ¬nh thÆ°á»ng)
+ * mode = 'request' : ẩn block Trạng thái & Thanh toán (xác nhận online / đặt lại từ request)
+ * mode = 'normal'  : hiện lại block Trạng thái & Thanh toán (tạo mới / chỉnh sửa bình thường)
  *
- * Reset hoÃ n toÃ n tráº¡ng thÃ¡i áº©n/hiá»‡n cÅ© trÆ°á»›c khi apply mode má»›i,
- * trÃ¡nh tráº¡ng thÃ¡i tá»« láº§n má»Ÿ trÆ°á»›c bá»‹ giá»¯ láº¡i.
+ * Reset hoàn toàn trạng thái ẩn/hiện cũ trước khi apply mode mới,
+ * tránh trạng thái từ lần mở trước bị giữ lại.
  */
 function _applyModalMode(mode) {
   const sharedStatusBlock = document.getElementById('sharedStatusBlock');
   if (!sharedStatusBlock) return;
 
   if (mode === 'request') {
-    // request-mode: áº©n Tráº¡ng thÃ¡i & Thanh toÃ¡n
+    // request-mode: ẩn Trạng thái & Thanh toán
     sharedStatusBlock.style.display = 'none';
     sharedStatusBlock.classList.add('d-none');
   } else {
-    // normal-mode: hiá»‡n láº¡i â€” xÃ³a má»i class/style áº©n tá»« láº§n trÆ°á»›c
+    // normal-mode: hiện lại — xóa mọi class/style ẩn từ lần trước
     sharedStatusBlock.style.display = 'block';
     sharedStatusBlock.classList.remove('d-none');
     sharedStatusBlock.classList.remove('hidden');
@@ -1732,7 +1710,7 @@ function _showSharedStatusBlock(statusValue, payValue, isEditMode) {
   const readonlyWrap  = document.getElementById('payStatusReadonlyWrap');
   const btnWrap       = document.getElementById('btnInvoiceWrap');
 
-  // Shared status dropdown â€” hiá»‡n cáº£ create vÃ  edit mode
+  // Shared status dropdown — hiện cả create và edit mode
   const apptStatusWrap = sharedStatusSel ? sharedStatusSel.closest('.status-form-group') : null;
 
   if (apptStatusWrap) apptStatusWrap.style.display = '';
@@ -1741,22 +1719,22 @@ function _showSharedStatusBlock(statusValue, payValue, isEditMode) {
   if (sharedPaySel) sharedPaySel.onchange = null;
 
   if (isEditMode) {
-    // EDIT MODE: Ä‘Ã¡nh giÃ¡ láº¡i tráº¡ng thÃ¡i nÃºt dá»±a trÃªn dá»‹ch vá»¥ Ä‘Ã£ chá»n
+    // EDIT MODE: đánh giá lại trạng thái nút dựa trên dịch vụ đã chọn
     _updateCreatePayBtn();
     _updatePaymentSummary();
   } else {
-    // CREATE MODE: badge readonly + nÃºt invoice
-    // KhÃ´ng nháº­p thanh toÃ¡n trá»±c tiáº¿p, dÃ¹ng invoice modal sau khi táº¡o lá»‹ch
-    // Badge luÃ´n "ChÆ°a thanh toÃ¡n" khi táº¡o má»›i
+    // CREATE MODE: badge readonly + nút invoice
+    // Không nhập thanh toán trực tiếp, dùng invoice modal sau khi tạo lịch
+    // Badge luôn "Chưa thanh toán" khi tạo mới
     _setPayStatusBadge('UNPAID');
-    // ÄÃ¡nh giÃ¡ tráº¡ng thÃ¡i nÃºt dá»±a trÃªn dá»‹ch vá»¥ Ä‘Ã£ chá»n
+    // Đánh giá trạng thái nút dựa trên dịch vụ đã chọn
     _updateCreatePayBtn();
     const btnInvoiceLabel = document.getElementById('btnInvoiceLabel');
-    if (btnInvoiceLabel) btnInvoiceLabel.textContent = 'Thanh toÃ¡n';
+    if (btnInvoiceLabel) btnInvoiceLabel.textContent = 'Thanh toán';
   }
 }
 
-/** Build 1 compact guest row â€” detail panel áº©n máº·c Ä‘á»‹nh, toggle báº±ng JS */
+/** Build 1 compact guest row — detail panel ẩn mặc định, toggle bằng JS */
 function _buildGuestItem(idx, prefill) {
   prefill = prefill || {};
   const dayPicker = document.getElementById("dayPicker");
@@ -1764,7 +1742,7 @@ function _buildGuestItem(idx, prefill) {
   var timeVal  = prefill.time || '';
   var endTime  = (timeVal && prefill.pendingDuration) ? addMinutesToTime(timeVal, prefill.pendingDuration) : '';
 
-  var svcOpts = '<option value="">Dá»‹ch vá»¥</option>' +
+  var svcOpts = '<option value="">Dịch vụ</option>' +
     SERVICES.map(function(s){ return '<option value="' + s.id + '">' + s.name + '</option>'; }).join('');
 
   var inp = 'width:100%;height:36px;padding:0 12px;font-size:14px;border:1px solid #d1d5db;border-radius:6px;outline:none;background:#fff;box-sizing:border-box;font-family:inherit;color:#111827;display:block;';
@@ -1774,28 +1752,28 @@ function _buildGuestItem(idx, prefill) {
   var lbl  = 'font-size:13px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px;white-space:nowrap;';
   var selectedRoomId = prefill.roomId || '';
 
-  // Slot badge: phÃ²ng dropdown + time-range field gá»n Ä‘áº¹p
-  var roomOpts = '<option value="" disabled' + (selectedRoomId ? '' : ' selected') + ' hidden>Chá»n phÃ²ng</option>' +
+  // Slot badge: phòng dropdown + time-range field gọn đẹp
+  var roomOpts = '<option value="" disabled' + (selectedRoomId ? '' : ' selected') + ' hidden>Chọn phòng</option>' +
     ROOMS.map(function(r){
       var roomId = r.id || r.code || '';
       var isSel = (String(roomId) === String(selectedRoomId)) ? ' selected' : '';
       var label = _roomShortLabel(r);
       var capacity = r.capacity || '';
-      var title = label + (capacity ? ' - ' + capacity + ' giÆ°á»ng' : '');
+      var title = label + (capacity ? ' - ' + capacity + ' giường' : '');
       return '<option value="' + _esc(roomId) + '"' + isSel + ' data-capacity="' + _esc(capacity) + '" title="' + _esc(title) + '">' + _esc(label) + '</option>';
     }).join('');
 
   var slotBadge = '<div class="gc-slot-badge">'
     + '<select class="gc-room-select" required style="' + roomSelectCss + '">' + roomOpts + '</select>'
-    + '<div class="gc-time-range-field" title="Click Ä‘á»ƒ chá»‰nh giá»">'
+    + '<div class="gc-time-range-field" title="Click để chỉnh giờ">'
       + '<i class="far fa-clock gc-time-range-icon"></i>'
       + '<span class="gc-time-range-display">'
         + (timeVal ? _esc(timeVal) : '--:--')
-        + '<span class="gc-time-range-sep"> â€“ </span>'
+        + '<span class="gc-time-range-sep"> – </span>'
         + (endTime ? _esc(endTime) : '--:--')
       + '</span>'
       + '<div class="gc-time-range-inputs">'
-        + '<input type="time" class="gc-time-input" value="' + _esc(timeVal) + '" title="Giá» báº¯t Ä‘áº§u" />'
+        + '<input type="time" class="gc-time-input" value="' + _esc(timeVal) + '" title="Giờ bắt đầu" />'
       + '</div>'
     + '</div>'
   + '</div>';
@@ -1817,62 +1795,62 @@ function _buildGuestItem(idx, prefill) {
   + '<input type="hidden" class="gc-time-end" value="' + _esc(endTime) + '" />'
   + '<input type="hidden" class="gc-customer-id" value="' + _esc(prefill.customerId || '') + '" />'
 
-  // â”€â”€ DÃ’NG CHÃNH â”€â”€
-  // Grid: # | PhÃ²ngÂ·Giá» | TÃªn khÃ¡ch (+ checkbox) | SÄT | Dá»‹ch vá»¥ | GÃ³i | Actions
+  // ── DÒNG CHÍNH ──
+  // Grid: # | Phòng·Giờ | Tên khách (+ checkbox) | SĐT | Dịch vụ | Gói | Actions
   + '<div class="gc-row gc-row-grid">'
 
-    // Col 1 â€” sá»‘ thá»© tá»±
-    + '<div class="gc-num" style="text-align:center;font-size:13px;font-weight:700;color:#94a3b8;">â€”</div>'
+    // Col 1 — số thứ tự
+    + '<div class="gc-num" style="text-align:center;font-size:13px;font-weight:700;color:#94a3b8;">—</div>'
 
-    // Col 2 â€” phÃ²ng Â· giá»
+    // Col 2 — phòng · giờ
     + '<div class="gc-slot-cell">' + slotBadge + '</div>'
 
-    // Col 3 â€” tÃªn khÃ¡ch + checkbox "= ngÆ°á»i Ä‘áº·t"
+    // Col 3 — tên khách + checkbox "= người đặt"
     + '<div class="gc-name-cell">'
       + '<div class="gc-name-inline">'
-        + '<input class="gc-name" style="' + inp + 'flex:1 1 220px;min-width:0;" placeholder="TÃªn khÃ¡ch *" value="' + _esc(prefill.name || '') + '" />'
-        + '<label class="gc-same-booker-label" title="Äiá»n tá»« ngÆ°á»i Ä‘áº·t">'
+        + '<input class="gc-name" style="' + inp + 'flex:1 1 220px;min-width:0;" placeholder="Tên khách *" value="' + _esc(prefill.name || '') + '" />'
+        + '<label class="gc-same-booker-label" title="Điền từ người đặt">'
           + '<input type="checkbox" class="gc-same-as-booker" style="width:14px;height:14px;cursor:pointer;accent-color:#1d4ed8;margin:0;" />'
-          + '<span>= ngÆ°á»i Ä‘áº·t</span>'
+          + '<span>= người đặt</span>'
         + '</label>'
       + '</div>'
     + '</div>'
 
-    // Col 4 â€” SÄT
-    + '<div class="gc-phone-cell"><input class="gc-phone" style="' + inp + '" placeholder="SÄT" inputmode="numeric" value="' + _esc(prefill.phone || '') + '" /></div>'
+    // Col 4 — SĐT
+    + '<div class="gc-phone-cell"><input class="gc-phone" style="' + inp + '" placeholder="SĐT" inputmode="numeric" value="' + _esc(prefill.phone || '') + '" /></div>'
 
-    // Col 5 â€” dá»‹ch vá»¥
+    // Col 5 — dịch vụ
     + '<div class="gc-service-cell"><select class="gc-service" style="' + sel + '">' + svcOpts + '</select></div>'
 
-    // Col 6 â€” gÃ³i
-    + '<div class="gc-variant-cell"><select class="gc-variant" style="' + sel + '" disabled><option value="">-- Chá»n dá»‹ch vá»¥ trÆ°á»›c --</option></select></div>'
+    // Col 6 — gói
+    + '<div class="gc-variant-cell"><select class="gc-variant" style="' + sel + '" disabled><option value="">-- Chọn dịch vụ trước --</option></select></div>'
 
-    // Col 7 â€” actions
+    // Col 7 — actions
     + '<div class="gc-actions-cell" style="display:flex;align-items:center;justify-content:center;gap:6px;">'
-      + '<button type="button" class="gc-expand-btn" onclick="toggleGuestCard(' + idx + ')" title="Email & ghi chÃº"'
+      + '<button type="button" class="gc-expand-btn" onclick="toggleGuestCard(' + idx + ')" title="Email & ghi chú"'
       + ' style="height:36px;width:36px;padding:0;font-size:15px;background:#f1f5f9;border:1px solid #e2e8f0;color:#64748b;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;">'
       + '<i class="fas fa-ellipsis-h"></i></button>'
-      + '<button type="button" class="gc-delete-btn" onclick="removeGuestCard(' + idx + ')" title="XÃ³a khÃ¡ch"'
+      + '<button type="button" class="gc-delete-btn" onclick="removeGuestCard(' + idx + ')" title="Xóa khách"'
       + ' style="height:36px;width:36px;padding:0;font-size:15px;background:#fff5f5;border:1px solid #fecaca;color:#ef4444;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s,opacity .15s;">'
       + '<i class="fas fa-trash-alt"></i></button>'
     + '</div>'
 
   + '</div>'
 
-  // gc-sub-row Ä‘Ã£ chuyá»ƒn thÃ nh block chung á»Ÿ footer â€” khÃ´ng render per-guest anymore
+  // gc-sub-row đã chuyển thành block chung ở footer — không render per-guest anymore
 
-  // â”€â”€ PHáº¦N Má»ž Rá»˜NG â€” Email + Ghi chÃº há»“ sÆ¡ khÃ¡ch + Tráº¡ng thÃ¡i (toggle báº±ng dáº¥u 3 cháº¥m) â”€â”€
+  // ── PHẦN MỞ RỘNG — Email + Ghi chú hồ sơ khách + Trạng thái (toggle bằng dấu 3 chấm) ──
   + '<div class="gc-detail-wrap">'
     + '<div class="gc-detail">'
       + '<div style="display:flex;flex-direction:column;gap:2px;min-width:150px;flex:1;">'
         + '<label style="' + lbl + '">Email</label>'
-        + '<input type="email" class="gc-email" style="' + sInp + '" placeholder="Email (náº¿u cÃ³)" value="' + _esc(prefill.email || '') + '" />'
+        + '<input type="email" class="gc-email" style="' + sInp + '" placeholder="Email (nếu có)" value="' + _esc(prefill.email || '') + '" />'
       + '</div>'
-      // Dropdown tráº¡ng thÃ¡i riÃªng tá»«ng khÃ¡ch â€” Ä‘Ã£ chuyá»ƒn lÃªn gc-row-grid (col 7) Ä‘á»ƒ hiá»‡n rÃµ trong edit mode
-      // Trong create mode, tráº¡ng thÃ¡i dÃ¹ng sharedApptStatus á»Ÿ footer
+      // Dropdown trạng thái riêng từng khách — đã chuyển lên gc-row-grid (col 7) để hiện rõ trong edit mode
+      // Trong create mode, trạng thái dùng sharedApptStatus ở footer
       + '<div style="display:flex;flex-direction:column;gap:2px;flex:3;min-width:180px;">'
-        + '<label style="' + lbl + '">Ghi chÃº há»“ sÆ¡ khÃ¡ch <span style="font-weight:400;color:#9ca3af;font-size:12px;">(lÆ°u vÃ o há»“ sÆ¡ náº¿u khÃ¡ch cÃ³ há»“ sÆ¡)</span></label>'
-        + '<input class="gc-customer-note" style="' + sInp + '" placeholder="Ghi chÃº lÃ¢u dÃ i tá»« há»“ sÆ¡ khÃ¡ch..." value="' + _esc(prefill.customerNote || '') + '" title="Ghi chÃº lÃ¢u dÃ i tá»« há»“ sÆ¡ khÃ¡ch â€” sáº½ Ä‘Æ°á»£c cáº­p nháº­t vÃ o há»“ sÆ¡ khi lÆ°u (náº¿u khÃ¡ch cÃ³ há»“ sÆ¡)" />'
+        + '<label style="' + lbl + '">Ghi chú hồ sơ khách <span style="font-weight:400;color:#9ca3af;font-size:12px;">(lưu vào hồ sơ nếu khách có hồ sơ)</span></label>'
+        + '<input class="gc-customer-note" style="' + sInp + '" placeholder="Ghi chú lâu dài từ hồ sơ khách..." value="' + _esc(prefill.customerNote || '') + '" title="Ghi chú lâu dài từ hồ sơ khách — sẽ được cập nhật vào hồ sơ khi lưu (nếu khách có hồ sơ)" />'
       + '</div>'
     + '</div>'
   + '</div>';
@@ -1919,7 +1897,7 @@ function _buildGuestItem(idx, prefill) {
     _updateGuestProgress();
   });
 
-  // â”€â”€ Autofill tá»« CustomerProfile khi blur khá»i Ã´ SÄT khÃ¡ch â”€â”€
+  // ── Autofill từ CustomerProfile khi blur khỏi ô SĐT khách ──
   var phoneInp = item.querySelector('.gc-phone');
   if (phoneInp) {
     let _lastGuestPhone = '';
@@ -1931,15 +1909,15 @@ function _buildGuestItem(idx, prefill) {
 
       const customer = await _lookupCustomerByPhone(digits);
       if (!customer) {
-        // KhÃ´ng tÃ¬m tháº¥y â†’ clear customerId, giá»¯ nguyÃªn dá»¯ liá»‡u user Ä‘ang nháº­p
+        // Không tìm thấy → clear customerId, giữ nguyên dữ liệu user đang nhập
         const custIdI = item.querySelector('.gc-customer-id');
         if (custIdI) custIdI.value = '';
         item.dataset.customerId = '';
         return;
       }
 
-      // TÃ¬m tháº¥y â†’ autofill Ä‘Ãºng dÃ²ng nÃ y
-      // Ghi Ä‘Ã¨ náº¿u profile má»›i khÃ¡c profile cÅ© (Ä‘á»•i SÄT sang khÃ¡ch khÃ¡c)
+      // Tìm thấy → autofill đúng dòng này
+      // Ghi đè nếu profile mới khác profile cũ (đổi SĐT sang khách khác)
       const nameI   = item.querySelector('.gc-name');
       const emailI  = item.querySelector('.gc-email');
       const custIdI = item.querySelector('.gc-customer-id');
@@ -1950,11 +1928,11 @@ function _buildGuestItem(idx, prefill) {
       if (nameI  && (isNewProfile || !nameI.value.trim()))  nameI.value  = customer.fullName || '';
       if (emailI && (isNewProfile || !emailI.value.trim())) emailI.value = customer.email    || '';
 
-      // LÆ°u customerId vÃ o hidden field vÃ  dataset
+      // Lưu customerId vào hidden field và dataset
       if (custIdI) custIdI.value = String(customer.id);
       item.dataset.customerId = String(customer.id);
 
-      // Ghi Ä‘Ã¨ ghi chÃº há»“ sÆ¡ khÃ¡ch khi profile má»›i khÃ¡c, hoáº·c Ã´ Ä‘ang trá»‘ng
+      // Ghi đè ghi chú hồ sơ khách khi profile mới khác, hoặc ô đang trống
       if (noteI && (isNewProfile || !noteI.value.trim())) {
         noteI.value = customer.notes || '';
         item.dataset.originalNote = (customer.notes || '').trim();
@@ -1964,7 +1942,7 @@ function _buildGuestItem(idx, prefill) {
     });
   }
 
-  // Checkbox "= ngÆ°á»i Ä‘áº·t" â€” sync tÃªn + SÄT + email tá»« booker khi tick
+  // Checkbox "= người đặt" — sync tên + SĐT + email từ booker khi tick
   var sameChk = item.querySelector('.gc-same-as-booker');
   if (sameChk) {
     sameChk.addEventListener('change', function() {
@@ -1978,16 +1956,16 @@ function _buildGuestItem(idx, prefill) {
         if (emailI) emailI.value = document.getElementById('bookerEmail')?.value.trim() || '';
         if (nameI)  nameI.readOnly  = true;
         if (phoneI) phoneI.readOnly = true;
-        // Khi tick "= ngÆ°á»i Ä‘áº·t": copy customerId cá»§a booker vÃ o guest
-        // (booker customerId Ä‘Æ°á»£c lÆ°u trong #selectedCustomerId)
+        // Khi tick "= người đặt": copy customerId của booker vào guest
+        // (booker customerId được lưu trong #selectedCustomerId)
         const bookerCustId = document.getElementById('selectedCustomerId')?.value || '';
         if (custIdI) custIdI.value = bookerCustId;
         item.dataset.customerId = bookerCustId;
-        // Ghi chÃº há»“ sÆ¡ khÃ¡ch: fill tá»« CustomerProfile cá»§a booker náº¿u cÃ³ vÃ  Ã´ Ä‘ang trá»‘ng
+        // Ghi chú hồ sơ khách: fill từ CustomerProfile của booker nếu có và ô đang trống
         if (bookerCustId) {
           const noteI = item.querySelector('.gc-customer-note');
           if (noteI && !noteI.value.trim()) {
-            // Lookup async â€” khÃ´ng block UI
+            // Lookup async — không block UI
             _lookupCustomerByPhone(document.getElementById('bookerPhone')?.value || '').then(c => {
               if (c && noteI && !noteI.value.trim()) {
                 noteI.value = c.notes || '';
@@ -2000,10 +1978,10 @@ function _buildGuestItem(idx, prefill) {
         if (nameI)  { nameI.value  = ''; nameI.readOnly  = false; }
         if (phoneI) { phoneI.value = ''; phoneI.readOnly = false; }
         if (emailI) emailI.readOnly = false;
-        // Bá» tick â†’ khÃ¡ch lÃ  ngÆ°á»i khÃ¡c, xÃ³a customerId Ä‘á»ƒ trÃ¡nh update nháº§m profile ngÆ°á»i Ä‘áº·t
+        // Bỏ tick → khách là người khác, xóa customerId để tránh update nhầm profile người đặt
         if (custIdI) custIdI.value = '';
         item.dataset.customerId = '';
-        // XÃ³a ghi chÃº há»“ sÆ¡ vÃ¬ chÆ°a biáº¿t profile cá»§a khÃ¡ch nÃ y
+        // Xóa ghi chú hồ sơ vì chưa biết profile của khách này
         const noteI = item.querySelector('.gc-customer-note');
         if (noteI) noteI.value = '';
         item.dataset.originalNote = '';
@@ -2012,7 +1990,7 @@ function _buildGuestItem(idx, prefill) {
     });
   }
 
-  // â”€â”€ Bind time inputs â€” sync vá» hidden fields + dataset â”€â”€
+  // ── Bind time inputs — sync về hidden fields + dataset ──
   var startInp = item.querySelector('.gc-time-input');
   var timeHid  = item.querySelector('.gc-time');
   var endHid   = item.querySelector('.gc-time-end');
@@ -2021,7 +1999,7 @@ function _buildGuestItem(idx, prefill) {
     var disp = item.querySelector('.gc-time-range-display');
     if (!disp) return;
     var s = startInp ? startInp.value : '';
-    // Giá» káº¿t thÃºc luÃ´n tÃ­nh tá»« giá» báº¯t Ä‘áº§u + duration
+    // Giờ kết thúc luôn tính từ giờ bắt đầu + duration
     var varSel = item.querySelector('.gc-variant');
     var dur = 60;
     if (varSel && varSel.selectedIndex >= 0) {
@@ -2029,7 +2007,7 @@ function _buildGuestItem(idx, prefill) {
       dur = opt?.dataset?.duration ? Number(opt.dataset.duration) : 60;
     }
     var e = s ? addMinutesToTime(s, dur) : '--:--';
-    disp.innerHTML = (s || '--:--') + '<span class="gc-time-range-sep"> â€“ </span>' + e;
+    disp.innerHTML = (s || '--:--') + '<span class="gc-time-range-sep"> – </span>' + e;
   }
 
   if (startInp) {
@@ -2037,7 +2015,7 @@ function _buildGuestItem(idx, prefill) {
       var v = startInp.value;
       item.dataset.slotTime = v;
       if (timeHid) timeHid.value = v;
-      // TÃ­nh láº¡i end tá»« variant duration (luÃ´n luÃ´n tÃ­nh)
+      // Tính lại end từ variant duration (luôn luôn tính)
       var varSel2 = item.querySelector('.gc-variant');
       var dur2 = 60;
       if (varSel2 && varSel2.selectedIndex >= 0) {
@@ -2053,33 +2031,28 @@ function _buildGuestItem(idx, prefill) {
     });
   }
 
-  // â”€â”€ Click vÃ o cá»¥m time-range â†’ toggle editing mode â”€â”€
+  // ── Click vào cụm time-range → toggle editing mode ──
   var timeRangeField = item.querySelector('.gc-time-range-field');
   if (timeRangeField) {
     timeRangeField.addEventListener('click', function(e) {
-      if (e.target.tagName === 'INPUT') return; // Ä‘ang trong input thÃ¬ khÃ´ng toggle
+      if (e.target.tagName === 'INPUT') return; // đang trong input thì không toggle
       var isEditing = timeRangeField.classList.contains('is-editing');
       if (!isEditing) {
         timeRangeField.classList.add('is-editing');
-        // Focus vÃ o input giá» báº¯t Ä‘áº§u
+        // Focus vào input giờ bắt đầu
         setTimeout(function() {
           var inp = timeRangeField.querySelector('.gc-time-input');
           if (inp) inp.focus();
         }, 30);
       }
     });
-    // Click ra ngoÃ i â†’ Ä‘Ã³ng editing (dÃ¹ng AbortController Ä‘á»ƒ trÃ¡nh leak khi card bá»‹ xÃ³a)
-    var _trAbort = new AbortController();
-    document.addEventListener('click', function(e) {
+    // Click ra ngoài → đóng editing
+    document.addEventListener('click', function _closeTimeRange(e) {
       if (!timeRangeField.contains(e.target)) {
         timeRangeField.classList.remove('is-editing');
       }
-    }, { signal: _trAbort.signal });
-    // Cleanup khi card bá»‹ remove khá»i DOM
-    new MutationObserver(function(_, obs) {
-      if (!document.contains(item)) { _trAbort.abort(); obs.disconnect(); }
-    }).observe(document.body, { childList: true, subtree: true });
-    // Enter tá»« input â†’ Ä‘Ã³ng editing
+    });
+    // Enter từ input → đóng editing
     var startTimeInp = timeRangeField.querySelector('.gc-time-input');
     if (startTimeInp) {
       startTimeInp.addEventListener('keydown', function(e) {
@@ -2100,26 +2073,26 @@ function addGuestCard(prefill = {}) {
   const item = _buildGuestItem(idx, prefill);
   list.appendChild(item);
 
-  // LÆ°u appointment_code vÃ o dataset Ä‘á»ƒ submit handler biáº¿t update Ä‘Ãºng appt
+  // Lưu appointment_code vào dataset để submit handler biết update đúng appt
   if (prefill._apptId) {
     item.dataset.apptId = prefill._apptId;
   }
 
-  // LÆ°u customerId vÃ  originalNote Ä‘á»ƒ so sÃ¡nh khi update note
+  // Lưu customerId và originalNote để so sánh khi update note
   if (prefill.customerId) {
     item.dataset.customerId = String(prefill.customerId);
   }
-  // originalNote: lÆ°u note gá»‘c tá»« profile Ä‘á»ƒ so sÃ¡nh trÆ°á»›c khi gá»i API
+  // originalNote: lưu note gốc từ profile để so sánh trước khi gọi API
   item.dataset.originalNote = (prefill.customerNote || '').trim();
 
-  // LÆ°u date/time/room gá»‘c Ä‘á»ƒ edit submit chá»‰ gá»­i khi thá»±c sá»± thay Ä‘á»•i
+  // Lưu date/time/room gốc để edit submit chỉ gửi khi thực sự thay đổi
   if (prefill._editMode) {
     item.dataset.originalDate    = prefill.date    || '';
     item.dataset.originalTime    = prefill.time    || '';
     item.dataset.originalRoom    = prefill.roomId  || '';
-    // LÆ°u variantId gá»‘c Ä‘á»ƒ detect khi variant Ä‘á»•i â†’ gá»­i kÃ¨m roomId cho BE validate overlap
+    // Lưu variantId gốc để detect khi variant đổi → gửi kèm roomId cho BE validate overlap
     item.dataset.originalVariantId = prefill.variantId ? String(prefill.variantId) : '';
-    // LÆ°u status gá»‘c Ä‘á»ƒ _hasUnsavedGuestChanges detect thay Ä‘á»•i (so sÃ¡nh vá»›i sharedApptStatus)
+    // Lưu status gốc để _hasUnsavedGuestChanges detect thay đổi (so sánh với sharedApptStatus)
     item.dataset.originalApptStatus = prefill.apptStatus || 'NOT_ARRIVED';
   }
 
@@ -2131,12 +2104,12 @@ function addGuestCard(prefill = {}) {
     }
   }
 
-  // Set room/date/time tá»« prefill náº¿u cÃ³ (edit mode)
+  // Set room/date/time từ prefill nếu có (edit mode)
   if (prefill.roomId) {
     item.dataset.slotRoom = prefill.roomId;
     const roomInp = item.querySelector('.gc-room');
     if (roomInp) roomInp.value = prefill.roomId;
-    // Cáº­p nháº­t select phÃ²ng
+    // Cập nhật select phòng
     const roomSel = item.querySelector('.gc-room-select');
     if (roomSel) roomSel.value = prefill.roomId;
   }
@@ -2165,16 +2138,16 @@ window.removeGuestCard = async function(idx) {
   const item  = _getGuestItem(idx);
   if (!item) return;
 
-  // Láº¥y _apptId tá»« dataset (Ä‘Æ°á»£c set khi build guest card trong edit mode)
+  // Lấy _apptId từ dataset (được set khi build guest card trong edit mode)
   const targetApptId = item.dataset.apptId || '';
 
-  // Náº¿u chá»‰ cÃ²n 1 dÃ²ng â†’ khÃ´ng cho xÃ³a, yÃªu cáº§u dÃ¹ng nÃºt XÃ³a lá»‹ch
+  // Nếu chỉ còn 1 dòng → không cho xóa, yêu cầu dùng nút Xóa lịch
   if (items.length <= 1) {
-    showToast('warning', 'KhÃ´ng thá»ƒ xÃ³a', 'Booking chá»‰ cÃ²n 1 khÃ¡ch. DÃ¹ng nÃºt "XÃ³a" Ä‘á»ƒ xÃ³a toÃ n bá»™ lá»‹ch háº¹n.');
+    showToast('warning', 'Không thể xóa', 'Booking chỉ còn 1 khách. Dùng nút "Xóa" để xóa toàn bộ lịch hẹn.');
     return;
   }
 
-  // Náº¿u card chÆ°a cÃ³ appointment_id (card má»›i thÃªm chÆ°a lÆ°u) â†’ chá»‰ remove DOM
+  // Nếu card chưa có appointment_id (card mới thêm chưa lưu) → chỉ remove DOM
   if (!targetApptId) {
     item.remove();
     _renumberGuests();
@@ -2183,17 +2156,17 @@ window.removeGuestCard = async function(idx) {
     return;
   }
 
-  // Card Ä‘Ã£ cÃ³ appointment_id â†’ há»i confirm rá»“i gá»i API delete
-  const customerName = item.querySelector('.gc-name')?.value.trim() || 'khÃ¡ch nÃ y';
+  // Card đã có appointment_id → hỏi confirm rồi gọi API delete
+  const customerName = item.querySelector('.gc-name')?.value.trim() || 'khách này';
   const confirmed = await confirmAction(
-    'XÃ³a khÃ¡ch khá»i booking?',
-    `XÃ³a "${customerName}" khá»i booking nÃ y? HÃ nh Ä‘á»™ng khÃ´ng thá»ƒ hoÃ n tÃ¡c.`,
-    'XÃ³a',
-    'Há»§y'
+    'Xóa khách khỏi booking?',
+    `Xóa "${customerName}" khỏi booking này? Hành động không thể hoàn tác.`,
+    'Xóa',
+    'Hủy'
   );
   if (!confirmed) return;
 
-  // Disable nÃºt xÃ³a trong lÃºc Ä‘ang gá»i API
+  // Disable nút xóa trong lúc đang gọi API
   const deleteBtn = item.querySelector('.gc-delete-btn');
   if (deleteBtn) { deleteBtn.disabled = true; deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
 
@@ -2204,15 +2177,15 @@ window.removeGuestCard = async function(idx) {
       _renumberGuests();
       _updateGuestProgress();
       _updateDeleteBtnState();
-      showToast('success', 'ÄÃ£ xÃ³a', `ÄÃ£ xÃ³a ${customerName} khá»i booking`);
+      showToast('success', 'Đã xóa', `Đã xóa ${customerName} khỏi booking`);
     } else {
-      // Restore nÃºt náº¿u tháº¥t báº¡i
+      // Restore nút nếu thất bại
       if (deleteBtn) { deleteBtn.disabled = false; deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>'; }
-      showToast('error', 'KhÃ´ng thá»ƒ xÃ³a', result.error || 'XÃ³a tháº¥t báº¡i, vui lÃ²ng thá»­ láº¡i.');
+      showToast('error', 'Không thể xóa', result.error || 'Xóa thất bại, vui lòng thử lại.');
     }
   } catch (err) {
     if (deleteBtn) { deleteBtn.disabled = false; deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>'; }
-    showToast('error', 'Lá»—i', 'XÃ³a tháº¥t báº¡i, vui lÃ²ng thá»­ láº¡i.');
+    showToast('error', 'Lỗi', 'Xóa thất bại, vui lòng thử lại.');
   }
 };
 
@@ -2223,7 +2196,7 @@ function _renumberGuests() {
   });
 }
 
-/** Disable nÃºt xÃ³a khi chá»‰ cÃ²n 1 dÃ²ng, enable láº¡i khi cÃ³ nhiá»u hÆ¡n */
+/** Disable nút xóa khi chỉ còn 1 dòng, enable lại khi có nhiều hơn */
 function _updateDeleteBtnState() {
   const items = _getGuestItems();
   const onlyOne = items.length <= 1;
@@ -2238,17 +2211,17 @@ function _updateDeleteBtnState() {
 
 function _collectGuestCards() {
   const bookerNote = document.getElementById('bookerNote')?.value.trim() || '';
-  // NgÃ y háº¹n chung cho toÃ n booking â€” Ä‘á»c tá»« field #bookingDate á»Ÿ booker section
+  // Ngày hẹn chung cho toàn booking — đọc từ field #bookingDate ở booker section
   const sharedDate = document.getElementById('bookingDate')?.value || '';
-  // Äá»c tráº¡ng thÃ¡i tá»« block footer (dÃ¹ng cho CREATE mode)
+  // Đọc trạng thái từ block footer (dùng cho CREATE mode)
   const sharedStatus  = document.getElementById('sharedApptStatus')?.value  || 'NOT_ARRIVED';
   return _getGuestItems().map(item => {
     const variantSel = item.querySelector('.gc-variant');
     const selectedVariantOpt = variantSel?.options[variantSel.selectedIndex];
-    // Tráº¡ng thÃ¡i láº¥y tá»« sharedApptStatus chung â€” Ã¡p dá»¥ng cho táº¥t cáº£ guests (cáº£ create vÃ  edit mode)
+    // Trạng thái lấy từ sharedApptStatus chung — áp dụng cho tất cả guests (cả create và edit mode)
     const perCardDate = item.dataset.slotDate || item.querySelector('.gc-date')?.value || '';
-    // BUG-006 FIX: Cáº£ edit mode vÃ  create mode Ä‘á»u Æ°u tiÃªn per-card date.
-    // sharedDate chá»‰ dÃ¹ng lÃ m fallback khi per-card date rá»—ng.
+    // BUG-006 FIX: Cả edit mode và create mode đều ưu tiên per-card date.
+    // sharedDate chỉ dùng làm fallback khi per-card date rỗng.
     const resolvedDate = perCardDate || sharedDate;
     return {
       name:               item.querySelector('.gc-name')?.value.trim() || '',
@@ -2270,23 +2243,23 @@ function _collectGuestCards() {
       _originalVariantId: item.dataset.originalVariantId || '',
       _duration:          selectedVariantOpt?.dataset?.duration || 60,
       _finalAmount:       item.dataset.finalAmount || 0,
-      _apptId:            item.dataset.apptId || '',   // appointment_code náº¿u lÃ  edit mode
+      _apptId:            item.dataset.apptId || '',   // appointment_code nếu là edit mode
     };
   });
 }
 
 /**
- * Cáº­p nháº­t ghi chÃº há»“ sÆ¡ khÃ¡ch cho tá»«ng guest cÃ³ thay Ä‘á»•i note.
+ * Cập nhật ghi chú hồ sơ khách cho từng guest có thay đổi note.
  *
- * Quy táº¯c:
- * 1. Chá»‰ update khi guest cÃ³ customerId â€” khÃ´ng dÃ¹ng phone Ä‘á»ƒ xÃ¡c Ä‘á»‹nh profile
- * 2. KhÃ´ng cÃ³ customerId â†’ bá» qua (toast nháº¹ náº¿u note cÃ³ thay Ä‘á»•i)
- * 3. Chá»‰ gá»i API khi note thá»±c sá»± thay Ä‘á»•i (so sÃ¡nh originalNote vs newNote)
- * 4. Náº¿u xÃ³a note (originalNote â‰  '' vÃ  newNote = '') â†’ há»i confirm trÆ°á»›c
- * 5. API lá»—i â†’ hiá»ƒn thá»‹ toast cáº£nh bÃ¡o (khÃ´ng silent fail)
+ * Quy tắc:
+ * 1. Chỉ update khi guest có customerId — không dùng phone để xác định profile
+ * 2. Không có customerId → bỏ qua (toast nhẹ nếu note có thay đổi)
+ * 3. Chỉ gọi API khi note thực sự thay đổi (so sánh originalNote vs newNote)
+ * 4. Nếu xóa note (originalNote ≠ '' và newNote = '') → hỏi confirm trước
+ * 5. API lỗi → hiển thị toast cảnh báo (không silent fail)
  *
- * @param {Array} cards - máº£ng guest card data tá»« _collectGuestCards()
- * @param {boolean} [skipConfirm=false] - bá» qua confirm xÃ³a note (dÃ¹ng khi Ä‘Ã£ confirm trÆ°á»›c)
+ * @param {Array} cards - mảng guest card data từ _collectGuestCards()
+ * @param {boolean} [skipConfirm=false] - bỏ qua confirm xóa note (dùng khi đã confirm trước)
  */
 async function _updateCustomerNotes(cards, skipConfirm = false) {
   for (const g of cards) {
@@ -2295,51 +2268,54 @@ async function _updateCustomerNotes(cards, skipConfirm = false) {
     const customerId   = (g.customerId || '').toString().trim();
     const guestLabel   = g.name ? ` (${g.name})` : '';
 
-    // KhÃ´ng thay Ä‘á»•i â†’ khÃ´ng gá»i API
+    // Không thay đổi → không gọi API
     if (newNote === originalNote) continue;
 
-    // KhÃ´ng cÃ³ customerId â†’ khÃ´ng update, toast nháº¹ náº¿u ngÆ°á»i dÃ¹ng Ä‘Ã£ nháº­p note
+    // Không có customerId → không update, toast nhẹ nếu người dùng đã nhập note
     if (!customerId) {
       if (newNote) {
-        showToast('warning', 'LÆ°u Ã½', `KhÃ¡ch${guestLabel} chÆ°a cÃ³ há»“ sÆ¡ nÃªn ghi chÃº chÆ°a Ä‘Æ°á»£c lÆ°u vÃ o há»“ sÆ¡ khÃ¡ch.`);
+        showToast('warning', 'Lưu ý', `Khách${guestLabel} chưa có hồ sơ nên ghi chú chưa được lưu vào hồ sơ khách.`);
       }
       continue;
     }
 
-    // XÃ³a note (originalNote cÃ³ giÃ¡ trá»‹, newNote rá»—ng) â†’ há»i confirm
+    // Xóa note (originalNote có giá trị, newNote rỗng) → hỏi confirm
     if (!skipConfirm && originalNote !== '' && newNote === '') {
-      const nameLabel = g.name ? `"${g.name}"` : 'khÃ¡ch nÃ y';
+      const nameLabel = g.name ? `"${g.name}"` : 'khách này';
       const confirmed = await confirmAction(
-        'XÃ³a ghi chÃº há»“ sÆ¡ khÃ¡ch',
-        `Báº¡n cÃ³ cháº¯c muá»‘n xÃ³a ghi chÃº há»“ sÆ¡ khÃ¡ch cá»§a ${nameLabel}?`,
-        'XÃ³a ghi chÃº',
-        'Giá»¯ láº¡i'
+        'Xóa ghi chú hồ sơ khách',
+        `Bạn có chắc muốn xóa ghi chú hồ sơ khách của ${nameLabel}?`,
+        'Xóa ghi chú',
+        'Giữ lại'
       );
       if (!confirmed) continue;
     }
 
-    // CÃ³ customerId â†’ update theo ID
+    // Có customerId → update theo ID
     try {
       const result = await apiPost(`${API_BASE}/customers/id/${customerId}/note/`, { note: newNote });
       if (!result.success) {
-        showToast('warning', 'Cáº£nh bÃ¡o', `KhÃ´ng cáº­p nháº­t Ä‘Æ°á»£c ghi chÃº há»“ sÆ¡ khÃ¡ch${guestLabel}`);
+        showToast('warning', 'Cảnh báo', `Không cập nhật được ghi chú hồ sơ khách${guestLabel}`);
       }
     } catch (e) {
       console.warn('_updateCustomerNotes: failed for customerId', customerId, e);
-      showToast('warning', 'Cáº£nh bÃ¡o', `KhÃ´ng cáº­p nháº­t Ä‘Æ°á»£c ghi chÃº há»“ sÆ¡ khÃ¡ch${guestLabel}`);
+      showToast('warning', 'Cảnh báo', `Không cập nhật được ghi chú hồ sơ khách${guestLabel}`);
     }
   }
 }
 
-/** Ãp dá»¥ng service/variant cho táº¥t cáº£ guest rows */
+/** Áp dụng service/variant cho tất cả guest rows */
 function _initApplyAllBar() {
   const applyAllSvc = document.getElementById('applyAllService');
   if (applyAllSvc) {
-    _populateSelect(applyAllSvc, SERVICES, 'id', 'name', 'Dá»‹ch vá»¥');
+    _populateSelect(applyAllSvc, SERVICES, 'id', 'name', 'Dịch vụ');
+  }
+
+  if (applyAllSvc) {
     applyAllSvc.onchange = function() {
       const varSel = document.getElementById('applyAllVariant');
       if (!varSel) return;
-      varSel.innerHTML = '<option value="">-- GÃ³i --</option>';
+      varSel.innerHTML = '<option value="">-- Gói --</option>';
       varSel.disabled  = true;
       varSel.style.color      = '#9ca3af';
       varSel.style.background = '#f9fafb';
@@ -2394,13 +2370,13 @@ function _initApplyAllBar() {
         bookingDate: document.getElementById('bookingDate')?.value  || '',
       };
 
-      // LÆ°u context edit mode (náº¿u cÃ³ bookingCode thÃ¬ Ä‘ang á»Ÿ edit)
+      // Lưu context edit mode (nếu có bookingCode thì đang ở edit)
       _addingSlotEditBookingCode = bookingCode || null;
       if (bookingCode) {
-        // LÆ°u láº¡i toÃ n bá»™ guest cards hiá»‡n táº¡i Ä‘á»ƒ restore sau
+        // Lưu lại toàn bộ guest cards hiện tại để restore sau
         _savedBookerInfo._allApptIds  = allApptIds;
         _savedBookerInfo._bookingCode = bookingCode;
-        // Snapshot cÃ¡c guest card hiá»‡n táº¡i
+        // Snapshot các guest card hiện tại
         _savedBookerInfo._existingGuests = _getGuestItems().map(item => ({
           name:       item.querySelector('.gc-name')?.value       || '',
           phone:      item.querySelector('.gc-phone')?.value      || '',
@@ -2427,26 +2403,26 @@ function _initApplyAllBar() {
         modal = existing || new bootstrap.Modal(modalEl);
       }
       if (modal) modal.hide();
-      showToast('info', 'Chá»n thÃªm slot', 'HÃ£y chá»n thÃªm 1 slot trÃªn lá»‹ch Ä‘á»ƒ thÃªm khÃ¡ch má»›i, rá»“i báº¥m "Tiáº¿p tá»¥c"');
+      showToast('info', 'Chọn thêm slot', 'Hãy chọn thêm 1 slot trên lịch để thêm khách mới, rồi bấm "Tiếp tục"');
     };
   }
 
-  // KhÃ´ng auto-fill booker â†’ guest: dá»¯ liá»‡u khÃ¡ch vÃ  ngÆ°á»i Ä‘áº·t hoÃ n toÃ n Ä‘á»™c láº­p
+  // Không auto-fill booker → guest: dữ liệu khách và người đặt hoàn toàn độc lập
 }
 
-// â”€â”€ Helpers Ä‘á»ƒ show/hide shared form â”€â”€
+// ── Helpers để show/hide shared form ──
 function _showSharedForm() {
   const f = document.getElementById('apptForm');
   if (f) { f.style.display = 'flex'; }
 }
-function _setAddGuestBtnVisible(visible) {
-  // "createOnlyBar" chá»©a nÃºt "ThÃªm khÃ¡ch" â€” hiá»‡n trong cáº£ create láº«n edit mode.
-  // visible=false chá»‰ dÃ¹ng cho rebook vÃ  online-confirm (khÃ´ng cho thÃªm khÃ¡ch má»›i).
-  // Edit mode thÃ´ng thÆ°á»ng KHÃ”NG gá»i hÃ m nÃ y vá»›i false ná»¯a â€” xem openEditModalWithData.
+function _hideSharedForm() {
+  const f = document.getElementById('apptForm');
+  if (f) { f.style.display = 'none'; }
+}
+function _setCreateOnlyVisible(visible) {
+  // Nút "Thêm khách" hiện cả create lẫn edit mode
   const bar = document.getElementById('createOnlyBar');
   if (bar) bar.style.display = 'flex';
-  const btnAdd = document.getElementById('btnAddGuest');
-  if (btnAdd) btnAdd.style.display = visible ? '' : 'none';
 }
 
 function openCreateModal(prefill={}){
@@ -2458,7 +2434,7 @@ function openCreateModal(prefill={}){
   const dayPicker = document.getElementById("dayPicker");
 
   resetModalError();
-  modalTitle.textContent = "Táº¡o lá»‹ch háº¹n";
+  modalTitle.textContent = "Tạo lịch hẹn";
   apptId.value = "";
   btnDelete.classList.add("d-none");
   document.getElementById('btnRebook')?.classList.add('d-none');
@@ -2466,28 +2442,28 @@ function openCreateModal(prefill={}){
   window._pendingOnlineRequestCode = '';
 
   const btnSaveText = document.getElementById("btnSaveText");
-  if (btnSaveText) btnSaveText.textContent = "Táº¡o lá»‹ch háº¹n";
+  if (btnSaveText) btnSaveText.textContent = "Tạo lịch hẹn";
 
-  // Hiá»‡n shared form, báº­t create-only bar
+  // Hiện shared form, bật create-only bar
   _showSharedForm();
-  _setAddGuestBtnVisible(true);
+  _setCreateOnlyVisible(true);
 
   // Label panel
   const lbl = document.getElementById('bookerPanelLabel');
-  if (lbl) lbl.textContent = 'NgÆ°á»i Ä‘áº·t lá»‹ch';
+  if (lbl) lbl.textContent = 'Người đặt lịch';
 
-  // Reset ngÆ°á»i Ä‘áº·t
+  // Reset người đặt
   document.getElementById('bookerName').value   = '';
   document.getElementById('bookerPhone').value  = '';
   document.getElementById('bookerEmail').value  = '';
   document.getElementById('bookerSource').value = 'DIRECT';
   const bookerNoteEl = document.getElementById('bookerNote');
   if (bookerNoteEl) bookerNoteEl.value = '';
-  // Set ngÃ y háº¹n chung â€” máº·c Ä‘á»‹nh lÃ  ngÃ y Ä‘ang xem trÃªn grid
+  // Set ngày hẹn chung — mặc định là ngày đang xem trên grid
   const bookingDateEl = document.getElementById('bookingDate');
   if (bookingDateEl) bookingDateEl.value = prefill.day || dayPicker.value || '';
 
-  // Reset danh sÃ¡ch khÃ¡ch
+  // Reset danh sách khách
   _guestCount = 0;
   document.getElementById('guestList').innerHTML = '';
 
@@ -2503,16 +2479,16 @@ function openCreateModal(prefill={}){
       variantId:   prefill._guest?.variantId || null,
       date:        dayPicker.value,
     });
-    modalTitle.textContent = 'Äáº·t láº¡i lá»‹ch háº¹n';
-    _setAddGuestBtnVisible(false);
-    showToast('info', 'Äáº·t láº¡i', 'Vui lÃ²ng chá»n ngÃ y, giá» vÃ  phÃ²ng má»›i');
+    modalTitle.textContent = 'Đặt lại lịch hẹn';
+    _setCreateOnlyVisible(false);
+    showToast('info', 'Đặt lại', 'Vui lòng chọn ngày, giờ và phòng mới');
   } else if (prefill._fromOnlineRequest && prefill._booker) {
     _isRebookMode = false;
-    // LÆ°u booking request code Ä‘á»ƒ submit sau
+    // Lưu booking request code để submit sau
     window._pendingOnlineRequestCode = prefill._bookingRequestCode || '';
     const rb = prefill._booker;
     _fillBookerFields(rb, 'ONLINE');
-    // Set ngÃ y háº¹n tá»« request
+    // Set ngày hẹn từ request
     const reqDate = prefill._guest?.date || '';
     if (reqDate && bookingDateEl) bookingDateEl.value = reqDate;
     addGuestCard({
@@ -2523,22 +2499,22 @@ function openCreateModal(prefill={}){
       variantId:   prefill._guest?.variantId || null,
       date:        reqDate || dayPicker.value || '',
       time:        prefill._guest?.time      || '',
-      // roomId sáº½ Ä‘á»ƒ trá»‘ng â€” staff pháº£i chá»n
+      // roomId sẽ để trống — staff phải chọn
     });
-    modalTitle.textContent = 'XÃ¡c nháº­n yÃªu cáº§u Ä‘áº·t lá»‹ch';
-    if (btnSaveText) btnSaveText.textContent = 'XÃ¡c nháº­n & Táº¡o lá»‹ch';
-    _setAddGuestBtnVisible(false);
-    showToast('info', 'XÃ¡c nháº­n yÃªu cáº§u', 'Vui lÃ²ng chá»n phÃ²ng vÃ  kiá»ƒm tra thÃ´ng tin trÆ°á»›c khi lÆ°u');
+    modalTitle.textContent = 'Xác nhận yêu cầu đặt lịch';
+    if (btnSaveText) btnSaveText.textContent = 'Xác nhận & Tạo lịch';
+    _setCreateOnlyVisible(false);
+    showToast('info', 'Xác nhận yêu cầu', 'Vui lòng chọn phòng và kiểm tra thông tin trước khi lưu');
   } else if (prefill._fromPending && prefill._blocks && prefill._blocks.length > 0) {
     _isRebookMode = false;
     if (prefill._restoreBooker) {
       const rb = prefill._restoreBooker;
       _fillBookerFields(rb);
-      // KhÃ´i phá»¥c ngÃ y háº¹n Ä‘Ã£ lÆ°u
+      // Khôi phục ngày hẹn đã lưu
       const bookingDateEl3 = document.getElementById('bookingDate');
       if (bookingDateEl3 && rb.bookingDate) bookingDateEl3.value = rb.bookingDate;
     }
-    // Set ngÃ y háº¹n chung tá»« block Ä‘áº§u tiÃªn
+    // Set ngày hẹn chung từ block đầu tiên
     const bookingDateEl2 = document.getElementById('bookingDate');
     if (bookingDateEl2 && prefill._blocks[0]?.day) bookingDateEl2.value = prefill._blocks[0].day;
     prefill._blocks.forEach(pb => {
@@ -2557,7 +2533,7 @@ function openCreateModal(prefill={}){
   _updateGuestProgress();
   _resetAllCustomerState();
 
-  // XÃ¡c Ä‘á»‹nh mode vÃ  apply TRÆ¯á»šC KHI show modal â€” khÃ´ng bá»‹ nhÃ¡ UI
+  // Xác định mode và apply TRƯỚC KHI show modal — không bị nhá UI
   const _isOnlineRequestMode = !!(prefill._fromOnlineRequest);
   const _isRebookModeLocal   = !!(prefill._fromRebook);
   const _shouldHideStatus    = _isOnlineRequestMode || _isRebookModeLocal;
@@ -2568,7 +2544,7 @@ function openCreateModal(prefill={}){
     _applyModalMode('normal');
     _showSharedStatusBlock('NOT_ARRIVED', 'UNPAID', false);
   }
-  // Reset payment táº¡m má»—i láº§n má»Ÿ modal táº¡o má»›i
+  // Reset payment tạm mỗi lần mở modal tạo mới
   _createModePayment = { payStatus: 'UNPAID', paymentMethod: '', paymentAmount: 0 };
 
   let modal = null;
@@ -2577,12 +2553,12 @@ function openCreateModal(prefill={}){
     modal = existing || new bootstrap.Modal(modalEl);
   }
   if (!modal) {
-    console.error('[openCreateModal] KhÃ´ng khá»Ÿi táº¡o Ä‘Æ°á»£c Bootstrap Modal instance');
+    console.error('[openCreateModal] Không khởi tạo được Bootstrap Modal instance');
     return;
   }
   modalEl.addEventListener('shown.bs.modal', () => {
 
-    // XÃ“A nÃºt ba cháº¥m vÃ  XÃ“A HOÃ€N TOÃ€N Email + Ghi chÃº trong form "XÃ¡c nháº­n" vÃ  "Äáº·t láº¡i"
+    // XÓA nút ba chấm và XÓA HOÀN TOÀN Email + Ghi chú trong form "Xác nhận" và "Đặt lại"
     if (_shouldHideStatus) {
       const guestItems = document.querySelectorAll('.gc-item');
       guestItems.forEach(item => {
@@ -2595,11 +2571,11 @@ function openCreateModal(prefill={}){
   }, { once: true });
   modal.show();
   } catch (err) {
-    console.error('[openCreateModal] Lá»–I EXCEPTION:', err);
+    console.error('[openCreateModal] LỖI EXCEPTION:', err);
   }
 }
 
-/** Má»Ÿ modal táº¡o lá»‹ch tá»« pending blocks Ä‘Ã£ chá»n trÃªn grid */
+/** Mở modal tạo lịch từ pending blocks đã chọn trên grid */
 function openCreateModalFromPending() {
   if (!pendingBlocks.length) return;
 
@@ -2607,7 +2583,7 @@ function openCreateModalFromPending() {
     _addingSlotMode = false;
 
     if (_addingSlotEditBookingCode && _savedBookerInfo._existingGuests) {
-      // â”€â”€ EDIT MODE: restore edit modal + append slot má»›i â”€â”€
+      // ── EDIT MODE: restore edit modal + append slot mới ──
       const booker = _savedBookerInfo;
       const existingGuests = booker._existingGuests || [];
       const bookingCode    = booker._bookingCode;
@@ -2616,23 +2592,23 @@ function openCreateModalFromPending() {
       _savedBookerInfo = null;
       _addingSlotEditBookingCode = null;
 
-      // Rebuild edit modal vá»›i guests cÅ© + pending blocks má»›i
+      // Rebuild edit modal với guests cũ + pending blocks mới
       const modalEl    = document.getElementById("apptModal");
       const modalTitle = document.getElementById("modalTitle");
       const apptId     = document.getElementById("apptId");
 
       resetModalError();
-      modalTitle.textContent = `Chá»‰nh sá»­a â€¢ ${bookingCode}`;
+      modalTitle.textContent = `Chỉnh sửa • ${bookingCode}`;
       apptId.value = existingGuests[0]?._apptId || '';
       apptId.dataset.bookingCode = bookingCode;
       apptId.dataset.allApptIds  = allApptIds;
 
       _showSharedForm();
-      _setAddGuestBtnVisible(true);
+      _setCreateOnlyVisible(true);
       _applyModalMode('normal');
 
       const lbl = document.getElementById('bookerPanelLabel');
-      if (lbl) lbl.textContent = 'NgÆ°á»i Ä‘áº·t lá»‹ch';
+      if (lbl) lbl.textContent = 'Người đặt lịch';
 
       _guestCount = 0;
       document.getElementById('guestList').innerHTML = '';
@@ -2648,17 +2624,17 @@ function openCreateModalFromPending() {
       const bookingDateEl = document.getElementById('bookingDate');
       if (bookingDateEl) bookingDateEl.value = booker.bookingDate || '';
 
-      // Restore cÃ¡c guest cÅ©
+      // Restore các guest cũ
       existingGuests.forEach(g => addGuestCard(g));
 
-      // Append guest má»›i tá»« pending blocks
+      // Append guest mới từ pending blocks
       pendingBlocks.forEach(pb => {
         addGuestCard({
           date:   pb.day,
           time:   pb.time,
           roomId: pb.roomId,
           pendingDuration: pb.duration,
-          _editMode: false,  // guest má»›i â€” chÆ°a cÃ³ apptId
+          _editMode: false,  // guest mới — chưa có apptId
         });
       });
 
@@ -2666,9 +2642,9 @@ function openCreateModalFromPending() {
       _updateGuestProgress();
 
       const btnSaveText = document.getElementById("btnSaveText");
-      if (btnSaveText) btnSaveText.textContent = "LÆ°u lá»‹ch háº¹n";
+      if (btnSaveText) btnSaveText.textContent = "Lưu lịch hẹn";
 
-      // Hiá»‡n status block (dÃ¹ng status cá»§a guest Ä‘áº§u tiÃªn)
+      // Hiện status block (dùng status của guest đầu tiên)
       _showSharedStatusBlock(
         existingGuests[0]?.apptStatus || 'NOT_ARRIVED',
         'UNPAID',
@@ -2685,7 +2661,7 @@ function openCreateModalFromPending() {
       if (modal) modal.show();
 
     } else {
-      // â”€â”€ CREATE MODE: quay láº¡i modal sau khi user chá»n thÃªm slot â”€â”€
+      // ── CREATE MODE: quay lại modal sau khi user chọn thêm slot ──
       openCreateModal({ _fromPending: true, _blocks: [...pendingBlocks], _restoreBooker: _savedBookerInfo });
       _savedBookerInfo = null;
     }
@@ -2699,15 +2675,15 @@ async function openEditModal(id){
   const modalError = document.getElementById("modalError");
   resetModalError();
 
-  // BÆ°á»›c 1: fetch appointment Ä‘Æ¡n Ä‘á»ƒ láº¥y bookingCode
+  // Bước 1: fetch appointment đơn để lấy bookingCode
   const result = await apiGet(`${API_BASE}/appointments/${id}/`);
   if (!result.success || !result.appointment) {
-    // Fallback: tÃ¬m trong APPOINTMENTS cache
+    // Fallback: tìm trong APPOINTMENTS cache
     const cached = APPOINTMENTS.find(x => x.id === id);
     if (cached) {
       await _openEditModalByBooking(cached.bookingCode, id);
     } else {
-      _showModalError("KhÃ´ng tÃ¬m tháº¥y lá»‹ch háº¹n");
+      _showModalError("Không tìm thấy lịch hẹn");
     }
     return;
   }
@@ -2720,18 +2696,18 @@ async function openEditModal(id){
 }
 
 /**
- * Fetch toÃ n bá»™ appointments trong booking rá»“i má»Ÿ modal edit.
- * @param {string} bookingCode - mÃ£ booking
- * @param {string} clickedApptId - appointment_code Ä‘Æ°á»£c click (Ä‘á»ƒ set apptId)
+ * Fetch toàn bộ appointments trong booking rồi mở modal edit.
+ * @param {string} bookingCode - mã booking
+ * @param {string} clickedApptId - appointment_code được click (để set apptId)
  */
 async function _openEditModalByBooking(bookingCode, clickedApptId) {
   const modalError = document.getElementById("modalError");
 
   if (!bookingCode) {
-    // KhÃ´ng cÃ³ bookingCode â†’ fallback edit Ä‘Æ¡n láº»
+    // Không có bookingCode → fallback edit đơn lẻ
     const result = await apiGet(`${API_BASE}/appointments/${clickedApptId}/`);
     if (result.success && result.appointment) openEditModalWithData([result.appointment], clickedApptId);
-    else { _showModalError("KhÃ´ng tÃ¬m tháº¥y lá»‹ch háº¹n"); }
+    else { _showModalError("Không tìm thấy lịch hẹn"); }
     return;
   }
 
@@ -2739,21 +2715,21 @@ async function _openEditModalByBooking(bookingCode, clickedApptId) {
   if (bkResult.success && bkResult.appointments && bkResult.appointments.length > 0) {
     openEditModalWithData(bkResult.appointments, clickedApptId);
   } else {
-    // Fallback: chá»‰ load appointment Ä‘Æ°á»£c click
+    // Fallback: chỉ load appointment được click
     const result = await apiGet(`${API_BASE}/appointments/${clickedApptId}/`);
     if (result.success && result.appointment) openEditModalWithData([result.appointment], clickedApptId);
-    else { _showModalError("KhÃ´ng tÃ¬m tháº¥y lá»‹ch háº¹n"); }
+    else { _showModalError("Không tìm thấy lịch hẹn"); }
   }
 }
 
 /**
- * Má»Ÿ modal chá»‰nh sá»­a vá»›i danh sÃ¡ch appointments thuá»™c cÃ¹ng 1 booking.
- * @param {Array} appointments - máº£ng appointment objects (tá»« API)
- * @param {string} clickedApptId - appointment_code Ä‘Æ°á»£c click (dÃ¹ng Ä‘á»ƒ set apptId chÃ­nh)
+ * Mở modal chỉnh sửa với danh sách appointments thuộc cùng 1 booking.
+ * @param {Array} appointments - mảng appointment objects (từ API)
+ * @param {string} clickedApptId - appointment_code được click (dùng để set apptId chính)
  */
 function openEditModalWithData(appointments, clickedApptId) {
   try {
-  // Láº¥y appointment Ä‘áº§u tiÃªn lÃ m "primary" Ä‘á»ƒ láº¥y booker info
+  // Lấy appointment đầu tiên làm "primary" để lấy booker info
   const primary = appointments.find(a => a.id === clickedApptId) || appointments[0];
   if (!primary) return;
 
@@ -2764,24 +2740,24 @@ function openEditModalWithData(appointments, clickedApptId) {
 
   resetModalError();
 
-  // Title hiá»ƒn thá»‹ booking code náº¿u cÃ³ nhiá»u khÃ¡ch
+  // Title hiển thị booking code nếu có nhiều khách
   if (appointments.length > 1) {
-    modalTitle.textContent = `Chá»‰nh sá»­a â€¢ ${primary.bookingCode || primary.id} (${appointments.length} khÃ¡ch)`;
+    modalTitle.textContent = `Chỉnh sửa • ${primary.bookingCode || primary.id} (${appointments.length} khách)`;
   } else {
-    modalTitle.textContent = `Chá»‰nh sá»­a â€¢ ${primary.id}`;
+    modalTitle.textContent = `Chỉnh sửa • ${primary.id}`;
   }
 
-  // apptId lÆ°u appointment_code Ä‘Æ°á»£c click (dÃ¹ng khi submit 1 appt)
-  // Vá»›i multi-appt, lÆ°u thÃªm bookingCode Ä‘á»ƒ submit handler biáº¿t
+  // apptId lưu appointment_code được click (dùng khi submit 1 appt)
+  // Với multi-appt, lưu thêm bookingCode để submit handler biết
   apptId.value = primary.id;
   apptId.dataset.bookingCode  = primary.bookingCode || '';
   apptId.dataset.allApptIds   = JSON.stringify(appointments.map(a => a.id));
-  // LÆ°u date/time/duration Ä‘á»ƒ validate timing khi submit
+  // Lưu date/time/duration để validate timing khi submit
   apptId.dataset.apptDate     = primary.date  || '';
   apptId.dataset.apptTime     = primary.start || '';
   apptId.dataset.apptDuration = primary.durationMin || '60';
 
-  // NÃºt Rebook / XÃ³a â€” dá»±a trÃªn primary
+  // Nút Rebook / Xóa — dựa trên primary
   const btnRebook = document.getElementById('btnRebook');
   const st   = (primary.apptStatus  || '').toUpperCase();
   const bkSt = (primary.bookingStatus || '').toUpperCase();
@@ -2800,18 +2776,18 @@ function openEditModalWithData(appointments, clickedApptId) {
   }
 
   const btnSaveText = document.getElementById("btnSaveText");
-  if (btnSaveText) btnSaveText.textContent = "LÆ°u lá»‹ch háº¹n";
+  if (btnSaveText) btnSaveText.textContent = "Lưu lịch hẹn";
 
   _showSharedForm();
-  _setAddGuestBtnVisible(true);  // edit mode Ä‘Æ°á»£c thÃªm khÃ¡ch má»›i
+  _setCreateOnlyVisible(false);
 
-  // Tráº¡ng thÃ¡i & thanh toÃ¡n dÃ¹ng cá»§a primary (hoáº·c appointment Ä‘Æ°á»£c click)
-  // LuÃ´n apply normal-mode trÆ°á»›c Ä‘á»ƒ reset má»i tráº¡ng thÃ¡i áº©n tá»« request-mode
+  // Trạng thái & thanh toán dùng của primary (hoặc appointment được click)
+  // Luôn apply normal-mode trước để reset mọi trạng thái ẩn từ request-mode
   _applyModalMode('normal');
   _showSharedStatusBlock(primary.apptStatus || 'NOT_ARRIVED', primary.payStatus || 'UNPAID', true);
 
   const lbl = document.getElementById('bookerPanelLabel');
-  if (lbl) lbl.textContent = 'NgÆ°á»i Ä‘áº·t lá»‹ch';
+  if (lbl) lbl.textContent = 'Người đặt lịch';
 
   // Reset guest list
   _guestCount = 0;
@@ -2819,7 +2795,7 @@ function openEditModalWithData(appointments, clickedApptId) {
   _resetAllCustomerState();
   document.getElementById('selectedCustomerId').value = primary.customerId || '';
 
-  // Äiá»n booker panel tá»« primary (booker info chung cho cáº£ booking)
+  // Điền booker panel từ primary (booker info chung cho cả booking)
   _fillBookerFields({
     name:   primary.bookerName  || '',
     phone:  primary.bookerPhone || '',
@@ -2827,11 +2803,11 @@ function openEditModalWithData(appointments, clickedApptId) {
     source: primary.source      || 'DIRECT',
     note:   primary.bookerNotes || '',
   });
-  // Set ngÃ y háº¹n chung â€” láº¥y tá»« appointment Ä‘áº§u tiÃªn
+  // Set ngày hẹn chung — lấy từ appointment đầu tiên
   const bookingDateEl = document.getElementById('bookingDate');
   if (bookingDateEl) bookingDateEl.value = primary.date || appointments[0]?.date || '';
 
-  // ThÃªm 1 guest card cho Má»–I appointment trong booking
+  // Thêm 1 guest card cho MỖI appointment trong booking
   appointments.forEach(a => {
     addGuestCard({
       name:         a.customerName || '',
@@ -2848,12 +2824,9 @@ function openEditModalWithData(appointments, clickedApptId) {
       customerNote: a.customerNote || '',
       customerId:   a.customerId || '',
       _editMode:    true,
-      _apptId:      a.id,   // lÆ°u appointment_code vÃ o card Ä‘á»ƒ submit Ä‘Ãºng
+      _apptId:      a.id,   // lưu appointment_code vào card để submit đúng
     });
   });
-
-  // Populate dropdown "Ãp dá»¥ng táº¥t cáº£" trong edit mode
-  _initApplyAllBar();
 
   let modal = null;
   if (modalEl) {
@@ -2862,7 +2835,7 @@ function openEditModalWithData(appointments, clickedApptId) {
   }
   if (modal) modal.show();
 
-  // Load invoice summary sau khi modal má»Ÿ (Ä‘á»ƒ cáº­p nháº­t paid amount)
+  // Load invoice summary sau khi modal mở (để cập nhật paid amount)
   if (primary.bookingCode) {
     _loadInvoiceSummary(primary.bookingCode);
   }
@@ -2872,13 +2845,13 @@ function openEditModalWithData(appointments, clickedApptId) {
 }
 
 /**
- * Load invoice summary tá»« API vÃ  cáº­p nháº­t payment summary trong edit modal.
- * Disable nÃºt XÃ³a vÃ  Thanh toÃ¡n trong lÃºc load Ä‘á»ƒ trÃ¡nh race condition.
+ * Load invoice summary từ API và cập nhật payment summary trong edit modal.
+ * Disable nút Xóa và Thanh toán trong lúc load để tránh race condition.
  */
 async function _loadInvoiceSummary(bookingCode) {
   if (!bookingCode) return;
 
-  // Disable cÃ¡c nÃºt nháº¡y cáº£m trong lÃºc load
+  // Disable các nút nhạy cảm trong lúc load
   const btnDelete   = document.getElementById('btnDelete');
   const btnInvoice  = document.getElementById('btnOpenInvoice');
   if (btnDelete)  { btnDelete._invoiceLoading  = true; btnDelete.disabled  = true; }
@@ -2888,7 +2861,7 @@ async function _loadInvoiceSummary(bookingCode) {
     const result = await apiGet(`${API_BASE}/bookings/${bookingCode}/invoice/`);
     if (result.success && result.invoice) {
       const inv = result.invoice;
-      // Cáº­p nháº­t hidden select (dÃ¹ng khi submit) vÃ  badge hiá»ƒn thá»‹
+      // Cập nhật hidden select (dùng khi submit) và badge hiển thị
       const payStatusSel = document.getElementById('sharedPayStatus');
       if (payStatusSel && inv.paymentStatus) {
         _setSelectValue(payStatusSel, inv.paymentStatus, 'UNPAID');
@@ -2896,17 +2869,12 @@ async function _loadInvoiceSummary(bookingCode) {
       _updatePaymentSummary();
     }
   } catch (e) {
-    // KhÃ´ng cÃ³ invoice â†’ giá»¯ nguyÃªn tráº¡ng thÃ¡i máº·c Ä‘á»‹nh
+    // Không có invoice → giữ nguyên trạng thái mặc định
   } finally {
-    // Re-enable nÃºt sau khi load xong (chá»‰ náº¿u chÃ­nh hÃ m nÃ y Ä‘Ã£ disable)
-    if (btnDelete && btnDelete._invoiceLoading) {
-      delete btnDelete._invoiceLoading;
-      // Chá»‰ enable láº¡i náº¿u payStatus cho phÃ©p xÃ³a
-      const payStatus = document.getElementById('sharedPayStatus')?.value || '';
-      btnDelete.disabled = ['PAID', 'PARTIAL', 'REFUNDED'].includes(payStatus);
-    }
+    // Re-enable nút sau khi load xong (chỉ nếu chính hàm này đã disable)
+    if (btnDelete  && btnDelete._invoiceLoading)  { btnDelete.disabled  = false; delete btnDelete._invoiceLoading; }
     if (btnInvoice && btnInvoice._invoiceLoading) {
-      // Gá»i láº¡i _updateCreatePayBtn Ä‘á»ƒ set Ä‘Ãºng tráº¡ng thÃ¡i enable/disable theo dá»‹ch vá»¥
+      // Gọi lại _updateCreatePayBtn để set đúng trạng thái enable/disable theo dịch vụ
       _updateCreatePayBtn();
       delete btnInvoice._invoiceLoading;
     }
@@ -2915,7 +2883,7 @@ async function _loadInvoiceSummary(bookingCode) {
 
 const btnSave = document.getElementById("btnSave");
 btnSave.addEventListener("click", ()=> {
-  // Trigger submit trÃªn form
+  // Trigger submit trên form
   const f = document.getElementById('apptForm');
   if (f) f.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
 });
@@ -2932,22 +2900,22 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
   const apptId = document.getElementById("apptId");
   const id = apptId.value.trim();
 
-  // â”€â”€ Validate booker â€” chung cho cáº£ CREATE vÃ  EDIT â”€â”€
+  // ── Validate booker — chung cho cả CREATE và EDIT ──
   const nameVal  = document.getElementById('bookerName')?.value.trim() || '';
   const phoneVal = document.getElementById('bookerPhone')?.value.trim() || '';
   const emailVal = document.getElementById('bookerEmail')?.value.trim() || '';
   const bookerCheck = _validateBookerFields(nameVal, phoneVal, emailVal);
   if (!bookerCheck.ok) { _showModalError(bookerCheck.error); return; }
 
-  // â”€â”€ EDIT MODE â€” gá»­i 1 request batch atomic thay vÃ¬ loop â”€â”€
+  // ── EDIT MODE — gửi 1 request batch atomic thay vì loop ──
   if (id) {
     const cards = _collectGuestCards();
-    if (!cards.length) { _showModalError("Lá»—i: khÃ´ng tÃ¬m tháº¥y dá»¯ liá»‡u"); return; }
+    if (!cards.length) { _showModalError("Lỗi: không tìm thấy dữ liệu"); return; }
 
-    // Validate tá»«ng guest card (FE-side, trÆ°á»›c khi gá»­i)
+    // Validate từng guest card (FE-side, trước khi gửi)
     for (let i = 0; i < cards.length; i++) {
       const g = cards[i];
-      const label = cards.length > 1 ? `KhÃ¡ch ${i + 1}: ` : '';
+      const label = cards.length > 1 ? `Khách ${i + 1}: ` : '';
       const gItem = _getGuestItems()[i];
       // Validate date / time / room
       const dtrCheck = _validateGuestDateTimeRoom(g, i, cards.length);
@@ -2955,9 +2923,9 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
         if (gItem && (dtrCheck.type === 'time' || dtrCheck.type === 'room')) _markRowError(gItem);
         _showModalError(dtrCheck.error); return;
       }
-      // Kiá»ƒm tra thá»i gian quÃ¡ khá»© â€” chá»‰ cháº·n khi ngÃ y/giá» thá»±c sá»± thay Ä‘á»•i
+      // Kiểm tra thời gian quá khứ — chỉ chặn khi ngày/giờ thực sự thay đổi
       if (g.time && (g.date !== g.originalDate || g.time !== g.originalTime) && _isSlotInPast(g.date, g.time)) {
-        _showModalError(`${label}KhÃ´ng thá»ƒ táº¡o lá»‹ch háº¹n vÃ o thá»i gian nÃ y (giá» Ä‘Ã£ qua)`); return;
+        _showModalError(`${label}Không thể tạo lịch hẹn vào thời gian này (giờ đã qua)`); return;
       }
       const basicCheck = _validateGuestBasic(g, i, cards.length);
       if (!basicCheck.ok) { _showModalError(basicCheck.error); return; }
@@ -2968,20 +2936,20 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
 
     const bookingCode = apptId.dataset.bookingCode || '';
     if (!bookingCode) {
-      _showModalError("KhÃ´ng tÃ¬m tháº¥y mÃ£ booking. Vui lÃ²ng Ä‘Ã³ng vÃ  má»Ÿ láº¡i."); return;
+      _showModalError("Không tìm thấy mã booking. Vui lòng đóng và mở lại."); return;
     }
 
-    // BUG-007 FIX: Validate COMPLETED + PAID cho tá»«ng guest card riÃªng láº»
-    // (khÃ´ng dÃ¹ng sharedApptStatus ná»¯a â€” má»—i khÃ¡ch cÃ³ tráº¡ng thÃ¡i riÃªng)
+    // BUG-007 FIX: Validate COMPLETED + PAID cho từng guest card riêng lẻ
+    // (không dùng sharedApptStatus nữa — mỗi khách có trạng thái riêng)
     const editPayStatus = document.getElementById('sharedPayStatus')?.value || '';
     for (let i = 0; i < cards.length; i++) {
       const g = cards[i];
-      const label = cards.length > 1 ? `KhÃ¡ch ${i + 1}: ` : '';
+      const label = cards.length > 1 ? `Khách ${i + 1}: ` : '';
       const completedCheck = _validateCompletedStatus(g.apptStatus, editPayStatus);
       if (!completedCheck.ok) { _showModalError(`${label}${completedCheck.error}`); return; }
     }
 
-    // BUG-007 FIX: Validate thá»i Ä‘iá»ƒm ARRIVED / COMPLETED cho tá»«ng card
+    // BUG-007 FIX: Validate thời điểm ARRIVED / COMPLETED cho từng card
     const editTimingCheck = _validateAllCardsTiming(
       cards,
       (g)    => g.apptStatus,
@@ -2991,7 +2959,7 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
     );
     if (!editTimingCheck.ok) { _showModalError(editTimingCheck.error); return; }
 
-    // XÃ¢y dá»±ng payload batch â€” BUG-02: 1 request duy nháº¥t, atomic
+    // Xây dựng payload batch — BUG-02: 1 request duy nhất, atomic
     const batchPayload = {
       bookerName:  nameVal,
       bookerPhone: phoneVal.replace(/\D/g, ''),
@@ -3008,24 +2976,22 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
           customerId:      g.customerId || null,
           apptStatus:      g.apptStatus || 'NOT_ARRIVED',
         };
-        // Chá»‰ gá»­i date/time/roomId khi thá»±c sá»± thay Ä‘á»•i
-        // Ngoáº¡i lá»‡: náº¿u variantId thay Ä‘á»•i, luÃ´n gá»­i roomId hiá»‡n táº¡i Ä‘á»ƒ backend
-        // validate overlap vá»›i duration má»›i (dÃ¹ room khÃ´ng Ä‘á»•i)
-        // Ngoáº¡i lá»‡ 2: guest má»›i (khÃ´ng cÃ³ _apptId) â†’ luÃ´n gá»­i Ä‘á»§ date/time/roomId
-        const isNewGuest = !g._apptId;
+        // Chỉ gửi date/time/roomId khi thực sự thay đổi
+        // Ngoại lệ: nếu variantId thay đổi, luôn gửi roomId hiện tại để backend
+        // validate overlap với duration mới (dù room không đổi)
         const variantChanged = (g.variantId || null) !== (g._originalVariantId || null);
-        if (isNewGuest || g.date !== g.originalDate) guest.date = g.date;
-        if (isNewGuest || g.time !== g.originalTime) guest.time = g.time;
-        if (isNewGuest || g.roomId !== g.originalRoom || variantChanged) guest.roomId = g.roomId;
+        if (g.date !== g.originalDate) guest.date = g.date;
+        if (g.time !== g.originalTime) guest.time = g.time;
+        if (g.roomId !== g.originalRoom || variantChanged) guest.roomId = g.roomId;
         return guest;
       }),
     };
 
     isSubmitting = true;
-    setButtonLoading(btnSave, 'Äang cáº­p nháº­t...');
+    setButtonLoading(btnSave, 'Đang cập nhật...');
 
     try {
-      // BUG-02: 1 request duy nháº¥t â†’ atomic trÃªn backend
+      // BUG-02: 1 request duy nhất → atomic trên backend
       const result = await apiPost(`${API_BASE}/bookings/${bookingCode}/update-batch/`, batchPayload);
 
       if (!result.success) {
@@ -3033,7 +2999,7 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
         return;
       }
 
-      // ThÃ nh cÃ´ng â€” cáº­p nháº­t ghi chÃº há»“ sÆ¡ khÃ¡ch
+      // Thành công — cập nhật ghi chú hồ sơ khách
       await _updateCustomerNotes(cards);
 
       const modalEl = document.getElementById("apptModal");
@@ -3046,7 +3012,7 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
       const firstDate = cards[0]?.date;
       if (firstDate && dayPicker.value !== firstDate) dayPicker.value = firstDate;
       await _refreshAll();
-      showToast("success", "ThÃ nh cÃ´ng", "Cáº­p nháº­t lá»‹ch háº¹n thÃ nh cÃ´ng");
+      showToast("success", "Thành công", "Cập nhật lịch hẹn thành công");
 
     } catch(err) {
       _showModalError(MSG_WEB_GENERIC_ERR);
@@ -3057,39 +3023,39 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
     return;
   }
 
-  // â”€â”€ CREATE MODE (batch) â”€â”€
+  // ── CREATE MODE (batch) ──
   const bookerName  = nameVal;
   const bookerPhone = phoneVal;
   const bookerEmail = emailVal;
 
   const guestCards = _collectGuestCards();
   if (!guestCards.length) {
-    _showModalError("Vui lÃ²ng thÃªm Ã­t nháº¥t 1 khÃ¡ch");
+    _showModalError("Vui lòng thêm ít nhất 1 khách");
     return;
   }
 
-  // UC 14.3 â€” khi xÃ¡c nháº­n request online, báº¯t buá»™c pháº£i chá»n phÃ²ng
+  // UC 14.3 — khi xác nhận request online, bắt buộc phải chọn phòng
   if (window._pendingOnlineRequestCode) {
     const missingRoom = guestCards.some(g => !g.roomId);
     if (missingRoom) {
-      _showModalError('Vui lÃ²ng chá»n phÃ²ng trÆ°á»›c khi xÃ¡c nháº­n yÃªu cáº§u Ä‘áº·t lá»‹ch');
+      _showModalError('Vui lòng chọn phòng trước khi xác nhận yêu cầu đặt lịch');
       return;
     }
   }
 
-  // Validate thanh toÃ¡n Ä‘Ã£ bá»‹ bá» khá»i create mode â€” thanh toÃ¡n qua invoice modal sau khi táº¡o lá»‹ch
+  // Validate thanh toán đã bị bỏ khỏi create mode — thanh toán qua invoice modal sau khi tạo lịch
 
-  // Validate ghi chÃº lá»‹ch háº¹n (max 1000 kÃ½ tá»± theo DB)
+  // Validate ghi chú lịch hẹn (max 1000 ký tự theo DB)
   const bookerNoteVal = document.getElementById('bookerNote')?.value || '';
   const noteCheck = _validateBookerNote(bookerNoteVal);
   if (!noteCheck.ok) { _showModalError(noteCheck.error); return; }
 
-  // Láº¥y ngÃ y hÃ´m nay Ä‘á»ƒ check quÃ¡ khá»©
+  // Lấy ngày hôm nay để check quá khứ
   const _todayStr = (() => { const t = new Date(); return `${t.getFullYear()}-${pad2(t.getMonth()+1)}-${pad2(t.getDate())}`; })();
 
   for (let i = 0; i < guestCards.length; i++) {
     const g = guestCards[i];
-    const label = `KhÃ¡ch ${i + 1}`;
+    const label = `Khách ${i + 1}`;
     const gItem = _getGuestItems()[i];
 
     // Validate date / time / room
@@ -3098,15 +3064,15 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
       if (gItem && (dtrCheck.type === 'time' || dtrCheck.type === 'room')) _markRowError(gItem);
       _showModalError(dtrCheck.error); return;
     }
-    // Validate ngÃ y quÃ¡ khá»© (CREATE mode) â€” bá» qua khi xÃ¡c nháº­n online request
+    // Validate ngày quá khứ (CREATE mode) — bỏ qua khi xác nhận online request
     if (!window._pendingOnlineRequestCode && g.date < _todayStr) {
       const prefix = guestCards.length > 1 ? `${label}: ` : '';
-      _showModalError(`${prefix}NgÃ y háº¹n khÃ´ng Ä‘Æ°á»£c nhá» hÆ¡n ngÃ y hÃ´m nay`); return;
+      _showModalError(`${prefix}Ngày hẹn không được nhỏ hơn ngày hôm nay`); return;
     }
-    // Kiá»ƒm tra thá»i gian quÃ¡ khá»© â€” bá» qua khi xÃ¡c nháº­n online request (staff chá»‰ confirm, khÃ´ng táº¡o má»›i)
+    // Kiểm tra thời gian quá khứ — bỏ qua khi xác nhận online request (staff chỉ confirm, không tạo mới)
     if (!window._pendingOnlineRequestCode && _isSlotInPast(g.date, g.time)) {
       const prefix = guestCards.length > 1 ? `${label}: ` : '';
-      _showModalError(`${prefix}KhÃ´ng thá»ƒ táº¡o lá»‹ch háº¹n vÃ o thá»i gian nÃ y (giá» Ä‘Ã£ qua)`); return;
+      _showModalError(`${prefix}Không thể tạo lịch hẹn vào thời gian này (giờ đã qua)`); return;
     }
     const basicCheck = _validateGuestBasic(g, i, guestCards.length);
     if (!basicCheck.ok) {
@@ -3115,14 +3081,14 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
     }
   }
 
-  // V-11: Check cross-guest conflict â€” 2 khÃ¡ch cÃ¹ng phÃ²ng cÃ¹ng giá» overlap
+  // V-11: Check cross-guest conflict — 2 khách cùng phòng cùng giờ overlap
   if (guestCards.length > 1) {
     for (let i = 0; i < guestCards.length; i++) {
       for (let j = i + 1; j < guestCards.length; j++) {
         const a = guestCards[i], b = guestCards[j];
         if (!a.roomId || !b.roomId || a.roomId !== b.roomId) continue;
         if (!a.time || !b.time) continue;
-        // TÃ­nh duration tá»« variant (fallback 60)
+        // Tính duration từ variant (fallback 60)
         const durA = Number(a._duration) || 60;
         const durB = Number(b._duration) || 60;
         const aStart = minutesFromStart(a.time);
@@ -3130,28 +3096,28 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
         const bStart = minutesFromStart(b.time);
         const bEnd   = bStart + durB;
         if (overlaps(aStart, aEnd, bStart, bEnd)) {
-          _showModalError(`KhÃ¡ch ${i+1} vÃ  KhÃ¡ch ${j+1} trÃ¹ng phÃ²ng vÃ  thá»i gian. Vui lÃ²ng chá»n phÃ²ng hoáº·c giá» khÃ¡c.`); return;
+          _showModalError(`Khách ${i+1} và Khách ${j+1} trùng phòng và thời gian. Vui lòng chọn phòng hoặc giờ khác.`); return;
         }
       }
     }
   }
 
-  // Validate tráº¡ng thÃ¡i "HoÃ n thÃ nh"
+  // Validate trạng thái "Hoàn thành"
   const createApptStatus = document.getElementById('sharedApptStatus')?.value || '';
   if (createApptStatus === 'COMPLETED') {
     const hasService = guestCards.some(g => g.serviceId);
     if (!hasService) {
-      _showModalError("KhÃ´ng thá»ƒ hoÃ n thÃ nh lá»‹ch háº¹n khi chÆ°a cÃ³ dá»‹ch vá»¥"); return;
+      _showModalError("Không thể hoàn thành lịch hẹn khi chưa có dịch vụ"); return;
     }
-    // BUG-001: COMPLETED pháº£i Ä‘i kÃ¨m PAID â€” kiá»ƒm tra _createModePayment trÆ°á»›c khi submit
+    // BUG-001: COMPLETED phải đi kèm PAID — kiểm tra _createModePayment trước khi submit
     const completedCheck = _validateCompletedStatus('COMPLETED', _createModePayment.payStatus);
     if (!completedCheck.ok) {
-      _showModalError(completedCheck.error + '. Vui lÃ²ng thanh toÃ¡n trÆ°á»›c.'); return;
+      _showModalError(completedCheck.error + '. Vui lòng thanh toán trước.'); return;
     }
   }
 
-  // Validate thá»i Ä‘iá»ƒm chuyá»ƒn tráº¡ng thÃ¡i ARRIVED / COMPLETED (create mode)
-  // Loop táº¥t cáº£ guestCards â€” má»—i khÃ¡ch cÃ³ thá»ƒ khÃ¡c giá»/duration
+  // Validate thời điểm chuyển trạng thái ARRIVED / COMPLETED (create mode)
+  // Loop tất cả guestCards — mỗi khách có thể khác giờ/duration
   if (createApptStatus === 'ARRIVED' || createApptStatus === 'COMPLETED') {
     const createTimingCheck = _validateAllCardsTiming(
       guestCards,
@@ -3163,12 +3129,12 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
     if (!createTimingCheck.ok) { _showModalError(createTimingCheck.error); return; }
   }
 
-  // UC 14.3 â€” TÃ¡ch luá»“ng: xÃ¡c nháº­n request online vs táº¡o lá»‹ch thÆ°á»ng
+  // UC 14.3 — Tách luồng: xác nhận request online vs tạo lịch thường
   const _onlineRequestCode = window._pendingOnlineRequestCode || '';
 
   if (_onlineRequestCode) {
-    // â”€â”€ LUá»’NG XÃC NHáº¬N REQUEST ONLINE â”€â”€
-    // Gá»i endpoint riÃªng: update appointment gá»‘c + confirm booking gá»‘c (khÃ´ng táº¡o booking má»›i)
+    // ── LUỒNG XÁC NHẬN REQUEST ONLINE ──
+    // Gọi endpoint riêng: update appointment gốc + confirm booking gốc (không tạo booking mới)
     const confirmPayload = {
       guests: guestCards.map(g => ({
         name:      g.name,
@@ -3184,7 +3150,7 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
     };
 
     isSubmitting = true;
-    setButtonLoading(btnSave, 'Äang xÃ¡c nháº­n...');
+    setButtonLoading(btnSave, 'Đang xác nhận...');
     try {
       const result = await apiPost(`${API_BASE}/booking-requests/${_onlineRequestCode}/confirm/`, confirmPayload);
       if (result.success) {
@@ -3202,7 +3168,7 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
         if (firstDate && dayPicker.value !== firstDate) dayPicker.value = firstDate;
         clearPendingBlocks();
         await _refreshAll();
-        showToast('success', 'ThÃ nh cÃ´ng', MSG_APPROVE_SUCCESS);
+        showToast('success', 'Thành công', MSG_APPROVE_SUCCESS);
       } else {
         _showModalError(_isConflictError(result, true) ? (result.error || MSG_WEB_CONFLICT) : (result.error || MSG_WEB_GENERIC_ERR));
       }
@@ -3215,7 +3181,7 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
     return;
   }
 
-  // â”€â”€ LUá»’NG Táº O Lá»ŠCH THÆ¯á»œNG â”€â”€
+  // ── LUỒNG TẠO LỊCH THƯỜNG ──
   const batchPayload = {
     booker: {
       name:          bookerName,
@@ -3226,20 +3192,20 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
       payStatus:     _createModePayment.payStatus     || 'UNPAID',
       paymentMethod: _createModePayment.paymentMethod || '',
       paymentAmount: _createModePayment.paymentAmount || 0,
-      // BUG-001 FIX: Gá»­i discount Ä‘á»ƒ backend Ã¡p dá»¥ng khi táº¡o invoice
+      // BUG-001 FIX: Gửi discount để backend áp dụng khi tạo invoice
       discountType:  _createModePayment.discountType  || 'NONE',
       discountValue: _createModePayment.discountValue || 0,
-      fromAdmin:     true,  // Admin táº¡o/rebook â†’ backend set CONFIRMED, khÃ´ng cáº§n xÃ¡c nháº­n
+      fromAdmin:     true,  // Admin tạo/rebook → backend set CONFIRMED, không cần xác nhận
     },
     guests: guestCards,
   };
 
   isSubmitting = true;
-  setButtonLoading(btnSave, 'Äang táº¡o lá»‹ch...');
+  setButtonLoading(btnSave, 'Đang tạo lịch...');
   try {
     const result = await apiPost(`${API_BASE}/appointments/create-batch/`, batchPayload);
     if (result.success) {
-      // Cáº­p nháº­t ghi chÃº há»“ sÆ¡ khÃ¡ch (await Ä‘á»ƒ xá»­ lÃ½ confirm xÃ³a note)
+      // Cập nhật ghi chú hồ sơ khách (await để xử lý confirm xóa note)
       await _updateCustomerNotes(guestCards);
 
       const modalEl = document.getElementById("apptModal");
@@ -3255,11 +3221,11 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
       if (firstDate && dayPicker.value !== firstDate) dayPicker.value = firstDate;
       clearPendingBlocks();
       await _refreshAll();
-      const successMsg = _isRebookMode ? MSG_REBOOK_SUCCESS : (result.message || 'Táº¡o lá»‹ch háº¹n thÃ nh cÃ´ng');
+      const successMsg = _isRebookMode ? MSG_REBOOK_SUCCESS : (result.message || 'Tạo lịch hẹn thành công');
       _isRebookMode = false;
-      showToast("success", "ThÃ nh cÃ´ng", successMsg);
+      showToast("success", "Thành công", successMsg);
       if (result.errors?.length) {
-        setTimeout(() => showToast("warning", "Má»™t sá»‘ lá»—i", result.errors.join(' | ')), 1500);
+        setTimeout(() => showToast("warning", "Một số lỗi", result.errors.join(' | ')), 1500);
       }
     } else {
       _showModalError(_isConflictError(result) ? (result.error || MSG_WEB_CONFLICT) : (result.error || MSG_WEB_GENERIC_ERR));
@@ -3272,7 +3238,7 @@ document.getElementById('apptForm').addEventListener("submit", async (e)=>{
   }
 });
 
-// ===== NÃšT Äáº¶T Láº I trong modal =====
+// ===== NÚT ĐẶT LẠI trong modal =====
 document.getElementById('btnRebook')?.addEventListener('click', async () => {
   const apptId = document.getElementById("apptId");
   const id = apptId.value.trim();
@@ -3286,17 +3252,17 @@ btnDelete.addEventListener("click", async ()=>{
   const id = apptId.value.trim();
   if (isSubmitting || !id) return;
 
-  // Kiá»ƒm tra hÃ³a Ä‘Æ¡n Ä‘Ã£ thanh toÃ¡n hoáº·c Ä‘Ã£ hoÃ n tiá»n â€” khÃ´ng cho phÃ©p xÃ³a
+  // Kiểm tra hóa đơn đã thanh toán hoặc đã hoàn tiền — không cho phép xóa
   const payStatus = document.getElementById('sharedPayStatus')?.value || '';
   if (payStatus === 'PAID' || payStatus === 'PARTIAL' || payStatus === 'REFUNDED') {
     const payMsg = payStatus === 'PARTIAL'
-      ? 'Lá»‹ch háº¹n Ä‘ang cÃ³ thanh toÃ¡n má»™t pháº§n, khÃ´ng thá»ƒ xÃ³a.'
-      : 'Lá»‹ch háº¹n Ä‘Ã£ thanh toÃ¡n, khÃ´ng thá»ƒ xÃ³a.';
-    showToast('error', 'KhÃ´ng thá»ƒ xÃ³a', payMsg);
+      ? 'Lịch hẹn đang có thanh toán một phần, không thể xóa.'
+      : 'Lịch hẹn đã thanh toán, không thể xóa.';
+    showToast('error', 'Không thể xóa', payMsg);
     return;
   }
 
-  // Äá»c info tá»« guest card duy nháº¥t (edit mode)
+  // Đọc info từ guest card duy nhất (edit mode)
   const firstCard = _getGuestItems()[0];
   const customerNameVal = firstCard?.querySelector('.gc-name')?.value.trim()
     || document.getElementById('bookerName')?.value.trim() || '';
@@ -3307,24 +3273,24 @@ btnDelete.addEventListener("click", async ()=>{
     const parts = [];
     if (customerNameVal) parts.push(customerNameVal);
     if (timeVal) parts.push(timeVal);
-    infoEl.textContent = parts.join(' Â· ');
+    infoEl.textContent = parts.join(' · ');
     infoEl.style.display = parts.length ? '' : 'none';
   }
 
-  // DÃ¹ng instance Ä‘Ã£ khá»Ÿi táº¡o sáºµn â€” trÃ¡nh lá»—i Bootstrap táº¡o nhiá»u instance
+  // Dùng instance đã khởi tạo sẵn — tránh lỗi Bootstrap tạo nhiều instance
   const deleteModal = window.deleteAppointmentModal
     || new bootstrap.Modal(document.getElementById('deleteAppointmentModal'));
 
   const confirmDeleteBtn = document.getElementById('confirmDeleteAppointmentBtn');
   if (confirmDeleteBtn) {
-    // XÃ³a listener cÅ© báº±ng cÃ¡ch clone node Ä‘á»ƒ trÃ¡nh duplicate
+    // Xóa listener cũ bằng cách clone node để tránh duplicate
     const newBtn = _replaceWithClone(confirmDeleteBtn);
 
     newBtn.addEventListener('click', async () => {
       deleteModal.hide();
 
       isSubmitting = true;
-      setButtonLoading(btnDelete, 'Äang xÃ³a...');
+      setButtonLoading(btnDelete, 'Đang xóa...');
 
       try {
         const result = await apiPost(`${API_BASE}/appointments/${id}/delete/`, {});
@@ -3335,13 +3301,13 @@ btnDelete.addEventListener("click", async ()=>{
             if (existing) existing.hide();
           }
           await _refreshAll();
-          showToast("success", "ThÃ nh cÃ´ng", result.message || "ÄÃ£ xÃ³a lá»‹ch háº¹n");
+          showToast("success", "Thành công", result.message || "Đã xóa lịch hẹn");
         } else {
-          showToast("error", "Lá»—i", result.error || "KhÃ´ng thá»ƒ xÃ³a lá»‹ch háº¹n");
+          showToast("error", "Lỗi", result.error || "Không thể xóa lịch hẹn");
         }
       } catch (err) {
         console.error('Delete error:', err);
-        showToast("error", "Lá»—i", "XÃ³a tháº¥t báº¡i, vui lÃ²ng thá»­ láº¡i sau.");
+        showToast("error", "Lỗi", "Xóa thất bại, vui lòng thử lại sau.");
       } finally {
         isSubmitting = false;
         resetButton(btnDelete);
@@ -3369,11 +3335,11 @@ async function refreshData(){
   try {
     await loadAppointments(dayPicker.value);
   } catch (err) {
-    // Network lá»—i hoÃ n toÃ n (offline, DNS fail...) â€” UC 14.2 exception flow 5a
+    // Network lỗi hoàn toàn (offline, DNS fail...) — UC 14.2 exception flow 5a
     console.error('refreshData error:', err);
     APPOINTMENTS = [];
     _gridLoadError = true;
-    showToast('error', 'Lá»—i', MSG_LOAD_APPT_ERROR);
+    showToast('error', 'Lỗi', MSG_LOAD_APPT_ERROR);
   }
   renderGrid();
 }
@@ -3390,7 +3356,7 @@ function initSearchModal() {
 
   searchModalEl.addEventListener('hidden.bs.modal', resetSearchModal);
 
-  // NÃºt má»Ÿ modal
+  // Nút mở modal
   const btnOpen = document.getElementById('btnOpenSearch');
   if (btnOpen) {
     btnOpen.addEventListener('click', () => {
@@ -3399,21 +3365,21 @@ function initSearchModal() {
     });
   }
 
-  // NÃºt TÃ¬m kiáº¿m
+  // Nút Tìm kiếm
   const btnDo = document.getElementById('btnDoSearch');
   if (btnDo) btnDo.addEventListener('click', () => _doSearch());
 
-  // NÃºt Äáº·t láº¡i
+  // Nút Đặt lại
   const btnReset = document.getElementById('btnResetSearch');
   if (btnReset) {
     btnReset.addEventListener('click', () => {
       _resetSearchModalState(searchModalEl);
-      refreshData();        // Refresh grid lá»‹ch theo phÃ²ng vá» toÃ n bá»™ danh sÃ¡ch
-      renderWebRequests();  // Refresh tab YÃªu cáº§u Ä‘áº·t lá»‹ch
+      refreshData();        // Refresh grid lịch theo phòng về toàn bộ danh sách
+      renderWebRequests();  // Refresh tab Yêu cầu đặt lịch
     });
   }
 
-  // Enter trong cÃ¡c input â†’ trigger search
+  // Enter trong các input → trigger search
   ['srchName','srchPhone','srchEmail','srchCode','srchDateFrom','srchDateTo'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') _doSearch(); });
@@ -3441,16 +3407,16 @@ function _resetSearchModalState(searchModalEl) {
     results.innerHTML = `
       <div class="text-center text-muted py-5" id="srchPlaceholder">
         <i class="fas fa-search fa-2x mb-2 d-block opacity-25"></i>
-        Nháº­p Ä‘iá»u kiá»‡n vÃ  báº¥m TÃ¬m kiáº¿m
+        Nhập điều kiện và bấm Tìm kiếm
       </div>`;
   }
 }
 
 function _fillSearchDropdowns() {
-  // Äiá»n dropdown dá»‹ch vá»¥
+  // Điền dropdown dịch vụ
   const srchSvc = document.getElementById('srchService');
   if (srchSvc && srchSvc.options.length <= 1 && SERVICES.length) {
-    _populateSelect(srchSvc, SERVICES, 'id', 'name', 'Táº¥t cáº£ dá»‹ch vá»¥');
+    _populateSelect(srchSvc, SERVICES, 'id', 'name', 'Tất cả dịch vụ');
   }
 }
 
@@ -3479,12 +3445,12 @@ async function _doSearch() {
 
   const hasCondition = name || phone || email || code || service || status || source || dateFrom || dateTo;
   if (!hasCondition) {
-    _setSearchWarning(true, 'Vui lÃ²ng nháº­p Ä‘iá»u kiá»‡n tÃ¬m kiáº¿m');
+    _setSearchWarning(true, 'Vui lòng nhập điều kiện tìm kiếm');
     return;
   }
 
   if (dateFrom && dateTo && dateFrom > dateTo) {
-    _setSearchWarning(true, 'Khoáº£ng ngÃ y tÃ¬m kiáº¿m khÃ´ng há»£p lá»‡.');
+    _setSearchWarning(true, 'Khoảng ngày tìm kiếm không hợp lệ.');
     return;
   }
 
@@ -3492,7 +3458,7 @@ async function _doSearch() {
 
   const resultsEl = document.getElementById('srchResults');
   if (resultsEl) {
-    resultsEl.innerHTML = `<div class="text-center text-muted py-5"><i class="fas fa-spinner fa-spin fa-2x mb-2 d-block"></i>Äang tÃ¬m kiáº¿m...</div>`;
+    resultsEl.innerHTML = `<div class="text-center text-muted py-5"><i class="fas fa-spinner fa-spin fa-2x mb-2 d-block"></i>Đang tìm kiếm...</div>`;
   }
 
   const params = new URLSearchParams();
@@ -3512,27 +3478,27 @@ async function _doSearch() {
   const result = await apiGet(`${API_BASE}/appointments/search/?${params.toString()}`);
 
   if (!result.success) {
-    if (resultsEl) resultsEl.innerHTML = `<div class="alert alert-danger m-3"><i class="fas fa-exclamation-circle me-2"></i>KhÃ´ng thá»ƒ tÃ¬m kiáº¿m lá»‹ch háº¹n. Vui lÃ²ng thá»­ láº¡i sau.</div>`;
+    if (resultsEl) resultsEl.innerHTML = `<div class="alert alert-danger m-3"><i class="fas fa-exclamation-circle me-2"></i>Không thể tìm kiếm lịch hẹn. Vui lòng thử lại sau.</div>`;
     return;
   }
 
   const appts = result.appointments || [];
   if (!appts.length) {
-    if (resultsEl) resultsEl.innerHTML = `<div class="text-center text-muted py-5"><i class="fas fa-inbox fa-2x mb-2 d-block opacity-25"></i>KhÃ´ng tÃ¬m tháº¥y lá»‹ch háº¹n phÃ¹ há»£p.</div>`;
+    if (resultsEl) resultsEl.innerHTML = `<div class="text-center text-muted py-5"><i class="fas fa-inbox fa-2x mb-2 d-block opacity-25"></i>Không tìm thấy lịch hẹn phù hợp.</div>`;
     return;
   }
 
   const rows = appts.map(a => {
-    // REJECTED lÃ  booking-level â€” náº¿u booking bá»‹ tá»« chá»‘i thÃ¬ badge luÃ´n hiá»‡n "ÄÃ£ tá»« chá»‘i"
-    // báº¥t ká»ƒ appointment.status lÃ  gÃ¬ (CANCELLED / NOT_ARRIVED do cascade).
-    // CÃ¡c status cÃ²n láº¡i dÃ¹ng apptStatus lÃ  nguá»“n sá»± tháº­t chÃ­nh.
+    // REJECTED là booking-level — nếu booking bị từ chối thì badge luôn hiện "Đã từ chối"
+    // bất kể appointment.status là gì (CANCELLED / NOT_ARRIVED do cascade).
+    // Các status còn lại dùng apptStatus là nguồn sự thật chính.
     const displayStatus = (a.bookingStatus || '').toUpperCase() === 'REJECTED'
       ? 'REJECTED'
       : a.apptStatus;
     const statusBadge = `<span class="badge ${_srchStatusBadgeClass(displayStatus)}">${statusLabel(displayStatus)}</span>`;
     const svcDisplay = a.serviceCode
-      ? `<span class="fw-semibold">${_esc(a.serviceCode)}</span>${a.service ? ` <span class="text-muted small">â€” ${_esc(a.service)}</span>` : ''}`
-      : (a.service ? _esc(a.service) : '<span class="text-muted fst-italic">ChÆ°a chá»n DV</span>');
+      ? `<span class="fw-semibold">${_esc(a.serviceCode)}</span>${a.service ? ` <span class="text-muted small">— ${_esc(a.service)}</span>` : ''}`
+      : (a.service ? _esc(a.service) : '<span class="text-muted fst-italic">Chưa chọn DV</span>');
     return `
       <div class="srch-result-item d-flex align-items-center gap-3 px-3 py-2 border-bottom"
            style="cursor:pointer;transition:background .15s;"
@@ -3540,13 +3506,13 @@ async function _doSearch() {
            onclick="window._srchGoToAppt('${_esc(a.id)}', '${_esc(a.date)}')">
         <div style="min-width:80px;">
           <div class="fw-semibold small">${_esc(a.date)}</div>
-          <div class="text-muted small">${_esc(a.start)}${a.end ? 'â€“'+_esc(a.end) : ''}</div>
+          <div class="text-muted small">${_esc(a.start)}${a.end ? '–'+_esc(a.end) : ''}</div>
         </div>
         <div style="min-width:70px;" class="text-muted small">
-          <i class="fas fa-door-open me-1"></i>${_esc(a.roomName || a.roomCode || 'â€”')}
+          <i class="fas fa-door-open me-1"></i>${_esc(a.roomName || a.roomCode || '—')}
         </div>
         <div style="flex:1;min-width:0;">
-          <div class="fw-semibold text-truncate">${_esc(a.customerName || a.bookerName || 'â€”')}</div>
+          <div class="fw-semibold text-truncate">${_esc(a.customerName || a.bookerName || '—')}</div>
           <div class="text-muted small text-truncate">${svcDisplay}</div>
         </div>
         <div style="min-width:90px;text-align:right;">${statusBadge}</div>
@@ -3559,8 +3525,8 @@ async function _doSearch() {
   if (resultsEl) {
     resultsEl.innerHTML = `
       <div class="px-3 py-2 border-bottom bg-light d-flex align-items-center justify-content-between">
-        <span class="small text-muted"><i class="fas fa-list me-1"></i>TÃ¬m tháº¥y <strong>${appts.length}</strong> káº¿t quáº£${appts.length === 100 ? ' (hiá»ƒn thá»‹ tá»‘i Ä‘a 100)' : ''}</span>
-        <span class="small text-muted">Click vÃ o káº¿t quáº£ Ä‘á»ƒ xem trÃªn lá»‹ch</span>
+        <span class="small text-muted"><i class="fas fa-list me-1"></i>Tìm thấy <strong>${appts.length}</strong> kết quả${appts.length === 100 ? ' (hiển thị tối đa 100)' : ''}</span>
+        <span class="small text-muted">Click vào kết quả để xem trên lịch</span>
       </div>
       ${rows}`;
   }
@@ -3579,20 +3545,20 @@ function _srchStatusBadgeClass(s) {
 }
 
 window._srchGoToAppt = async function(apptId, apptDate) {
-  // ÄÃ³ng modal tÃ¬m kiáº¿m
+  // Đóng modal tìm kiếm
   const searchModalEl = document.getElementById('searchModal');
   if (searchModalEl) {
     const searchModal = bootstrap.Modal.getInstance(searchModalEl);
     if (searchModal) searchModal.hide();
   }
 
-  // Chuyá»ƒn grid sang Ä‘Ãºng ngÃ y
+  // Chuyển grid sang đúng ngày
   if (apptDate && dayPicker) {
     dayPicker.value = apptDate;
     await refreshData();
   }
 
-  // Highlight block trÃªn grid
+  // Highlight block trên grid
   setTimeout(() => {
     const block = document.querySelector(`.appt[data-id="${CSS.escape(apptId)}"]`);
     if (block) {
@@ -3607,7 +3573,7 @@ window._srchGoToAppt = async function(apptId, apptDate) {
 // SECTION 14: CUSTOMER CANCEL POLLING
 // ============================================================
 (function initCustomerCancelPolling() {
-  // LÆ°u cÃ¡c mÃ£ lá»‹ch Ä‘Ã£ toast Ä‘á»ƒ khÃ´ng hiá»‡n láº¡i
+  // Lưu các mã lịch đã toast để không hiện lại
   const _seenCodes = new Set();
 
   function _showCancelToast(customerName, code) {
@@ -3627,14 +3593,14 @@ window._srchGoToAppt = async function(apptId, apptDate) {
         <i class="fas fa-user-times" style="font-size:13px;"></i>
       </div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:2px;">KhÃ¡ch vá»«a há»§y lá»‹ch</div>
+        <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:2px;">Khách vừa hủy lịch</div>
         <div style="font-size:12px;color:#6b7280;">
           <span style="font-weight:600;color:#374151;">${customerName}</span>
-          Ä‘Ã£ há»§y lá»‹ch <span style="font-weight:600;color:#ef4444;">${code}</span>
+          đã hủy lịch <span style="font-weight:600;color:#ef4444;">${code}</span>
         </div>
       </div>
       <button onclick="document.getElementById('${id}').remove()"
-              style="flex-shrink:0;background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;line-height:1;padding:0;">Ã—</button>
+              style="flex-shrink:0;background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;line-height:1;padding:0;">×</button>
     `;
     container.appendChild(el);
     setTimeout(() => { if (el.parentNode) el.remove(); }, 8000);
@@ -3675,7 +3641,7 @@ window._srchGoToAppt = async function(apptId, apptDate) {
     } catch (e) { /* silent */ }
   }
 
-  // Cháº¡y láº§n Ä‘áº§u sau 5s (trÃ¡nh spam khi má»›i load), sau Ä‘Ã³ má»—i 30s
+  // Chạy lần đầu sau 5s (tránh spam khi mới load), sau đó mỗi 30s
   setTimeout(() => {
     _pollCancelledByCustomer();
     setInterval(_pollCancelledByCustomer, 30000);
@@ -3693,7 +3659,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
   const sidebarToggle = document.getElementById("sidebarToggle");
   const grid = document.getElementById("grid");
 
-  // Initialize customer search (stub â€” badges Ä‘Ã£ bá»)
+  // Initialize customer search (stub — badges đã bỏ)
   initCustomerSearch();
 
   // Initialize delete modal
@@ -3704,36 +3670,36 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 
   if(sidebarToggle) sidebarToggle.addEventListener("click", ()=> sidebar.classList.toggle("show"));
 
-  // â”€â”€ Render header timeline NGAY Láº¬P Tá»¨C trÆ°á»›c khi fetch â”€â”€
-  // Äá»ƒ layout á»•n Ä‘á»‹nh, khÃ´ng bá»‹ trá»‘ng trong lÃºc chá» API
+  // ── Render header timeline NGAY LẬP TỨC trước khi fetch ──
+  // Để layout ổn định, không bị trống trong lúc chờ API
   dayPicker.value = todayISO();
   renderHeader();
-  showGridLoading();   // hiá»‡n skeleton trong vÃ¹ng grid
+  showGridLoading();   // hiện skeleton trong vùng grid
 
-  // â”€â”€ Fetch song song rooms + services Ä‘á»ƒ giáº£m thá»i gian chá» â”€â”€
+  // ── Fetch song song rooms + services để giảm thời gian chờ ──
   await Promise.all([loadRooms(), loadServices()]);
 
   fillServiceFilter();
 
-  // â”€â”€ Fetch appointments + web requests song song â”€â”€
+  // ── Fetch appointments + web requests song song ──
   await Promise.all([
     refreshData(),
     renderWebRequests(),
   ]);
 
-  // ===== POLLING: cáº­p nháº­t badge pending count má»—i 15 giÃ¢y =====
-  // Track count láº§n trÆ°á»›c Ä‘á»ƒ phÃ¡t hiá»‡n thay Ä‘á»•i
+  // ===== POLLING: cập nhật badge pending count mỗi 15 giây =====
+  // Track count lần trước để phát hiện thay đổi
   let _lastPendingCount = -1;
-  // Store interval reference Ä‘á»ƒ cleanup khi rá»i trang
+  // Store interval reference để cleanup khi rời trang
   const _pendingCountInterval = setInterval(async () => {
     try {
       const res = await apiGet(`${API_BASE}/booking/pending-count/`);
       if (res.success && typeof res.count === 'number') {
-        // Cáº­p nháº­t badge
+        // Cập nhật badge
         _setWebCountBadge(res.count);
 
-        // Náº¿u count thay Ä‘á»•i so vá»›i láº§n trÆ°á»›c â†’ reload danh sÃ¡ch yÃªu cáº§u
-        // (khÃ´ng reset filter, chá»‰ gá»i láº¡i renderWebRequests vá»›i filter hiá»‡n táº¡i)
+        // Nếu count thay đổi so với lần trước → reload danh sách yêu cầu
+        // (không reset filter, chỉ gọi lại renderWebRequests với filter hiện tại)
         if (_lastPendingCount !== -1 && res.count !== _lastPendingCount) {
           renderWebRequests();
         }
@@ -3742,7 +3708,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
     } catch(e) { /* silent */ }
   }, 15000);
 
-  // Cleanup khi rá»i trang Ä‘á»ƒ trÃ¡nh memory leak
+  // Cleanup khi rời trang để tránh memory leak
   window.addEventListener('beforeunload', () => {
     clearInterval(_pendingCountInterval);
     clearInterval(_ctlInterval);
@@ -3753,11 +3719,11 @@ document.addEventListener("DOMContentLoaded", async ()=>{
   if(btnNext) btnNext.addEventListener("click", ()=> shiftDay(1));
   if(dayPicker) dayPicker.addEventListener("change", ()=> { clearPendingBlocks(); refreshData(); updateCurrentTimeLine(); });
 
-  // â”€â”€ Current time line: interval realtime + resize â”€â”€
+  // ── Current time line: interval realtime + resize ──
   startCurrentTimeLineInterval();
   window.addEventListener('resize', updateCurrentTimeLine);
 
-  // ===== ACTION BAR â€” Pending blocks =====
+  // ===== ACTION BAR — Pending blocks =====
   const btnCancelPending   = document.getElementById('btnCancelPending');
   const btnContinuePending = document.getElementById('btnContinuePending');
 
@@ -3767,7 +3733,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
       _savedBookerInfo = null;
       _addingSlotEditBookingCode = null;
       clearPendingBlocks();
-      showToast('info', 'ÄÃ£ há»§y', 'ÄÃ£ xÃ³a toÃ n bá»™ slot Ä‘ang chá»n');
+      showToast('info', 'Đã hủy', 'Đã xóa toàn bộ slot đang chọn');
     });
   }
 
@@ -3787,12 +3753,12 @@ document.addEventListener("DOMContentLoaded", async ()=>{
       if (!isSubmitting && !_addingSlotMode) {
         clearPendingBlocks();
       }
-      // Reset online request state khi modal Ä‘Ã³ng (ká»ƒ cáº£ khi cancel)
+      // Reset online request state khi modal đóng (kể cả khi cancel)
       window._pendingOnlineRequestCode = '';
     });
   }
 
-  // Filter bar â€” tab YÃªu cáº§u Ä‘áº·t lá»‹ch (dÃ¹ng FilterManager chung)
+  // Filter bar — tab Yêu cầu đặt lịch (dùng FilterManager chung)
   const webFM = new FilterManager({
     fields:   ['webSearchInput', 'webServiceFilter', 'webDateFilter'],
     btnId:    'webFilterBtn',
@@ -3805,29 +3771,19 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 
   // ===== INVOICE MODAL =====
   _initInvoiceModal();
-
-  // XÃ³a pending blocks khi chuyá»ƒn tab (trÃ¡nh orphaned blocks khÃ´ng nhÃ¬n tháº¥y)
-  // Guard: khÃ´ng xÃ³a khi Ä‘ang trong flow thÃªm khÃ¡ch tá»« edit mode (_addingSlotMode)
-  document.querySelectorAll('[data-bs-toggle="pill"]').forEach(tab => {
-    tab.addEventListener('shown.bs.tab', () => {
-      if (!_addingSlotMode) {
-        clearPendingBlocks();
-      }
-    });
-  });
 });
 
 // ============================================================
 // SECTION 16: INVOICE MODAL
 // ============================================================
 
-/** State cá»§a invoice modal */
-let _invoiceData = null; // dá»¯ liá»‡u invoice hiá»‡n táº¡i
+/** State của invoice modal */
+let _invoiceData = null; // dữ liệu invoice hiện tại
 
 /**
- * LÆ°u tráº¡ng thÃ¡i thanh toÃ¡n táº¡m thá»i cho create mode.
- * ÄÆ°á»£c set khi user xÃ¡c nháº­n trong _openCreatePayModal(),
- * Ä‘Æ°á»£c Ä‘á»c khi submit batchPayload.
+ * Lưu trạng thái thanh toán tạm thời cho create mode.
+ * Được set khi user xác nhận trong _openCreatePayModal(),
+ * được đọc khi submit batchPayload.
  */
 let _createModePayment = {
   payStatus:     'UNPAID',
@@ -3836,9 +3792,9 @@ let _createModePayment = {
 };
 
 /**
- * Cáº­p nháº­t tráº¡ng thÃ¡i enable/disable nÃºt "Thanh toÃ¡n" trong create mode.
- * Chá»‰ enable khi Ã­t nháº¥t 1 khÃ¡ch Ä‘Ã£ chá»n Ä‘á»§ dá»‹ch vá»¥ + gÃ³i.
- * Gá»i má»—i khi variant thay Ä‘á»•i hoáº·c guest card thÃªm/xÃ³a.
+ * Cập nhật trạng thái enable/disable nút "Thanh toán" trong create mode.
+ * Chỉ enable khi ít nhất 1 khách đã chọn đủ dịch vụ + gói.
+ * Gọi mỗi khi variant thay đổi hoặc guest card thêm/xóa.
  */
 function _updateCreatePayBtn() {
   const btnOpen = document.getElementById('btnOpenInvoice');
@@ -3853,10 +3809,10 @@ function _updateCreatePayBtn() {
 
   btnOpen.disabled = !hasReadyGuest;
   btnOpen.title    = hasReadyGuest
-    ? 'Nháº­p thÃ´ng tin thanh toÃ¡n'
-    : 'Vui lÃ²ng chá»n dá»‹ch vá»¥ vÃ  gÃ³i dá»‹ch vá»¥ trÆ°á»›c khi thanh toÃ¡n';
+    ? 'Nhập thông tin thanh toán'
+    : 'Vui lòng chọn dịch vụ và gói dịch vụ trước khi thanh toán';
 
-  // Hiá»ƒn thá»‹ rÃµ tráº¡ng thÃ¡i disabled/enabled
+  // Hiển thị rõ trạng thái disabled/enabled
   if (hasReadyGuest) {
     btnOpen.style.opacity        = '';
     btnOpen.style.filter         = '';
@@ -3871,23 +3827,23 @@ function _updateCreatePayBtn() {
 }
 
 /**
- * Má»Ÿ modal thanh toÃ¡n táº¡m cho create mode.
- * TÃ­nh tiá»n tá»« guestCards hiá»‡n táº¡i (dá»±a trÃªn SERVICES data),
- * cho phÃ©p nháº­p phÆ°Æ¡ng thá»©c + sá»‘ tiá»n, lÆ°u vÃ o _createModePayment.
+ * Mở modal thanh toán tạm cho create mode.
+ * Tính tiền từ guestCards hiện tại (dựa trên SERVICES data),
+ * cho phép nhập phương thức + số tiền, lưu vào _createModePayment.
  */
 function _openCreatePayModal() {
-  // Kiá»ƒm tra láº¡i â€” pháº£i cÃ³ Ã­t nháº¥t 1 khÃ¡ch Ä‘á»§ dá»‹ch vá»¥ + gÃ³i
+  // Kiểm tra lại — phải có ít nhất 1 khách đủ dịch vụ + gói
   const liveData = _buildLinesFromGuestCards();
   if (!liveData || !liveData.lines.length) {
-    showToast('warning', 'ChÆ°a Ä‘á»§ thÃ´ng tin', 'Vui lÃ²ng chá»n dá»‹ch vá»¥ vÃ  gÃ³i dá»‹ch vá»¥ trÆ°á»›c khi thanh toÃ¡n.');
+    showToast('warning', 'Chưa đủ thông tin', 'Vui lòng chọn dịch vụ và gói dịch vụ trước khi thanh toán.');
     return;
   }
 
   const { lines, subtotal } = liveData;
 
-  // DÃ¹ng láº¡i invoiceModal vá»›i data táº¡m â€” khÃ´ng cáº§n bookingCode
+  // Dùng lại invoiceModal với data tạm — không cần bookingCode
   _invoiceData = {
-    _bookingCode:   '',   // rá»—ng = create mode
+    _bookingCode:   '',   // rỗng = create mode
     _createMode:    true,
     invoiceCode:    '',
     bookingCode:    '',
@@ -3906,9 +3862,9 @@ function _openCreatePayModal() {
 
   _renderInvoiceModal(_invoiceData);
 
-  // Äá»•i label nÃºt xÃ¡c nháº­n cho create mode
+  // Đổi label nút xác nhận cho create mode
   const btnLbl = document.getElementById('btnConfirmPaymentLabel');
-  if (btnLbl) btnLbl.textContent = 'XÃ¡c nháº­n';
+  if (btnLbl) btnLbl.textContent = 'Xác nhận';
 
   const invoiceModalEl = document.getElementById('invoiceModal');
   const invoiceModal   = bootstrap.Modal.getInstance(invoiceModalEl) || new bootstrap.Modal(invoiceModalEl);
@@ -3916,20 +3872,20 @@ function _openCreatePayModal() {
 }
 
 /**
- * BUG-008 FIX: Kiá»ƒm tra xem cÃ³ guest card nÃ o trong edit mode cÃ³ thay Ä‘á»•i chÆ°a lÆ°u khÃ´ng.
+ * BUG-008 FIX: Kiểm tra xem có guest card nào trong edit mode có thay đổi chưa lưu không.
  *
- * So sÃ¡nh giÃ¡ trá»‹ hiá»‡n táº¡i cá»§a variant, room, date, time vá»›i giÃ¡ trá»‹ gá»‘c
- * Ä‘Æ°á»£c lÆ°u trong dataset khi modal má»Ÿ (originalVariantId, originalRoom,
+ * So sánh giá trị hiện tại của variant, room, date, time với giá trị gốc
+ * được lưu trong dataset khi modal mở (originalVariantId, originalRoom,
  * originalDate, originalTime).
  *
- * CÅ©ng kiá»ƒm tra booker info (name, phone, email, notes) so vá»›i giÃ¡ trá»‹
- * Ä‘Æ°á»£c load tá»« API khi má»Ÿ modal.
+ * Cũng kiểm tra booker info (name, phone, email, notes) so với giá trị
+ * được load từ API khi mở modal.
  *
- * @returns {boolean} true náº¿u cÃ³ thay Ä‘á»•i chÆ°a lÆ°u
+ * @returns {boolean} true nếu có thay đổi chưa lưu
  */
 function _hasUnsavedGuestChanges() {
   const apptIdEl = document.getElementById('apptId');
-  // Chá»‰ Ã¡p dá»¥ng trong edit mode (cÃ³ bookingCode)
+  // Chỉ áp dụng trong edit mode (có bookingCode)
   if (!apptIdEl?.dataset.bookingCode) return false;
 
   const items = _getGuestItems();
@@ -3942,9 +3898,9 @@ function _hasUnsavedGuestChanges() {
     const originalRoom = item.dataset.originalRoom || '';
     if (currentRoom !== originalRoom) return true;
 
-    // NgÃ y háº¹n â€” BUG-A08 FIX: Æ°u tiÃªn per-card slotDate thay vÃ¬ bookingDate (shared).
-    // bookingDate chá»‰ pháº£n Ã¡nh ngÃ y khÃ¡ch Ä‘áº§u tiÃªn â€” dÃ¹ng nÃ³ cho táº¥t cáº£ cards
-    // sáº½ luÃ´n tráº£ true cho cÃ¡c khÃ¡ch cÃ³ ngÃ y khÃ¡c nhau dÃ¹ khÃ´ng cÃ³ thay Ä‘á»•i thá»±c sá»±.
+    // Ngày hẹn — BUG-A08 FIX: ưu tiên per-card slotDate thay vì bookingDate (shared).
+    // bookingDate chỉ phản ánh ngày khách đầu tiên — dùng nó cho tất cả cards
+    // sẽ luôn trả true cho các khách có ngày khác nhau dù không có thay đổi thực sự.
     const currentDate = item.dataset.slotDate
       || item.querySelector('.gc-date')?.value
       || document.getElementById('bookingDate')?.value
@@ -3959,7 +3915,7 @@ function _hasUnsavedGuestChanges() {
     const originalTime = item.dataset.originalTime || '';
     if (originalTime && currentTime !== originalTime) return true;
 
-    // Check tráº¡ng thÃ¡i chung â€” so sÃ¡nh sharedApptStatus vá»›i originalApptStatus cá»§a card Ä‘áº§u tiÃªn
+    // Check trạng thái chung — so sánh sharedApptStatus với originalApptStatus của card đầu tiên
     const currentStatus = document.getElementById('sharedApptStatus')?.value || '';
     const originalStatus = item.dataset.originalApptStatus || '';
     if (originalStatus && currentStatus !== originalStatus) return true;
@@ -3969,7 +3925,7 @@ function _hasUnsavedGuestChanges() {
 }
 
 function _initInvoiceModal() {
-  // NÃºt má»Ÿ invoice modal â€” phÃ¢n biá»‡t create mode vÃ  edit mode
+  // Nút mở invoice modal — phân biệt create mode và edit mode
   const btnOpen = document.getElementById('btnOpenInvoice');
   if (btnOpen) {
     btnOpen.addEventListener('click', async () => {
@@ -3977,30 +3933,30 @@ function _initInvoiceModal() {
       const bookingCode = apptIdEl?.dataset.bookingCode || '';
 
       if (bookingCode) {
-        // EDIT MODE: BUG-008 FIX â€” kiá»ƒm tra form cÃ³ thay Ä‘á»•i chÆ°a lÆ°u khÃ´ng
-        // Náº¿u cÃ³ â†’ yÃªu cáº§u lÆ°u trÆ°á»›c Ä‘á»ƒ BE vÃ  FE dÃ¹ng cÃ¹ng 1 nguá»“n dá»¯ liá»‡u
+        // EDIT MODE: BUG-008 FIX — kiểm tra form có thay đổi chưa lưu không
+        // Nếu có → yêu cầu lưu trước để BE và FE dùng cùng 1 nguồn dữ liệu
         const unsavedChanges = _hasUnsavedGuestChanges();
         if (unsavedChanges) {
-          _showModalError('Vui lÃ²ng lÆ°u lá»‹ch háº¹n trÆ°á»›c khi má»Ÿ hÃ³a Ä‘Æ¡n (cÃ³ thay Ä‘á»•i chÆ°a Ä‘Æ°á»£c lÆ°u).');
-          // Scroll lÃªn Ä‘á»ƒ user tháº¥y thÃ´ng bÃ¡o
+          _showModalError('Vui lòng lưu lịch hẹn trước khi mở hóa đơn (có thay đổi chưa được lưu).');
+          // Scroll lên để user thấy thông báo
           document.getElementById('modalError')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
           return;
         }
         await _openInvoiceModal(bookingCode);
       } else {
-        // CREATE MODE: má»Ÿ modal thanh toÃ¡n táº¡m dá»±a trÃªn guestCards hiá»‡n táº¡i
+        // CREATE MODE: mở modal thanh toán tạm dựa trên guestCards hiện tại
         _openCreatePayModal();
       }
     });
   }
 
-  // Tá»± Ä‘á»™ng tÃ­nh láº¡i khi thay Ä‘á»•i discount
+  // Tự động tính lại khi thay đổi discount
   const discountInput = document.getElementById('invDiscountValue');
   const discountType  = document.getElementById('invDiscountType');
   if (discountInput) discountInput.addEventListener('input', () => _recalcInvoiceTotals());
   if (discountType)  discountType.addEventListener('change', () => _recalcInvoiceTotals());
 
-  // NÃºt xÃ¡c nháº­n thanh toÃ¡n
+  // Nút xác nhận thanh toán
   const btnConfirm = document.getElementById('btnConfirmPayment');
   if (btnConfirm) {
     btnConfirm.addEventListener('click', async () => {
@@ -4008,7 +3964,7 @@ function _initInvoiceModal() {
     });
   }
 
-  // NÃºt hoÃ n tiá»n
+  // Nút hoàn tiền
   const btnRefundInit = document.getElementById('btnRefundPayment');
   if (btnRefundInit) {
     btnRefundInit.addEventListener('click', async () => {
@@ -4018,8 +3974,8 @@ function _initInvoiceModal() {
 }
 
 /**
- * Build danh sÃ¡ch lines tá»« guest cards hiá»‡n táº¡i trÃªn form.
- * Tráº£ vá» { lines, subtotal } hoáº·c null náº¿u khÃ´ng cÃ³ guest nÃ o há»£p lá»‡.
+ * Build danh sách lines từ guest cards hiện tại trên form.
+ * Trả về { lines, subtotal } hoặc null nếu không có guest nào hợp lệ.
  */
 function _buildLinesFromGuestCards() {
   const items = _getGuestItems();
@@ -4037,7 +3993,7 @@ function _buildLinesFromGuestCards() {
     const svc     = SERVICES.find(s => String(s.id) === svcSel?.value);
     const variant = svc?.variants?.find(v => String(v.id) === varSel?.value);
     const price   = parseFloat(variant?.price || svc?.price || 0);
-    const name    = item.querySelector('.gc-name')?.value.trim() || 'â€”';
+    const name    = item.querySelector('.gc-name')?.value.trim() || '—';
     subtotal += price;
     lines.push({
       customerName: name,
@@ -4053,7 +4009,7 @@ function _buildLinesFromGuestCards() {
 }
 
 /**
- * Má»Ÿ Invoice Modal vÃ  load dá»¯ liá»‡u hÃ³a Ä‘Æ¡n.
+ * Mở Invoice Modal và load dữ liệu hóa đơn.
  */
 async function _openInvoiceModal(bookingCode) {
   const invoiceModalEl = document.getElementById('invoiceModal');
@@ -4070,21 +4026,21 @@ async function _openInvoiceModal(bookingCode) {
   // Load invoice data
   const result = await apiGet(`${API_BASE}/bookings/${bookingCode}/invoice/`);
   if (!result.success || !result.invoice) {
-    showToast('error', 'Lá»—i', 'KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u hÃ³a Ä‘Æ¡n');
+    showToast('error', 'Lỗi', 'Không thể tải dữ liệu hóa đơn');
     return;
   }
 
   _invoiceData = result.invoice;
   _invoiceData._bookingCode = bookingCode;
 
-  // BUG-008 FIX: KhÃ´ng override lines/subtotal tá»« form chÆ°a lÆ°u ná»¯a.
-  // Caller (_initInvoiceModal) Ä‘Ã£ Ä‘áº£m báº£o khÃ´ng cÃ³ unsaved changes trÆ°á»›c khi gá»i hÃ m nÃ y.
-  // DÃ¹ng hoÃ n toÃ n dá»¯ liá»‡u tá»« API (Ä‘Ã£ pháº£n Ã¡nh Ä‘Ãºng DB sau khi lÆ°u).
+  // BUG-008 FIX: Không override lines/subtotal từ form chưa lưu nữa.
+  // Caller (_initInvoiceModal) đã đảm bảo không có unsaved changes trước khi gọi hàm này.
+  // Dùng hoàn toàn dữ liệu từ API (đã phản ánh đúng DB sau khi lưu).
 
   // Render modal
   _renderInvoiceModal(_invoiceData);
 
-  // Má»Ÿ modal
+  // Mở modal
   const invoiceModal = bootstrap.Modal.getInstance(invoiceModalEl) || new bootstrap.Modal(invoiceModalEl);
   invoiceModal.show();
 
@@ -4092,13 +4048,13 @@ async function _openInvoiceModal(bookingCode) {
 }
 
 /**
- * Render ná»™i dung Invoice Modal tá»« dá»¯ liá»‡u invoice.
+ * Render nội dung Invoice Modal từ dữ liệu invoice.
  */
 function _renderInvoiceModal(inv) {
   // Header
   const titleEl = document.getElementById('invoiceModalTitle');
   if (titleEl) {
-    titleEl.textContent = inv.invoiceCode ? `HÃ³a Ä‘Æ¡n ${inv.invoiceCode}` : `HÃ³a Ä‘Æ¡n â€” ${inv.bookingCode}`;
+    titleEl.textContent = inv.invoiceCode ? `Hóa đơn ${inv.invoiceCode}` : `Hóa đơn — ${inv.bookingCode}`;
   }
 
   // Booking info
@@ -4113,22 +4069,22 @@ function _renderInvoiceModal(inv) {
   const tbody = document.getElementById('invLinesTbody');
   if (tbody) {
     if (!inv.lines || inv.lines.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">ChÆ°a cÃ³ dá»‹ch vá»¥</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Chưa có dịch vụ</td></tr>';
     } else {
       tbody.innerHTML = inv.lines.map(line => {
         const hasService = line.serviceName || line.variantLabel;
         const svcCell = hasService
           ? `<td>${_esc(line.serviceName || '')}</td>`
-          : `<td class="invoice-no-service">ChÆ°a chá»n dá»‹ch vá»¥</td>`;
+          : `<td class="invoice-no-service">Chưa chọn dịch vụ</td>`;
         const variantCell = hasService
-          ? `<td>${_esc(line.variantLabel || '')}${line.durationMin ? ` â€” ${line.durationMin} phÃºt` : ''}</td>`
-          : `<td class="invoice-no-service">â€”</td>`;
+          ? `<td>${_esc(line.variantLabel || '')}${line.durationMin ? ` — ${line.durationMin} phút` : ''}</td>`
+          : `<td class="invoice-no-service">—</td>`;
         const priceCell = hasService
           ? `<td class="text-end">${_fmtVND(parseFloat(line.unitPrice))}</td>`
-          : `<td class="text-end invoice-no-service">0Ä‘</td>`;
+          : `<td class="text-end invoice-no-service">0đ</td>`;
         const totalCell = hasService
           ? `<td class="text-end">${_fmtVND(parseFloat(line.lineTotal))}</td>`
-          : `<td class="text-end invoice-no-service">0Ä‘</td>`;
+          : `<td class="text-end invoice-no-service">0đ</td>`;
         return `<tr>
           <td>${_esc(line.customerName || '')}</td>
           ${svcCell}
@@ -4141,7 +4097,7 @@ function _renderInvoiceModal(inv) {
     }
   }
 
-  // Reset discount fields â€” khÃ´i phá»¥c tá»« invoice Ä‘Ã£ lÆ°u
+  // Reset discount fields — khôi phục từ invoice đã lưu
   const discountInput = document.getElementById('invDiscountValue');
   const discountType  = document.getElementById('invDiscountType');
   if (discountInput) {
@@ -4149,7 +4105,7 @@ function _renderInvoiceModal(inv) {
     discountInput.value = dv > 0 ? dv : '';
   }
   if (discountType) {
-    // Map model value â†’ select option: NONE/AMOUNT/PERCENT
+    // Map model value → select option: NONE/AMOUNT/PERCENT
     const dtMap = { NONE: 'NONE', AMOUNT: 'AMOUNT', PERCENT: 'PERCENT' };
     discountType.value = dtMap[inv.discountType] || 'NONE';
   }
@@ -4172,34 +4128,34 @@ function _renderInvoiceModal(inv) {
   const btnRefund    = document.getElementById('btnRefundPayment');
   const refundedMsg  = document.getElementById('invRefundedMsg');
 
-  // Reset tráº¡ng thÃ¡i trÆ°á»›c
+  // Reset trạng thái trước
   if (payInputWrap) payInputWrap.style.display = 'none';
   if (btnConfirm)   btnConfirm.style.display   = 'none';
   if (btnRefund)    btnRefund.style.display     = 'none';
   if (refundedMsg)  refundedMsg.style.display   = 'none';
 
   if (payStatus === 'REFUNDED') {
-    // ÄÃ£ hoÃ n tiá»n â†’ chá»‰ hiá»‡n thÃ´ng bÃ¡o, áº©n táº¥t cáº£ nÃºt
+    // Đã hoàn tiền → chỉ hiện thông báo, ẩn tất cả nút
     if (refundedMsg) refundedMsg.style.display = '';
   } else if (payStatus === 'PAID') {
-    // ÄÃ£ thanh toÃ¡n Ä‘á»§ â†’ hiá»‡n nÃºt HoÃ n tiá»n chá»‰ khi paidAmount > 0
+    // Đã thanh toán đủ → hiện nút Hoàn tiền chỉ khi paidAmount > 0
     if (paidAmount > 0) {
       if (btnRefund) btnRefund.style.display = '';
     }
   } else {
-    // UNPAID / PARTIAL â†’ hiá»‡n form nháº­p thanh toÃ¡n
-    // BUG-002 FIX: PARTIAL cÃ³ tiá»n Ä‘Ã£ thu â†’ hiá»‡n thÃªm nÃºt HoÃ n tiá»n
+    // UNPAID / PARTIAL → hiện form nhập thanh toán
+    // BUG-002 FIX: PARTIAL có tiền đã thu → hiện thêm nút Hoàn tiền
     const finalAmount = parseFloat(inv.finalAmount) || 0;
     const remaining   = parseFloat(inv.remaining)   || 0;
 
-    // Náº¿u final = 0 (chÆ°a cÃ³ dá»‹ch vá»¥) â†’ áº©n form, hiá»‡n thÃ´ng bÃ¡o
+    // Nếu final = 0 (chưa có dịch vụ) → ẩn form, hiện thông báo
     if (finalAmount === 0 && payStatus === 'UNPAID') {
       const errEl = document.getElementById('invoiceModalError');
       if (errEl) {
-        errEl.textContent = 'ChÆ°a cÃ³ dá»‹ch vá»¥ nÃ o Ä‘Æ°á»£c chá»n. Vui lÃ²ng lÆ°u lá»‹ch háº¹n vá»›i dá»‹ch vá»¥ trÆ°á»›c khi thanh toÃ¡n.';
+        errEl.textContent = 'Chưa có dịch vụ nào được chọn. Vui lòng lưu lịch hẹn với dịch vụ trước khi thanh toán.';
         errEl.classList.remove('d-none');
       }
-      // áº¨n nÃºt xÃ¡c nháº­n â€” khÃ´ng thá»ƒ thanh toÃ¡n 0Ä‘
+      // Ẩn nút xác nhận — không thể thanh toán 0đ
       if (btnConfirm) btnConfirm.style.display = 'none';
     } else {
       if (payInputWrap) payInputWrap.style.display = 'block';
@@ -4212,14 +4168,14 @@ function _renderInvoiceModal(inv) {
         payAmountInput.value = remaining > 0 ? Math.round(remaining) : '';
       }
       if (btnLabel) {
-        btnLabel.textContent = payStatus === 'PARTIAL' ? 'Thu thÃªm' : 'XÃ¡c nháº­n thanh toÃ¡n';
+        btnLabel.textContent = payStatus === 'PARTIAL' ? 'Thu thêm' : 'Xác nhận thanh toán';
       }
     }
   }
 }
 
 /**
- * TÃ­nh láº¡i tá»•ng tiá»n khi thay Ä‘á»•i chiáº¿t kháº¥u.
+ * Tính lại tổng tiền khi thay đổi chiết khấu.
  */
 function _recalcInvoiceTotals() {
   if (!_invoiceData) return;
@@ -4232,14 +4188,14 @@ function _recalcInvoiceTotals() {
   let discountValue = parseFloat(discountInput?.value || 0) || 0;
   const dtype = discountType?.value || 'NONE';  // NONE | AMOUNT | PERCENT
 
-  // Clamp: 0 â‰¤ discount â‰¤ subtotal
+  // Clamp: 0 ≤ discount ≤ subtotal
   const discountAmount = _calcDiscountAmount(subtotal, dtype, discountValue);
   const finalAmount = subtotal - discountAmount;
   const remaining   = Math.max(finalAmount - paidAmount, 0);
 
   _updateInvoiceTotalsDisplay(subtotal, discountAmount, finalAmount, paidAmount, remaining);
 
-  // Cáº­p nháº­t pre-fill sá»‘ tiá»n
+  // Cập nhật pre-fill số tiền
   const payAmountInput = document.getElementById('invPayAmount');
   if (payAmountInput && remaining > 0) {
     payAmountInput.value = Math.round(remaining);
@@ -4247,7 +4203,7 @@ function _recalcInvoiceTotals() {
 }
 
 /**
- * Cáº­p nháº­t hiá»ƒn thá»‹ cÃ¡c dÃ²ng tá»•ng trong invoice modal.
+ * Cập nhật hiển thị các dòng tổng trong invoice modal.
  */
 function _updateInvoiceTotalsDisplay(subtotal, discount, final, paid, remaining) {
   const set = (id, val) => {
@@ -4262,7 +4218,7 @@ function _updateInvoiceTotalsDisplay(subtotal, discount, final, paid, remaining)
 }
 
 /**
- * Submit thanh toÃ¡n tá»« Invoice Modal.
+ * Submit thanh toán từ Invoice Modal.
  */
 async function _submitInvoicePayment() {
   if (!_invoiceData) return;
@@ -4283,19 +4239,19 @@ async function _submitInvoicePayment() {
 
   // Validate
   if (payAmount > 0 && !payMethod) {
-    if (errEl) { errEl.textContent = 'Vui lÃ²ng chá»n phÆ°Æ¡ng thá»©c thanh toÃ¡n'; errEl.classList.remove('d-none'); }
+    if (errEl) { errEl.textContent = 'Vui lòng chọn phương thức thanh toán'; errEl.classList.remove('d-none'); }
     return;
   }
   if (payAmount < 0) {
-    if (errEl) { errEl.textContent = 'Sá»‘ tiá»n khÃ´ng Ä‘Æ°á»£c Ã¢m'; errEl.classList.remove('d-none'); }
+    if (errEl) { errEl.textContent = 'Số tiền không được âm'; errEl.classList.remove('d-none'); }
     return;
   }
   if (dtype === 'PERCENT' && discountValue > 100) {
-    if (errEl) { errEl.textContent = 'Chiáº¿t kháº¥u % khÃ´ng Ä‘Æ°á»£c vÆ°á»£t quÃ¡ 100'; errEl.classList.remove('d-none'); }
+    if (errEl) { errEl.textContent = 'Chiết khấu % không được vượt quá 100'; errEl.classList.remove('d-none'); }
     return;
   }
 
-  // Validate remaining (tÃ­nh tá»« _invoiceData + discount hiá»‡n táº¡i)
+  // Validate remaining (tính từ _invoiceData + discount hiện tại)
   if (payAmount > 0 && !(_invoiceData._createMode)) {
     const subtotalCheck = parseFloat(_invoiceData.subtotal) || 0;
     const paidCheck     = parseFloat(_invoiceData.paidAmount) || 0;
@@ -4303,29 +4259,29 @@ async function _submitInvoicePayment() {
     const finalCheck     = Math.max(subtotalCheck - discountAmountCheck, 0);
     const remainingCheck = Math.max(finalCheck - paidCheck, 0);
     if (finalCheck === 0) {
-      if (errEl) { errEl.textContent = 'ChÆ°a cÃ³ dá»‹ch vá»¥ nÃ o Ä‘Æ°á»£c chá»n. Vui lÃ²ng lÆ°u lá»‹ch háº¹n vá»›i dá»‹ch vá»¥ trÆ°á»›c khi thanh toÃ¡n.'; errEl.classList.remove('d-none'); }
+      if (errEl) { errEl.textContent = 'Chưa có dịch vụ nào được chọn. Vui lòng lưu lịch hẹn với dịch vụ trước khi thanh toán.'; errEl.classList.remove('d-none'); }
       return;
     }
     if (payAmount > remainingCheck) {
-      if (errEl) { errEl.textContent = `Sá»‘ tiá»n thanh toÃ¡n (${_fmtVND(payAmount)}) vÆ°á»£t quÃ¡ sá»‘ tiá»n cÃ²n láº¡i (${_fmtVND(remainingCheck)}). Vui lÃ²ng kiá»ƒm tra láº¡i.`; errEl.classList.remove('d-none'); }
+      if (errEl) { errEl.textContent = `Số tiền thanh toán (${_fmtVND(payAmount)}) vượt quá số tiền còn lại (${_fmtVND(remainingCheck)}). Vui lòng kiểm tra lại.`; errEl.classList.remove('d-none'); }
       return;
     }
   }
 
   const bookingCode = _invoiceData._bookingCode;
 
-  // â”€â”€ CREATE MODE: lÆ°u payment data táº¡m, khÃ´ng gá»i API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── CREATE MODE: lưu payment data tạm, không gọi API ────────────────────
   if (_invoiceData._createMode || !bookingCode) {
-    // TÃ­nh final sau discount
+    // Tính final sau discount
     const subtotal = parseFloat(_invoiceData.subtotal) || 0;
     const discountAmount = _calcDiscountAmount(subtotal, dtype, discountValue);
     const finalAmount = subtotal - discountAmount;
 
-    // XÃ¡c Ä‘á»‹nh payStatus
+    // Xác định payStatus
     const hasAnyService = ((_invoiceData.lines || []).some(l => parseFloat(l.unitPrice) > 0));
     const payStatus = _calcPayStatus(finalAmount, payAmount, hasAnyService);
 
-    // LÆ°u vÃ o state táº¡m
+    // Lưu vào state tạm
     _createModePayment = {
       payStatus,
       paymentMethod: payMethod,
@@ -4336,30 +4292,30 @@ async function _submitInvoicePayment() {
       finalAmount,
     };
 
-    // Cáº­p nháº­t badge trong create modal
+    // Cập nhật badge trong create modal
     _setPayStatusBadge(payStatus);
     const btnInvoiceLabel = document.getElementById('btnInvoiceLabel');
     if (btnInvoiceLabel) {
-      if (payStatus === 'PAID')         btnInvoiceLabel.textContent = 'Xem hÃ³a Ä‘Æ¡n';
-      else if (payStatus === 'PARTIAL') btnInvoiceLabel.textContent = 'Thu thÃªm';
-      else                              btnInvoiceLabel.textContent = 'Thanh toÃ¡n';
+      if (payStatus === 'PAID')         btnInvoiceLabel.textContent = 'Xem hóa đơn';
+      else if (payStatus === 'PARTIAL') btnInvoiceLabel.textContent = 'Thu thêm';
+      else                              btnInvoiceLabel.textContent = 'Thanh toán';
     }
 
-    // ÄÃ³ng invoice modal
+    // Đóng invoice modal
     const invoiceModalEl = document.getElementById('invoiceModal');
     const invoiceModal   = bootstrap.Modal.getInstance(invoiceModalEl);
     if (invoiceModal) invoiceModal.hide();
 
-    showToast('success', 'ÄÃ£ ghi nháº­n', `Thanh toÃ¡n: ${_fmtVND(payAmount)} â€” sáº½ lÆ°u khi táº¡o lá»‹ch`);
+    showToast('success', 'Đã ghi nhận', `Thanh toán: ${_fmtVND(payAmount)} — sẽ lưu khi tạo lịch`);
     return;
   }
 
-  // â”€â”€ EDIT MODE: gá»i API nhÆ° cÅ© â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── EDIT MODE: gọi API như cũ ────────────────────────────────────────────
 
-  // Loading state â€” chá»‰ Ä‘á»•i text trong span, khÃ´ng ghi Ä‘Ã¨ innerHTML nÃºt
+  // Loading state — chỉ đổi text trong span, không ghi đè innerHTML nút
   const btnLbl = document.getElementById('btnConfirmPaymentLabel');
   if (btnConfirm) btnConfirm.disabled = true;
-  if (btnLbl) btnLbl.textContent = 'Äang xá»­ lÃ½...';
+  if (btnLbl) btnLbl.textContent = 'Đang xử lý...';
 
   try {
     const result = await apiPost(`${API_BASE}/bookings/${bookingCode}/invoice/pay/`, {
@@ -4370,16 +4326,16 @@ async function _submitInvoicePayment() {
     });
 
     if (!result.success) {
-      if (errEl) { errEl.textContent = result.error || 'CÃ³ lá»—i xáº£y ra'; errEl.classList.remove('d-none'); }
+      if (errEl) { errEl.textContent = result.error || 'Có lỗi xảy ra'; errEl.classList.remove('d-none'); }
       return;
     }
 
-    // ÄÃ³ng invoice modal
+    // Đóng invoice modal
     const invoiceModalEl = document.getElementById('invoiceModal');
     const invoiceModal = bootstrap.Modal.getInstance(invoiceModalEl);
     if (invoiceModal) invoiceModal.hide();
 
-    // Cáº­p nháº­t hidden select + badge trong edit modal
+    // Cập nhật hidden select + badge trong edit modal
     const payStatusSel = document.getElementById('sharedPayStatus');
     if (payStatusSel) _setSelectValue(payStatusSel, result.paymentStatus, 'UNPAID');
     _updatePaymentSummary();
@@ -4387,22 +4343,22 @@ async function _submitInvoicePayment() {
     // Refresh grid
     await _refreshAll();
 
-    const statusLabels = { UNPAID: 'ChÆ°a thanh toÃ¡n', PARTIAL: 'Thanh toÃ¡n má»™t pháº§n', PAID: 'ÄÃ£ thanh toÃ¡n' };
-    showToast('success', 'Thanh toÃ¡n thÃ nh cÃ´ng', statusLabels[result.paymentStatus] || result.paymentStatus);
+    const statusLabels = { UNPAID: 'Chưa thanh toán', PARTIAL: 'Thanh toán một phần', PAID: 'Đã thanh toán' };
+    showToast('success', 'Thanh toán thành công', statusLabels[result.paymentStatus] || result.paymentStatus);
 
   } catch (e) {
-    if (errEl) { errEl.textContent = 'CÃ³ lá»—i xáº£y ra, vui lÃ²ng thá»­ láº¡i'; errEl.classList.remove('d-none'); }
+    if (errEl) { errEl.textContent = 'Có lỗi xảy ra, vui lòng thử lại'; errEl.classList.remove('d-none'); }
   } finally {
     if (btnConfirm) {
       btnConfirm.disabled = false;
       const lbl = document.getElementById('btnConfirmPaymentLabel');
-      if (lbl) lbl.textContent = 'XÃ¡c nháº­n thanh toÃ¡n';
+      if (lbl) lbl.textContent = 'Xác nhận thanh toán';
     }
   }
 }
 
 /**
- * HoÃ n tiá»n hÃ³a Ä‘Æ¡n â€” Ä‘á»•i táº¥t cáº£ InvoicePayment SUCCESS â†’ REFUNDED.
+ * Hoàn tiền hóa đơn — đổi tất cả InvoicePayment SUCCESS → REFUNDED.
  */
 async function _submitInvoiceRefund() {
   if (!_invoiceData) return;
@@ -4416,32 +4372,32 @@ async function _submitInvoiceRefund() {
 
   if (errEl) { errEl.textContent = ''; errEl.classList.add('d-none'); }
 
-  // Confirm trÆ°á»›c khi hoÃ n tiá»n
+  // Confirm trước khi hoàn tiền
   const confirmed = await confirmAction(
-    'XÃ¡c nháº­n hoÃ n tiá»n',
-    'Báº¡n cÃ³ cháº¯c muá»‘n hoÃ n tiá»n hÃ³a Ä‘Æ¡n nÃ y? Táº¥t cáº£ giao dá»‹ch thanh toÃ¡n sáº½ bá»‹ Ä‘Ã¡nh dáº¥u lÃ  Ä‘Ã£ hoÃ n.',
-    'HoÃ n tiá»n',
-    'Há»§y'
+    'Xác nhận hoàn tiền',
+    'Bạn có chắc muốn hoàn tiền hóa đơn này? Tất cả giao dịch thanh toán sẽ bị đánh dấu là đã hoàn.',
+    'Hoàn tiền',
+    'Hủy'
   );
   if (!confirmed) return;
 
   if (btnRefund) btnRefund.disabled = true;
-  if (btnLbl)    btnLbl.textContent = 'Äang xá»­ lÃ½...';
+  if (btnLbl)    btnLbl.textContent = 'Đang xử lý...';
 
   try {
     const result = await apiPost(`${API_BASE}/bookings/${bookingCode}/invoice/refund/`, {});
 
     if (!result.success) {
-      if (errEl) { errEl.textContent = result.error || 'CÃ³ lá»—i xáº£y ra'; errEl.classList.remove('d-none'); }
+      if (errEl) { errEl.textContent = result.error || 'Có lỗi xảy ra'; errEl.classList.remove('d-none'); }
       return;
     }
 
-    // ÄÃ³ng invoice modal
+    // Đóng invoice modal
     const invoiceModalEl = document.getElementById('invoiceModal');
     const invoiceModal = bootstrap.Modal.getInstance(invoiceModalEl);
     if (invoiceModal) invoiceModal.hide();
 
-    // Cáº­p nháº­t tráº¡ng thÃ¡i thanh toÃ¡n trong edit modal
+    // Cập nhật trạng thái thanh toán trong edit modal
     const payStatusSel = document.getElementById('sharedPayStatus');
     if (payStatusSel) _setSelectValue(payStatusSel, 'REFUNDED', 'UNPAID');
     _updatePaymentSummary();
@@ -4449,15 +4405,14 @@ async function _submitInvoiceRefund() {
     // Refresh grid
     await _refreshAll();
 
-    showToast('success', 'HoÃ n tiá»n thÃ nh cÃ´ng', 'ÄÃ£ hoÃ n tiá»n hÃ³a Ä‘Æ¡n');
+    showToast('success', 'Hoàn tiền thành công', 'Đã hoàn tiền hóa đơn');
 
   } catch (e) {
-    if (errEl) { errEl.textContent = 'CÃ³ lá»—i xáº£y ra, vui lÃ²ng thá»­ láº¡i'; errEl.classList.remove('d-none'); }
+    if (errEl) { errEl.textContent = 'Có lỗi xảy ra, vui lòng thử lại'; errEl.classList.remove('d-none'); }
   } finally {
     if (btnRefund) btnRefund.disabled = false;
-    if (btnLbl)    btnLbl.textContent = 'HoÃ n tiá»n';
+    if (btnLbl)    btnLbl.textContent = 'Hoàn tiền';
   }
 }
-
 
 
