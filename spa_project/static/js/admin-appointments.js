@@ -1024,18 +1024,21 @@ async function renderWebRequests(){
   }
   webTbody.innerHTML = rows.map(a => {
     // Backend chỉ trả về PENDINGS bookings - không cần check status
-    // Escape appointment code để tránh XSS trong onclick
-    const safeId = _esc(a.id);
+    const apptId = a.id;
     // Chỉ có action Xác nhận và Từ chối cho PENDING bookings
     const actionBtn = `<div class="action-buttons">
-      <button type="button" class="web-action-btn web-action-btn-approve" data-id="${safeId}" onclick="approveWeb('${safeId}')"><i class="fas fa-check"></i><span>Xác nhận</span></button>
-      <button type="button" class="web-action-btn web-action-btn-reject" data-id="${safeId}" onclick="rejectWeb('${safeId}')"><i class="fas fa-xmark"></i><span>Từ chối</span></button>
+      <button type="button" class="web-action-btn web-action-btn-approve" data-id="${apptId}" onclick="approveWeb('${apptId}')"><i class="fas fa-check"></i><span>Xác nhận</span></button>
+      <button type="button" class="web-action-btn web-action-btn-reject" data-id="${apptId}" onclick="rejectWeb('${apptId}')"><i class="fas fa-xmark"></i><span>Từ chối</span></button>
     </div>`;
 
-    // Escape tất cả user input để tránh XSS
     return `<tr>
-      <td class="fw-semibold">${safeId}</td><td>${_esc(a.customerName)}</td><td>${_esc(a.phone)}</td><td>${_esc(a.service)}</td>
-      <td>${_esc(a.date)}</td><td>${_esc(a.start)} - ${_esc(a.end)}</td><td>${_esc(a.durationMin||"")} phút</td>
+      <td class="fw-semibold">${apptId}</td>
+      <td>${a.customerName}</td>
+      <td>${a.phone}</td>
+      <td>${a.service}</td>
+      <td>${a.date}</td>
+      <td>${a.start} - ${a.end}</td>
+      <td>${a.durationMin||""} phút</td>
       <td class="action-cell">${actionBtn}</td>
     </tr>`;
   }).join("");
