@@ -1,2 +1,0 @@
-tests.py 336:             "booker": {"name": "Tran Thi B", "phone": "0987654321", "source": "DIRECT"},
-tests.py 657:         self.assertEqual(data['booking']['bookerName'], 'Thanh Thien')

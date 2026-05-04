@@ -1,3 +1,0 @@
-308: function _validateGuestDateTimeRoom(g, index, total) {
-2946: const dtrCheck = _validateGuestDateTimeRoom(g, i, cards.length);
-3087: const dtrCheck = _validateGuestDateTimeRoom(g, i, guestCards.length);
