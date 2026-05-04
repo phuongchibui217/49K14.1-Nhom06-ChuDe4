@@ -833,10 +833,18 @@ def api_appointments_search(request):
             Q(booking__booker_email__icontains=email)
         )
     if status:
-        # Tìm theo appointment status hoặc booking status
-        qs = qs.filter(
-            Q(status=status) | Q(booking__status=status)
-        )
+        # REJECTED chỉ tồn tại ở Booking (không có ở Appointment)
+        # Các status khác (NOT_ARRIVED, ARRIVED, COMPLETED, CANCELLED) chỉ ở Appointment
+        BOOKING_ONLY_STATUSES = {'REJECTED', 'PENDING', 'CONFIRMED'}
+        APPT_ONLY_STATUSES    = {'NOT_ARRIVED', 'ARRIVED', 'COMPLETED'}
+        if status in BOOKING_ONLY_STATUSES:
+            qs = qs.filter(booking__status=status)
+        elif status in APPT_ONLY_STATUSES:
+            qs = qs.filter(status=status)
+        else:
+            # CANCELLED tồn tại ở cả hai — lọc appointment bị hủy trực tiếp
+            # hoặc thuộc booking bị hủy
+            qs = qs.filter(Q(status=status) | Q(booking__status=status))
     if source:
         qs = qs.filter(booking__source=source)
     if service_id:

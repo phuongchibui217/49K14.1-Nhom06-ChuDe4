@@ -3293,7 +3293,7 @@ function _fillSearchDropdowns() {
   // Điền dropdown dịch vụ
   const srchSvc = document.getElementById('srchService');
   if (srchSvc && srchSvc.options.length <= 1 && SERVICES.length) {
-    _populateSelect(srchSvc, SERVICES, 'id', 'name', null);
+    _populateSelect(srchSvc, SERVICES, 'id', 'name', 'Tất cả dịch vụ');
   }
 }
 
@@ -3366,7 +3366,13 @@ async function _doSearch() {
   }
 
   const rows = appts.map(a => {
-    const statusBadge = `<span class="badge ${_srchStatusBadgeClass(a.apptStatus)}">${statusLabel(a.apptStatus)}</span>`;
+    // Ưu tiên bookingStatus khi booking ở trạng thái đặc biệt (REJECTED, PENDING, CONFIRMED)
+    // vì các status này không tồn tại ở Appointment
+    const BOOKING_OVERRIDE = new Set(['REJECTED', 'PENDING', 'CONFIRMED']);
+    const displayStatus = BOOKING_OVERRIDE.has((a.bookingStatus || '').toUpperCase())
+      ? a.bookingStatus
+      : a.apptStatus;
+    const statusBadge = `<span class="badge ${_srchStatusBadgeClass(displayStatus)}">${statusLabel(displayStatus)}</span>`;
     const svcDisplay = a.serviceCode
       ? `<span class="fw-semibold">${_esc(a.serviceCode)}</span>${a.service ? ` <span class="text-muted small">— ${_esc(a.service)}</span>` : ''}`
       : (a.service ? _esc(a.service) : '<span class="text-muted fst-italic">Chưa chọn DV</span>');
