@@ -1,2 +1,0 @@
-1406: f'Khách {i+1} và Khách {j+1} trùng phòng và thời gian. '
-1407: 'Các khách trong cùng lịch hẹn không được trùng phòng và thời gian.'

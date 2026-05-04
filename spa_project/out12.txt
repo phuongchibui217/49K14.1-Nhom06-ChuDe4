@@ -1,1 +1,0 @@
-3122: _showModalError(`Khách ${i+1} và Khách ${j+1} trùng phòng và thời gian. Vui lòng chọn phòng hoặc giờ khác.`); return;
