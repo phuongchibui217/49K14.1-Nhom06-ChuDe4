@@ -189,7 +189,6 @@
               <label class="form-label mb-1 search-form-label">Trạng thái</label>
               <select class="form-select form-select-sm" id="srchStatus">
                 <option value="">Tất cả trạng thái</option>
-                <option value="CONFIRMED">Đã xác nhận</option>
                 <option value="NOT_ARRIVED">Chưa đến</option>
                 <option value="ARRIVED">Đã đến</option>
                 <option value="COMPLETED">Hoàn thành</option>
@@ -316,8 +315,8 @@
         {# PANEL 2+3: Scroll area #}
         <div class="appt-scroll-area">
 
-          {# Apply-all bar — CHỈ HIỆN Ở CREATE MODE #}
-          <div id="createOnlyBar" class="create-only-bar">
+          {# Apply-all bar — hiện cả create lẫn edit mode #}
+          <div id="applyAllBar" class="create-only-bar">
             <span class="create-only-label"><i class="fas fa-magic me-1"></i>Áp dụng tất cả:</span>
             <select id="applyAllService" class="apply-all-select">
               <option value="">-- Dịch vụ --</option>
@@ -328,7 +327,8 @@
             <button type="button" id="btnApplyAll" class="btn-apply-all">
               <i class="fas fa-check me-1"></i>Áp dụng
             </button>
-            <div class="ms-auto d-flex align-items-center gap-8">
+            {# Thêm khách — CHỈ HIỆN Ở CREATE MODE #}
+            <div class="ms-auto d-flex align-items-center gap-8" id="createOnlyBar">
               <button type="button" id="btnAddGuest" class="btn-add-guest">
                 <i class="fas fa-plus me-1"></i>Thêm khách
               </button>
@@ -371,18 +371,10 @@
               </select>
             </div>
 
-            {# Trạng thái thanh toán — CREATE MODE: dropdown editable; EDIT MODE: badge readonly #}
-            <div class="status-form-group" id="payStatusEditableWrap">
-              <label class="status-label">Thanh toán</label>
-              <select id="sharedPayStatus" class="status-select">
-                <option value="UNPAID" selected>Chưa thanh toán</option>
-                <option value="PARTIAL">Một phần</option>
-                <option value="PAID">Đã thanh toán</option>
-                <option value="REFUNDED">Đã hoàn tiền</option>
-              </select>
-            </div>
+            {# sharedPayStatus: hidden — giá trị được cập nhật tự động qua invoice modal #}
+            <input type="hidden" id="sharedPayStatus" value="UNPAID">
 
-            {# Badge readonly — chỉ hiện ở EDIT MODE thay cho dropdown #}
+            {# Badge readonly — chỉ hiện ở EDIT MODE #}
             <div class="status-form-group d-none" id="payStatusReadonlyWrap">
               <label class="status-label">Thanh toán</label>
               <span id="payStatusBadge" class="pay-status-badge pay-status-unpaid">Chưa thanh toán</span>

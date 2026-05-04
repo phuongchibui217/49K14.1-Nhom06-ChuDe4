@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Count
 from .models import CustomerProfile
 from .forms import CustomerProfileForm, ChangePasswordForm
 from core.decorators import customer_required
@@ -100,7 +100,18 @@ def admin_customers(request):
             Q(full_name__icontains=search_query) |
             Q(phone__icontains=search_query)
         )
-        
+
+    # Annotate số lịch hẹn thực tế: exclude CANCELLED và soft-deleted
+    customers_qs = customers_qs.annotate(
+        appt_count=Count(
+            'appointments',
+            filter=Q(
+                appointments__status__in=['NOT_ARRIVED', 'ARRIVED', 'COMPLETED'],
+                appointments__deleted_at__isnull=True,
+            )
+        )
+    )
+
     customers_qs = customers_qs.order_by('-created_at')
 
     # Phân trang
