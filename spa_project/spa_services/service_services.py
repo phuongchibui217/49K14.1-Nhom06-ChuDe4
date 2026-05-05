@@ -10,7 +10,6 @@ Tách ra khỏi views.py để:
 - Code gọn hơn, dễ đọc
 - Dùng lại được ở nhiều nơi (DRY)
 - Dễ test riêng biệt
-
 Author: Spa ANA Team
 """
 

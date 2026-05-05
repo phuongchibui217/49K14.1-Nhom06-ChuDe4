@@ -4,7 +4,6 @@ Forms cho Service Management
 File này chứa các forms cho:
 - Tạo/cập nhật dịch vụ spa
 
-Author: Spa ANA Team
 """
 
 from django import forms
@@ -113,6 +112,7 @@ class ServiceForm(forms.ModelForm):
         # Không dùng trực tiếp fields từ model, ta đã định nghĩa ở trên
 
     def __init__(self, *args, **kwargs):
+        """Load danh mục từ DB và set choices cho category_number field"""
         super().__init__(*args, **kwargs)
         from .models import ServiceCategory
         self.fields['category_number'].choices = [('', 'Chọn danh mục')] + [
@@ -121,7 +121,7 @@ class ServiceForm(forms.ModelForm):
         ]
 
     def clean_code(self):
-        """Validate mã dịch vụ — bắt buộc, unique"""
+        """Validate mã dịch vụ: bắt buộc, unique (case-insensitive khi edit)"""
         code = self.cleaned_data.get('code', '').strip().upper()
         if not code:
             raise forms.ValidationError('Vui lòng nhập mã dịch vụ')
@@ -133,7 +133,7 @@ class ServiceForm(forms.ModelForm):
         return code
 
     def clean_name(self):
-        """Validate tên dịch vụ"""
+        """Validate tên dịch vụ: không rỗng, không chỉ số, unique (case-insensitive)"""
         name = self.cleaned_data.get('name', '').strip()
 
         # Check if name is not empty
@@ -158,15 +158,16 @@ class ServiceForm(forms.ModelForm):
         return name
 
     def clean_description(self):
-        """short_description — cắt tối đa 255 ký tự"""
+        """Cắt short_description tối đa 255 ký tự (trả về chuỗi rỗng nếu null)"""
         value = self.cleaned_data.get('description', '').strip()
         return value[:255] if value else ''
 
     def clean_detail_description(self):
+        """Return detail_description as-is (không validate, chỉ strip spaces)"""
         return self.cleaned_data.get('detail_description', '').strip()
 
     def clean_image(self):
-        """Validate hình ảnh"""
+        """Validate hình ảnh: bắt buộc khi tạo, optional khi edit, max 5MB, min 300x300px"""
         image = self.cleaned_data.get('image')
 
         # Nếu không upload ảnh mới
@@ -200,7 +201,7 @@ class ServiceForm(forms.ModelForm):
         return image
 
     def clean_category_number(self):
-        """Validate và map category code sang ServiceCategory object"""
+        """Validate category được chọn và map code -> ServiceCategory object"""
         category_code = self.cleaned_data.get('category_number')
         if not category_code:
             raise forms.ValidationError('Vui lòng chọn danh mục')
@@ -211,7 +212,7 @@ class ServiceForm(forms.ModelForm):
             raise forms.ValidationError('Danh mục không tồn tại trong hệ thống')
 
     def save(self, commit=True):
-        """Override save để xử lý mapping và sinh mã dịch vụ"""
+        """Override save: map category_number->object, sinh mã code, xử lý descriptions"""
         service = super().save(commit=False)
 
         # Map category_number to ServiceCategory object

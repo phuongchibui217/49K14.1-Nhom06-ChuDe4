@@ -7,7 +7,6 @@ File này chứa các views cho:
 - Quản lý dịch vụ (admin)
 - API endpoints cho services
 
-Author: Spa ANA Team
 """
 
 from django.shortcuts import render, redirect, get_object_or_404
@@ -19,7 +18,6 @@ from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
 import json
 
-# TẠM IMPORT từ spa.models (CHƯA chuyển model trong phase này)
 from .models import Service
 
 # Forms (sẽ tạo trong spa_services/forms.py)
@@ -57,31 +55,35 @@ def service_list(request):
     from .models import ServiceCategory
     from django.db.models import Min, Max, Count
 
+    # Init variables
     load_error = False
     services = []
     categories = []
 
     try:
+        # Query services với aggregate data từ variants
         services = (
             Service.objects
-            .filter(status='ACTIVE')
-            .select_related('category')
-            .prefetch_related('variants')
+            .filter(status='ACTIVE')              # Chỉ services active
+            .select_related('category')            # JOIN category (1 query)
+            .prefetch_related('variants')          # Eager load variants (1 query)
             .annotate(
-                min_price=Min('variants__price'),
-                max_price=Max('variants__price'),
-                min_duration=Min('variants__duration_minutes'),
-                max_duration=Max('variants__duration_minutes'),
-                variant_count=Count('variants'),
+                min_price=Min('variants__price'),               # Min price
+                max_price=Max('variants__price'),               # Max price
+                min_duration=Min('variants__duration_minutes'), # Min duration để tính giá từ 1000-2000 
+                max_duration=Max('variants__duration_minutes'), # Max duration
+                variant_count=Count('variants'),                # Số lượng variants
             )
             .order_by('-created_at')
         )
+        # Query categories cho filter
         categories = ServiceCategory.objects.filter(status='ACTIVE').order_by('sort_order', 'name')
     except Exception:
         import traceback
         traceback.print_exc()
         load_error = True
 
+    # Render template với context
     return render(request, 'spa_services/services.html', {
         'services': services,
         'categories': categories,
@@ -90,44 +92,28 @@ def service_list(request):
 
 
 def service_detail(request, service_id):
-    """Chi tiết dịch vụ - Lấy từ database"""
-    # Case 1: Dịch vụ không tồn tại hoặc không active
-    try:
-        service = Service.objects.get(id=service_id, status='ACTIVE')
-    except Service.DoesNotExist:
-        return render(request, 'spa_services/service_detail.html', {
-            'service': None,
-            'not_found': True,
-            'related_services': [],
-        }, status=404)
-    except Exception:
-        # Case 2: Lỗi khi tải dữ liệu
-        import traceback
-        traceback.print_exc()
-        return render(request, 'spa_services/service_detail.html', {
-            'service': None,
-            'load_error': True,
-            'related_services': [],
-        })
+    """Chi tiết dịch vụ - Lấy service + related services cùng category"""
+    from django.db.models import Min, Max, Count
 
-    # Lấy các dịch vụ liên quan (cùng category)
-    try:
-        related_services = (
-            Service.objects
-            .filter(category=service.category, status='ACTIVE')
-            .exclude(id=service_id)
-            .prefetch_related('variants')
-            .annotate(
-                min_price=Min('variants__price'),
-                max_price=Max('variants__price'),
-                min_duration=Min('variants__duration_minutes'),
-                max_duration=Max('variants__duration_minutes'),
-                variant_count=Count('variants'),
-            )[:4]
-        )
-    except Exception:
-        related_services = []
+    # Get service active hoặc return 404
+    service = get_object_or_404(Service, id=service_id, status='ACTIVE')
 
+    # Get related services (cùng category, max 4)
+    related_services = (
+        Service.objects
+        .filter(category=service.category, status='ACTIVE')
+        .exclude(id=service_id)
+        .prefetch_related('variants')
+        .annotate(
+            min_price=Min('variants__price'),
+            max_price=Max('variants__price'),
+            min_duration=Min('variants__duration_minutes'),
+            max_duration=Max('variants__duration_minutes'),
+            variant_count=Count('variants'),
+        )[:4]
+    )
+
+    # Render template
     return render(request, 'spa_services/service_detail.html', {
         'service': service,
         'related_services': related_services,
