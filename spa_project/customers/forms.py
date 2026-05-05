@@ -90,7 +90,13 @@ class CustomerProfileForm(forms.ModelForm):
         return phone
 
     def clean_email(self):
-        email = self.cleaned_data.get('email', '').strip().lower() or None
+        # Fix: Check None trước khi strip() để tránh AttributeError
+        email_raw = self.cleaned_data.get('email')
+        if email_raw:
+            email = email_raw.strip().lower()
+        else:
+            email = None
+
         if email:
             qs = CustomerProfile.objects.filter(email=email)
             if self.instance and self.instance.pk:
