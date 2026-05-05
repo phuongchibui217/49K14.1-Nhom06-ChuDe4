@@ -769,29 +769,62 @@
 
 {% block extra_js %}
 <script>
-// Variant selection
+/**
+ * Flow:
+ * 1. Xóa highlight 'is-selected' khỏi tất cả variants
+ * 2. Thêm highlight vào variant được chọn
+ * 3. Enable nút "Đặt lịch ngay"
+ * 4. Ẩn dòng hint "Vui lòng chọn gói"
+ */
 function onVariantChange(radio) {
-  document.querySelectorAll('.sd-variant').forEach(el => 
+  // Bước 1: Xóa highlight khỏi tất cả variants (clean state)
+  document.querySelectorAll('.sd-variant').forEach(el =>
     el.classList.remove('is-selected')
   );
+  // Kết quả: Tất cả .sd-variant mất class 'is-selected'
+
+  // Bước 2: Thêm highlight vào variant được chọn
   radio.closest('.sd-variant').classList.add('is-selected');
-  
-  const btn = document.getElementById('btnBook');
-  const note = document.getElementById('bookingNote');
-  if (btn) btn.disabled = false;
-  if (note) note.textContent = '';
+  // Giải thích:
+  //   radio           = <input> element được click
+  //   .closest()      = Tìm parent <label> gần nhất
+  //   .classList.add() = Thêm CSS class để highlight
+
+  // Bước 3: Enable nút "Đặt lịch ngay" & Ẩn hint text
+  const btn = document.getElementById('btnBook');      // Lấy nút button
+  const note = document.getElementById('bookingNote'); // Lấy hint text
+
+  if (btn) btn.disabled = false;   // Enable button (nếu tồn tại)
+  if (note) note.textContent = ''; // Xóa text (ẩn hint)
 }
 
-// Go to booking
+/**
+ * Flow:
+ * 1. Tìm radio button được selected
+ * 2. Redirect đến /booking/ với service & variant IDs
+ */
 function goToBooking(serviceId) {
+  // Lấy variant được selected (radio button có attribute checked)
   const selected = document.querySelector('input[name="selected_variant"]:checked');
+
+  // Guard clause: Nếu không có variant nào selected, dừng lại
   if (!selected) return;
+
+  // Redirect đến trang booking với query parameters
   window.location.href = `/booking/?service=${serviceId}&variant=${selected.value}`;
+  //  /booking/?service=12&variant=46
 }
 
-// Smooth scroll for booking button
+/**
+ * SMOOTH SCROLL TO BOOKING CARD
+ * Tự động scroll mượt đến booking card khi user click links
+ * Được chạy khi DOM loaded xong
+ */
 document.addEventListener('DOMContentLoaded', function() {
+  // Tìm tất cả links dẫn đến #booking-card
   const bookingLinks = document.querySelectorAll('a[href="#booking-card"]');
+
+  // Thêm event listener cho từng link
   bookingLinks.forEach(link => {
     link.addEventListener('click', function(e) {
       e.preventDefault();

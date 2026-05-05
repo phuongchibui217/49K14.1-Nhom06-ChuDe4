@@ -1,12 +1,25 @@
+{# ────────────────────────────────────────────────────────────── #}
+{# SERVICE LIST PAGE - Trang danh sách dịch vụ                     #}
+{# Hiển thị tất cả dịch vụ với filter theo danh mục               #}
+{# ────────────────────────────────────────────────────────────── #}
+
 {% extends 'spa/base.html' %}
 {% load spa_filters %}
 
 {% block title %}Dịch vụ — Spa ANA{% endblock %}
 
+{# ────────────────────────────────────────────────────────────── #}
+{# STYLES - Styling cho page                                       #}
+{# ────────────────────────────────────────────────────────────── #}
 {% block extra_css %}
 <style>
-/* ── SERVICE LIST PAGE ─────────────────────────────── */
+/* ───────────────────────────────────────────────────────────────────
+   STYLING CHO SERVICE LIST PAGE
+   ─────────────────────────────────────────────────────────────────── */
 
+/* ───────────────────────────────────────────────────────────────────
+   HERO SECTION - Banner chính
+   ─────────────────────────────────────────────────────────────────── */
 /* Page header — luxury dark overlay */
 .sl-hero {
   position: relative;
@@ -46,6 +59,9 @@
   letter-spacing: .04em;
 }
 
+/* ───────────────────────────────────────────────────────────────────
+   FILTER BAR - Sticky navigation lọc category
+   ─────────────────────────────────────────────────────────────────── */
 /* Filter bar */
 .sl-filter {
   background: var(--bg-white);
@@ -79,9 +95,15 @@
   color: #fff;
 }
 
+/* ───────────────────────────────────────────────────────────────────
+   GRID SECTION - Responsive grid layout
+   ─────────────────────────────────────────────────────────────────── */
 /* Grid */
 .sl-section { padding: 3.5rem 0 5rem; background: var(--bg-page); }
 
+/* ───────────────────────────────────────────────────────────────────
+   SERVICE CARD - Card component cho mỗi dịch vụ
+   ─────────────────────────────────────────────────────────────────── */
 /* Service card — luxury minimal */
 .sl-card {
   background: var(--bg-white);
@@ -194,6 +216,9 @@
   color: #fff;
 }
 
+/* ───────────────────────────────────────────────────────────────────
+   EMPTY STATE - Khi không có dữ liệu hoặc lỗi
+   ─────────────────────────────────────────────────────────────────── */
 /* Empty */
 .sl-empty {
   text-align: center; padding: 5rem 2rem;
@@ -203,9 +228,14 @@
 </style>
 {% endblock %}
 
+{# ────────────────────────────────────────────────────────────── #}
+{# CONTENT - Main content area                                     #}
+{# ────────────────────────────────────────────────────────────── #}
 {% block content %}
 
-{# ── HERO ── #}
+{# ────────────────────────────────────────────────────────────── #}
+{# HERO SECTION - Banner chính với title và subtitle              #}
+{# ────────────────────────────────────────────────────────────── #}
 <div class="sl-hero">
   <img class="sl-hero__img"
        src="https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=1920"
@@ -218,7 +248,9 @@
   </div>
 </div>
 
-{# ── FILTER BAR ── #}
+{# ────────────────────────────────────────────────────────────── #}
+{# FILTER BAR - Navigation lọc dịch vụ theo danh mục              #}
+{# ────────────────────────────────────────────────────────────── #}
 <div class="sl-filter">
   <div class="container">
     <div class="sl-filter__inner">
@@ -230,20 +262,29 @@
   </div>
 </div>
 
-{# ── GRID ── #}
+{# ────────────────────────────────────────────────────────────── #}
+{# SERVICES GRID - Danh sách dịch vụ (responsive grid)             #}
+{# ────────────────────────────────────────────────────────────── #}
 <section class="sl-section">
   <div class="container">
+    {# ── ERROR STATE: Database error ── #}
     {% if load_error %}
     <div class="col-12 sl-empty">
       <i class="fas fa-exclamation-circle"></i>
       <p>Không thể tải danh sách dịch vụ, vui lòng thử lại.</p>
     </div>
+
+    {# ── NORMAL STATE: Grid với 3 layouts (mobile/tablet/desktop) ── #}
     {% else %}
     <div class="row g-4" id="servicesGrid">
+      {# Loop qua services và render card #}
       {% for service in services %}
+      {# Mobile: 1 col, Tablet: 2 col, Desktop: 3 col #}
       <div class="col-sm-6 col-lg-4 service-item" data-category="{{ service.category.code }}">
         {% include 'spa/includes/_service_card.html' with service=service %}
       </div>
+
+      {# ── EMPTY STATE: Không có dịch vụ nào ── #}
       {% empty %}
       <div class="col-12 sl-empty">
         <i class="fas fa-spa"></i>
@@ -257,13 +298,51 @@
 
 {% endblock %}
 
+{# ────────────────────────────────────────────────────────────── #}
+{# JAVASCRIPT - Client-side filter logic                           #}
+{# ────────────────────────────────────────────────────────────── #}
 {% block extra_js %}
 <script>
+/**
+ * Filter services theo category code (client-side, không reload page)
+ *
+ * @param {string} code - Mã category ('all' hoặc category code như 'MASSAGE', 'CS_DA')
+ * @param {HTMLElement} btn - Button được click (để set active state)
+ *
+ * Workflow:
+ * 1. Xóa active class khỏi tất cả filter buttons
+ * 2. Thêm active class vào button được click
+ * 3. Ẩn/hiện service cards dựa trên data-category attribute
+ */
 function filterServices(code, btn) {
+  // Bước 1: Xóa trạng thái active khỏi tất cả các nút lọc
   document.querySelectorAll('.sl-filter-btn').forEach(b => b.classList.remove('is-active'));
+
+  // Bước 2: Đánh dấu nút vừa được click là active
   btn.classList.add('is-active');
-  document.querySelectorAll('.service-item').forEach(item => {
-    item.style.display = (code === 'all' || item.dataset.category === code) ? '' : 'none';
+
+  // Bước 3: Lọc danh sách dịch vụ
+  // - Nếu code = 'all': Hiện tất cả
+  // - Nếu code != 'all': Chỉ hiện services có data-category khớp với code
+
+  // Lấy tất cả các service cards
+  const serviceCards = document.querySelectorAll('.service-item');
+
+  // Duyệt từng card và quyết định hiển thị hay ẩn
+  serviceCards.forEach(function(card) {
+    const cardCategory = card.dataset.category;  // Lấy category code của card này
+
+    // Kiểm tra điều kiện hiển thị:
+    // 1. Đang chọn "Tất cả" (code === 'all') → HIỆN
+    // 2. Hoặc category của card khớp với code được chọn → HIỆN
+    // 3. Ngược lại → ẨN
+    if (code === 'all' || cardCategory === code) {
+      // Hiện card: xóa inline display để dùng CSS default (flex)
+      card.style.display = '';
+    } else {
+      // Ẩn card: set display = none
+      card.style.display = 'none';
+    }
   });
 }
 </script>

@@ -1,6 +1,5 @@
 from django.contrib import admin
-from .models import Service, ServiceVariant
-
+from .models import Service, ServiceVariant,ServiceCategory
 
 class ServiceVariantInline(admin.TabularInline):
     model = ServiceVariant
@@ -39,6 +38,32 @@ class ServiceAdmin(admin.ModelAdmin):
             obj.created_by = request.user
         obj.updated_by = request.user
         super().save_model(request, obj, form, change)
+
+
+@admin.register(ServiceCategory)
+class ServiceCategoryAdmin(admin.ModelAdmin):
+    """Admin interface cho ServiceCategory"""
+    list_display = ['code', 'name', 'status', 'sort_order', 'created_at']
+    list_filter = ['status', 'created_at']
+    search_fields = ['name', 'code', 'description']
+    list_editable = ['status', 'sort_order']
+    readonly_fields = ['created_at', 'updated_at', 'slug']
+    ordering = ['sort_order', 'name']
+    fieldsets = (
+        ('Thông tin cơ bản', {
+            'fields': ('code', 'name', 'slug')
+        }),
+        ('Mô tả', {
+            'fields': ('description',)
+        }),
+        ('Cấu hình', {
+            'fields': ('status', 'sort_order')
+        }),
+        ('Thời gian', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
 
 
 @admin.register(ServiceVariant)
