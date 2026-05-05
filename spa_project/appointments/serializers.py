@@ -1,7 +1,6 @@
 """
 Serializers — chuyển Booking/Appointment model thành dict/JSON cho frontend.
 
-Author: Spa ANA Team
 """
 
 from .models import Appointment, Booking

@@ -1086,8 +1086,12 @@ function openConfirmOnlineRequestModal(appt) {
   window._pendingOnlineRequestCode = appt.bookingCode || ''; // lưu bookingCode của online request đang được xác nhận
 
   // Show form
-  _showSharedForm(); // hiển thị form lên 
-  _setAddGuestBarVisible(true);
+  _showSharedForm(); // hiển thị form lên
+
+  // Ẩn "Áp dụng tất cả" bar (bao gồm cả nút "Thêm khách" bên trong)
+  // Vì online request chỉ có 1 khách → không cần tính năng bulk actions
+  const applyAllBar = document.getElementById('applyAllBar');
+  if (applyAllBar) applyAllBar.style.display = 'none';
 
   // ── STEP 4: Fill booker info (người đặt) ──
   document.getElementById('bookerName').value = appt.bookerName || appt.customerName || '';
@@ -3671,6 +3675,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   const deleteModalEl = document.getElementById('deleteAppointmentModal');
   if (deleteModalEl) {
     window.deleteAppointmentModal = new bootstrap.Modal(deleteModalEl);
+  }
+
+  // Reset applyAllBar khi apptModal đóng (để tránh ẩn vĩnh viễn sau confirm online request)
+  if (modalEl) {
+    modalEl.addEventListener('hidden.bs.modal', () => {
+      const applyAllBar = document.getElementById('applyAllBar');
+      if (applyAllBar) applyAllBar.style.display = ''; // Reset về mặc định (flex)
+    });
   }
 
   if (sidebarToggle) sidebarToggle.addEventListener("click", () => sidebar.classList.toggle("show"));
