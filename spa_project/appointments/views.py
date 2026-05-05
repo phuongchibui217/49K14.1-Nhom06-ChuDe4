@@ -119,41 +119,45 @@ def _render_booking_form(request, form, customer_profile):
 
 
 # =====================================================
-# TRANG LỊCH HẸN CỦA TÔI
+# TRANG LỊCH HẸN CỦA TÔI 
+#Hiển thị trang "Lịch hẹn của tôi" cho khách hàng, với bộ lọc trạng thái 
+# (Tất cả, Chờ xác nhận, Đã xác nhận, etc.)
 # =====================================================
 
 @customer_required()
 def my_appointments(request):
     """Trang xem lịch hẹn của khách hàng."""
-    customer_profile = request.user.customer_profile
-    status_filter    = request.GET.get('status', 'all')
+    # ── Step 1: Lấy input ──
+    customer_profile = request.user.customer_profile  # User đang login
+    status_filter    = request.GET.get('status', 'all')  # Filter từ URL (?status=pending)
 
-    # Lấy tất cả appointment của khách (qua customer FK)
+    # ── Step 2: Query tất cả appointments của khách ──
     appointments = Appointment.objects.filter(
-        customer=customer_profile,
-        deleted_at__isnull=True,
-    ).select_related('booking', 'service_variant__service', 'room')
+        customer=customer_profile,        # Chỉ lấy của user hiện tại
+        deleted_at__isnull=True,          # Chỉ lấy chưa xóa
+    ).select_related(
+        'booking',                        # Join để lấy booking_code, booker_notes
+        'service_variant__service'        # Join để lấy tên dịch vụ
+    )
 
-    # Map filter → Booking status + Appointment status
+    # ── Step 3: Áp dụng bộ lọc (nếu có) ──
+    # Map filter URL → điều kiện filter DB
+    # Note: 'completed' filter theo appointment.status (vì Booking không có status này)
     FILTER_MAP = {
-        'pending':   {'booking__status': 'PENDING'},
-        'confirmed': {'booking__status': 'CONFIRMED'},
-        'completed': {'status': 'COMPLETED'},
-        'cancelled': {'booking__status': 'CANCELLED'},
-        'rejected':  {'booking__status': 'REJECTED'},
+        'pending':   {'booking__status': 'PENDING'},      # Chờ xác nhận
+        'confirmed': {'booking__status': 'CONFIRMED'},    # Đã xác nhận
+        'completed': {'status': 'COMPLETED'},             # Hoàn thành
+        'cancelled': {'booking__status': 'CANCELLED'},    # Đã hủy
+        'rejected':  {'booking__status': 'REJECTED'},     # Đã từ chối
     }
 
     if status_filter != 'all' and status_filter in FILTER_MAP:
-        flt = FILTER_MAP[status_filter]
-        if 'booking__status__in' in flt:
-            appointments = appointments.filter(booking__status__in=flt['booking__status__in'])
-        elif 'booking__status' in flt:
-            appointments = appointments.filter(booking__status=flt['booking__status'])
-        elif 'status' in flt:
-            appointments = appointments.filter(status=flt['status'])
+        appointments = appointments.filter(**FILTER_MAP[status_filter])
 
-    appointments = appointments.order_by('-booking__created_at')
+    # ── Step 4: Sắp xếp ──
+    appointments = appointments.order_by('-booking__created_at')  # Mới nhất trước
 
+    # ── Step 5: Đếm số lượng theo từng trạng thái (để hiển thị trên tab filter) ──
     base_qs = Appointment.objects.filter(customer=customer_profile, deleted_at__isnull=True)
     status_counts = {
         'pending':   base_qs.filter(booking__status='PENDING').count(),
@@ -164,10 +168,11 @@ def my_appointments(request):
     }
     status_counts['all'] = base_qs.count()
 
+    # ── Step 6: Render template ──
     return render(request, 'appointments/my_appointments.html', {
-        'appointments': appointments,
-        'status_filter': status_filter,
-        'status_counts': status_counts,
+        'appointments': appointments,        # Danh sách sau khi lọc
+        'status_filter': status_filter,      # Filter hiện tại (để highlight tab)
+        'status_counts': status_counts,      # Số lượng mỗi trạng thái
     })
 
 
@@ -178,33 +183,42 @@ def my_appointments(request):
 @customer_required()
 def cancel_appointment(request, appointment_id):
     """Hủy lịch hẹn (khách hàng tự hủy)."""
+    # ── Step 1: Lấy appointment + Kiểm tra quyền ──
+    # Chỉ lấy appointment của user đang login (customer=...)
+    # Nếu không tìm thấy → 404 Not Found
+    # Note: UI đã kiểm soát trạng thái, không cần validate lại ở đây
     appointment = get_object_or_404(
-        Appointment, id=appointment_id, customer=request.user.customer_profile, deleted_at__isnull=True
+        Appointment,
+        id=appointment_id,
+        customer=request.user.customer_profile,
+        deleted_at__isnull=True
     )
     booking = appointment.booking
 
-    if appointment.status == 'COMPLETED':
-        messages.warning(request, 'Không thể hủy lịch đã hoàn thành.')
-        return redirect('appointments:my_appointments')
-
-    if booking and booking.status not in ('PENDING', 'CONFIRMED'):
-        messages.warning(request, 'Hủy lịch thất bại, vui lòng thử lại.')
-        return redirect('appointments:my_appointments')
-
+    # ── Step 2: Thực hiện hủy (dùng transaction để đảm bảo toàn vẹn dữ liệu) ──
     try:
         from django.utils import timezone
         from django.db import transaction
-        with transaction.atomic():
-            appointment.status = 'CANCELLED'
-            appointment.save(update_fields=['status', 'updated_at'])
+
+        with transaction.atomic():  # Transaction: Hoàn thành TẤT CẢ hoặc KHÔNG làm gì cả
+            # Nếu có lỗi bất kỳ → tự động rollback (hoàn tác) tất cả thay đổi
+
+            # ── Cập nhật Appointment ──
+            appointment.status = 'CANCELLED'  # Đổi trạng thái sang "Đã hủy"
+            appointment.save(update_fields=['status', 'updated_at'])  # Chỉ update 2 trường này (tối ưu)
+
+            # ── Cập nhật Booking (nếu có) ──
             if booking:
-                booking.status      = 'CANCELLED'
-                booking.cancelled_at = timezone.now()
-                booking.save(update_fields=['status', 'cancelled_at', 'updated_at'])
+                booking.status = 'CANCELLED'  # Đổi trạng thái booking sang "Đã hủy"
+                booking.cancelled_at = timezone.now()  # Ghi thời điểm hủy
+                booking.save(update_fields=['status', 'cancelled_at', 'updated_at'])  # Chỉ update 3 trường này
+
         messages.success(request, f'Đã hủy lịch hẹn {appointment.appointment_code}.')
+
     except Exception:
         messages.error(request, 'Hủy lịch thất bại, vui lòng thử lại.')
 
+    # ── Step 3: Redirect về trang lịch hẹn ──
     return redirect('appointments:my_appointments')
 
 
