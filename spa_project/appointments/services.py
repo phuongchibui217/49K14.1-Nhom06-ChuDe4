@@ -76,6 +76,7 @@ def check_room_availability(
     start_time,
     duration_minutes,
     exclude_appointment_code=None,
+    exclude_appointment_codes=None,
 ):
     """
     Kiểm tra phòng có trống trong khung giờ đã chọn không.
@@ -123,7 +124,9 @@ def check_room_availability(
 
     # ── Step 5: Exclude appointment đang được update (tránh check với chính nó)
     # VD: Update appointment A, đổi thời gian → không conflict với A cũ
-    if exclude_appointment_code:
+    if exclude_appointment_codes:
+        queryset = queryset.exclude(appointment_code__in=exclude_appointment_codes)
+    elif exclude_appointment_code:
         queryset = queryset.exclude(appointment_code=exclude_appointment_code)
 
     # ── Step 6: Đếm số lượng appointments trùng khung giờ
@@ -161,6 +164,7 @@ def validate_appointment_create(
     duration_minutes,
     room_code=None,
     exclude_appointment_code=None,
+    exclude_appointment_codes=None,
     is_staff_confirm=False,
 ):
     """
@@ -188,6 +192,7 @@ def validate_appointment_create(
             start_time=appointment_time,
             duration_minutes=duration_minutes,
             exclude_appointment_code=exclude_appointment_code,
+            exclude_appointment_codes=exclude_appointment_codes,
         )
         if not is_available:
             if message == 'CONFLICT':

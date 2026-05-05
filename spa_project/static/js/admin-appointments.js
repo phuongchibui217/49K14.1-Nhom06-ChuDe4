@@ -2760,6 +2760,7 @@ function openEditModalWithData(appointments, clickedApptId) {
     const apptId = document.getElementById("apptId");
     const btnDelete = document.getElementById("btnDelete");
 
+    _initApplyAllBar();
     resetModalError();
 
     // Title hiển thị booking code nếu có nhiều khách
@@ -3302,7 +3303,9 @@ btnDelete.addEventListener("click", async () => {
       setButtonLoading(btnDelete, 'Đang xóa...');
 
       try {
-        const result = await apiPost(`${API_BASE}/appointments/${id}/delete/`, {});
+        const bookingCode = apptId.dataset.bookingCode || '';
+        const url = bookingCode ? `${API_BASE}/bookings/${bookingCode}/delete/` : `${API_BASE}/appointments/${id}/delete/`;
+        const result = await apiPost(url, {});
         if (result.success) {
           const modalEl = document.getElementById("apptModal");
           if (modalEl) {

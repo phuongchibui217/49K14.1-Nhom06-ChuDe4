@@ -189,6 +189,8 @@ def _check_cross_capacity(slot_list, error_prefix_fn=None, status_code=400, conf
         _, room_code, appt_date, start_min, end_min = entry
         groups[(room_code, appt_date)].append(entry)
 
+    all_req_identifiers = [entry[0] for entry in slot_list if entry[0]]
+
     for (room_code, appt_date), slots in groups.items():
         if len(slots) < 2:
             continue
@@ -201,7 +203,7 @@ def _check_cross_capacity(slot_list, error_prefix_fn=None, status_code=400, conf
         for identifier, _, _, start_min, end_min in slots:
             db_count = _count_db_overlaps(
                 room_code, appt_date, start_min, end_min,
-                exclude_codes=[identifier] if identifier else None,
+                exclude_codes=all_req_identifiers,
             )
             req_count = sum(
                 1 for other_id, _, _, o_start, o_end in slots
@@ -979,6 +981,56 @@ def api_appointment_detail(request, appointment_code):
         return JsonResponse({'success': False, 'error': 'Không tìm thấy lịch hẹn'}, status=404)
     return JsonResponse({'success': True, 'appointment': serialize_appointment(appt)})
 
+@require_http_methods(["POST", "DELETE"])
+@staff_api
+def api_booking_delete(request, booking_code):
+    """
+    [TAB 1] POST /api/bookings/<booking_code>/delete/
+    Xóa toàn bộ booking và các lịch hẹn bên trong.
+    """
+    try:
+        booking = Booking.objects.get(booking_code=booking_code, deleted_at__isnull=True)
+    except Booking.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Không tìm thấy booking'}, status=404)
+
+    if not _is_staff(request.user):
+        return _deny()
+
+    try:
+        with transaction.atomic():
+            booking = Booking.objects.select_for_update().get(id=booking.id)
+            booking_pay_status = booking.payment_status or ''
+            if booking_pay_status in ('PAID', 'PARTIAL', 'REFUNDED'):
+                if booking_pay_status == 'PAID':
+                    err_msg = 'Không thể xóa booking đã thanh toán. Vui lòng hoàn tiền trước nếu cần hủy.'
+                elif booking_pay_status == 'PARTIAL':
+                    err_msg = 'Không thể xóa booking đang có thanh toán một phần. Vui lòng hoàn tiền trước nếu cần hủy.'
+                else:
+                    err_msg = 'Không thể xóa booking đã hoàn tiền. Vui lòng giữ lại để đối soát.'
+                return JsonResponse({'success': False, 'error': err_msg}, status=400)
+            
+            appointments = Appointment.objects.filter(booking=booking, deleted_at__isnull=True)
+            if appointments.filter(status='COMPLETED').exists():
+                return JsonResponse({'success': False, 'error': 'Không thể xóa booking có lịch hẹn đã hoàn thành.'}, status=400)
+
+            now = timezone.now()
+            for appt in appointments:
+                appt.deleted_at = now
+                appt.deleted_by_user = request.user
+                appt.save(update_fields=['deleted_at', 'deleted_by_user', 'updated_at'])
+            
+            booking.deleted_at = now
+            booking.deleted_by_user = request.user
+            booking.save(update_fields=['deleted_at', 'deleted_by_user', 'updated_at'])
+
+        return JsonResponse({
+            'success': True,
+            'message': 'Đã xóa toàn bộ booking',
+            'booking_deleted': True,
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Lỗi khi xóa booking: {str(e)}'}, status=400)
+
 
 @require_http_methods(["GET"])
 def api_booking_detail(request, booking_code):
@@ -1591,6 +1643,8 @@ def api_booking_update_batch(request, booking_code):
 
     valid_appt_statuses = {choice[0] for choice in Appointment.STATUS_CHOICES}
 
+    all_req_identifiers = [g.get('appointmentCode').strip() for g in guests if g.get('appointmentCode')]
+
     # ── Pre-validate tất cả guests trước khi vào transaction ─────────────────
     # Tránh rollback giữa chừng do lỗi validate đơn giản
     pre_errors = []
@@ -1935,6 +1989,7 @@ def api_booking_update_batch(request, booking_code):
                         duration_minutes=val_duration,
                         room_code=val_room,
                         exclude_appointment_code=appt_code,
+                        exclude_appointment_codes=all_req_identifiers,
                         is_staff_confirm=(not datetime_changed),
                     )
                     if not val_result['valid']:
