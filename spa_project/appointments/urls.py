@@ -16,7 +16,7 @@ app_name = 'appointments'
 
 urlpatterns = [
     # ========== HTML PAGES ==========
-    path('booking/', views.booking, name='booking'),
+    path('booking/', views.booking, name='booking'), 
     path('lich-hen-cua-toi/', views.my_appointments, name='my_appointments'),
     path('lich-hen/cancel/<int:appointment_id>/', views.cancel_appointment, name='cancel_appointment'),
     path('manage/appointments/', views.admin_appointments, name='admin_appointments'),
@@ -31,8 +31,8 @@ urlpatterns = [
     path('api/appointments/create-batch/', api.api_appointment_create_batch, name='api_appointment_create_batch'),  # Tạo nhiều / share
     path('api/appointments/customer-cancelled-recent/', api.api_customer_cancelled_recent, name='api_customer_cancelled_recent'),  # Khách hủy gần đây
     path('api/appointments/<str:appointment_code>/', api.api_appointment_detail, name='api_appointment_detail'),  # Chi tiết
-    path('api/appointments/<str:appointment_code>/update/', api.api_appointment_update, name='api_appointment_update'),  # [REMOVED] trả 410 — dùng update-batch
-    path('api/appointments/<str:appointment_code>/status/', api.api_appointment_status, name='api_appointment_status'),  # Đổi trạng thái
+    # path('api/appointments/<str:appointment_code>/update/', api.api_appointment_update, name='api_appointment_update'),  # [REMOVED] trả 410 — dùng update-batch
+    path('api/appointments/<str:appointment_code>/status/', api.api_appointment_status, name='api_appointment_status'),  # Đổi trạng thái 1
     path('api/appointments/<str:appointment_code>/delete/', api.api_appointment_delete, name='api_appointment_delete'),  # Xóa
 
     # ========== API: TAB "Yêu Cầu Đặt Lịch" (Booking Requests) ==========
@@ -48,7 +48,7 @@ urlpatterns = [
     path('api/bookings/<str:booking_code>/invoice/refund/', api.api_booking_invoice_refund, name='api_booking_invoice_refund'),  # Hoàn tiền
 
     # ========== API: Customers ==========
-    path('api/customers/search/', api.api_customer_search, name='api_customer_search'),  # Tìm khách hàng
+    path('api/customers/search/', api.api_customer_search, name='api_customer_search'),  # Tìm khách hàng 1
     path('api/customers/<str:phone>/note/', api.api_customer_note_update, name='api_customer_note_update'),  # Cập nhật note
     path('api/customers/id/<int:customer_id>/note/', api.api_customer_note_update_by_id, name='api_customer_note_update_by_id'),  # Note theo ID
 ]
