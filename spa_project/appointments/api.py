@@ -1544,37 +1544,6 @@ def api_appointment_create_batch(request):
         return JsonResponse({'success': False, 'error': str(e) or 'Không thể tạo lịch hẹn. Vui lòng thử lại sau'}, status=400)
 
 
-@require_http_methods(["POST", "PUT"])
-@staff_api
-def api_appointment_update(request, appointment_code):
-    """
-    [REMOVED] POST /api/appointments/<code>/update/
-
-    Endpoint này đã bị loại bỏ hoàn toàn.
-    Mọi thao tác sửa lịch phải dùng:
-
-        POST /api/bookings/<booking_code>/update-batch/
-
-    Lý do: update-batch là atomic (1 transaction cho toàn booking),
-    tự rebuild invoice, và là endpoint duy nhất frontend sử dụng.
-    """
-    logger.error(
-        '[REMOVED] api_appointment_update (%s) bị gọi — client phải dùng update-batch',
-        appointment_code,
-    )
-    return JsonResponse(
-        {
-            'success': False,
-            'error': (
-                'Endpoint này đã bị loại bỏ. '
-                'Dùng POST /api/bookings/<booking_code>/update-batch/ thay thế.'
-            ),
-            'use_instead': 'POST /api/bookings/<booking_code>/update-batch/',
-        },
-        status=410,
-    )
-
-
 @require_http_methods(["POST"])
 @staff_api
 def api_booking_update_batch(request, booking_code):
