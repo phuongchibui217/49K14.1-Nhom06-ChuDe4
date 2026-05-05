@@ -89,48 +89,69 @@ def check_room_availability(
         - 'CONFLICT': khung giờ đã có lịch (capacity = 1, bị trùng)
         - 'CAPACITY': phòng đã đủ chỗ (capacity > 1, vượt giới hạn)
     """
+    # ── Step 1: Guard clause - nếu không có room_code → coi như available
+    # Lý do: Một số flow (tạo pending, xác nhận request) chưa chọn phòng ngay
     if not room_code:
         return (True, None, '')
 
+    # ── Step 2: Lấy room object từ DB
     try:
         room = Room.objects.get(code=room_code, is_active=True)
     except Room.DoesNotExist:
         return (False, None, f'Phòng {room_code} không tồn tại.')
 
+    # ── Step 3: Tính giờ kết thúc của appointment đang check
     end_time = _calc_end_time(start_time, duration_minutes)
 
+    # ── Step 4: Query appointments CẦN CHECK TRỪNG LỊCH
+    # Chỉ lấy appointments:
+    #   - Cùng phòng
+    #   - Cùng ngày
+    #   - Chưa bị xóa (deleted_at is null)
+    #   - KHÔNG phải CANCELLED
+    #   - KHÔNG phải booking CANCELLED/REJECTED/PENDING
+    # Lý do exclude PENDING: Booking mới tạo (PENDING) chưa được confirm → chưa chiếm slot
     queryset = Appointment.objects.filter(
-        room=room,
-        appointment_date=appointment_date,
-        deleted_at__isnull=True,
+        room=room,                           # Cùng phòng
+        appointment_date=appointment_date,   # Cùng ngày
+        deleted_at__isnull=True,             # Chưa bị xóa
     ).exclude(
-        status='CANCELLED'
+        status='CANCELLED'                   # Bỏ qua appointments đã hủy
     ).exclude(
-        booking__status__in=['CANCELLED', 'REJECTED', 'PENDING']
+        booking__status__in=['CANCELLED', 'REJECTED', 'PENDING']  # Bỏ qua booking không hiệu lực
     )
 
+    # ── Step 5: Exclude appointment đang được update (tránh check với chính nó)
+    # VD: Update appointment A, đổi thời gian → không conflict với A cũ
     if exclude_appointment_code:
         queryset = queryset.exclude(appointment_code=exclude_appointment_code)
 
-    # Đếm số lịch trùng giờ (mỗi lịch = 1 khách)
+    # ── Step 6: Đếm số lượng appointments trùng khung giờ
     overlapping_count = 0
     first_conflict = None
 
     for existing in queryset:
+        # Tính giờ kết thúc của appointment existing
         dur = _get_appt_duration(existing)
         existing_end = _calc_end_time(existing.appointment_time, dur)
 
+        # Check overlap: 2 khung giờ giao nhau?
+        # Formula: (start1 < end2) AND (end1 > start2)
         if start_time < existing_end and end_time > existing.appointment_time:
             overlapping_count += 1
             if first_conflict is None:
-                first_conflict = existing
+                first_conflict = existing  # Lưu appointment đầu tiên bị conflict (để báo lỗi chi tiết)
 
+    # ── Step 7: Kiểm tra có vượt quá capacity không?
     if overlapping_count >= room.capacity:
-        # Phân biệt: capacity=1 → trùng lịch; capacity>1 → vượt sức chứa
+        # Phân biệt rõ 2 trường hợp để error message thân thiện
         if room.capacity == 1:
+            # Phòng 1 người: trùng giờ = CONFLICT
             return (False, first_conflict, 'CONFLICT')
+        # Phòng nhiều người: đã đủ chỗ = CAPACITY
         return (False, first_conflict, 'CAPACITY')
 
+    # ── Step 8: Pass mọi check → phòng available
     return (True, None, '')
 
 
@@ -203,17 +224,3 @@ def _get_appt_duration(appointment):
     return 60
 
 
-def get_available_rooms_for_slot(appointment_date, start_time, duration_minutes):
-    """Lấy danh sách phòng còn trống cho khung giờ đã chọn."""
-    all_rooms = Room.objects.filter(is_active=True)
-    available = []
-    for room in all_rooms:
-        is_available, _, _ = check_room_availability(
-            room_code=room.code,
-            appointment_date=appointment_date,
-            start_time=start_time,
-            duration_minutes=duration_minutes,
-        )
-        if is_available:
-            available.append(room)
-    return available
