@@ -1549,6 +1549,8 @@ function _loadGuestVariants(item, serviceId, selectedVariantId) {
   _updateCreatePayBtn();
 }
 
+
+
 /** Tính và lưu end_time vào dataset + cập nhật hiển thị (giờ kết thúc auto-tính) */
 function _updateGuestEndTime(item) {
   const varSel = item.querySelector('.gc-variant');

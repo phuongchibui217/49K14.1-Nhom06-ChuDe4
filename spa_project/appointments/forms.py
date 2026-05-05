@@ -37,8 +37,8 @@ class BookingOnlineForm(forms.Form):
 
     service = forms.ModelChoiceField(
         queryset=Service.objects.filter(status='ACTIVE'),
-        required=False,
-        empty_label='-- Chọn dịch vụ (tuỳ chọn) --',
+        required=True,
+        empty_label='-- Chọn dịch vụ --',
         label='Dịch vụ',
         widget=forms.Select(attrs={'class': 'lux-select'})
     )
@@ -77,19 +77,15 @@ class BookingOnlineForm(forms.Form):
         self.customer_profile = kwargs.pop('customer_profile', None)
         super().__init__(*args, **kwargs)
 
-        # Pre-fill booker từ profile
+        # Pre-fill booker info từ profile (user đang đăng nhập)
         if self.customer_profile:
-            profile_name  = self.customer_profile.full_name or ''
+            # Lấy tên/SĐT từ profile (fallback rỗng nếu không có)
+            profile_name = self.customer_profile.full_name or ''
             profile_phone = self.customer_profile.phone or ''
-            self.initial['booker_name']  = profile_name
+
+            # Điền vào hidden fields (user không thấy, nhưng data có sẵn)
+            self.initial['booker_name'] = profile_name
             self.initial['booker_phone'] = profile_phone
-            if self.data:
-                data = self.data.copy()
-                if not data.get('booker_name'):
-                    data['booker_name'] = profile_name
-                if not data.get('booker_phone'):
-                    data['booker_phone'] = profile_phone
-                self.data = data
 
         # Load variants theo service đã chọn
         service_id = self.data.get('service') if self.data else None
@@ -98,9 +94,8 @@ class BookingOnlineForm(forms.Form):
                 service_id=service_id
             ).order_by('sort_order', 'duration_minutes')
         else:
-            self.fields['service_variant'].queryset = ServiceVariant.objects.select_related('service').order_by(
-                'service__name', 'sort_order', 'duration_minutes'
-            )
+            # Chưa chọn service → rỗng (chờ JavaScript filter)
+            self.fields['service_variant'].queryset = ServiceVariant.objects.none()
 
     def clean_booker_phone(self):
         phone = self.cleaned_data.get('booker_phone', '').strip()

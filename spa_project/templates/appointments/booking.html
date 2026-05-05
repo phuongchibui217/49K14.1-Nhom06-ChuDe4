@@ -323,45 +323,43 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function updateServiceInfo() {
     if (!variantSelect) return;
-    const opt = variantSelect.options[variantSelect.selectedIndex];
+    const opt = variantSelect?.options[variantSelect.selectedIndex];
 
-    if (opt && opt.value) {
-      if (durationSpan) durationSpan.textContent = opt.dataset.duration + ' phút';
-      if (priceSpan) priceSpan.textContent = parseFloat(opt.dataset.price).toLocaleString('vi-VN') + ' VNĐ';
+    if (opt?.value) {
+      durationSpan.textContent = opt.dataset.duration + ' phút';
+      priceSpan.textContent = parseFloat(opt.dataset.price).toLocaleString('vi-VN') + ' VNĐ';
     } else {
-      if (durationSpan) durationSpan.textContent = '—';
-      if (priceSpan) priceSpan.textContent = '—';
+      durationSpan.textContent = '—';
+      priceSpan.textContent = '—';
     }
   }
 
   function updateSummary() {
     if (!summaryBox) return;
 
-    const svcOpt = serviceSelect ? serviceSelect.options[serviceSelect.selectedIndex] : null;
-    const varOpt = variantSelect ? variantSelect.options[variantSelect.selectedIndex] : null;
-    const dateVal = dateInput ? dateInput.value : '';
-    const timeVal = timeInput ? timeInput.value : '';
+    const svcOpt = serviceSelect?.options[serviceSelect.selectedIndex];
+    const varOpt = variantSelect?.options[variantSelect.selectedIndex];
+    const dateVal = dateInput?.value || '';
+    const timeVal = timeInput?.value || '';
 
-    if (svcOpt && svcOpt.value && varOpt && varOpt.value && dateVal && timeVal) {
+    if (svcOpt?.value && varOpt?.value && dateVal && timeVal) 
+    {
       summaryBox.style.display = 'block';
-      if (sumService) sumService.textContent = svcOpt.textContent;
-      if (sumVariant) {
-        sumVariant.textContent = varOpt.dataset.label || varOpt.textContent.split('—')[0].trim();
-      }
-      if (sumDate && dateVal) {
-        const d = new Date(dateVal + 'T00:00:00');
-        sumDate.textContent = d.toLocaleDateString('vi-VN', {
-          weekday: 'long',
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric'
-        });
-      }
-      if (sumTime) sumTime.textContent = timeVal;
-      if (sumTotal && varOpt.dataset.price) {
-        sumTotal.textContent = parseFloat(varOpt.dataset.price).toLocaleString('vi-VN') + ' VNĐ';
-      }
-    } else {
+      sumService.textContent = svcOpt.textContent;
+      sumVariant.textContent = varOpt.dataset.label || varOpt.textContent.split('—')[0].trim();
+
+      const d = new Date(dateVal + 'T00:00:00');
+      sumDate.textContent = d.toLocaleDateString('vi-VN', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      sumTime.textContent = timeVal;
+      sumTotal.textContent = parseFloat(varOpt.dataset.price).toLocaleString('vi-VN') + ' VNĐ';
+    }
+    else
+    {
       summaryBox.style.display = 'none';
     }
   }

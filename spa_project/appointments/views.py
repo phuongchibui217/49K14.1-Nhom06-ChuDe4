@@ -13,11 +13,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
-from .models import Appointment, Booking, Room
+from .models import Appointment, Booking
 from spa_services.models import Service, ServiceVariant
 from .forms import BookingOnlineForm
 from core.decorators import customer_required
-from .services import get_available_rooms_for_slot
 
 
 # =====================================================
@@ -34,37 +33,17 @@ def booking(request):
         if form.is_valid():
             booker_name  = form.cleaned_data['booker_name']
             booker_phone = form.cleaned_data['booker_phone']
-            booker_email = customer_profile.user.email if customer_profile.user else ''
+            booker_email = customer_profile.user.email
             booker_notes = form.cleaned_data.get('booker_notes', '')
 
             # Customer snapshot — khách sử dụng dịch vụ
             customer_name_snapshot  = request.POST.get('customer_name_snapshot', '').strip() or booker_name
             _raw_phone              = request.POST.get('customer_phone_snapshot', '').strip()
-            customer_phone_snapshot = ''.join(filter(str.isdigit, _raw_phone)) or None
+            customer_phone_snapshot = ''.join(filter(str.isdigit, _raw_phone)) or booker_phone
             customer_email_snapshot = request.POST.get('customer_email_snapshot', '').strip() or None
 
-            # Resolve customer profile
-            from .api import _resolve_or_create_customer
-            try:
-                customer = _resolve_or_create_customer(
-                    phone=booker_phone,
-                    email=booker_email,
-                    customer_name=booker_name,
-                )
-            except Exception:
-                customer = None
-
-            # Chọn phòng trống
+            # Service variant
             service_variant = form.cleaned_data.get('service_variant')
-            duration_min    = service_variant.duration_minutes if service_variant else 60
-            available_rooms = get_available_rooms_for_slot(
-                appointment_date=form.cleaned_data['appointment_date'],
-                start_time=form.cleaned_data['appointment_time'],
-                duration_minutes=duration_min,
-            )
-            if not available_rooms:
-                messages.error(request, 'Không còn phòng trống cho khung giờ này. Vui lòng chọn giờ khác hoặc liên hệ trực tiếp.')
-                return _render_booking_form(request, form, customer_profile)
 
             try:
                 from django.db import transaction
@@ -73,19 +52,18 @@ def booking(request):
                     bk = Booking.objects.create(
                         booker_name=booker_name,
                         booker_phone=booker_phone,
-                        booker_email=booker_email or None,
+                        booker_email=booker_email,
                         booker_notes=booker_notes or None,
                         status='PENDING',
                         payment_status='UNPAID',
                         source='ONLINE',
                         created_by=request.user,
                     )
-                    # Tạo Appointment
+                    # Tạo Appointment (chưa assign phòng - staff sẽ làm sau)
                     appt = Appointment.objects.create(
                         booking=bk,
-                        customer=customer,
+                        customer=customer_profile,
                         service_variant=service_variant,
-                        room=available_rooms[0],
                         customer_name_snapshot=customer_name_snapshot,
                         customer_phone_snapshot=customer_phone_snapshot,
                         customer_email_snapshot=customer_email_snapshot,
@@ -107,14 +85,26 @@ def booking(request):
     return _render_booking_form(request, form, customer_profile)
 
 
+"""   
+    Mục đích:
+    - Lấy tất cả services + variants từ database
+    - Format thành JSON để JavaScript dùng cho dropdown
+    - Render template với đầy đủ context data
+"""
 def _render_booking_form(request, form, customer_profile):
-    """Helper render booking form với services data."""
+    # 1. Lấy tất cả services đang hoạt động
     services = Service.objects.filter(status='ACTIVE').prefetch_related('variants')
 
     import json as _json
+    # chuẩn bị data cho JS
+    # 2. Format data cho JavaScript: {service_id: [variants]}
     services_with_variants = {
         str(s.id): [
-            {'id': v.id, 'label': v.label, 'duration_minutes': v.duration_minutes, 'price': float(v.price)}
+            {'id': v.id,
+             'label': v.label,
+             'duration_minutes': v.duration_minutes, 
+             'price': float(v.price)
+            }
             for v in s.variants.order_by('sort_order', 'duration_minutes')
         ]
         for s in services
