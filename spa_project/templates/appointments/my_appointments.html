@@ -76,6 +76,7 @@
                   <i class="fas fa-hashtag me-1"></i>{{ appointment.booking.booking_code }}
                 </div>
               </div>
+              <!-- Status badge: Hiển thị trạng thái theo góc nhìn khách hàng -->
               <span class="status-badge status-{{ appointment.customer_status_css }}">
                 {{ appointment.customer_status_label }}
               </span>
@@ -108,8 +109,11 @@
             {% endif %}
 
             <!-- Footer: nút hủy (chỉ khi Booking PENDING hoặc CONFIRMED) -->
+              <!--Kiểm tra: Booking CÓ THỂ hủy được không? -->
             {% if appointment.booking.status == 'PENDING' or appointment.booking.status == 'CONFIRMED' %}
-            {% if appointment.status != 'COMPLETED' and appointment.status != 'CANCELLED' %}
+              <!-- Appointment ĐÃ XONG CHƯA?-->
+            {% if appointment.status != 'COMPLETED' and appointment.status != 'CANCELLED' %}  
+            
             <div class="card-action-footer">
               <form method="post"
                     action="{% url 'appointments:cancel_appointment' appointment.id %}"
@@ -287,44 +291,33 @@
 </style>
 
 <script>
-(function () {
-  'use strict';
-
+document.addEventListener('DOMContentLoaded', function () {
   const modalEl    = document.getElementById('cancelApptModal');
   const btnConfirm = document.getElementById('cancelApptConfirmBtn');
   const bsModal    = new bootstrap.Modal(modalEl);
+  let _activeForm  = null;
 
-  let _activeForm = null;
-
-  /* ── Mở modal ── */
-  function openModal(form) {
-    _activeForm = form;
-    bsModal.show();
-  }
-
-  /* ── Gắn sự kiện nút "Hủy lịch" trên mỗi card ── */
-  document.querySelectorAll('.btn-trigger-cancel').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      var form = btn.closest('.cancel-appointment-form');
-      openModal(form);
+  // Mở modal khi bấm "Hủy lịch"
+  document.querySelectorAll('.btn-trigger-cancel')  // Tìm tất cả nút có class "btn-trigger-cancel" (tất cả các nút "Hủy lịch")
+    .forEach(function (btn) {                        // Lặp qua TỪNG nút để gắn sự kiện
+      btn.addEventListener('click', function () {    // Khi user bấm vào nút này
+        _activeForm = btn.closest('.cancel-appointment-form');  // Tìm form cha của nút vừa bấm (để biết đang xử lý appointment nào)
+        bsModal.show();                              // Hiện modal xác nhận: "Bạn có chắc muốn hủy?"
+      });
     });
+
+  // Xử lý khi user bấm "Xác nhận" trong modal
+  btnConfirm.addEventListener('click', function () {     // Lắng nghe sự kiện click vào nút "Xác nhận"
+    if (_activeForm) {                                    // Kiểm tra: đã lưu form nào chưa? (tránh submit rỗng)
+      _activeForm.submit();                               // Submit form NGAY LAP TUC (gửi POST request về server để hủy appointment)
+      bsModal.hide();                                     // Đồng thời đóng modal
+    }
   });
 
-  /* ── Khi modal đóng (Hủy / click nền / Escape) → reset form ── */
-  modalEl.addEventListener('hidden.bs.modal', function () {
-    _activeForm = null;
+  // Reset khi modal đóng (user bấm "Hủy" / bấm ESC / click ra ngoài)
+  modalEl.addEventListener('hidden.bs.modal', function () {  // Lắng nghe sự kiện modal đóng
+    _activeForm = null;                                     // Xóa form đã lưu (để lần sau không submit nhầm appointment cũ)
   });
-
-  /* ── Nút "Xác nhận" → đóng modal rồi submit form ── */
-  btnConfirm.addEventListener('click', function () {
-    var form = _activeForm;
-    bsModal.hide();
-    modalEl.addEventListener('hidden.bs.modal', function submitOnHide() {
-      modalEl.removeEventListener('hidden.bs.modal', submitOnHide);
-      if (form) form.submit();
-    });
-  });
-
-}());
+});
 </script>
 {% endblock %}
