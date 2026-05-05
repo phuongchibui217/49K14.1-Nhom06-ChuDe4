@@ -81,16 +81,19 @@ def admin_profile(request):
                 request.user.email = email
             request.user.save()
 
-            # Update StaffProfile
-            if staff_profile:
-                staff_profile.full_name = full_name
-                if phone:
-                    staff_profile.phone = phone
-                staff_profile.gender = gender or None
-                staff_profile.dob = dob
-                staff_profile.address = address
-                staff_profile.save()
+            # Update StaffProfile — tạo mới nếu chưa có
+            if not staff_profile:
+                from core.user_service import ensure_staff_profile
+                staff_profile = ensure_staff_profile(request.user)
 
+            staff_profile.full_name = full_name
+            if phone:
+                staff_profile.phone = phone
+            staff_profile.gender = gender or None
+            staff_profile.dob = dob
+            staff_profile.address = address
+            staff_profile.save()
+            
             messages.success(request, 'Cập nhật thông tin thành công.')
             return redirect('admin_panel:admin_profile')
 
