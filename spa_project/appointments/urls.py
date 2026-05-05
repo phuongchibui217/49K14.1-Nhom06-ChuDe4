@@ -31,7 +31,7 @@ urlpatterns = [
     path('api/appointments/create-batch/', api.api_appointment_create_batch, name='api_appointment_create_batch'),  # Táº¡o nhiá»u / share
     path('api/appointments/customer-cancelled-recent/', api.api_customer_cancelled_recent, name='api_customer_cancelled_recent'),  # KhÃ¡ch há»§y gáº§n Ä‘Ã¢y
     path('api/appointments/<str:appointment_code>/', api.api_appointment_detail, name='api_appointment_detail'),  # Chi tiáº¿t
-    path('api/appointments/<str:appointment_code>/update/', api.api_appointment_update, name='api_appointment_update'),  # [REMOVED] tráº£ 410 â€” dÃ¹ng update-batch
+    # path('api/appointments/<str:appointment_code>/update/', api.api_appointment_update, name='api_appointment_update'),  # [REMOVED] tráº£ 410 â€” dÃ¹ng update-batch
     path('api/appointments/<str:appointment_code>/status/', api.api_appointment_status, name='api_appointment_status'),  # Äá»•i tráº¡ng thÃ¡i
     path('api/appointments/<str:appointment_code>/delete/', api.api_appointment_delete, name='api_appointment_delete'),  # XÃ³a
 
